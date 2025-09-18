@@ -19,7 +19,10 @@ namespace Microsoft.Extensions.Hosting;
 public static class WritableConfigurationExtensions
 {
     /// <summary>
-    /// Adds a writable user configuration file to the host application builder.
+    /// Adds a writable user configuration file to the host application builder, specifying a folder under the user config directory. <br/>
+    /// * On Windows, this is typically "%LOCALAPPDATA%"<br/>
+    /// * On macOS, this is typically "~/Library/Application Support"<br/>
+    /// * On Linux, this is typically "$XDG_CONFIG_HOME" or "~/.config"
     /// </summary>
     /// <typeparam name="T">The type of the configuration class.</typeparam>
     /// <param name="builder">The host application builder.</param>
@@ -27,7 +30,7 @@ public static class WritableConfigurationExtensions
     /// <param name="folderName">The folder name for the configuration file.</param>
     /// <param name="configureOptions">An optional action to configure options.</param>
     /// <returns>The host application builder.</returns>
-    public static IHostApplicationBuilder AddWritableUserConfigFile<T>(
+    public static IHostApplicationBuilder AddUserConfigurationToAppConfigFolder<T>(
         this IHostApplicationBuilder builder,
         string fileName,
         string folderName,
@@ -37,7 +40,7 @@ public static class WritableConfigurationExtensions
     {
         var configRoot = UserConfigurationPath.GetUserConfigRootDirectory();
         var fullPath = Path.Combine(configRoot, folderName, fileName);
-        return builder.AddWritableUserConfigFile<T>(fullPath, configureOptions);
+        return builder.AddUserConfigurationFile<T>(fullPath, configureOptions);
     }
 
     /// <summary>
@@ -50,7 +53,7 @@ public static class WritableConfigurationExtensions
     /// <param name="configFolder">The special folder to use as the root.</param>
     /// <param name="configureOptions">An optional action to configure options.</param>
     /// <returns>The host application builder.</returns>
-    public static IHostApplicationBuilder AddWritableUserConfigFile<T>(
+    public static IHostApplicationBuilder AddUserConfigurationToSpecialFolder<T>(
         this IHostApplicationBuilder builder,
         string fileName,
         string folderName,
@@ -61,7 +64,7 @@ public static class WritableConfigurationExtensions
     {
         var configRoot = Environment.GetFolderPath(configFolder);
         var fullPath = Path.Combine(configRoot, folderName, fileName);
-        return builder.AddWritableUserConfigFile<T>(fullPath, configureOptions);
+        return builder.AddUserConfigurationFile<T>(fullPath, configureOptions);
     }
 
     /// <summary>
@@ -72,26 +75,27 @@ public static class WritableConfigurationExtensions
     /// <param name="filePath">The full path to the configuration file.</param>
     /// <param name="configureOptions">An optional action to configure options.</param>
     /// <returns>The host application builder.</returns>
-    public static IHostApplicationBuilder AddWritableUserConfigFile<T>(
+    public static IHostApplicationBuilder AddUserConfigurationFile<T>(
         this IHostApplicationBuilder builder,
         string filePath,
         Action<T>? configureOptions = null
     )
         where T : class
     {
+        var filePathAbsolute = Path.GetFullPath(filePath);
         if (configureOptions == null)
         {
             configureOptions = _ => { };
         }
         // add configuration
-        builder.Configuration.AddJsonFile(filePath, optional: true, reloadOnChange: true);
+        builder.Configuration.AddJsonFile(filePathAbsolute, optional: true, reloadOnChange: true);
         // add IOptions<T>
         builder.Services.Configure<T>(configureOptions);
         // add IWritableOptions<T>
         builder.Services.TryAddSingleton<IWritableOptions<T>, WritableJsonConfiguration<T>>();
         builder.Services.Configure<WritableJsonConfigurationOptions<T>>(options =>
         {
-            options.ConfigFilePath = filePath;
+            options.ConfigFilePath = filePathAbsolute;
         });
         return builder;
     }

@@ -13,18 +13,6 @@ public interface IWritableOptions<T> : IOptions<T>, IOptionsMonitor<T>
     where T : class
 {
     /// <summary>
-    /// Saves the specified configuration.
-    /// </summary>
-    /// <param name="newConfig">The new configuration to save.</param>
-    void Save(T newConfig);
-
-    /// <summary>
-    /// Updates and saves the configuration using the provided updater action.
-    /// </summary>
-    /// <param name="configUpdator">An action to update the configuration.</param>
-    void Save(Action<T> configUpdator);
-
-    /// <summary>
     /// Asynchronously saves the specified configuration.
     /// </summary>
     /// <param name="newConfig">The new configuration to save.</param>

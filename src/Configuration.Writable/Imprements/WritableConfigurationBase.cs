@@ -15,7 +15,6 @@ internal abstract class WritableConfigurationBase<T>(IOptionsMonitor<T> optionMo
     : IWritableOptions<T>
     where T : class
 {
-    public abstract void Save(T newConfig);
     public abstract Task SaveAsync(T newConfig, CancellationToken cancellationToken = default);
 
     // -------
@@ -33,13 +32,6 @@ internal abstract class WritableConfigurationBase<T>(IOptionsMonitor<T> optionMo
 
     // -------
     // IWritableOptions<T> implementation
-    public void Save(Action<T> configUpdator)
-    {
-        var current = optionMonitorInstance.CurrentValue;
-        configUpdator(current);
-        Save(current);
-    }
-
     public Task SaveAsync(Action<T> configUpdator, CancellationToken cancellationToken = default)
     {
         var current = optionMonitorInstance.CurrentValue;

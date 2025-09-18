@@ -25,18 +25,6 @@ internal class WritableJsonConfiguration<T> : WritableConfigurationBase<T>
         _configOptions = configOptions;
     }
 
-    public override void Save(T newConfig)
-    {
-        // naive implementation
-        var config = _configOptions.CurrentValue;
-        var path = config.ConfigFilePath;
-        var json = JsonSerializer.Serialize<T>(newConfig, config.JsonSerializerOptions);
-        // if directory not exist, create it
-        var directory = System.IO.Path.GetDirectoryName(path)!;
-        System.IO.Directory.CreateDirectory(directory);
-        System.IO.File.WriteAllText(path, json);
-    }
-
     public override Task SaveAsync(T newConfig, CancellationToken cancellationToken = default)
     {
         // naive implementation
