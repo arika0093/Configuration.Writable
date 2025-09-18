@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Configuration.Writable.Xml\Configuration.Writable.Xml.csproj" />
+    <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
+    <ProjectReference Include="..\Configuration.Writable.Tests\Configuration.Writable.Tests.csproj" />
+  </ItemGroup>
+</Project>

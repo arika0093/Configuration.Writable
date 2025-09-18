@@ -1,0 +1,7 @@
+namespace Example.WorkerService;
+
+public record SampleSetting
+{
+    public string? Name { get; set; }
+    public DateTime LastUpdatedAt { get; set; } = DateTime.Now;
+}

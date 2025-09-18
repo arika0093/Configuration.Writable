@@ -1,0 +1,14 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+*.DotSettings*
+.idea/
+.vs/
+# DocFX generated files
+docs/api/
+docs/_site/
+docs/obj/
+*.csproj.user
+CLAUDE.md
