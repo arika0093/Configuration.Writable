@@ -1,0 +1,12 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+*.DotSettings*
+.idea/
+.vs/
+docs/api
+docs/_site
+*.csproj.user
+CLAUDE.md
