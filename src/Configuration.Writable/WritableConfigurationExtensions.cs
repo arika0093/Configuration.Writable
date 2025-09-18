@@ -13,8 +13,20 @@ using SpecialFolder = System.Environment.SpecialFolder;
 
 namespace Microsoft.Extensions.Hosting;
 
+/// <summary>
+/// Provides extension methods for writable configuration.
+/// </summary>
 public static class WritableConfigurationExtensions
 {
+    /// <summary>
+    /// Adds a writable user configuration file to the host application builder.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration class.</typeparam>
+    /// <param name="builder">The host application builder.</param>
+    /// <param name="fileName">The configuration file name.</param>
+    /// <param name="folderName">The folder name for the configuration file.</param>
+    /// <param name="configureOptions">An optional action to configure options.</param>
+    /// <returns>The host application builder.</returns>
     public static IHostApplicationBuilder AddWritableUserConfigFile<T>(
         this IHostApplicationBuilder builder,
         string fileName,
@@ -28,6 +40,16 @@ public static class WritableConfigurationExtensions
         return builder.AddWritableUserConfigFile<T>(fullPath, configureOptions);
     }
 
+    /// <summary>
+    /// Adds a writable user configuration file to the host application builder, specifying a special folder.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration class.</typeparam>
+    /// <param name="builder">The host application builder.</param>
+    /// <param name="fileName">The configuration file name.</param>
+    /// <param name="folderName">The folder name for the configuration file.</param>
+    /// <param name="configFolder">The special folder to use as the root.</param>
+    /// <param name="configureOptions">An optional action to configure options.</param>
+    /// <returns>The host application builder.</returns>
     public static IHostApplicationBuilder AddWritableUserConfigFile<T>(
         this IHostApplicationBuilder builder,
         string fileName,
@@ -42,6 +64,14 @@ public static class WritableConfigurationExtensions
         return builder.AddWritableUserConfigFile<T>(fullPath, configureOptions);
     }
 
+    /// <summary>
+    /// Adds a writable user configuration file to the host application builder, specifying the full file path.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration class.</typeparam>
+    /// <param name="builder">The host application builder.</param>
+    /// <param name="filePath">The full path to the configuration file.</param>
+    /// <param name="configureOptions">An optional action to configure options.</param>
+    /// <returns>The host application builder.</returns>
     public static IHostApplicationBuilder AddWritableUserConfigFile<T>(
         this IHostApplicationBuilder builder,
         string filePath,

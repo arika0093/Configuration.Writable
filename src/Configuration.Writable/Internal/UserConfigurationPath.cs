@@ -4,6 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace Configuration.Writable.Internal;
 
+/// <summary>
+/// Provides methods to get user-specific configuration file paths.
+/// </summary>
 internal static class UserConfigurationPath
 {
     /// <summary>
