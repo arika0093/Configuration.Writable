@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using Configuration.Writable.Internal;
-using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
 
@@ -44,6 +43,12 @@ public record WritableConfigurationOptions<T>
     /// If empty, that means the root of the configuration file.
     /// </summary>
     public string SectionName { get; set; } = "UserSettings";
+
+    /// <summary>
+    /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to true. <br/>
+    /// if you specify InstanceName, you can get it with [FromKeyedServices("instance-name")].
+    /// </summary>
+    public bool RegisterInstanceToContainer { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a factory function to create an instance of <see cref="IWritableOptions{T}"/>.

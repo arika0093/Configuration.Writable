@@ -1,5 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,47 +12,48 @@ namespace Configuration.Writable.Provider;
 /// Writable configuration implementation for JSON files.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public class WritableJsonConfiguration<T> : WritableConfigurationBase<T>
+/// <param name="optionMonitorInstance">An <see cref="IOptionsMonitor{T}"/> instance used to retrieve and monitor changes to the options of type
+/// <typeparamref name="T"/>.</param>
+/// <param name="configOptions">A <see cref="WritableConfigurationOptions{T}"/> instance that specifies the configuration options,  including
+/// the instance name and file path for the writable JSON configuration.</param>
+public class WritableJsonConfiguration<T>(
+    IOptionsMonitor<T> optionMonitorInstance,
+    IEnumerable<WritableConfigurationOptions<T>> configOptions
+) : WritableConfigurationBase<T>(optionMonitorInstance, configOptions)
     where T : class
 {
-    private readonly WritableConfigurationOptions<T> _options;
-    private readonly WritableJsonConfigurationOptions<T> _jsonOptions;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WritableJsonConfiguration{T}"/> class,  providing functionality to
-    /// manage writable JSON-based configuration for the specified options type.
-    /// </summary>
-    /// <param name="optionMonitorInstance">An <see cref="IOptionsMonitor{T}"/> instance used to retrieve and monitor changes to the options of type
-    /// <typeparamref name="T"/>.</param>
-    /// <param name="configOptions">A <see cref="WritableConfigurationOptions{T}"/> instance that specifies the configuration options,  including
-    /// the instance name and file path for the writable JSON configuration.</param>
-    /// <param name="jsonOptions">Optional. A <see cref="WritableJsonConfigurationOptions{T}"/> instance that specifies the serializer options
-    /// for handling JSON serialization and deserialization. If not provided, default options are used.</param>
-    public WritableJsonConfiguration(
-        IOptionsMonitor<T> optionMonitorInstance,
-        WritableConfigurationOptions<T> configOptions,
-        WritableJsonConfigurationOptions<T>? jsonOptions = null
-    )
-        : base(optionMonitorInstance, configOptions.InstanceName)
-    {
-        _options = configOptions;
-        _jsonOptions = jsonOptions ?? new();
-    }
+    private readonly WritableJsonConfigurationOptions<T> _jsonOptions = new();
 
     /// <inheritdoc />
-    public override Task SaveAsync(T newConfig, CancellationToken cancellationToken = default)
+    public override Task SaveAsync(
+        T newConfig,
+        string name,
+        CancellationToken cancellationToken = default
+    )
     {
-        // naive implementation
-        var path = _options.ConfigFilePath;
-        var json = JsonSerializer.Serialize<T>(newConfig, _jsonOptions.JsonSerializerOptions);
-        // if directory not exist, create it
-        var directory = System.IO.Path.GetDirectoryName(path)!;
-        System.IO.Directory.CreateDirectory(directory);
-#if NET
-        return System.IO.File.WriteAllTextAsync(path, json, cancellationToken);
-#else
-        return Task.Run(() => System.IO.File.WriteAllText(path, json), cancellationToken);
-#endif
+        var option = GetOption(name);
+        var path = option.ConfigFilePath;
+        var sectionName = option.SectionName;
+        var serializerOptions = _jsonOptions.JsonSerializerOptions;
+
+        // generate saved json object
+        var root = new JsonObject();
+        var serializeNode = JsonSerializer.SerializeToNode<T>(newConfig, serializerOptions);
+        if (!string.IsNullOrWhiteSpace(sectionName))
+        {
+            // if section name is specified, wrap the config in a section
+            root[sectionName] = serializeNode;
+        }
+        else
+        {
+            // if section name is empty, write the config as root
+            root = serializeNode as JsonObject;
+        }
+        // save to cache
+        SetCachedValue(name, newConfig);
+        // convert to string
+        var jsonString = root?.ToJsonString(serializerOptions) ?? "{}";
+        return SaveToFileAsync(path, jsonString, cancellationToken);
     }
 }
 

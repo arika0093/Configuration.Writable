@@ -95,12 +95,39 @@ public static class WritableConfigurationExtensions
                 configuration.GetSection(options.SectionName)
             );
         }
-        // add IWritableOptions<T>
-        services.AddSingleton<IWritableOptions<T>>(provider =>
+        // add T instance
+        if (options.RegisterInstanceToContainer)
+        {
+            if (string.IsNullOrEmpty(options.InstanceName))
+            {
+                services.AddSingleton(provider =>
+                    provider.GetRequiredService<IReadonlyOptions<T>>().CurrentValue
+                );
+            }
+            else
+            {
+                services.AddKeyedSingleton<T>(
+                    options.InstanceName,
+                    (provider, _) =>
+                    {
+                        return provider
+                            .GetRequiredService<IReadonlyOptions<T>>()
+                            .Get(options.InstanceName);
+                    }
+                );
+            }
+        }
+        // add WritableConfigurationOptions<T> enumerable
+        services.AddSingleton(options);
+        // add IReadonlyOptions<T> and IWritableOptions<T>
+        var configurationProvider = (IServiceProvider provider) =>
         {
             var optionMonitor = provider.GetRequiredService<IOptionsMonitor<T>>();
+            var options = provider.GetServices<WritableConfigurationOptions<T>>();
             return new WritableJsonConfiguration<T>(optionMonitor, options);
-        });
+        };
+        services.AddSingleton<IReadonlyOptions<T>>(configurationProvider);
+        services.AddSingleton<IWritableOptions<T>>(configurationProvider);
         return services;
     }
 }

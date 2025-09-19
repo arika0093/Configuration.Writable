@@ -2,8 +2,7 @@ using Configuration.Writable;
 
 namespace Example.WorkerService;
 
-public class Worker(IWritableOptions<SampleSetting> options, IConfiguration config)
-    : BackgroundService
+public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -11,9 +10,8 @@ public class Worker(IWritableOptions<SampleSetting> options, IConfiguration conf
         while (!stoppingToken.IsCancellationRequested)
         {
             Console.WriteLine("-------------------------");
-            Console.WriteLine($"Current Name is :: {config["Name"]}");
-            Console.WriteLine($"Current Name is :: {options.Value.Name}");
-            Console.Write($"Enter Name ::");
+            Console.WriteLine($"Current Name is :: {options.CurrentValue.Name}");
+            Console.Write($"Enter Name :: ");
             var name = Console.ReadLine();
             await options.SaveAsync(
                 config =>
