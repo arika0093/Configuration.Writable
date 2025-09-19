@@ -1,6 +1,6 @@
 using Configuration.Writable;
 
-namespace Example.SimpleCase;
+namespace Example.WorkerService;
 
 public class Worker(IWritableOptions<SampleSetting> options, IConfiguration config)
     : BackgroundService

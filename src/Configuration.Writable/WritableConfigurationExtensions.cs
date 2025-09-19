@@ -1,15 +1,10 @@
 ﻿#pragma warning disable IDE0130
 using System;
-using System.IO;
-using System.Xml.Linq;
 using Configuration.Writable;
-using Configuration.Writable.Imprements;
-using Configuration.Writable.Internal;
+using Configuration.Writable.Provider;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using SpecialFolder = System.Environment.SpecialFolder;
 
 namespace Microsoft.Extensions.Hosting;
 
@@ -19,84 +14,93 @@ namespace Microsoft.Extensions.Hosting;
 public static class WritableConfigurationExtensions
 {
     /// <summary>
-    /// Adds a writable user configuration file to the host application builder, specifying a folder under the user config directory. <br/>
-    /// * On Windows, this is typically "%LOCALAPPDATA%"<br/>
-    /// * On macOS, this is typically "~/Library/Application Support"<br/>
-    /// * On Linux, this is typically "$XDG_CONFIG_HOME" or "~/.config"
+    /// Adds a user-defined configuration file to the application's configuration system and registers the specified
+    /// options type for dependency injection.
     /// </summary>
-    /// <typeparam name="T">The type of the configuration class.</typeparam>
-    /// <param name="builder">The host application builder.</param>
-    /// <param name="fileName">The configuration file name.</param>
-    /// <param name="folderName">The folder name for the configuration file.</param>
-    /// <param name="configureOptions">An optional action to configure options.</param>
-    /// <returns>The host application builder.</returns>
-    public static IHostApplicationBuilder AddUserConfigurationToAppConfigFolder<T>(
-        this IHostApplicationBuilder builder,
-        string fileName,
-        string folderName,
-        Action<T>? configureOptions = null
+    /// <typeparam name="T">The type of the options to be configured. This type must be a class.</typeparam>
+    /// <param name="builder">The <see cref="IHostApplicationBuilder"/> to which the configuration file and options will be added.</param>
+    public static IHostApplicationBuilder AddUserConfigurationFile<T>(
+        this IHostApplicationBuilder builder
     )
         where T : class
     {
-        var configRoot = UserConfigurationPath.GetUserConfigRootDirectory();
-        var fullPath = Path.Combine(configRoot, folderName, fileName);
-        return builder.AddUserConfigurationFile<T>(fullPath, configureOptions);
+        builder.Services.AddUserConfigurationFile<T>(builder.Configuration, _ => { });
+        return builder;
     }
 
     /// <summary>
-    /// Adds a writable user configuration file to the host application builder, specifying a special folder.
+    /// Adds a user-defined configuration file to the application's configuration system and registers the specified
+    /// options type for dependency injection.
     /// </summary>
-    /// <typeparam name="T">The type of the configuration class.</typeparam>
-    /// <param name="builder">The host application builder.</param>
-    /// <param name="fileName">The configuration file name.</param>
-    /// <param name="folderName">The folder name for the configuration file.</param>
-    /// <param name="configFolder">The special folder to use as the root.</param>
-    /// <param name="configureOptions">An optional action to configure options.</param>
-    /// <returns>The host application builder.</returns>
-    public static IHostApplicationBuilder AddUserConfigurationToSpecialFolder<T>(
-        this IHostApplicationBuilder builder,
-        string fileName,
-        string folderName,
-        SpecialFolder configFolder,
-        Action<T>? configureOptions = null
-    )
-        where T : class
-    {
-        var configRoot = Environment.GetFolderPath(configFolder);
-        var fullPath = Path.Combine(configRoot, folderName, fileName);
-        return builder.AddUserConfigurationFile<T>(fullPath, configureOptions);
-    }
-
-    /// <summary>
-    /// Adds a writable user configuration file to the host application builder, specifying the full file path.
-    /// </summary>
-    /// <typeparam name="T">The type of the configuration class.</typeparam>
-    /// <param name="builder">The host application builder.</param>
-    /// <param name="filePath">The full path to the configuration file.</param>
-    /// <param name="configureOptions">An optional action to configure options.</param>
-    /// <returns>The host application builder.</returns>
+    /// <typeparam name="T">The type of the options to be configured. This type must be a class.</typeparam>
+    /// <param name="builder">The <see cref="IHostApplicationBuilder"/> to which the configuration file and options will be added.</param>
+    /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptions{T}"/> used to specify the configuration file
+    /// path, section name, and other options.</param>
     public static IHostApplicationBuilder AddUserConfigurationFile<T>(
         this IHostApplicationBuilder builder,
-        string filePath,
-        Action<T>? configureOptions = null
+        Action<WritableConfigurationOptions<T>> configureOptions
     )
         where T : class
     {
-        var filePathAbsolute = Path.GetFullPath(filePath);
-        if (configureOptions == null)
-        {
-            configureOptions = _ => { };
-        }
-        // add configuration
-        builder.Configuration.AddJsonFile(filePathAbsolute, optional: true, reloadOnChange: true);
-        // add IOptions<T>
-        builder.Services.Configure<T>(configureOptions);
-        // add IWritableOptions<T>
-        builder.Services.TryAddSingleton<IWritableOptions<T>, WritableJsonConfiguration<T>>();
-        builder.Services.Configure<WritableJsonConfigurationOptions<T>>(options =>
-        {
-            options.ConfigFilePath = filePathAbsolute;
-        });
+        builder.Services.AddUserConfigurationFile<T>(builder.Configuration, configureOptions);
         return builder;
+    }
+
+    /// <summary>
+    /// Adds a user-specific configuration file to the application's configuration system and registers the specified
+    /// options type for dependency injection.
+    /// </summary>
+    /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
+    /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
+    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
+    public static IServiceCollection AddUserConfigurationFile<T>(
+        this IServiceCollection services,
+        IConfigurationManager configuration
+    )
+        where T : class
+    {
+        return services.AddUserConfigurationFile<T>(configuration, _ => { });
+    }
+
+    /// <summary>
+    /// Adds a user-specific configuration file to the application's configuration system and registers the specified
+    /// options type for dependency injection.
+    /// </summary>
+    /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
+    /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
+    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
+    /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptions{T}"/> used to specify the configuration file
+    /// path, section name, and other options.</param>
+    public static IServiceCollection AddUserConfigurationFile<T>(
+        this IServiceCollection services,
+        IConfigurationManager configuration,
+        Action<WritableConfigurationOptions<T>> configureOptions
+    )
+        where T : class
+    {
+        var options = new WritableConfigurationOptions<T>();
+        configureOptions(options);
+        var filePath = options.ConfigFilePath;
+        // add configuration
+        configuration.AddJsonFile(filePath, optional: true, reloadOnChange: true);
+        // add IOptions<T>
+        if (string.IsNullOrWhiteSpace(options.SectionName))
+        {
+            services.Configure<T>(options.InstanceName, configuration);
+        }
+        else
+        {
+            services.Configure<T>(
+                options.InstanceName,
+                configuration.GetSection(options.SectionName)
+            );
+        }
+        // add IWritableOptions<T>
+        services.AddSingleton<IWritableOptions<T>>(provider =>
+        {
+            var optionMonitor = provider.GetRequiredService<IOptionsMonitor<T>>();
+            return new WritableJsonConfiguration<T>(optionMonitor, options);
+        });
+        return services;
     }
 }
