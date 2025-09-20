@@ -57,8 +57,8 @@ dotnet add package Configuration.Writable
 ```csharp
 public class SampleSetting
 {
-		public string Name { get; set; } = "default name";
-		public int Age { get; set; } = 20;
+    public string Name { get; set; } = "default name";
+    public int Age { get; set; } = 20;
 }
 ```
 
@@ -99,22 +99,22 @@ services.AddUserConfigurationFile<SampleSetting>(configuration);
 // read config in your class
 public class ConfigReadClass(IReadonlyConfig<SampleSetting> config)
 {
-		public void Print()
-		{
-				var sampleSetting = config.CurrentValue;
-				Console.WriteLine($">> Name: {sampleSetting.Name}");
-		}
+    public void Print()
+    {
+        var sampleSetting = config.CurrentValue;
+        Console.WriteLine($">> Name: {sampleSetting.Name}");
+    }
 }
 
 // read and write config in your class
 public class ConfigReadWriteClass(IWritableConfig<SampleSetting> config)
 {
-		public async Task UpdateAsync()
-		{
-				var sampleSetting = config.CurrentValue;
-				sampleSetting.Name = "new name";
-				await config.SaveAsync(sampleSetting);
-		}
+    public async Task UpdateAsync()
+    {
+        var sampleSetting = config.CurrentValue;
+        sampleSetting.Name = "new name";
+        await config.SaveAsync(sampleSetting);
+    }
 }
 ```
 
@@ -125,35 +125,35 @@ public class ConfigReadWriteClass(IWritableConfig<SampleSetting> config)
 ```csharp
 // DIを使わない場合
 WritableConfig<SampleSetting>.Initialize(options => {
-		// 例
-		options.FileName = "mysettings.json";
+    // 例
+    options.FileName = "mysettings.json";
 });
 
 // DIを使う場合
 builder.AddUserConfigurationFile<SampleSetting>(options => {
-		// 例
-		options.FileName = "mysettings.json";
+    // 例
+    options.FileName = "mysettings.json";
 });
 ```
 ### 主な設定項目
 ```csharp
 {
-		// 保存するファイル名 (デフォルト: "usersettings")
-		// 例えば、親ディレクトリに保存したい場合は、"../usersettings"のように指定します。
-		// 拡張子はプロバイダーによって自動的に付与されるため、指定不要です。
-		options.FileName = "usersettings"; 
+    // 保存するファイル名 (デフォルト: "usersettings")
+    // 例えば、親ディレクトリに保存したい場合は、"../usersettings"のように指定します。
+    // 拡張子はプロバイダーによって自動的に付与されるため、指定不要です。
+    options.FileName = "usersettings"; 
 
-		// もし一般的な設定ディレクトリに保存したい場合、この関数を実行します。
-		// 例えば、Windowsでは %APPDATA%/MyApp/ に保存されます。
-		options.UseStandardSaveLocation("MyApp");
+    // もし一般的な設定ディレクトリに保存したい場合、この関数を実行します。
+    // 例えば、Windowsでは %APPDATA%/MyApp/ に保存されます。
+    options.UseStandardSaveLocation("MyApp");
 
-		// 設定ファイル保存のプロバイダー
-		// デフォルトではJSON形式で保存します。
-		// サポートしている一覧
-		// JSON: WritableConfigJsonProvider<T>
-		// XML:  WritableConfigXmlProvider<T>
-		// YAML: WritableConfigYamlProvider<T> (Configuration.Writable.Yamlパッケージが必要)
-		options.Provider = new WritableConfigJsonProvider<SampleSetting>();
+    // 設定ファイル保存のプロバイダー
+    // デフォルトではJSON形式で保存します。
+    // サポートしている一覧
+    // JSON: WritableConfigJsonProvider<T>
+    // XML:  WritableConfigXmlProvider<T>
+    // YAML: WritableConfigYamlProvider<T> (Configuration.Writable.Yamlパッケージが必要)
+    options.Provider = new WritableConfigJsonProvider<SampleSetting>();
 }
 ```
 
