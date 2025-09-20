@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.WorkerService", "ex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configuration.Writable.Yaml", "src\Configuration.Writable.Yaml\Configuration.Writable.Yaml.csproj", "{4F795B8D-B9CF-4B6A-97DD-B714463A4524}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.ConsoleApp", "example\Example.ConsoleApp\Example.ConsoleApp.csproj", "{1AE84166-409C-4F0D-8359-BA954E1A9E41}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{4F795B8D-B9CF-4B6A-97DD-B714463A4524}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F795B8D-B9CF-4B6A-97DD-B714463A4524}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F795B8D-B9CF-4B6A-97DD-B714463A4524}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AE84166-409C-4F0D-8359-BA954E1A9E41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AE84166-409C-4F0D-8359-BA954E1A9E41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AE84166-409C-4F0D-8359-BA954E1A9E41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AE84166-409C-4F0D-8359-BA954E1A9E41}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -41,6 +47,7 @@ Global
 		{C8D73896-0B9B-40C3-AE8D-FEB7113F2E99} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{97A056D3-B77D-4206-4F39-EF0E8C07668E} = {1D587995-D2B1-D47C-23B4-E8E972FA15E9}
 		{4F795B8D-B9CF-4B6A-97DD-B714463A4524} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{1AE84166-409C-4F0D-8359-BA954E1A9E41} = {1D587995-D2B1-D47C-23B4-E8E972FA15E9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E73558E3-09FC-4E17-896B-7BD02861757F}
