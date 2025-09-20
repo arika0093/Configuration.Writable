@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.*" />
+    <PackageReference Include="YamlDotNet" Version="*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Configuration.Writable\Configuration.Writable.csproj" />
