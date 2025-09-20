@@ -39,7 +39,7 @@ public record WritableConfigurationOptions<T>
     /// Gets or sets the name of the configuration section. Defaults to "UserSettings".
     /// If empty, that means the root of the configuration file.
     /// </summary>
-    public string SectionName { get; set; } = "UserSettings";
+    public string SectionRootName { get; set; } = "UserSettings";
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
@@ -66,6 +66,26 @@ public record WritableConfigurationOptions<T>
             }
             var combined = Path.Combine(ConfigFolder, FileName);
             return Path.GetFullPath(combined);
+        }
+    }
+
+    /// <summary>
+    /// Gets the name of the configuration section, combining the root name and instance name if both are specified. <br/>
+    /// e.g. if SectionRootName is "UserSettings" and InstanceName is "Instance1", the result will be "UserSettings-Instance1".
+    /// </summary>
+    public string SectionName
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(SectionRootName))
+            {
+                return string.Empty;
+            }
+            if (string.IsNullOrWhiteSpace(InstanceName))
+            {
+                return SectionRootName;
+            }
+            return $"{SectionRootName}-{InstanceName}";
         }
     }
 
