@@ -24,20 +24,11 @@ public record WritableConfigurationOptions<T>
     public string FileName { get; set; } = "usersettings.json";
 
     /// <summary>
-    /// Gets or sets the name of the folder associated with the current application.
-    /// Defaults to the entry assembly name.
+    /// eng: Gets or sets the folder name where the settings are saved. <br/>
+    /// If NULL, FileName is treated as a relative path.
+    /// If a value is provided, the file is saved under the specified folder with the name of FileName. <br/>
     /// </summary>
-    public string? FolderName { get; set; } = Assembly.GetEntryAssembly()?.GetName().Name;
-
-    /// <summary>
-    /// Gets or sets the root folder path for configuration files.
-    /// Defaults to the user config directory for the current platform. <br/>
-    /// * On Windows, this is typically "%LOCALAPPDATA%" <br/>
-    /// * On macOS, this is typically "~/Library/Application Support" <br/>
-    /// * On Linux, this is typically "$XDG_CONFIG_HOME" or "~/.config"
-    /// </summary>
-    public string ConfigRootFolder { get; set; } =
-        UserConfigurationPath.GetUserConfigRootDirectory();
+    public string? ConfigFolder { get; set; } = null;
 
     /// <summary>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
@@ -59,26 +50,38 @@ public record WritableConfigurationOptions<T>
     public bool RegisterInstanceToContainer { get; set; } = false;
 
     /// <summary>
-    /// Gets the full file path to the configuration file, combining the root path, folder name, and file name.
+    /// Gets the full file path to the configuration file, combining config folder and file name.
     /// </summary>
     public string ConfigFilePath
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(ConfigRootFolder))
-            {
-                throw new InvalidOperationException($"ConfigRootFolder cannot be null or empty.");
-            }
-            if (string.IsNullOrWhiteSpace(FolderName))
-            {
-                throw new InvalidOperationException($"FolderName cannot be null or empty.");
-            }
             if (string.IsNullOrWhiteSpace(FileName))
             {
                 throw new InvalidOperationException($"FileName cannot be null or empty.");
             }
-            var combined = Path.Combine(ConfigRootFolder, FolderName, FileName);
+            if (string.IsNullOrWhiteSpace(ConfigFolder))
+            {
+                return Path.GetFullPath(FileName);
+            }
+            var combined = Path.Combine(ConfigFolder, FileName);
             return Path.GetFullPath(combined);
         }
+    }
+
+    /// <summary>
+    /// Sets the configuration folder to the standard save location for the specified application.
+    /// </summary>
+    /// <remarks>
+    /// in Windows: %APPDATA%/<paramref name="applicationId"/> <br/>
+    /// in macOS: ~/Library/Application Support/<paramref name="applicationId"/> <br/>
+    /// in Linux: $XDG_CONFIG_HOME/<paramref name="applicationId"/>
+    /// </remarks>
+    /// <param name="applicationId">The unique identifier of the application. This is used to determine the subdirectory within the user
+    /// configuration root directory.</param>
+    public void UseStandardSaveLocation(string applicationId)
+    {
+        var root = UserConfigurationPath.GetUserConfigRootDirectory();
+        ConfigFolder = Path.Combine(root, applicationId);
     }
 }

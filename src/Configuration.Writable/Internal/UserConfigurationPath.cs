@@ -16,8 +16,8 @@ internal static class UserConfigurationPath
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            // Windows: %LOCALAPPDATA%
-            return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            // Windows: %APPDATA%
+            return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {

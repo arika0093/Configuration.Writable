@@ -1,12 +1,16 @@
+using Configuration.Writable.Provider;
 using Example.WorkerService;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 // Add a writable configuration file located at the user config directory
 // e.g. "%LOCALAPPDATA%/Configuration.Writable.Examples/user-settings.json" on Windows
-builder.AddUserConfigurationFile<SampleSetting>();
+builder.AddUserConfigurationFile<SampleSetting>(options =>
+{
+    options.FileName = "setting.yaml";
+    options.Provider = new WritableConfigYamlProvider<SampleSetting>();
+});
 
-builder.Services.AddHostedService<ReadOnlyWorker>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

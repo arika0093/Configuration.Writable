@@ -17,7 +17,7 @@ public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
                 config =>
                 {
                     config.Name = name ?? string.Empty;
-                    config.LastUpdatedAt = DateTimeOffset.Now;
+                    config.LastUpdatedAt = DateTime.Now;
                 },
                 stoppingToken
             );
