@@ -19,6 +19,9 @@ public class WritableConfigXmlProvider<T> : IWritableConfigProvider<T>
     public Encoding Encoding { get; init; } = Encoding.UTF8;
 
     /// <inheritdoc />
+    public string FileExtension => "xml";
+
+    /// <inheritdoc />
     public void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
         configuration.AddXmlFile(path, optional: true, reloadOnChange: true);
 

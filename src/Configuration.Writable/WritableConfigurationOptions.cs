@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
+﻿using System.IO;
 using Configuration.Writable.Internal;
 using Configuration.Writable.Provider;
 
@@ -13,15 +11,23 @@ namespace Configuration.Writable;
 public record WritableConfigurationOptions<T>
     where T : class
 {
+    private const string DefaultFileName = "usersettings";
+
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableConfigProvider{T}"/> used to handle the serialization and deserialization of the configuration data.
     /// </summary>
     public IWritableConfigProvider<T> Provider { get; set; } = new WritableConfigJsonProvider<T>();
 
     /// <summary>
-    /// Gets or sets the name of the file used to store user settings. Defaults to "usersettings.json".
+    /// Gets or sets a instance of <see cref="IWriteFileProvider"/> used to handle the file writing operations.
     /// </summary>
-    public string FileName { get; set; } = "usersettings.json";
+    public IWriteFileProvider FileWriter { get; set; } = new CommonWriteFileProvider();
+
+    /// <summary>
+    /// Gets or sets the name of the file used to store user settings. Defaults to InstanceName or "usersettings" if InstanceName is not set. <br/>
+    /// Extension is determined by the Provider. <br/>
+    /// </summary>
+    public string? FileName { get; set; }
 
     /// <summary>
     /// eng: Gets or sets the folder name where the settings are saved. <br/>
@@ -56,15 +62,28 @@ public record WritableConfigurationOptions<T>
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(FileName))
+            var fileName = FileName;
+            if (fileName == null)
             {
-                throw new InvalidOperationException($"FileName cannot be null or empty.");
+                if (InstanceName != Microsoft.Extensions.Options.Options.DefaultName)
+                {
+                    fileName = InstanceName;
+                }
+                else
+                {
+                    fileName = DefaultFileName;
+                }
+            }
+            var fileNameWithExtension = fileName;
+            if (!fileNameWithExtension.Contains("."))
+            {
+                fileNameWithExtension += $".{Provider.FileExtension}";
             }
             if (string.IsNullOrWhiteSpace(ConfigFolder))
             {
-                return Path.GetFullPath(FileName);
+                return Path.GetFullPath(fileNameWithExtension);
             }
-            var combined = Path.Combine(ConfigFolder, FileName);
+            var combined = Path.Combine(ConfigFolder, fileNameWithExtension);
             return Path.GetFullPath(combined);
         }
     }

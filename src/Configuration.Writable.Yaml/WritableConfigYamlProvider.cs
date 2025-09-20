@@ -20,6 +20,9 @@ public class WritableConfigYamlProvider<T> : IWritableConfigProvider<T>
     public Encoding Encoding { get; init; } = Encoding.UTF8;
 
     /// <inheritdoc />
+    public string FileExtension => "yaml";
+
+    /// <inheritdoc />
     public void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
         configuration.AddYamlFile(path, optional: true, reloadOnChange: true);
 

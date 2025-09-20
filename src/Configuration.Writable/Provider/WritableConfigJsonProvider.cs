@@ -4,7 +4,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Provider;
 
@@ -25,6 +24,9 @@ public class WritableConfigJsonProvider<T> : IWritableConfigProvider<T>
     /// Gets or sets the text encoding used for processing text data.
     /// </summary>
     public Encoding Encoding { get; init; } = System.Text.Encoding.UTF8;
+
+    /// <inheritdoc />
+    public string FileExtension => "json";
 
     /// <inheritdoc />
     public void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>

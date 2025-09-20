@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Provider;
@@ -104,7 +102,11 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     {
         SetCachedValue(options.InstanceName, newConfig);
         var contents = options.Provider.GetSaveContents(newConfig, options);
-        return SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken);
+        return options.FileWriter.SaveToFileAsync(
+            options.ConfigFilePath,
+            contents,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -137,55 +139,6 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     private void SetCachedValue(string instanceName, T value)
     {
         CachedValue[instanceName] = value;
-    }
-
-    /// <summary>
-    /// Asynchronously saves the specified content to a file at the given path, creating any necessary directories.
-    /// </summary>
-    /// <param name="path">The full file path where the content will be saved. The directory structure will be created if it does not
-    /// exist.</param>
-    /// <param name="content">The content to write to the file.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    private static async Task SaveToFileAsync(
-        string path,
-        ReadOnlyMemory<byte> content,
-        CancellationToken cancellationToken
-    )
-    {
-        string? backupPath = null;
-        // create directory if not exists
-        var directory = Path.GetDirectoryName(path)!;
-        Directory.CreateDirectory(directory);
-        // make backup if file exists
-        if (File.Exists(path))
-        {
-            backupPath = path + ".bak";
-            File.Copy(path, backupPath, true);
-        }
-        try
-        {
-#if NET9_0_OR_GREATER
-            await File.WriteAllBytesAsync(path, content, cancellationToken);
-#elif NET
-            await File.WriteAllBytesAsync(path, content.ToArray(), cancellationToken);
-#else
-            await Task.Run(() => File.WriteAllBytes(path, content.ToArray()), cancellationToken);
-#endif
-            // delete backup if write succeeded
-            if (backupPath is not null && File.Exists(backupPath))
-            {
-                File.Delete(backupPath);
-            }
-        }
-        catch
-        {
-            // if operation was cancelled, restore from backup
-            if (backupPath is not null && File.Exists(backupPath))
-            {
-                File.Copy(backupPath, path, true);
-            }
-            throw;
-        }
     }
 }
 

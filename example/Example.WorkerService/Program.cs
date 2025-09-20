@@ -9,13 +9,11 @@ builder
     .AddUserConfigurationFile<SampleSetting>(options =>
     {
         options.InstanceName = "worker-sample-1";
-        options.FileName = "setting1.yaml";
         options.Provider = new WritableConfigYamlProvider<SampleSetting>();
     })
     .AddUserConfigurationFile<SampleSetting>(options =>
     {
         options.InstanceName = "worker-sample-2";
-        options.FileName = "setting2.json";
         options.Provider = new WritableConfigJsonProvider<SampleSetting>();
     });
 

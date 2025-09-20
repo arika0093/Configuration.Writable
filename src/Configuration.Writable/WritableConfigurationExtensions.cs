@@ -4,7 +4,6 @@ using Configuration.Writable;
 using Configuration.Writable.Provider;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.Hosting;
 

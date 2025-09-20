@@ -11,6 +11,11 @@ public interface IWritableConfigProvider<T>
     where T : class
 {
     /// <summary>
+    /// Gets the file extension associated with the current file, including the leading period (e.g., ".txt").
+    /// </summary>
+    public string FileExtension { get; }
+
+    /// <summary>
     /// Adds a configuration manager to the current configuration pipeline. e.g. AddJsonFile, AddIniFile, AddXmlFile, etc.
     /// </summary>
     /// <param name="configuration">The <see cref="IConfigurationBuilder"/> instance to be added to the pipeline.</param>
