@@ -12,7 +12,6 @@ internal static class UserConfigurationPath
     /// <summary>
     /// Get user config directory path for the current platform.
     /// </summary>
-    /// <returns>directory path</returns>
     public static string GetUserConfigRootDirectory()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

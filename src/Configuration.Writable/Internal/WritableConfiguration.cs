@@ -13,21 +13,20 @@ namespace Configuration.Writable.Provider;
 /// Base class for writable configuration implementations.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-/// <param name="optionMonitorInstance">The options monitor instance.</param>
-/// <param name="instanceName">The name of the configuration instance.</param>
-public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
+internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposable
     where T : class
 {
     private readonly IOptionsMonitor<T> _optionMonitorInstance;
     private readonly IEnumerable<WritableConfigurationOptions<T>> _options;
+    private readonly IDisposable? _onChangeToken;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WritableConfigurationBase{T}"/> class with the specified options
+    /// Initializes a new instance of the <see cref="WritableConfiguration{T}"/> class with the specified options
     /// monitor.
     /// </summary>
     /// <param name="optionMonitorInstance">An <see cref="IOptionsMonitor{T}"/> instance used to monitor and retrieve configuration values.</param>
     /// <param name="configOptions">A collection of <see cref="WritableConfigurationOptions{T}"/> instances. </param>
-    protected WritableConfigurationBase(
+    public WritableConfiguration(
         IOptionsMonitor<T> optionMonitorInstance,
         IEnumerable<WritableConfigurationOptions<T>> configOptions
     )
@@ -36,7 +35,7 @@ public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
         _options = configOptions;
 
         // clear cache on receiving change notification
-        _optionMonitorInstance.OnChange(
+        _onChangeToken = _optionMonitorInstance.OnChange(
             (updatedValue, name) =>
             {
                 CachedValue.Remove(name!);
@@ -45,15 +44,15 @@ public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
     }
 
     /// <inheritdoc />
-    public abstract Task SaveAsync(
+    public Task SaveAsync(
         T newConfig,
         string name,
         CancellationToken cancellationToken = default
-    );
+    ) => SaveCoreAsync(newConfig, GetOption(name), cancellationToken);
 
     /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveAsync(newConfig, Options.DefaultName, cancellationToken);
+        SaveCoreAsync(newConfig, GetOption(Options.DefaultName), cancellationToken);
 
     /// <inheritdoc />
     public Task SaveAsync(
@@ -64,7 +63,7 @@ public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
     {
         var current = CurrentValue;
         configUpdator(current);
-        return SaveAsync(current, name, cancellationToken);
+        return SaveCoreAsync(current, GetOption(name), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -83,10 +82,30 @@ public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
     public IDisposable? OnChange(Action<T, string?> listener) =>
         _optionMonitorInstance.OnChange(listener);
 
+    /// <inheritdoc />
+    public void Dispose() => _onChangeToken?.Dispose();
+
     /// <summary>
     /// A property to cache values in case <see cref="IOptionsMonitor{T}"/> does not work properly in some environments (docker, network shares, etc.)
     /// </summary>
     private Dictionary<string, T> CachedValue { get; set; } = [];
+
+    /// <summary>
+    /// Asynchronously saves the specified configuration.
+    /// </summary>
+    /// <param name="newConfig">The new configuration to save.</param>
+    /// <param name="options">The writable configuration options associated with the configuration to be saved.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    private Task SaveCoreAsync(
+        T newConfig,
+        WritableConfigurationOptions<T> options,
+        CancellationToken cancellationToken = default
+    )
+    {
+        SetCachedValue(options.InstanceName, newConfig);
+        var contents = options.Provider.GetSaveContents(newConfig, options);
+        return SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken);
+    }
 
     /// <summary>
     /// Retrieves a writable configuration option of the specified type and name.
@@ -95,7 +114,7 @@ public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
     /// <returns>The <see cref="WritableConfigurationOptions{T}"/> instance that matches the specified name.</returns>
     /// <exception cref="InvalidOperationException">Thrown if multiple configuration options with the specified name are found, or if no configuration option with
     /// the specified name exists.</exception>
-    protected WritableConfigurationOptions<T> GetOption(string name)
+    private WritableConfigurationOptions<T> GetOption(string name)
     {
         var matchedOptions = _options.Where(o => o.InstanceName == name).ToList();
         if (matchedOptions.Count >= 2)
@@ -115,7 +134,7 @@ public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
     /// </summary>
     /// <param name="instanceName">Option's instance name.</param>
     /// <param name="value">Used to cache values in environments where IOptionsMonitor does not work properly.</param>
-    protected void SetCachedValue(string instanceName, T value)
+    private void SetCachedValue(string instanceName, T value)
     {
         CachedValue[instanceName] = value;
     }
@@ -126,21 +145,47 @@ public abstract class WritableConfigurationBase<T> : IWritableOptions<T>
     /// <param name="path">The full file path where the content will be saved. The directory structure will be created if it does not
     /// exist.</param>
     /// <param name="content">The content to write to the file.</param>
-    /// <param name="contentValue"></param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    protected static Task SaveToFileAsync(
+    private static async Task SaveToFileAsync(
         string path,
-        string content,
+        ReadOnlyMemory<byte> content,
         CancellationToken cancellationToken
     )
     {
+        string? backupPath = null;
+        // create directory if not exists
         var directory = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(directory);
-#if NET
-        return File.WriteAllTextAsync(path, content, cancellationToken);
+        // make backup if file exists
+        if (File.Exists(path))
+        {
+            backupPath = path + ".bak";
+            File.Copy(path, backupPath, true);
+        }
+        try
+        {
+#if NET9_0_OR_GREATER
+            await File.WriteAllBytesAsync(path, content, cancellationToken);
+#elif NET
+            await File.WriteAllBytesAsync(path, content.ToArray(), cancellationToken);
 #else
-        return Task.Run(() => File.WriteAllText(path, content), cancellationToken);
+            await Task.Run(() => File.WriteAllBytes(path, content.ToArray()), cancellationToken);
 #endif
+            // delete backup if write succeeded
+            if (backupPath is not null && File.Exists(backupPath))
+            {
+                File.Delete(backupPath);
+            }
+        }
+        catch
+        {
+            // if operation was cancelled, restore from backup
+            if (backupPath is not null && File.Exists(backupPath))
+            {
+                File.Copy(backupPath, path, true);
+            }
+            throw;
+        }
     }
 }
 

@@ -82,7 +82,7 @@ public static class WritableConfigurationExtensions
         configureOptions(options);
         var filePath = options.ConfigFilePath;
         // add configuration
-        configuration.AddJsonFile(filePath, optional: true, reloadOnChange: true);
+        options.Provider.AddConfigurationFile(configuration, filePath);
         // add IOptions<T>
         if (string.IsNullOrWhiteSpace(options.SectionName))
         {
@@ -120,14 +120,13 @@ public static class WritableConfigurationExtensions
         // add WritableConfigurationOptions<T> enumerable
         services.AddSingleton(options);
         // add IReadonlyOptions<T> and IWritableOptions<T>
-        var configurationProvider = (IServiceProvider provider) =>
-        {
-            var optionMonitor = provider.GetRequiredService<IOptionsMonitor<T>>();
-            var options = provider.GetServices<WritableConfigurationOptions<T>>();
-            return new WritableJsonConfiguration<T>(optionMonitor, options);
-        };
-        services.AddSingleton<IReadonlyOptions<T>>(configurationProvider);
-        services.AddSingleton<IWritableOptions<T>>(configurationProvider);
+        services.AddSingleton<WritableConfiguration<T>>();
+        services.AddSingleton<IReadonlyOptions<T>>(p =>
+            p.GetRequiredService<WritableConfiguration<T>>()
+        );
+        services.AddSingleton<IWritableOptions<T>>(p =>
+            p.GetRequiredService<WritableConfiguration<T>>()
+        );
         return services;
     }
 }
