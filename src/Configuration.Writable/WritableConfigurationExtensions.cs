@@ -1,7 +1,7 @@
 ﻿#pragma warning disable IDE0130
 using System;
 using Configuration.Writable;
-using Configuration.Writable.Provider;
+using Configuration.Writable.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

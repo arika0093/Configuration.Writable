@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Configuration.Writable.Encrypt\Configuration.Writable.Encrypt.csproj" />
+    <ProjectReference Include="..\..\src\Configuration.Writable.Yaml\Configuration.Writable.Yaml.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
   </ItemGroup>
 </Project>

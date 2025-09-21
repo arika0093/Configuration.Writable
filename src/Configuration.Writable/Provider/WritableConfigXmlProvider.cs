@@ -1,23 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.Extensions.Configuration;
 
-namespace Configuration.Writable.Provider;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Writable configuration implementation for XML files.
 /// </summary>
-/// <typeparam name="T">The type of the configuration class.</typeparam>
-public class WritableConfigXmlProvider<T> : IWritableConfigProvider<T>
-    where T : class
+internal record WritableConfigXmlProvider : IWritableConfigProvider
 {
-    /// <summary>
-    /// Gets or sets the text encoding used for processing text data.
-    /// </summary>
-    public Encoding Encoding { get; init; } = Encoding.UTF8;
-
     /// <inheritdoc />
     public string FileExtension => "xml";
 
@@ -26,17 +20,38 @@ public class WritableConfigXmlProvider<T> : IWritableConfigProvider<T>
         configuration.AddXmlFile(path, optional: true, reloadOnChange: true);
 
     /// <inheritdoc />
-    public ReadOnlyMemory<byte> GetSaveContents(T config, WritableConfigurationOptions<T> options)
+    public ReadOnlyMemory<byte> GetSaveContents<T>(
+        T config,
+        WritableConfigurationOptions<T> options
+    )
+        where T : class
     {
+        throw new NotImplementedException("XML writable configuration is not implemented yet.");
         var sectionName = options.SectionName;
-        var serializer = new XmlSerializer(
-            typeof(T),
-            new XmlRootAttribute(
-                string.IsNullOrWhiteSpace(sectionName) ? typeof(T).Name : sectionName
-            )
-        );
-        using var ms = new MemoryStream();
-        serializer.Serialize(ms, config);
-        return new ReadOnlyMemory<byte>(ms.ToArray());
+        if (string.IsNullOrWhiteSpace(sectionName))
+        {
+            // save to <configuration>...</configuration>
+            var serializer = new XmlSerializer(typeof(T), new XmlRootAttribute("configuration"));
+            var ns = new XmlSerializerNamespaces();
+            ns.Add("", "");
+            using var ms = new MemoryStream();
+            serializer.Serialize(ms, config, ns);
+            return new ReadOnlyMemory<byte>(ms.ToArray());
+        }
+        else
+        {
+            // save to <configuration><{sectionName}>...</{sectionName}></configuration>
+            var serializer = new XmlSerializer(typeof(T), new XmlRootAttribute(sectionName));
+            using var sw = new StringWriter();
+            serializer.Serialize(sw, config);
+            // wrap with <configuration>...</configuration>
+            var xmlString = $"""
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                    {sw}
+                </configuration>
+                """;
+            return Encoding.UTF8.GetBytes(xmlString);
+        }
     }
 }

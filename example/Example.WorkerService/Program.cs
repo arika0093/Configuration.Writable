@@ -1,9 +1,12 @@
-using Configuration.Writable.Provider;
+using Configuration.Writable;
 using Example.WorkerService;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.AddUserConfigurationFile<SampleSetting>();
+builder.AddUserConfigurationFile<SampleSetting>(options =>
+{
+    options.Provider = WritableConfigProvider.Json;
+});
 
 builder.Services.AddHostedService<Worker>();
 

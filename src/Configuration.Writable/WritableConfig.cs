@@ -7,9 +7,8 @@ using Microsoft.Extensions.Hosting;
 namespace Configuration.Writable;
 
 /// <summary>
-/// Provides static utilities to initialize, retrieve, and save writable configuration for the specified type <typeparamref name="T"/>.
+/// Provides static utilities to initialize, retrieve, and save writable configuration.
 /// </summary>
-/// <typeparam name="T">The type of the configuration class.</typeparam>
 public static class WritableConfig
 {
     /// <summary>
@@ -68,31 +67,9 @@ public static class WritableConfig
 
     private static IServiceCollection ServiceCollection { get; } = new ServiceCollection();
 
-	private static IConfigurationManager Configuration { get; } = new ConfigurationManager();
+    private static IConfigurationManager Configuration { get; } = new ConfigurationManager();
 
-    private static IServiceProvider ServiceProvider => _serviceProviderCache ??= ServiceCollection.BuildServiceProvider();
-	private static IServiceProvider? _serviceProviderCache;
-}
-
-/// <summary>
-/// Internal static class to hold shared singleton instances for configuration, service collection, and service provider.
-/// </summary>
-internal static class WritableConfigSharedInstance
-{
-    /// <summary>
-    /// Gets or creates the global <see cref="IServiceProvider"/> instance.
-    /// </summary>
-    public static IServiceProvider ServiceProvider =>
-       
-
-    /// <summary>
-    /// Gets the global <see cref="IServiceCollection"/> instance.
-    /// </summary>
-    public static IServiceCollection ServiceCollection { get; } = 
-
-    /// <summary>
-    /// Gets the global <see cref="IConfigurationManager"/> instance.
-    /// </summary>
-    public static IConfigurationManager Configuration { get; }
-
+    private static IServiceProvider ServiceProvider =>
+        _serviceProviderCache ??= ServiceCollection.BuildServiceProvider();
+    private static IServiceProvider? _serviceProviderCache;
 }

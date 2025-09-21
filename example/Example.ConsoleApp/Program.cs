@@ -3,13 +3,16 @@ using Example.ConsoleApp;
 
 // initialize the writable config system
 // default save location is ./userconfig.json
-WritableConfig.Initialize<SampleSetting>();
+//WritableConfig.Initialize<SampleSetting>();
 
 // if you want to specify a custom save location, use the following instead:
-//WritableConfig.Initialize<SampleSetting>(options =>
-//{
-//    options.FileName = "../custom-setting.json";
-//});
+WritableConfig.Initialize<SampleSetting>(options =>
+{
+    //options.FileName = "config/encrypt-setting";
+    //options.Provider = new WritableConfigEncryptProvider("th3Rand0mP4ssw0rd!");
+    options.Provider = new WritableConfigXmlProvider();
+    //options.FileWriter = new CommonWriteFileProvider() { BackupMaxCount = 5 };
+});
 
 // or use system app data folder
 // (e.g. C:\Users\<User>\AppData\Local\sample-console-app\appdata-setting.json on Windows):

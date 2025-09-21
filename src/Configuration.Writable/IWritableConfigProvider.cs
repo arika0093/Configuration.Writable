@@ -6,12 +6,10 @@ namespace Configuration.Writable;
 /// <summary>
 /// Defines a provider for managing writable configurations, including serialization of configuration objects.
 /// </summary>
-/// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
-public interface IWritableConfigProvider<T>
-    where T : class
+public interface IWritableConfigProvider
 {
     /// <summary>
-    /// Gets the file extension associated with the current file, including the leading period (e.g., ".txt").
+    /// Gets the file extension associated with the current file, exluding the leading period (e.g., "txt").
     /// </summary>
     public string FileExtension { get; }
 
@@ -25,8 +23,10 @@ public interface IWritableConfigProvider<T>
     /// <summary>
     /// Retrieves the serialized byte representation of the specified configuration.
     /// </summary>
+    /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
     /// <param name="config">The configuration object to be serialized.</param>
     /// <param name="options">The options that control how the configuration is serialized.</param>
     /// <returns>A read-only memory segment containing the serialized byte representation of the configuration.</returns>
-    ReadOnlyMemory<byte> GetSaveContents(T config, WritableConfigurationOptions<T> options);
+    ReadOnlyMemory<byte> GetSaveContents<T>(T config, WritableConfigurationOptions<T> options)
+        where T : class;
 }

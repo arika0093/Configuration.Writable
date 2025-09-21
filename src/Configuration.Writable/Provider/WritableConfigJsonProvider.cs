@@ -5,14 +5,12 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 
-namespace Configuration.Writable.Provider;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Writable configuration implementation for JSON files.
 /// </summary>
-/// <typeparam name="T">The type of the configuration class.</typeparam>
-public class WritableConfigJsonProvider<T> : IWritableConfigProvider<T>
-    where T : class
+public record WritableConfigJsonProvider : IWritableConfigProvider
 {
     /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.
@@ -33,7 +31,11 @@ public class WritableConfigJsonProvider<T> : IWritableConfigProvider<T>
         configuration.AddJsonFile(path, optional: true, reloadOnChange: true);
 
     /// <inheritdoc />
-    public ReadOnlyMemory<byte> GetSaveContents(T config, WritableConfigurationOptions<T> options)
+    public ReadOnlyMemory<byte> GetSaveContents<T>(
+        T config,
+        WritableConfigurationOptions<T> options
+    )
+        where T : class
     {
         var sectionName = options.SectionName;
         var serializerOptions = JsonSerializerOptions;

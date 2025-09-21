@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 
-namespace Configuration.Writable.Provider;
+namespace Configuration.Writable.Internal;
 
 /// <summary>
 /// Base class for writable configuration implementations.

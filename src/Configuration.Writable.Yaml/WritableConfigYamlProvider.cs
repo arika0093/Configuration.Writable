@@ -5,15 +5,19 @@ using Microsoft.Extensions.Configuration;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Configuration.Writable.Provider;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Writable configuration implementation for Yaml files.
 /// </summary>
-/// <typeparam name="T">The type of the configuration class.</typeparam>
-public class WritableConfigYamlProvider<T> : IWritableConfigProvider<T>
-    where T : class
+public record WritableConfigYamlProvider : IWritableConfigProvider
 {
+    /// <summary>
+    /// Gets or sets the serializer used to convert objects to and from a specific format.
+    /// </summary>
+    public ISerializer Serializer { get; init; } =
+        new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
+
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
     /// </summary>
@@ -27,12 +31,14 @@ public class WritableConfigYamlProvider<T> : IWritableConfigProvider<T>
         configuration.AddYamlFile(path, optional: true, reloadOnChange: true);
 
     /// <inheritdoc />
-    public ReadOnlyMemory<byte> GetSaveContents(T config, WritableConfigurationOptions<T> options)
+    public ReadOnlyMemory<byte> GetSaveContents<T>(
+        T config,
+        WritableConfigurationOptions<T> options
+    )
+        where T : class
     {
         var sectionName = options.SectionName;
-        var serializer = new SerializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
+        var serializer = Serializer;
 
         string yamlString;
         if (!string.IsNullOrWhiteSpace(sectionName))

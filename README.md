@@ -5,7 +5,7 @@
 C#アプリケーションにおいてユーザー設定を取り扱う方法は多岐にわたります。しかし、どれも何かしらの欠点があり、デファクトスタンダードたりうるものは存在していません。
 
 ### `app.config`(`Settings.settings`)を使う
-古くからある方法で、検索すると多くの情報がヒットします(困ったことに……！)。使い始めると、おそらく以下のような問題に直面するでしょう。
+古くからある方法で、検索すると多くの情報がヒットします(困ったことに！)。使い始めると、おそらく以下のような問題に直面するでしょう。
 
 * XMLベースの構成ファイルを手で記述する必要があります。(または、Visual Studioの使いにくいGUIを使う)
 * 型安全性に欠け、複雑な設定には不向きです。
@@ -41,7 +41,7 @@ C#アプリケーションにおいてユーザー設定を取り扱う方法は
 
 ### `Configuration.Writable`
 前置きが長くなりましたが、宣伝の時間です！
-このライブラリは、`Microsoft.Extensions.Configuration`を拡張し、ユーザー設定の書き込みを簡単に行えるようにします。（読み込み部分は`MS.E.C`の機能をそのまま使っています）
+このライブラリは、`Microsoft.Extensions.Configuration`を拡張し、ユーザー設定の書き込みを簡単に行えるようにします。
 また、DIを使わないアプリケーションでも簡単に使えるように設計されています。
 
 ## 使い方
@@ -52,10 +52,10 @@ NuGetから`Configuration.Writable`をインストールします。
 dotnet add package Configuration.Writable
 ```
 
-そして、設定として読み書きしたいクラス(`SampleSetting`)を事前に準備します。
+そして、設定として読み書きしたいクラス(`UserSetting`)を事前に準備します。
 
 ```csharp
-public class SampleSetting
+public class UserSetting
 {
     public string Name { get; set; } = "default name";
     public int Age { get; set; } = 20;
@@ -63,21 +63,21 @@ public class SampleSetting
 ```
 
 ### DIを使わない場合 (Console, WinForms, WPFなど)
-`WritableConfig<SampleSetting>`を起点として、設定の読み書きを行います。
+`WritableConfig`を起点として、設定の読み書きを行います。
 
 ```csharp
 using Configuration.Writable;
 
 // 起動時に一度だけ初期化する
-WritableConfig<SampleSetting>.Initialize();
+WritableConfig.Initialize<UserSetting>();
 
 // 設定を読み込む
-var sampleSetting = WritableConfig<SampleSetting>.GetValue();
-Console.WriteLine($">> Name: {sampleSetting.Name}");
+var UserSetting = WritableConfig.GetValue<UserSetting>();
+Console.WriteLine($">> Name: {UserSetting.Name}");
 
 // 設定を書き込む
-sampleSetting.Name = "new name";
-WritableConfig<SampleSetting>.Save(sampleSetting);
+UserSetting.Name = "new name";
+WritableConfig.Save<UserSetting>(UserSetting);
 // 標準では ./usersettings.json に保存されます。
 ```
 
@@ -86,51 +86,52 @@ WritableConfig<SampleSetting>.Save(sampleSetting);
 
 ```csharp
 // Program.cs
-builder.AddUserConfigurationFile<SampleSetting>();
+builder.AddUserConfigurationFile<UserSetting>();
 
 // もしIHostApplicationを使用していない場合は、以下のようにします。
 var configuration = new ConfigurationManager();
-services.AddUserConfigurationFile<SampleSetting>(configuration);
+services.AddUserConfigurationFile<UserSetting>(configuration);
 ```
 
-その後、以下のようにDIコンテナから`IReadonlyConfig<T>`または`IWritableConfig<T>`を取得して使用します。
+その後、以下のようにDIコンテナから`IReadonlyOptions<T>`または`IWritableOptions<T>`を取得して使用します。
 
 ```csharp
 // read config in your class
-public class ConfigReadClass(IReadonlyConfig<SampleSetting> config)
+// you can also use IOptions<T>, IOptionsMonitor<T> or IOptionsSnapshot<T>
+public class ConfigReadClass(IReadonlyOptions<UserSetting> config)
 {
     public void Print()
     {
-        var sampleSetting = config.CurrentValue;
-        Console.WriteLine($">> Name: {sampleSetting.Name}");
+        var UserSetting = config.CurrentValue;
+        Console.WriteLine($">> Name: {UserSetting.Name}");
     }
 }
 
 // read and write config in your class
-public class ConfigReadWriteClass(IWritableConfig<SampleSetting> config)
+public class ConfigReadWriteClass(IWritableOptions<UserSetting> config)
 {
     public async Task UpdateAsync()
     {
-        var sampleSetting = config.CurrentValue;
-        sampleSetting.Name = "new name";
-        await config.SaveAsync(sampleSetting);
+        var UserSetting = config.CurrentValue;
+        UserSetting.Name = "new name";
+        await config.SaveAsync(UserSetting);
     }
 }
 ```
 
 ## カスタマイズ
 ### 設定方法
-`WritableConfig<SampleSetting>.Initialize()`または`AddUserConfigurationFile<SampleSetting>()`の引数として、各種設定を変更することができます。
+`WritableConfig.Initialize<UserSetting>()`または`AddUserConfigurationFile<UserSetting>()`の引数として、各種設定を変更することができます。
 
 ```csharp
 // DIを使わない場合
-WritableConfig<SampleSetting>.Initialize(options => {
+WritableConfig.Initialize<UserSetting>(options => {
     // 例
     options.FileName = "mysettings.json";
 });
 
 // DIを使う場合
-builder.AddUserConfigurationFile<SampleSetting>(options => {
+builder.AddUserConfigurationFile<UserSetting>(options => {
     // 例
     options.FileName = "mysettings.json";
 });
@@ -140,20 +141,19 @@ builder.AddUserConfigurationFile<SampleSetting>(options => {
 {
     // 保存するファイル名 (デフォルト: "usersettings")
     // 例えば、親ディレクトリに保存したい場合は、"../usersettings"のように指定します。
-    // 拡張子はプロバイダーによって自動的に付与されるため、指定不要です。
+    // 拡張子はプロバイダーによって自動的に付与されます。
     options.FileName = "usersettings"; 
 
     // もし一般的な設定ディレクトリに保存したい場合、この関数を実行します。
-    // 例えば、Windowsでは %APPDATA%/MyApp/ に保存されます。
-    options.UseStandardSaveLocation("MyApp");
+    // 例えば、Windowsでは %APPDATA%/MyAppId/ に保存されます。
+    options.UseStandardSaveLocation("MyAppId");
 
-    // 設定ファイル保存のプロバイダー
-    // デフォルトではJSON形式で保存します。
+    // 設定ファイル保存のフォーマット
     // サポートしている一覧
-    // JSON: WritableConfigJsonProvider<T>
-    // XML:  WritableConfigXmlProvider<T>
-    // YAML: WritableConfigYamlProvider<T> (Configuration.Writable.Yamlパッケージが必要)
-    options.Provider = new WritableConfigJsonProvider<SampleSetting>();
+    // * JSON (デフォルト)
+		// * XML
+    // * YAML (Configuration.Writable.Yamlパッケージが必要)
+    options.Provider = WritableConfigProvider.Json<UserSetting>();
 }
 ```
 

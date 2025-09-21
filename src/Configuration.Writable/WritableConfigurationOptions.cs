@@ -1,6 +1,6 @@
-﻿using System.IO;
+﻿#pragma warning disable S2326 // Unused type parameters should be removed
+using System.IO;
 using Configuration.Writable.Internal;
-using Configuration.Writable.Provider;
 
 namespace Configuration.Writable;
 
@@ -14,9 +14,10 @@ public record WritableConfigurationOptions<T>
     private const string DefaultFileName = "usersettings";
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableConfigProvider{T}"/> used to handle the serialization and deserialization of the configuration data.
+    /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
+    /// Defaults to <see cref="WritableConfigJsonProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public IWritableConfigProvider<T> Provider { get; set; } = new WritableConfigJsonProvider<T>();
+    public IWritableConfigProvider Provider { get; set; } = new WritableConfigJsonProvider();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWriteFileProvider"/> used to handle the file writing operations.
