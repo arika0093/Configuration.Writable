@@ -10,63 +10,68 @@ namespace Configuration.Writable;
 /// Provides static utilities to initialize, retrieve, and save writable configuration for the specified type <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public static class WritableConfig<T>
-    where T : class
+public static class WritableConfig
 {
     /// <summary>
     /// Initializes writable configuration with default settings.
     /// </summary>
-    public static void Initialize() => Initialize(_ => { });
+    public static void Initialize<T>()
+        where T : class => Initialize<T>(_ => { });
 
     /// <summary>
     /// Initializes writable configuration with custom options.
     /// </summary>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
-    public static void Initialize(Action<WritableConfigurationOptions<T>> configurationOptions) =>
+    public static void Initialize<T>(Action<WritableConfigurationOptions<T>> configurationOptions)
+        where T : class =>
         ServiceCollection.AddUserConfigurationFile(Configuration, configurationOptions);
 
     /// <summary>
     /// Gets an instance of <see cref="IWritableOptions{T}"/> from the DI container.
     /// </summary>
-    public static IWritableOptions<T> GetOptions() =>
-        ServiceProvider.GetRequiredService<IWritableOptions<T>>();
+    public static IWritableOptions<T> GetOptions<T>()
+        where T : class => ServiceProvider.GetRequiredService<IWritableOptions<T>>();
 
     /// <summary>
     /// Gets the current configuration value.
     /// </summary>
-    public static T GetValue() => GetOptions().CurrentValue;
+    public static T GetValue<T>()
+        where T : class => GetOptions<T>().CurrentValue;
 
     /// <summary>
     /// Saves the specified value synchronously.
     /// </summary>
     /// <param name="value">The configuration value to save.</param>
-    public static void Save(T value) => SaveAsync(value).GetAwaiter().GetResult();
+    public static void Save<T>(T value)
+        where T : class => SaveAsync<T>(value).GetAwaiter().GetResult();
 
     /// <summary>
     /// Updates the configuration using the specified action and saves it synchronously.
     /// </summary>
     /// <param name="action">An action to update the configuration value.</param>
-    public static void Save(Action<T> action) => SaveAsync(action).GetAwaiter().GetResult();
+    public static void Save<T>(Action<T> action)
+        where T : class => SaveAsync<T>(action).GetAwaiter().GetResult();
 
     /// <summary>
     /// Saves the specified value asynchronously.
     /// </summary>
     /// <param name="value">The configuration value to save.</param>
-    public static Task SaveAsync(T value) => GetOptions().SaveAsync(value);
+    public static Task SaveAsync<T>(T value)
+        where T : class => GetOptions<T>().SaveAsync(value);
 
     /// <summary>
     /// Updates the configuration using the specified action and saves it asynchronously.
     /// </summary>
     /// <param name="action">An action to update the configuration value.</param>
-    public static Task SaveAsync(Action<T> action) => GetOptions().SaveAsync(action);
+    public static Task SaveAsync<T>(Action<T> action)
+        where T : class => GetOptions<T>().SaveAsync(action);
 
-    private static IServiceCollection ServiceCollection =>
-        WritableConfigSharedInstance.ServiceCollection;
+    private static IServiceCollection ServiceCollection { get; } = new ServiceCollection();
 
-    private static IConfigurationManager Configuration =>
-        WritableConfigSharedInstance.Configuration;
+	private static IConfigurationManager Configuration { get; } = new ConfigurationManager();
 
-    private static IServiceProvider ServiceProvider => WritableConfigSharedInstance.ServiceProvider;
+    private static IServiceProvider ServiceProvider => _serviceProviderCache ??= ServiceCollection.BuildServiceProvider();
+	private static IServiceProvider? _serviceProviderCache;
 }
 
 /// <summary>
@@ -78,17 +83,16 @@ internal static class WritableConfigSharedInstance
     /// Gets or creates the global <see cref="IServiceProvider"/> instance.
     /// </summary>
     public static IServiceProvider ServiceProvider =>
-        _serviceProviderCache ??= ServiceCollection.BuildServiceProvider();
+       
 
     /// <summary>
     /// Gets the global <see cref="IServiceCollection"/> instance.
     /// </summary>
-    public static IServiceCollection ServiceCollection { get; } = new ServiceCollection();
+    public static IServiceCollection ServiceCollection { get; } = 
 
     /// <summary>
     /// Gets the global <see cref="IConfigurationManager"/> instance.
     /// </summary>
-    public static IConfigurationManager Configuration { get; } = new ConfigurationManager();
+    public static IConfigurationManager Configuration { get; }
 
-    private static IServiceProvider? _serviceProviderCache;
 }
