@@ -360,7 +360,6 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Json": "[9.*, )",
-          "Microsoft.Extensions.Configuration.Xml": "[9.*, )",
           "Microsoft.Extensions.DependencyInjection": "[9.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.*, )"
@@ -600,7 +599,6 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Json": "[9.*, )",
-          "Microsoft.Extensions.Configuration.Xml": "[9.*, )",
           "Microsoft.Extensions.DependencyInjection": "[9.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.*, )"
@@ -795,7 +793,6 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Json": "[9.*, )",
-          "Microsoft.Extensions.Configuration.Xml": "[9.*, )",
           "Microsoft.Extensions.DependencyInjection": "[9.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.*, )"
