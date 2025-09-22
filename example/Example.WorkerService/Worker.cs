@@ -6,34 +6,37 @@ public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await Task.Delay(1000);
+        await Task.Delay(1000, stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
-            Console.WriteLine("-------------------------");
-            Console.WriteLine($"Current Name 1 is :: {options.Get("worker-sample-1").Name}");
-            Console.WriteLine($"Current Name 2 is :: {options.Get("worker-sample-2").Name}");
-            Console.Write($"Enter Name 1 :: ");
-            var name = Console.ReadLine();
+            // get the config instance
+            var sampleSetting = options.CurrentValue;
+            Console.WriteLine(
+                $">> Name: {sampleSetting.Name}, LastUpdatedAt: {sampleSetting.LastUpdatedAt}"
+            );
+
+            // save the config instance
+            Console.Write(":: Enter new name: ");
+            var newName = Console.ReadLine();
             await options.SaveAsync(
-                config =>
+                setting =>
                 {
-                    config.Name = name ?? string.Empty;
-                    config.LastUpdatedAt = DateTime.Now;
+                    setting.Name = newName;
+                    setting.LastUpdatedAt = DateTime.Now;
                 },
-                "worker-sample-1",
                 stoppingToken
             );
-            Console.Write($"Enter Name 2 :: ");
-            var name2 = Console.ReadLine();
-            await options.SaveAsync(
-                config =>
-                {
-                    config.Name = name2 ?? string.Empty;
-                    config.LastUpdatedAt = DateTime.Now;
-                },
-                "worker-sample-2",
-                stoppingToken
+            Console.WriteLine(":: Config saved.");
+            Console.WriteLine($"   at {options.GetWritableConfigurationOptions().ConfigFilePath}");
+
+            // get updated config instance
+            var updatedSampleSetting = options.CurrentValue;
+            Console.WriteLine(
+                $">> Name: {updatedSampleSetting.Name}, LastUpdatedAt: {updatedSampleSetting.LastUpdatedAt}"
             );
+
+            // finish
+            Environment.Exit(0);
         }
     }
 }

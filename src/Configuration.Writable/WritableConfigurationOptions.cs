@@ -48,7 +48,7 @@ public record WritableConfigurationOptions<T>
     /// If empty, that means the root of the configuration file.
     /// If use multiple configuration file for same type T, you must set different SectionName for each.
     /// </summary>
-    public string SectionName { get; set; } = "UserSettings";
+    public string SectionRootName { get; set; } = "UserSettings";
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
@@ -77,17 +77,41 @@ public record WritableConfigurationOptions<T>
                     fileName = DefaultFileName;
                 }
             }
-            var fileNameWithExtension = fileName;
+            // if no extension, add default extension
+            var fileNameWithExtension = Path.GetFileName(fileName);
             if (!fileNameWithExtension.Contains("."))
             {
                 fileNameWithExtension += $".{Provider.FileExtension}";
             }
-            if (string.IsNullOrWhiteSpace(ConfigFolder))
+            // if ConfigFolder is set, combine it with the directory of FileName (if any)
+            var directoryName = Path.GetDirectoryName(fileName) ?? "";
+            var combinedDir = string.IsNullOrWhiteSpace(ConfigFolder)
+                ? Path.Combine(directoryName, fileNameWithExtension)
+                : Path.Combine(ConfigFolder, directoryName, fileNameWithExtension);
+            return Path.GetFullPath(combinedDir);
+        }
+    }
+
+    /// <summary>
+    /// Gets the full section name composed of the section root name and instance name.
+    /// </summary>
+    /// <remarks>
+    /// multiple configuration files for the same type T must have different SectionName values.
+    /// so combine SectionRootName and InstanceName to make it unique.
+    /// </remarks>
+    public string SectionName
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(SectionRootName))
             {
-                return Path.GetFullPath(fileNameWithExtension);
+                return string.Empty;
             }
-            var combined = Path.Combine(ConfigFolder, fileNameWithExtension);
-            return Path.GetFullPath(combined);
+            if (string.IsNullOrWhiteSpace(InstanceName))
+            {
+                return SectionRootName;
+            }
+            return $"{SectionRootName}-{InstanceName}";
         }
     }
 

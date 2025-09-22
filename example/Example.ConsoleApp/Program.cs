@@ -1,44 +1,52 @@
 ﻿using Configuration.Writable;
+using Configuration.Writable.FileWriter;
 using Example.ConsoleApp;
+
+var options = WritableConfig.GetInstance<SampleSetting>();
 
 // initialize the writable config system
 // default save location is ./userconfig.json
-//WritableConfig.Initialize<SampleSetting>();
+options.Initialize();
 
 // if you want to specify a custom save location, use the following instead:
-WritableConfig.Initialize<SampleSetting>(options =>
+options.Initialize(opt =>
 {
-    //options.FileName = "config/encrypt-setting";
-    //options.Provider = new WritableConfigEncryptProvider("th3Rand0mP4ssw0rd!");
-    options.Provider = new WritableConfigXmlProvider();
-    //options.FileWriter = new CommonWriteFileProvider() { BackupMaxCount = 5 };
-});
+    // save file location is ../config/mysettings.json
+    // extension is determined by the provider (omittable)
+    opt.FileName = "../config/mysettings";
 
-// or use system app data folder
-// (e.g. C:\Users\<User>\AppData\Local\sample-console-app\appdata-setting.json on Windows):
-//WritableConfig.Initialize<SampleSetting>(options =>
-//{
-//    options.FileName = "appdata-setting.json";
-//    options.UseStandardSaveLocation("sample-console-app");
-//});
+    // if you want to standard system configration location, use opt.UseStandardSaveLocation("your-app-id");
+    // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
+    //opt.UseStandardSaveLocation("your-app-id");
+
+    // customize the provider and file writer
+    // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IWritableConfigProvider
+    opt.Provider = new WritableConfigJsonProvider()
+    {
+        JsonSerializerOptions = { WriteIndented = true },
+    };
+    // if you want to keep backup files, use CommonFileWriter with BackupMaxCount > 0
+    opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
+});
 
 // -------------------------------
 // get the config instance
-var sampleSetting = WritableConfig.GetValue<SampleSetting>();
+var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}, LastUpdatedAt: {sampleSetting.LastUpdatedAt}");
 
-// modify the config instance
+// save the config instance
 Console.Write(":: Enter new name: ");
 var newName = Console.ReadLine();
-
-// save the config instance
-sampleSetting.Name = newName;
-sampleSetting.LastUpdatedAt = DateTime.Now;
-WritableConfig.Save<SampleSetting>(sampleSetting);
+await options.SaveAsync(setting =>
+{
+    setting.Name = newName;
+    setting.LastUpdatedAt = DateTime.Now;
+});
 Console.WriteLine(":: Config saved.");
+Console.WriteLine($"   at {options.ConfigFilePath}");
 
 // get updated config instance
-var updatedSampleSetting = WritableConfig.GetValue<SampleSetting>();
+var updatedSampleSetting = options.CurrentValue;
 Console.WriteLine(
     $">> Name: {updatedSampleSetting.Name}, LastUpdatedAt: {updatedSampleSetting.LastUpdatedAt}"
 );

@@ -16,10 +16,10 @@ public class CommonFileWriter : IFileWriter
     /// <summary>
     /// Gets or sets the maximum number of backup files to keep. Defaults to 0.
     /// </summary>
-    public int BackupMaxCount { get; set; } = 0;
+    public virtual int BackupMaxCount { get; set; } = 0;
 
     /// <inheritdoc />
-    public async Task SaveToFileAsync(
+    public virtual async Task SaveToFileAsync(
         string path,
         ReadOnlyMemory<byte> content,
         CancellationToken cancellationToken
@@ -66,24 +66,12 @@ public class CommonFileWriter : IFileWriter
         }
     }
 
-    // write content to file
-    private static Task WriteContentToFileAsync(
-        string path,
-        ReadOnlyMemory<byte> content,
-        CancellationToken cancellationToken
-    )
-    {
-#if NET9_0_OR_GREATER
-        return File.WriteAllBytesAsync(path, content, cancellationToken);
-#elif NET
-        return File.WriteAllBytesAsync(path, content.ToArray(), cancellationToken);
-#else
-        return Task.Run(() => File.WriteAllBytes(path, content.ToArray()), cancellationToken);
-#endif
-    }
-
-    // generate temporary file path
-    private static string GetTemporaryFilePath(string path)
+    /// <summary>
+    /// Generates a unique temporary file path based on the specified file path.
+    /// </summary>
+    /// <param name="path">The original file path to use as a base for generating the temporary file path. Must not be null and must
+    /// include a file name.</param>
+    protected virtual string GetTemporaryFilePath(string path)
     {
         var extension = Path.GetExtension(path);
         var filePathWithoutExtension = Path.Combine(
@@ -94,8 +82,12 @@ public class CommonFileWriter : IFileWriter
         return $"{filePathWithoutExtension}_{timestamp}{extension}";
     }
 
-    // generate backup file and rotate old backup files
-    private void GenerateBackupFile(string path)
+    /// <summary>
+    /// Creates a backup of the specified file if it exists and manages the number of backup files according to the
+    /// maximum backup count.
+    /// </summary>
+    /// <param name="path">The full path of the file to back up. Must not be null or empty.</param>
+    protected virtual void GenerateBackupFile(string path)
     {
         // if file does not exist, do nothing
         if (!File.Exists(path))
@@ -115,7 +107,7 @@ public class CommonFileWriter : IFileWriter
             .ToList();
         if (backupFilesOrderByCreated.Count >= BackupMaxCount)
         {
-            // 先頭N個を削除
+            // delete oldest files
             var deleteCount = backupFilesOrderByCreated.Count - BackupMaxCount + 1;
             foreach (var file in backupFilesOrderByCreated.Take(deleteCount))
             {
@@ -132,5 +124,21 @@ public class CommonFileWriter : IFileWriter
         // create backup file
         var backupFilePath = GetTemporaryFilePath(path) + ".bak";
         File.Copy(path, backupFilePath);
+    }
+
+    // write content to file
+    private static Task WriteContentToFileAsync(
+        string path,
+        ReadOnlyMemory<byte> content,
+        CancellationToken cancellationToken
+    )
+    {
+#if NET9_0_OR_GREATER
+        return File.WriteAllBytesAsync(path, content, cancellationToken);
+#elif NET
+        return File.WriteAllBytesAsync(path, content.ToArray(), cancellationToken);
+#else
+        return Task.Run(() => File.WriteAllBytes(path, content.ToArray()), cancellationToken);
+#endif
     }
 }
