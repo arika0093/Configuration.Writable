@@ -1,5 +1,6 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
 using System.IO;
+using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable;
@@ -20,9 +21,9 @@ public record WritableConfigurationOptions<T>
     public IWritableConfigProvider Provider { get; set; } = new WritableConfigJsonProvider();
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWriteFileProvider"/> used to handle the file writing operations.
+    /// Gets or sets a instance of <see cref="IFileWriter"/> used to handle the file writing operations.
     /// </summary>
-    public IWriteFileProvider FileWriter { get; set; } = new CommonWriteFileProvider();
+    public IFileWriter FileWriter { get; set; } = new CommonFileWriter();
 
     /// <summary>
     /// Gets or sets the name of the file used to store user settings. Defaults to InstanceName or "usersettings" if InstanceName is not set. <br/>
@@ -45,8 +46,9 @@ public record WritableConfigurationOptions<T>
     /// <summary>
     /// Gets or sets the name of the configuration section. Defaults to "UserSettings".
     /// If empty, that means the root of the configuration file.
+    /// If use multiple configuration file for same type T, you must set different SectionName for each.
     /// </summary>
-    public string SectionRootName { get; set; } = "UserSettings";
+    public string SectionName { get; set; } = "UserSettings";
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
@@ -86,26 +88,6 @@ public record WritableConfigurationOptions<T>
             }
             var combined = Path.Combine(ConfigFolder, fileNameWithExtension);
             return Path.GetFullPath(combined);
-        }
-    }
-
-    /// <summary>
-    /// Gets the name of the configuration section, combining the root name and instance name if both are specified. <br/>
-    /// e.g. if SectionRootName is "UserSettings" and InstanceName is "Instance1", the result will be "UserSettings-Instance1".
-    /// </summary>
-    public string SectionName
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(SectionRootName))
-            {
-                return string.Empty;
-            }
-            if (string.IsNullOrWhiteSpace(InstanceName))
-            {
-                return SectionRootName;
-            }
-            return $"{SectionRootName}-{InstanceName}";
         }
     }
 

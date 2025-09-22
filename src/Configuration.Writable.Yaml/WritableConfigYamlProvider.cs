@@ -10,7 +10,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Writable configuration implementation for Yaml files.
 /// </summary>
-public record WritableConfigYamlProvider : IWritableConfigProvider
+public class WritableConfigYamlProvider : WritableConfigProviderBase
 {
     /// <summary>
     /// Gets or sets the serializer used to convert objects to and from a specific format.
@@ -24,14 +24,14 @@ public record WritableConfigYamlProvider : IWritableConfigProvider
     public Encoding Encoding { get; init; } = Encoding.UTF8;
 
     /// <inheritdoc />
-    public string FileExtension => "yaml";
+    public override string FileExtension => "yaml";
 
     /// <inheritdoc />
-    public void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
+    public override void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
         configuration.AddYamlFile(path, optional: true, reloadOnChange: true);
 
     /// <inheritdoc />
-    public ReadOnlyMemory<byte> GetSaveContents<T>(
+    public override ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
         WritableConfigurationOptions<T> options
     )

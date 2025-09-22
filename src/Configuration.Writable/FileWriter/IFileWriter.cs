@@ -2,12 +2,12 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.FileWriter;
 
 /// <summary>
 /// Defines a provider for writing data to files.
 /// </summary>
-public interface IWriteFileProvider
+public interface IFileWriter
 {
     /// <summary>
     /// Asynchronously saves the specified content to a file at the given path.

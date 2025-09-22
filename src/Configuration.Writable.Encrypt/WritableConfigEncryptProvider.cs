@@ -8,9 +8,40 @@ namespace Configuration.Writable;
 /// <summary>
 /// Provides functionality for managing writable configuration files with encryption support.
 /// </summary>
-public record WritableConfigEncryptProvider : IWritableConfigProvider
+public class WritableConfigEncryptProvider : WritableConfigProviderBase
 {
-    private byte[] _key = [];
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WritableConfigEncryptProvider"/> class with the specified
+    /// encryption key.
+    /// </summary>
+    /// <param name="key">specified encryption key, less than 32 characters string.</param>
+    public WritableConfigEncryptProvider(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new ArgumentNullException(nameof(key), "Key cannot be null or empty.");
+        }
+        if (key.Length < 32)
+        {
+            key = key.PadRight(32, '0');
+        }
+        Key = System.Text.Encoding.UTF8.GetBytes(key);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WritableConfigEncryptProvider"/> class with the specified
+    /// encryption key.
+    /// </summary>
+    /// <param name="key">The encryption key to be used for securing configuration data.</param>
+    public WritableConfigEncryptProvider(byte[] key)
+    {
+        Key = key;
+    }
+
+    /// <summary>
+    /// Gets or sets the options to use when serializing and deserializing JSON data.
+    /// </summary>
+    public WritableConfigJsonProvider JsonProvider { get; init; } = new();
 
     /// <summary>
     /// Gets the cryptographic key used for encryption or decryption operations.
@@ -30,59 +61,18 @@ public record WritableConfigEncryptProvider : IWritableConfigProvider
             _key = value;
         }
     }
+    private byte[] _key = [];
 
     /// <summary>
     /// Gets the Advanced Encryption Standard (AES) cryptographic algorithm instance.
     /// </summary>
     public Aes Aes { get; private set; } = Aes.Create();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WritableConfigEncryptProvider"/> class with the specified
-    /// encryption key.
-    /// </summary>
-    /// <param name="key">specified encryption key, usable Base64 string or less than 32 characters string.</param>
-    public WritableConfigEncryptProvider(string key)
-    {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentNullException(nameof(key), "Key cannot be null or empty.");
-        }
-        try
-        {
-            // check if it's a valid Base64 string
-            Key = Convert.FromBase64String(key);
-        }
-        catch (FormatException)
-        {
-            // if not, use UTF8 bytes
-            if (key.Length < 32)
-            {
-                key = key.PadRight(32, '0');
-            }
-            Key = System.Text.Encoding.UTF8.GetBytes(key);
-        }
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WritableConfigEncryptProvider"/> class with the specified
-    /// encryption key.
-    /// </summary>
-    /// <param name="key">The encryption key to be used for securing configuration data.</param>
-    public WritableConfigEncryptProvider(byte[] key)
-    {
-        Key = key;
-    }
-
-    /// <summary>
-    /// Gets or sets the options to use when serializing and deserializing JSON data.
-    /// </summary>
-    public WritableConfigJsonProvider JsonProvider { get; init; } = new();
+    /// <inheritdoc />
+    public override string FileExtension => "";
 
     /// <inheritdoc />
-    public string FileExtension => "";
-
-    /// <inheritdoc />
-    public void AddConfigurationFile(IConfigurationBuilder configuration, string path)
+    public override void AddConfigurationFile(IConfigurationBuilder configuration, string path)
     {
         configuration.Add<EncryptConfigurationSource>(source =>
         {
@@ -97,7 +87,7 @@ public record WritableConfigEncryptProvider : IWritableConfigProvider
     }
 
     /// <inheritdoc />
-    public ReadOnlyMemory<byte> GetSaveContents<T>(
+    public override ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
         WritableConfigurationOptions<T> options
     )

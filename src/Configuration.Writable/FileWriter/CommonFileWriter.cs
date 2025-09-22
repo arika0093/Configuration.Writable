@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.FileWriter;
 
 /// <summary>
 /// Provides functionality to write data to a file, ensuring thread safety and data integrity.
 /// </summary>
-public class CommonWriteFileProvider : IWriteFileProvider
+public class CommonFileWriter : IFileWriter
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 

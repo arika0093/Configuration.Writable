@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Configuration.Writable.FileWriter;
 using Microsoft.Extensions.Configuration;
 
 namespace Configuration.Writable;
@@ -9,9 +12,14 @@ namespace Configuration.Writable;
 public interface IWritableConfigProvider
 {
     /// <summary>
+    /// Gets the file provider used for write operations.
+    /// </summary>
+    public IFileWriter WriteFileProvider { get; }
+
+    /// <summary>
     /// Gets the file extension associated with the current file, exluding the leading period (e.g., "txt").
     /// </summary>
-    public string FileExtension { get; }
+    string FileExtension { get; }
 
     /// <summary>
     /// Adds a configuration manager to the current configuration pipeline. e.g. AddJsonFile, AddIniFile, AddXmlFile, etc.
@@ -28,5 +36,21 @@ public interface IWritableConfigProvider
     /// <param name="options">The options that control how the configuration is serialized.</param>
     /// <returns>A read-only memory segment containing the serialized byte representation of the configuration.</returns>
     ReadOnlyMemory<byte> GetSaveContents<T>(T config, WritableConfigurationOptions<T> options)
+        where T : class;
+
+    /// <summary>
+    /// Asynchronously saves the specified configuration object to a file using the provided options.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration object to save. Must be a reference type.</typeparam>
+    /// <param name="config">The configuration object to be saved. Cannot be null.</param>
+    /// <param name="options">The options that control how and where the configuration is saved, including the target file path. Cannot be
+    /// null.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the save operation.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    Task SaveAsync<T>(
+        T config,
+        WritableConfigurationOptions<T> options,
+        CancellationToken cancellationToken = default
+    )
         where T : class;
 }

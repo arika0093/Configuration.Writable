@@ -10,23 +10,22 @@ namespace Configuration.Writable;
 /// <summary>
 /// Writable configuration implementation for XML files.
 /// </summary>
-internal record WritableConfigXmlProvider : IWritableConfigProvider
+public class WritableConfigXmlProvider : WritableConfigProviderBase
 {
     /// <inheritdoc />
-    public string FileExtension => "xml";
+    public override string FileExtension => "xml";
 
     /// <inheritdoc />
-    public void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
+    public override void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
         configuration.AddXmlFile(path, optional: true, reloadOnChange: true);
 
     /// <inheritdoc />
-    public ReadOnlyMemory<byte> GetSaveContents<T>(
+    public override ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
         WritableConfigurationOptions<T> options
     )
         where T : class
     {
-        throw new NotImplementedException("XML writable configuration is not implemented yet.");
         var sectionName = options.SectionName;
         if (string.IsNullOrWhiteSpace(sectionName))
         {
@@ -40,16 +39,16 @@ internal record WritableConfigXmlProvider : IWritableConfigProvider
         }
         else
         {
-            // save to <configuration><{sectionName}>...</{sectionName}></configuration>
-            var serializer = new XmlSerializer(typeof(T), new XmlRootAttribute(sectionName));
+            // first serialize to <AnyName>...</AnyName>
+            var serializer = new XmlSerializer(typeof(T));
             using var sw = new StringWriter();
             serializer.Serialize(sw, config);
-            // wrap with <configuration>...</configuration>
+            var xmlDocument = new XmlDocument();
+            xmlDocument.LoadXml(sw.ToString());
+            // secondly, wrap with <configuration><{sectionName}>...</{sectionName}></configuration>
             var xmlString = $"""
                 <?xml version="1.0" encoding="utf-8"?>
-                <configuration>
-                    {sw}
-                </configuration>
+                <configuration><{sectionName}>{xmlDocument.DocumentElement?.InnerXml}</{sectionName}></configuration>
                 """;
             return Encoding.UTF8.GetBytes(xmlString);
         }

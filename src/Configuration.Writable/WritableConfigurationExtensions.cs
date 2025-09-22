@@ -80,8 +80,6 @@ public static class WritableConfigurationExtensions
         var options = new WritableConfigurationOptions<T>();
         configureOptions(options);
         var filePath = options.ConfigFilePath;
-        // add configuration
-        options.Provider.AddConfigurationFile(configuration, filePath);
         // add IOptions<T>
         if (string.IsNullOrWhiteSpace(options.SectionName))
         {
@@ -126,6 +124,8 @@ public static class WritableConfigurationExtensions
         services.AddSingleton<IWritableOptions<T>>(p =>
             p.GetRequiredService<WritableConfiguration<T>>()
         );
+        // add configuration
+        options.Provider.AddConfigurationFile(configuration, filePath);
         return services;
     }
 }

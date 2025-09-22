@@ -101,12 +101,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     )
     {
         SetCachedValue(options.InstanceName, newConfig);
-        var contents = options.Provider.GetSaveContents(newConfig, options);
-        return options.FileWriter.SaveToFileAsync(
-            options.ConfigFilePath,
-            contents,
-            cancellationToken
-        );
+        return options.Provider.SaveAsync(newConfig, options, cancellationToken);
     }
 
     /// <summary>

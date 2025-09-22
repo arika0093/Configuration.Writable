@@ -8,9 +8,9 @@ using Example.ConsoleApp;
 // if you want to specify a custom save location, use the following instead:
 WritableConfig.Initialize<SampleSetting>(options =>
 {
-    options.FileName = "config/encrypt-setting";
-    options.Provider = new WritableConfigEncryptProvider("th3Rand0mP4ssw0rd!");
-    //options.Provider = new WritableConfigXmlProvider();
+    //options.FileName = "config/encrypt-setting";
+    //options.Provider = new WritableConfigEncryptProvider("th3Rand0mP4ssw0rd!");
+    options.Provider = new WritableConfigXmlProvider();
     //options.FileWriter = new CommonWriteFileProvider() { BackupMaxCount = 5 };
 });
 

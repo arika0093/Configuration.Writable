@@ -10,7 +10,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Writable configuration implementation for JSON files.
 /// </summary>
-public record WritableConfigJsonProvider : IWritableConfigProvider
+public class WritableConfigJsonProvider : WritableConfigProviderBase
 {
     /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.
@@ -24,14 +24,14 @@ public record WritableConfigJsonProvider : IWritableConfigProvider
     public Encoding Encoding { get; init; } = System.Text.Encoding.UTF8;
 
     /// <inheritdoc />
-    public string FileExtension => "json";
+    public override string FileExtension => "json";
 
     /// <inheritdoc />
-    public void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
+    public override void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
         configuration.AddJsonFile(path, optional: true, reloadOnChange: true);
 
     /// <inheritdoc />
-    public ReadOnlyMemory<byte> GetSaveContents<T>(
+    public override ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
         WritableConfigurationOptions<T> options
     )
