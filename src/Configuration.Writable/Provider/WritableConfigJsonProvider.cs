@@ -17,7 +17,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
     /// Gets or sets the options to use when serializing and deserializing JSON data.
     /// </summary>
     public JsonSerializerOptions JsonSerializerOptions { get; init; } =
-        new() { WriteIndented = true, ReferenceHandler = ReferenceHandler.IgnoreCycles };
+        new() { WriteIndented = false, ReferenceHandler = ReferenceHandler.IgnoreCycles };
 
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
