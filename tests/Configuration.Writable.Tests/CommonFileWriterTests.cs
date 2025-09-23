@@ -9,6 +9,24 @@ namespace Configuration.Writable.Tests;
 
 public class CommonFileWriterTests
 {
+    private static Task<byte[]> ReadAllBytesCompat(string path)
+    {
+#if NETFRAMEWORK
+        return Task.Run(() => File.ReadAllBytes(path));
+#else
+        return File.ReadAllBytesAsync(path);
+#endif
+    }
+
+    private static Task<string> ReadAllTextCompat(string path)
+    {
+#if NETFRAMEWORK
+        return Task.Run(() => File.ReadAllText(path));
+#else
+        return File.ReadAllTextAsync(path);
+#endif
+    }
+
     [Fact]
     public async Task SaveToFileAsync_ShouldCreateFileWithContent()
     {
@@ -21,7 +39,7 @@ public class CommonFileWriterTests
             await writer.SaveToFileAsync(testFile, content, CancellationToken.None);
 
             File.Exists(testFile).ShouldBeTrue();
-            var savedContent = await File.ReadAllBytesAsync(testFile);
+            var savedContent = await ReadAllBytesCompat(testFile);
             savedContent.ShouldBe(content);
         }
         finally
@@ -71,12 +89,12 @@ public class CommonFileWriterTests
         {
             // Create original file
             await writer.SaveToFileAsync(testFile, originalContent, CancellationToken.None);
-            var firstSave = await File.ReadAllBytesAsync(testFile);
+            var firstSave = await ReadAllBytesCompat(testFile);
             firstSave.ShouldBe(originalContent);
 
             // Replace with new content
             await writer.SaveToFileAsync(testFile, newContent, CancellationToken.None);
-            var secondSave = await File.ReadAllBytesAsync(testFile);
+            var secondSave = await ReadAllBytesCompat(testFile);
             secondSave.ShouldBe(newContent);
         }
         finally
@@ -88,7 +106,7 @@ public class CommonFileWriterTests
         }
     }
 
-    [Fact(Skip = "Backup file creation timing is environment dependent")]
+    [Fact]
     public async Task SaveToFileAsync_WithBackup_ShouldCreateBackupFile()
     {
         var testFile = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.txt");
@@ -110,7 +128,7 @@ public class CommonFileWriterTests
             backupFiles.Length.ShouldBeGreaterThan(0);
 
             // Verify current file content
-            var currentContent = await File.ReadAllBytesAsync(testFile);
+            var currentContent = await ReadAllBytesCompat(testFile);
             currentContent.ShouldBe(newContent);
         }
         finally
@@ -124,12 +142,16 @@ public class CommonFileWriterTests
             var backupFiles = Directory.GetFiles(directory, "*test_*.bak");
             foreach (var backup in backupFiles)
             {
-                try { File.Delete(backup); } catch { }
+                try
+                {
+                    File.Delete(backup);
+                }
+                catch { }
             }
         }
     }
 
-    [Fact(Skip = "Backup file cleanup timing can cause race conditions")]
+    [Fact]
     public async Task SaveToFileAsync_WithBackupMaxCount_ShouldLimitBackupFiles()
     {
         var testFile = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.txt");
@@ -163,7 +185,11 @@ public class CommonFileWriterTests
             var backupFiles = Directory.GetFiles(directory, "*test_*.bak");
             foreach (var backup in backupFiles)
             {
-                try { File.Delete(backup); } catch { }
+                try
+                {
+                    File.Delete(backup);
+                }
+                catch { }
             }
         }
     }
@@ -215,7 +241,7 @@ public class CommonFileWriterTests
 
             // File should exist and contain one of the written contents
             File.Exists(testFile).ShouldBeTrue();
-            var finalContent = await File.ReadAllTextAsync(testFile);
+            var finalContent = await ReadAllTextCompat(testFile);
             finalContent.ShouldStartWith("Content ");
         }
         finally
@@ -227,7 +253,7 @@ public class CommonFileWriterTests
         }
     }
 
-    [Fact(Skip = "Cancellation token handling may cause SemaphoreFullException in some scenarios")]
+    [Fact]
     public async Task SaveToFileAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         var testFile = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.txt");
@@ -294,7 +320,7 @@ public class CommonFileWriterTests
             await writer.SaveToFileAsync(testFile, largeContent, CancellationToken.None);
 
             File.Exists(testFile).ShouldBeTrue();
-            var savedContent = await File.ReadAllBytesAsync(testFile);
+            var savedContent = await ReadAllBytesCompat(testFile);
             savedContent.ShouldBe(largeContent);
         }
         finally

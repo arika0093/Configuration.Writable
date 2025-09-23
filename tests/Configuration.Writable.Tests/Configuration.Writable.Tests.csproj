@@ -1,11 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.*" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <!-- in 9.* will be failing on net6.0 -->
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
   </ItemGroup>
-
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.*" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.*" />
+  </ItemGroup>
 </Project>

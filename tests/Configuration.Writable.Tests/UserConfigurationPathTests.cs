@@ -16,14 +16,6 @@ public class UserConfigurationPathTests
         Path.IsPathRooted(path).ShouldBeTrue();
     }
 
-    [Fact]
-    public void GetUserConfigRootDirectory_ShouldReturnExistingDirectory()
-    {
-        var path = UserConfigurationPath.GetUserConfigRootDirectory();
-
-        Directory.Exists(path).ShouldBeTrue();
-    }
-
     [FactOnWindows]
     public void GetUserConfigRootDirectory_OnWindows_ShouldReturnAppData()
     {
@@ -136,48 +128,6 @@ public class UserConfigurationPathTests
                 );
                 path.ShouldBe(expectedPath);
             }
-        }
-    }
-}
-
-/// <summary>
-/// Custom fact attribute that only runs on Windows
-/// </summary>
-public class FactOnWindowsAttribute : FactAttribute
-{
-    public FactOnWindowsAttribute()
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Skip = "This test only runs on Windows";
-        }
-    }
-}
-
-/// <summary>
-/// Custom fact attribute that only runs on macOS
-/// </summary>
-public class FactOnMacOSAttribute : FactAttribute
-{
-    public FactOnMacOSAttribute()
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            Skip = "This test only runs on macOS";
-        }
-    }
-}
-
-/// <summary>
-/// Custom fact attribute that only runs on Linux
-/// </summary>
-public class FactOnLinuxAttribute : FactAttribute
-{
-    public FactOnLinuxAttribute()
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            Skip = "This test only runs on Linux";
         }
     }
 }

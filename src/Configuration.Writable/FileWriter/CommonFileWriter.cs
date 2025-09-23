@@ -29,6 +29,14 @@ public class CommonFileWriter : IFileWriter
         {
             // ensure only one write operation at a time
             await _semaphore.WaitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // if waiting is cancelled, just return
+            return;
+        }
+        try
+        {
             // create directory if not exists
             var directory = Path.GetDirectoryName(path)!;
             Directory.CreateDirectory(directory);

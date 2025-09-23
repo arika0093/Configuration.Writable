@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -13,6 +14,52 @@ public class WritableConfigurationExtensionsTests
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 42;
         public bool IsEnabled { get; set; } = true;
+    }
+
+    [Fact]
+    public void AddUserConfigurationFile_WithServiceCollection_ShouldRegisterServices()
+    {
+        var config = new ConfigurationManager();
+        var services = new ServiceCollection();
+        services.AddUserConfigurationFile<TestSettings>(config);
+        var serviceProvider = services.BuildServiceProvider();
+        var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
+        var readonlyOptions = serviceProvider.GetService<IReadonlyOptions<TestSettings>>();
+        writableOptions.ShouldNotBeNull();
+        readonlyOptions.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void AddUserConfigurationFile_WithServiceCollection_ShouldUseCustomConfiguration()
+    {
+        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+
+        try
+        {
+            var config = new ConfigurationManager();
+            var services = new ServiceCollection();
+            services.AddUserConfigurationFile<TestSettings>(
+                config,
+                options =>
+                {
+                    options.FileName = Path.GetFileNameWithoutExtension(testFileName);
+                    options.ConfigFolder = Path.GetDirectoryName(testFileName)!;
+                }
+            );
+            var serviceProvider = services.BuildServiceProvider();
+            var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
+            var readonlyOptions = serviceProvider.GetService<IReadonlyOptions<TestSettings>>();
+            writableOptions.ShouldNotBeNull();
+            readonlyOptions.ShouldNotBeNull();
+            writableOptions.GetWritableConfigurationOptions().ConfigFilePath.ShouldBe(testFileName);
+        }
+        finally
+        {
+            if (File.Exists(testFileName))
+            {
+                File.Delete(testFileName);
+            }
+        }
     }
 
     [Fact]
@@ -44,7 +91,9 @@ public class WritableConfigurationExtensionsTests
             });
 
             var host = builder.Build();
-            var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettings>>();
+            var writableOptions = host.Services.GetRequiredService<
+                IWritableOptions<TestSettings>
+            >();
 
             var configOptions = writableOptions.GetWritableConfigurationOptions();
             configOptions.ConfigFilePath.ShouldBe(testFileName);
@@ -73,13 +122,15 @@ public class WritableConfigurationExtensionsTests
             });
 
             var host = builder.Build();
-            var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettings>>();
+            var writableOptions = host.Services.GetRequiredService<
+                IWritableOptions<TestSettings>
+            >();
 
             var newSettings = new TestSettings
             {
                 Name = "host_test",
                 Value = 500,
-                IsEnabled = false
+                IsEnabled = false,
             };
 
             await writableOptions.SaveAsync(newSettings);
@@ -115,7 +166,9 @@ public class WritableConfigurationExtensionsTests
             });
 
             var host = builder.Build();
-            var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettings>>();
+            var writableOptions = host.Services.GetRequiredService<
+                IWritableOptions<TestSettings>
+            >();
 
             await writableOptions.SaveAsync(settings =>
             {
