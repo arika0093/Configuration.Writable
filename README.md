@@ -140,10 +140,10 @@ Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
 |------------------------------|---------------------------|------------------------------|
-| `WritableConfigJsonProvider` | save in Json format.     | Configuration.Writable (Built-in) |
-| `WritableConfigXmlProvider`  | save in Xml format.      | Configuration.Writable.Xml  |
-| `WritableConfigYamlProvider` | save in Yaml format.     | Configuration.Writable.Yaml |
-| `WritableConfigEncryptProvider` | save in encrypted (AES-256-CBC) Json format. | Configuration.Writable.Encrypt |
+| `WritableConfigJsonProvider` | save in Json format.     | `Configuration.Writable` (Built-in) |
+| `WritableConfigXmlProvider`  | save in Xml format.      | `Configuration.Writable.Xml`  |
+| `WritableConfigYamlProvider` | save in Yaml format.     | `Configuration.Writable.Yaml` |
+| `WritableConfigEncryptProvider` | save in AES-256-CBC encrypted Json format. | `Configuration.Writable.Encrypt` |
 
 
 
@@ -189,4 +189,9 @@ Apps that want to use configuration files are more likely to not use DI (example
 The preamble has gotten long, but it's time for promotion!
 This library extends `Microsoft.Extensions.Configuration` to make writing user settings easy.
 It's also designed to be easily usable in applications that don't use DI.
+
+Please give it a try. It's simple!
+
+## License
+This project is licensed under the Apache-2.0 License.
 
