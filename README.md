@@ -3,6 +3,14 @@
 
 A lightweight library that extends Microsoft.Extensions.Configuration to easily handle user settings.
 
+## Features
+* Read and write user settings with type safety.
+* Extends `Microsoft.Extensions.Configuration` and integrates seamlessly with `IHostApplication`.
+* Simple API that can be easily used in applications both with and without DI.
+* Supports various file formats (Json, Xml, Yaml, Encrypted, etc...) via providers.
+
+[More...](#why-this-library)
+
 ## Usage
 ### Setup
 Install `Configuration.Writable` from NuGet.
@@ -66,8 +74,8 @@ public class ConfigReadClass(IReadonlyOptions<UserSetting> config)
 {
     public void Print()
     {
-        var UserSetting = config.CurrentValue;
-        Console.WriteLine($">> Name: {UserSetting.Name}");
+        var sampleSetting = config.CurrentValue;
+        Console.WriteLine($">> Name: {sampleSetting.Name}");
     }
 }
 
@@ -76,6 +84,7 @@ public class ConfigReadWriteClass(IWritableOptions<UserSetting> config)
 {
     public async Task UpdateAsync()
     {
+        var sampleSetting = config.CurrentValue;
         await config.SaveAsync(setting =>
         {
             setting.Name = "new name";
@@ -86,7 +95,7 @@ public class ConfigReadWriteClass(IWritableOptions<UserSetting> config)
 
 ## Customization
 ### Configuration Method
-You can change various settings as arguments to `WritableConfig.Initialize<UserSetting>()` or `AddUserConfigurationFile<UserSetting>()`.
+You can change various settings as arguments to `Initialize` or `AddUserConfigurationFile`.
 
 ```csharp
 // Without DI
@@ -98,6 +107,8 @@ builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
 ```
 
 ### Main Configuration Options
+Major options you can set include:
+
 ```csharp
 {
     // File name to save (default: "usersettings")
@@ -105,13 +116,15 @@ builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
     // The extension is automatically added by the provider
     opt.FileName = "usersettings"; 
 
-    // If you want to save to a common settings directory, execute this function
-    // For example, on Windows it saves to %APPDATA%/MyAppId/
+    // If you want to save to a common settings directory, execute this function.
+    // * on Windows it saves to %APPDATA%/MyAppId/
+    // * on Linux it saves to ~/.config/MyAppId/ or $XDG_CONFIG_HOME/MyAppId/
+    // * on macOS it saves to ~/Library/Application Support/MyAppId/
     opt.UseStandardSaveLocation("MyAppId");
 
     // Configuration file save format.
     // for example, use Json format with indentation
-    opt.Provider = new WritableConfigJsonProvider(){
+    opt.Provider = new WritableConfigJsonProvider() {
         JsonSerializerOptions = { WriteIndented = true },
     };
 
@@ -120,6 +133,18 @@ builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
     opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
 }
 ```
+
+### Provider
+If you want to change the format when saving files, create a class that implements `IWritableConfigProvider` and specify it in `opt.Provider`.
+Currently, the following providers are available:
+
+| Provider                     | Description              | NuGet Package                |
+|------------------------------|---------------------------|------------------------------|
+| `WritableConfigJsonProvider` | save in Json format.     | Configuration.Writable (Built-in) |
+| `WritableConfigXmlProvider`  | save in Xml format.      | Configuration.Writable.Xml  |
+| `WritableConfigYamlProvider` | save in Yaml format.     | Configuration.Writable.Yaml |
+| `WritableConfigEncryptProvider` | save in encrypted (AES-256-CBC) Json format. | Configuration.Writable.Encrypt |
+
 
 
 ## Why This Library?
