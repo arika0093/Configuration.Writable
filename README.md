@@ -35,17 +35,18 @@ Use `WritableConfig` as the starting point for reading and writing settings.
 ```csharp
 using Configuration.Writable;
 
+// initialize at once (application startup)
+WritableConfig.Initialize<SampleSetting>();
+
+// -------------
 // get the writable config instance with the specified setting class
 var options = WritableConfig.GetInstance<SampleSetting>();
-
-// initialize at once before use
-options.Initialize();
 
 // get the config instance
 var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}");
 
-// save the config instance
+// and save to storage
 await options.SaveAsync(setting =>
 {
     setting.Name = "new name";
@@ -70,21 +71,24 @@ Then, obtain and use `IReadonlyOptions<T>` or `IWritableOptions<T>` from the DI 
 ```csharp
 // read config in your class
 // you can also use IOptions<T>, IOptionsMonitor<T> or IOptionsSnapshot<T>
-public class ConfigReadClass(IReadonlyOptions<UserSetting> config)
+public class ConfigReadService(IReadonlyOptions<UserSetting> config)
 {
     public void Print()
     {
+        // get the config instance
         var sampleSetting = config.CurrentValue;
         Console.WriteLine($">> Name: {sampleSetting.Name}");
     }
 }
 
 // read and write config in your class
-public class ConfigReadWriteClass(IWritableOptions<UserSetting> config)
+public class ConfigReadWriteService(IWritableOptions<UserSetting> config)
 {
     public async Task UpdateAsync()
     {
+        // get the config instance
         var sampleSetting = config.CurrentValue;
+        // and save to storage
         await config.SaveAsync(setting =>
         {
             setting.Name = "new name";
@@ -140,10 +144,10 @@ Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
 |------------------------------|---------------------------|------------------------------|
-| `WritableConfigJsonProvider` | save in Json format.     | `Configuration.Writable` (Built-in) |
-| `WritableConfigXmlProvider`  | save in Xml format.      | `Configuration.Writable.Xml`  |
-| `WritableConfigYamlProvider` | save in Yaml format.     | `Configuration.Writable.Yaml` |
-| `WritableConfigEncryptProvider` | save in AES-256-CBC encrypted Json format. | `Configuration.Writable.Encrypt` |
+| `WritableConfigJsonProvider` | save in JSON format.     | Built-in |
+| `WritableConfigXmlProvider`  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  |
+| `WritableConfigYamlProvider` | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  |
+| `WritableConfigEncryptProvider` | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
 
 
 
@@ -158,7 +162,7 @@ This is an old-fashioned approach that yields many search results (unfortunately
 * Files may be included in distributions without careful consideration, risking settings reset during updates
 
 ### Reading and Writing Configuration Files Yourself
-When considering type safety, the first approach that comes to mind is creating and reading/writing your own configuration files.
+When considering type safety, the first approach that comes to mind is creating and reading/writing your own configuration files.  
 This method isn't bad, but the drawback is that there are too many things to consider.
 
 * You need to write configuration management code yourself
@@ -167,8 +171,8 @@ This method isn't bad, but the drawback is that there are too many things to con
 * You need to implement configuration change reflection yourself
 
 ### Using (Any Configuration Library)
-Since there's so much boilerplate code, there must be some configuration library available.
-Indeed, just [searching for `Config` on NuGet](https://www.nuget.org/packages?q=config) yields many libraries.
+Since there's so much boilerplate code, there must be some configuration library available.  
+Indeed, just [searching for `Config` on NuGet](https://www.nuget.org/packages?q=config) yields many libraries.  
 I examined the major ones among these, but couldn't adopt them for the following reasons:
 
 * [DotNetConfig](https://github.com/dotnetconfig/dotnet-config)
@@ -179,16 +183,16 @@ I examined the major ones among these, but couldn't adopt them for the following
   * Collection writing is [not supported](https://github.com/aloneguid/config#json) in the JSON provider
 
 ### Using `Microsoft.Extensions.Configuration`
-Considering these current situations, `Microsoft.Extensions.Configuration` (`MS.E.C`) can be said to be the most standardized configuration management method in modern times.
-It provides many features such as multi-file integration, support for various formats including environment variables, and configuration change reflection, and integrates seamlessly with `IHostApplication`.
-However, since it's primarily designed for application settings, it's insufficient for handling user settings. The major problem is that configuration writing is not supported.
-Another issue is that it's based on DI, making it somewhat cumbersome to use in console applications.
-Apps that want to use configuration files are more likely to not use DI (examples include `WinForms`, `WPF`, `console apps`, etc.).
+Considering these current situations, `Microsoft.Extensions.Configuration` (`MS.E.C`) can be said to be the most standardized configuration management method in modern times.  
+It provides many features such as multi-file integration, support for various formats including environment variables, and configuration change reflection, and integrates seamlessly with `IHostApplication`.  
+However, since it's primarily designed for application settings, it's insufficient for handling user settings. The major problem is that configuration writing is not supported.  
+Another issue is that it's based on DI, making it somewhat cumbersome to use in console applications.  
+Apps that want to use configuration files are more likely to not use DI (examples include `WinForms`, `WPF`, `console apps`, etc.).  
 
 ### `Configuration.Writable`
-The preamble has gotten long, but it's time for promotion!
-This library extends `Microsoft.Extensions.Configuration` to make writing user settings easy.
-It's also designed to be easily usable in applications that don't use DI.
+The preamble has gotten long, but it's time for promotion!  
+This library extends `Microsoft.Extensions.Configuration` to make writing user settings easy.  
+It's also designed to be easily usable in applications that don't use DI.  
 
 Please give it a try. It's simple!
 
