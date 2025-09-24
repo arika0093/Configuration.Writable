@@ -141,7 +141,7 @@ public record WritableConfigurationOptions<T>
     /// <returns>The full path to the configuration file.</returns>
     public string UseTemporarySaveLocation()
     {
-        ConfigFolder = null;
+        ConfigFolder = Path.GetTempPath();
         FilePath = Path.GetRandomFileName();
         return ConfigFilePath;
     }
