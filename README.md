@@ -110,32 +110,20 @@ options.Initialize(opt => { /* ... */ });
 builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
 ```
 
-### Main Configuration Options
-Major options you can set include:
+### Save Location
+Default behavior save to `./usersettings.json`.  
+If you want to change the save location, use `opt.FileName` or `opt.UseStandardSaveLocation("MyAppId")`.
 
+For example:
 ```csharp
-{
-    // File name to save (default: "usersettings")
-    // For example, if you want to save to the parent directory, specify like "../usersettings"
-    // The extension is automatically added by the provider
-    opt.FileName = "usersettings"; 
+// to save to the parent directory
+opt.FileName = "../myconfig";
 
-    // If you want to save to a common settings directory, execute this function.
-    // * on Windows it saves to %APPDATA%/MyAppId/
-    // * on Linux it saves to ~/.config/MyAppId/ or $XDG_CONFIG_HOME/MyAppId/
-    // * on macOS it saves to ~/Library/Application Support/MyAppId/
-    opt.UseStandardSaveLocation("MyAppId");
+// to save to child directory
+opt.FileName = "config/myconfig";
 
-    // Configuration file save format.
-    // for example, use Json format with indentation
-    opt.Provider = new WritableConfigJsonProvider() {
-        JsonSerializerOptions = { WriteIndented = true },
-    };
-
-    // File writer to use when saving files.
-    // for example, if you want to keep backup files, use CommonFileWriter with BackupMaxCount > 0
-    opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
-}
+// to save to a common settings directory
+opt.UseStandardSaveLocation("MyAppId");
 ```
 
 ### Provider
@@ -144,12 +132,59 @@ Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
 |------------------------------|---------------------------|------------------------------|
-| `WritableConfigJsonProvider` | save in JSON format.     | Built-in |
-| `WritableConfigXmlProvider`  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  |
-| `WritableConfigYamlProvider` | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  |
-| `WritableConfigEncryptProvider` | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
+| [WritableConfigJsonProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable/Provider/WritableConfigJsonProvider.cs) | save in JSON format.     | Built-in |
+| [WritableConfigXmlProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/WritableConfigXmlProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  |
+| [WritableConfigYamlProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/WritableConfigYamlProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  |
+| [WritableConfigEncryptProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Encrypt/WritableConfigEncryptProvider.cs) | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
 
+For example:
+```csharp
+// use Json format with indentation
+opt.Provider = new WritableConfigJsonProvider() {
+    JsonSerializerOptions = { WriteIndented = true },
+};
 
+// use Yaml format
+// (you need to install Configuration.Writable.Yaml package)
+opt.Provider = new WritableConfigYamlProvider();
+
+// use encrypted Json format
+// (you need to install Configuration.Writable.Encrypt package)
+opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
+```
+
+### FileWriter
+If you want to change the way files are written, create a class that implements `IFileWriter` and specify it in `opt.FileWriter`.
+
+For example, if you want to keep backup files when saving, use `CommonFileWriter` with `BackupMaxCount > 0`.
+```csharp
+// keep 5 backup files when saving
+opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
+```
+
+### SectionName
+In default, the entire settings are saved in the following structure:
+```jsonc
+{
+  // settings saved to under "UserSettings" section
+  "UserSettings": {
+    "Name": "custom name",
+    "Age": 30
+  }
+}
+```
+
+As you can see, the settings are written under the “UserSettings” section.
+This serves as a guardrail to prevent conflicts with settings from other libraries (such as `ASP.NET Core`).
+You can freely change this section name.
+
+```csharp
+// change the section name to "MyAppSettings"
+opt.SectionName = "MyAppSettings";
+
+// nothing use section (written at the root, not recommended)
+opt.SectionName = "";
+```
 
 ## Why This Library?
 There are many ways to handle user settings in C# applications. However, each has some drawbacks, and no de facto standard exists.
