@@ -28,7 +28,7 @@ public class WritableConfigXmlProviderTests
     [Fact]
     public void Initialize_WithXmlProvider_ShouldCreateXmlFile()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.xml");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -58,7 +58,7 @@ public class WritableConfigXmlProviderTests
     [Fact]
     public void LoadAndSave_WithXmlProvider_ShouldPreserveSimpleData()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.xml");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -94,7 +94,7 @@ public class WritableConfigXmlProviderTests
     [Fact]
     public void LoadAndSave_WithXmlProvider_ShouldPreserveData()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.xml");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -133,7 +133,7 @@ public class WritableConfigXmlProviderTests
     [Fact]
     public async Task SaveAsync_WithXmlProvider_ShouldWork()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.xml");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {

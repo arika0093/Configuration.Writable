@@ -35,7 +35,7 @@ public class WritableConfigurationExtensionsTests
     [Fact]
     public void AddUserConfigurationFile_WithServiceCollection_ShouldUseCustomConfiguration()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         var config = new ConfigurationManager();
         var services = new ServiceCollection();
@@ -43,7 +43,7 @@ public class WritableConfigurationExtensionsTests
             config,
             options =>
             {
-                options.FilePath = testFileName;
+                options.FilePath = testFilePath;
                 options.UseInMemoryFileWriter(_fileWriter);
             }
         );
@@ -52,7 +52,7 @@ public class WritableConfigurationExtensionsTests
         var readonlyOptions = serviceProvider.GetService<IReadonlyOptions<TestSettings>>();
         writableOptions.ShouldNotBeNull();
         readonlyOptions.ShouldNotBeNull();
-        writableOptions.GetWritableConfigurationOptions().ConfigFilePath.ShouldBe(testFileName);
+        writableOptions.GetWritableConfigurationOptions().ConfigFilePath.ShouldBe(testFilePath);
     }
 
     [Fact]
@@ -72,12 +72,12 @@ public class WritableConfigurationExtensionsTests
     [Fact]
     public void AddUserConfigurationFile_WithCustomOptions_ShouldUseCustomConfiguration()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         var builder = Host.CreateApplicationBuilder();
         builder.AddUserConfigurationFile<TestSettings>(options =>
         {
-            options.FilePath = testFileName;
+            options.FilePath = testFilePath;
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -85,13 +85,13 @@ public class WritableConfigurationExtensionsTests
         var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettings>>();
 
         var configOptions = writableOptions.GetWritableConfigurationOptions();
-        configOptions.ConfigFilePath.ShouldBe(testFileName);
+        configOptions.ConfigFilePath.ShouldBe(testFilePath);
     }
 
     [Fact]
     public async Task WritableOptions_SaveAsync_ShouldPersistData()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
         builder.AddUserConfigurationFile<TestSettings>(options =>
@@ -123,7 +123,7 @@ public class WritableConfigurationExtensionsTests
     [Fact]
     public async Task WritableOptions_SaveAsyncWithAction_ShouldUpdateData()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
         builder.AddUserConfigurationFile<TestSettings>(options =>

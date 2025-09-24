@@ -11,13 +11,6 @@ public class WritableConfigTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
 
-    public class TestSettings
-    {
-        public string Name { get; set; } = "default";
-        public int Value { get; set; } = 42;
-        public bool IsEnabled { get; set; } = true;
-    }
-
     [Fact]
     public void Initialize_ShouldCreateConfiguration()
     {
@@ -33,15 +26,25 @@ public class WritableConfigTests
     [Fact]
     public void GetInstance_ShouldReturnWritableConfig()
     {
+        WritableConfig.Initialize<TestSettings>();
         var instance = WritableConfig.GetInstance<TestSettings>();
         instance.ShouldNotBeNull();
-        instance.ShouldBeOfType<WritableConfig<TestSettings>>();
+        instance.ShouldBeAssignableTo<IWritableOptions<TestSettings>>();
+    }
+
+    [Fact]
+    public void GetInstance_ShouldThrowIfNotInitialized()
+    {
+        Should.Throw<InvalidOperationException>(() =>
+        {
+            var instance = WritableConfig.GetInstance<TestSettings2>();
+        });
     }
 
     [Fact]
     public void Save_ShouldPersistConfiguration()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -75,7 +78,7 @@ public class WritableConfigTests
     [Fact]
     public async Task SaveAsync_ShouldPersistConfiguration()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -109,7 +112,7 @@ public class WritableConfigTests
     [Fact]
     public void SaveWithAction_ShouldUpdateConfiguration()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -146,3 +149,12 @@ public class WritableConfigTests
         path.ShouldEndWith(".json");
     }
 }
+
+file class TestSettings
+{
+    public string Name { get; set; } = "default";
+    public int Value { get; set; } = 42;
+    public bool IsEnabled { get; set; } = true;
+}
+
+file class TestSettings2 : TestSettings;

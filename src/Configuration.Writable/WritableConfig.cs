@@ -12,12 +12,6 @@ namespace Configuration.Writable;
 public static class WritableConfig
 {
     /// <summary>
-    /// Creates a new instance of the writable configuration for the specified type.
-    /// </summary>
-    public static WritableConfig<T> GetInstance<T>()
-        where T : class => new();
-
-    /// <summary>
     /// Initializes writable configuration with default settings.
     /// </summary>
     public static void Initialize<T>()
@@ -39,16 +33,16 @@ public static class WritableConfig
     }
 
     /// <summary>
-    /// Gets an instance of <see cref="IWritableOptions{T}"/> from the DI container.
+    /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
-    public static IWritableOptions<T> GetOptions<T>()
+    public static IWritableOptions<T> GetInstance<T>()
         where T : class => ServiceProvider.GetRequiredService<IWritableOptions<T>>();
 
     /// <summary>
     /// Retrieves writable configuration options for the specified options type.
     /// </summary>
     public static WritableConfigurationOptions<T> GetConfigurationOptions<T>()
-        where T : class => GetOptions<T>().GetWritableConfigurationOptions();
+        where T : class => GetInstance<T>().GetWritableConfigurationOptions();
 
     /// <summary>
     /// Gets the file path of the configuration file associated with the specified type.
@@ -62,7 +56,7 @@ public static class WritableConfig
     /// Gets the current configuration value.
     /// </summary>
     public static T GetCurrentValue<T>()
-        where T : class => GetOptions<T>().CurrentValue;
+        where T : class => GetInstance<T>().CurrentValue;
 
     /// <summary>
     /// Saves the specified value synchronously.
@@ -83,14 +77,14 @@ public static class WritableConfig
     /// </summary>
     /// <param name="value">The configuration value to save.</param>
     public static Task SaveAsync<T>(T value)
-        where T : class => GetOptions<T>().SaveAsync(value);
+        where T : class => GetInstance<T>().SaveAsync(value);
 
     /// <summary>
     /// Updates the configuration using the specified action and saves it asynchronously.
     /// </summary>
     /// <param name="action">An action to update the configuration value.</param>
     public static Task SaveAsync<T>(Action<T> action)
-        where T : class => GetOptions<T>().SaveAsync(action);
+        where T : class => GetInstance<T>().SaveAsync(action);
 
     private static IServiceCollection ServiceCollection { get; set; } = new ServiceCollection();
 
@@ -111,68 +105,4 @@ public static class WritableConfig
     }
 
     private static IServiceProvider? _serviceProviderCache;
-}
-
-/// <summary>
-/// Provides static access to writable configuration options and related operations for a specified options type.
-/// </summary>
-/// <typeparam name="T">The type of the configuration options to manage. Must be a reference type.</typeparam>
-public class WritableConfig<T>
-    where T : class
-{
-    /// <summary>
-    /// Initializes the writable configuration for the specified type parameter.
-    /// </summary>
-    public void Initialize() => WritableConfig.Initialize<T>();
-
-    /// <summary>
-    /// Initializes the writable configuration using the specified configuration options.
-    /// </summary>
-    public void Initialize(Action<WritableConfigurationOptions<T>> configurationOptions) =>
-        WritableConfig.Initialize(configurationOptions);
-
-    /// <summary>
-    /// Gets an instance of <see cref="IWritableOptions{T}"/> from the DI container.
-    /// </summary>
-    public IWritableOptions<T> Options => WritableConfig.GetOptions<T>();
-
-    /// <summary>
-    /// Retrieves writable configuration options for the specified options type.
-    /// </summary>
-    public WritableConfigurationOptions<T> ConfigurationOptions =>
-        WritableConfig.GetConfigurationOptions<T>();
-
-    /// <summary>
-    /// Gets the file path of the configuration file associated with the specified type.
-    /// </summary>
-    public string ConfigFilePath => WritableConfig.GetConfigFilePath<T>();
-
-    /// <summary>
-    /// Gets the current configuration value.
-    /// </summary>
-    public T CurrentValue => WritableConfig.GetCurrentValue<T>();
-
-    /// <summary>
-    /// Saves the specified value synchronously.
-    /// </summary>
-    /// <param name="value">The configuration value to save.</param>
-    public void Save(T value) => WritableConfig.Save<T>(value);
-
-    /// <summary>
-    /// Updates the configuration using the specified action and saves it synchronously.
-    /// </summary>
-    /// <param name="action">An action to update the configuration value.</param>
-    public void Save(Action<T> action) => WritableConfig.Save<T>(action);
-
-    /// <summary>
-    /// Saves the specified value asynchronously.
-    /// </summary>
-    /// <param name="value">The configuration value to save.</param>
-    public Task SaveAsync(T value) => WritableConfig.SaveAsync<T>(value);
-
-    /// <summary>
-    /// Updates the configuration using the specified action and saves it asynchronously.
-    /// </summary>
-    /// <param name="action">An action to update the configuration value.</param>
-    public Task SaveAsync(Action<T> action) => WritableConfig.SaveAsync<T>(action);
 }

@@ -35,7 +35,7 @@ public class WritableConfigYamlProviderTests
     [Fact]
     public void Initialize_WithYamlProvider_ShouldCreateYamlFile()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.yaml");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -68,7 +68,7 @@ public class WritableConfigYamlProviderTests
     [Fact]
     public void LoadAndSave_WithYamlProvider_ShouldPreserveData()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.yaml");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {
@@ -108,7 +108,7 @@ public class WritableConfigYamlProviderTests
     [Fact]
     public async Task SaveAsync_WithYamlProvider_ShouldWork()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.yaml");
+        var testFileName = Path.GetRandomFileName();
 
         WritableConfig.Initialize<TestSettings>(options =>
         {

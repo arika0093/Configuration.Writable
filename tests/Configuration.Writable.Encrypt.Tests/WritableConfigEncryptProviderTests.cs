@@ -68,7 +68,7 @@ public class WritableConfigEncryptProviderTests
     [Fact]
     public void Initialize_WithEncryptProvider_ShouldCreateEncryptedFile()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}");
+        var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
 
         WritableConfig.Initialize<TestSettings>(options =>
@@ -102,7 +102,7 @@ public class WritableConfigEncryptProviderTests
     [Fact]
     public void LoadAndSave_WithEncryptProvider_ShouldPreserveData()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}");
+        var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
 
         WritableConfig.Initialize<TestSettings>(options =>
@@ -144,7 +144,7 @@ public class WritableConfigEncryptProviderTests
     [Fact]
     public void LoadWithDifferentKey_ShouldHandleDecryptionFailure()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}");
+        var testFileName = Path.GetRandomFileName();
         var encryptionKey1 = "myencryptionkey123456789012345";
         var encryptionKey2 = "differentkey12345678901234567";
 
@@ -180,7 +180,7 @@ public class WritableConfigEncryptProviderTests
     [Fact]
     public async Task SaveAsync_WithEncryptProvider_ShouldWork()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}");
+        var testFileName = Path.GetRandomFileName();
         var encryptionKey = "asyncencryptionkey12345678901";
 
         WritableConfig.Initialize<TestSettings>(options =>

@@ -22,7 +22,7 @@ public class IOptionsIntegrationTests
     [Fact]
     public void IOptions_ShouldProvideCurrentValue()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
         builder.AddUserConfigurationFile<TestSettings>(options =>
@@ -44,7 +44,7 @@ public class IOptionsIntegrationTests
     [Fact]
     public void IOptionsSnapshot_ShouldProvideCurrentValue()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
         builder.AddUserConfigurationFile<TestSettings>(options =>
@@ -70,7 +70,7 @@ public class IOptionsIntegrationTests
     [Fact]
     public void IOptionsMonitor_ShouldProvideCurrentValue()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
         builder.AddUserConfigurationFile<TestSettings>(options =>
@@ -92,7 +92,7 @@ public class IOptionsIntegrationTests
     [Fact]
     public void IOptionsMonitor_Get_WithName_ShouldWork()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
         builder.AddUserConfigurationFile<TestSettings>(options =>
@@ -115,7 +115,7 @@ public class IOptionsIntegrationTests
     [Fact]
     public async Task IOptions_WithSavedConfiguration_ShouldReturnSavedValues()
     {
-        var testFileName = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+        var testFileName = Path.GetRandomFileName();
 
         // First, save some configuration
         var builder1 = Host.CreateApplicationBuilder();
