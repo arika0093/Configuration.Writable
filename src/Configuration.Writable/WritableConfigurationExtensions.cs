@@ -79,7 +79,24 @@ public static class WritableConfigurationExtensions
         // build options
         var confBuilder = new WritableConfigurationOptionsBuilder<T>();
         configureOptions(confBuilder);
+        return services.AddUserConfigurationFile<T>(configuration, confBuilder);
+    }
 
+    /// <summary>
+    /// Adds a user-specific configuration file to the application's configuration system and registers the specified
+    /// options type for dependency injection.
+    /// </summary>
+    /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
+    /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
+    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
+    /// <param name="confBuilder">A pre-configured <see cref="WritableConfigurationOptionsBuilder{T}"/> instance used to specify the configuration file. </param>
+    public static IServiceCollection AddUserConfigurationFile<T>(
+        this IServiceCollection services,
+        IConfigurationManager configuration,
+        WritableConfigurationOptionsBuilder<T> confBuilder
+    )
+        where T : class
+    {
         var fileWriter = confBuilder.FileWriter;
         var fileReadStream = confBuilder.FileReadStream;
         var options = confBuilder.BuildOptions();
@@ -148,4 +165,35 @@ public static class WritableConfigurationExtensions
         );
         return services;
     }
+
+    /// <summary>
+    /// Adds a user-specific configuration file to the application's configuration system and registers the specified
+    /// options type for dependency injection.
+    /// </summary>
+    /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
+    /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
+    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
+    /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptionsBuilder{T}"/> used to specify the configuration file
+    /// path, section name, and other options.</param>
+    public static IServiceCollection AddUserConfigurationFile<T>(
+        this IConfigurationManager configuration,
+        IServiceCollection services,
+        Action<WritableConfigurationOptionsBuilder<T>> configureOptions
+    )
+        where T : class => services.AddUserConfigurationFile<T>(configuration, configureOptions);
+
+    /// <summary>
+    /// Adds a user-specific configuration file to the application's configuration system and registers the specified
+    /// options type for dependency injection.
+    /// </summary>
+    /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
+    /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
+    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
+    /// <param name="confBuilder">A pre-configured <see cref="WritableConfigurationOptionsBuilder{T}"/> instance used to specify the configuration file. </param>
+    public static IServiceCollection AddUserConfigurationFile<T>(
+        this IConfigurationManager configuration,
+        IServiceCollection services,
+        WritableConfigurationOptionsBuilder<T> confBuilder
+    )
+        where T : class => services.AddUserConfigurationFile<T>(configuration, confBuilder);
 }
