@@ -63,12 +63,6 @@ public class WritableConfigTests
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        WritableConfig.Initialize<TestSettings>(options =>
-        {
-            options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
-        });
-
         var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
         loadedSettings.Name.ShouldBe("updated");
         loadedSettings.Value.ShouldBe(100);
@@ -97,12 +91,6 @@ public class WritableConfigTests
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        WritableConfig.Initialize<TestSettings>(options =>
-        {
-            options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
-        });
-
         var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
         loadedSettings.Name.ShouldBe("async_updated");
         loadedSettings.Value.ShouldBe(200);
@@ -127,12 +115,6 @@ public class WritableConfigTests
         });
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
-
-        WritableConfig.Initialize<TestSettings>(options =>
-        {
-            options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
-        });
 
         var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
         loadedSettings.Name.ShouldBe("action_updated");
