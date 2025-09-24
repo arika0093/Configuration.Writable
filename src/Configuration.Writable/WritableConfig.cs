@@ -21,7 +21,9 @@ public static class WritableConfig
     /// Initializes writable configuration with custom options.
     /// </summary>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
-    public static void Initialize<T>(Action<WritableConfigurationOptions<T>> configurationOptions)
+    public static void Initialize<T>(
+        Action<WritableConfigurationOptionsBuilder<T>> configurationOptions
+    )
         where T : class
     {
         // reset instance

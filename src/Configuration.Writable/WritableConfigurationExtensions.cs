@@ -37,7 +37,7 @@ public static class WritableConfigurationExtensions
     /// path, section name, and other options.</param>
     public static IHostApplicationBuilder AddUserConfigurationFile<T>(
         this IHostApplicationBuilder builder,
-        Action<WritableConfigurationOptions<T>> configureOptions
+        Action<WritableConfigurationOptionsBuilder<T>> configureOptions
     )
         where T : class
     {
@@ -68,27 +68,33 @@ public static class WritableConfigurationExtensions
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
     /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
-    /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptions{T}"/> used to specify the configuration file
+    /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptionsBuilder{T}"/> used to specify the configuration file
     /// path, section name, and other options.</param>
     public static IServiceCollection AddUserConfigurationFile<T>(
         this IServiceCollection services,
         IConfigurationManager configuration,
-        Action<WritableConfigurationOptions<T>> configureOptions
+        Action<WritableConfigurationOptionsBuilder<T>> configureOptions
     )
         where T : class
     {
-        var options = new WritableConfigurationOptions<T>();
-        configureOptions(options);
+        // build options
+        var confBuilder = new WritableConfigurationOptionsBuilder<T>();
+        configureOptions(confBuilder);
+
+        var fileWriter = confBuilder.FileWriter;
+        var fileReadStream = confBuilder.FileReadStream;
+        var options = confBuilder.BuildOptions();
+
         var filePath = options.ConfigFilePath;
         // set FileWriter and Stream
-        if (options.FileWriter != null)
+        if (fileWriter != null)
         {
-            options.Provider.FileWriter = options.FileWriter;
+            options.Provider.FileWriter = fileWriter;
         }
         // add configuration
-        if (options.FileReadStream != null)
+        if (fileReadStream != null)
         {
-            options.Provider.AddConfigurationFile(configuration, options.FileReadStream);
+            options.Provider.AddConfigurationFile(configuration, fileReadStream);
         }
         else
         {
@@ -109,7 +115,7 @@ public static class WritableConfigurationExtensions
         }
 
         // add T instance
-        if (options.RegisterInstanceToContainer)
+        if (confBuilder.RegisterInstanceToContainer)
         {
             if (string.IsNullOrEmpty(options.InstanceName))
             {
