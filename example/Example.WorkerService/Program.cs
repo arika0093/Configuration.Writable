@@ -6,9 +6,9 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddUserConfigurationFile<SampleSetting>(opt =>
 {
-    // save file location is ../config/mysettings.json
+    // save file location is ./config/mysettings.json
     // extension is determined by the provider (omittable)
-    opt.FilePath = "../config/mysettings";
+    opt.FilePath = "./config/mysettings";
 
     // if you want to standard system configration location, use opt.UseStandardSaveLocation("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows

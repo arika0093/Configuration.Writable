@@ -42,12 +42,11 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     }
 
     /// <inheritdoc />
-    public WritableConfigurationOptions<T> GetWritableConfigurationOptions() =>
+    public WritableConfigurationOptions<T> GetConfigurationOptions() =>
         GetOption(Options.DefaultName);
 
     /// <inheritdoc />
-    public WritableConfigurationOptions<T> GetWritableConfigurationOptions(string name) =>
-        GetOption(name);
+    public WritableConfigurationOptions<T> GetConfigurationOptions(string name) => GetOption(name);
 
     /// <inheritdoc />
     public Task SaveAsync(

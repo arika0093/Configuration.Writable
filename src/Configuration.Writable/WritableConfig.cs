@@ -42,7 +42,7 @@ public static class WritableConfig
     /// Retrieves writable configuration options for the specified options type.
     /// </summary>
     public static WritableConfigurationOptions<T> GetConfigurationOptions<T>()
-        where T : class => GetInstance<T>().GetWritableConfigurationOptions();
+        where T : class => GetInstance<T>().GetConfigurationOptions();
 
     /// <summary>
     /// Gets the file path of the configuration file associated with the specified type.

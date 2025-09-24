@@ -1,15 +1,12 @@
 ﻿using Configuration.Writable;
-using Configuration.Writable.FileWriter;
 using Example.ConsoleApp;
-
-var options = WritableConfig.GetInstance<SampleSetting>();
 
 // initialize the writable config system
 // default save location is ./userconfig.json
-options.Initialize();
+WritableConfig.Initialize<SampleSetting>();
 
 // if you want to specify a custom save location, use the following instead:
-options.Initialize(opt =>
+WritableConfig.Initialize<SampleSetting>(opt =>
 {
     // save file location is ../config/mysettings.json
     // extension is determined by the provider (omittable)
@@ -32,6 +29,8 @@ options.Initialize(opt =>
 
 // -------------------------------
 // get the config instance
+var options = WritableConfig.GetInstance<SampleSetting>();
+
 var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}, LastUpdatedAt: {sampleSetting.LastUpdatedAt}");
 
@@ -44,7 +43,7 @@ await options.SaveAsync(setting =>
     setting.LastUpdatedAt = DateTime.Now;
 });
 Console.WriteLine(":: Config saved.");
-Console.WriteLine($"   at {options.ConfigFilePath}");
+Console.WriteLine($"   at {options.GetConfigurationOptions().FilePath}");
 
 // get updated config instance
 var updatedSampleSetting = options.CurrentValue;
