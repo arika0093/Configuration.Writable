@@ -24,7 +24,7 @@ public interface IWritableOptions<T> : IReadonlyOptions<T>
     /// <param name="newConfig">The new configuration to save.</param>
     /// <param name="name">The name of the options instance to save.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    Task SaveAsync(T newConfig, string name, CancellationToken cancellationToken = default);
+    Task SaveAsync(string name, T newConfig, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously updates and saves the configuration using the provided updater action.
@@ -40,8 +40,8 @@ public interface IWritableOptions<T> : IReadonlyOptions<T>
     /// <param name="name">The name of the options instance to save.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     Task SaveAsync(
-        Action<T> configUpdator,
         string name,
+        Action<T> configUpdator,
         CancellationToken cancellationToken = default
     );
 }

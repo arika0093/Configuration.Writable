@@ -50,8 +50,8 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
 
     /// <inheritdoc />
     public Task SaveAsync(
-        T newConfig,
         string name,
+        T newConfig,
         CancellationToken cancellationToken = default
     ) => SaveCoreAsync(newConfig, GetOption(name), cancellationToken);
 
@@ -61,8 +61,8 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
 
     /// <inheritdoc />
     public Task SaveAsync(
-        Action<T> configUpdator,
         string name,
+        Action<T> configUpdator,
         CancellationToken cancellationToken = default
     )
     {
@@ -73,7 +73,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
 
     /// <inheritdoc />
     public Task SaveAsync(Action<T> configUpdator, CancellationToken cancellationToken = default) =>
-        SaveAsync(configUpdator, Options.DefaultName, cancellationToken);
+        SaveAsync(Options.DefaultName, configUpdator, cancellationToken);
 
     /// <inheritdoc />
     public T CurrentValue =>
