@@ -51,4 +51,13 @@ public class WritableConfigurationOptionsTests
 
         options.SectionName.ShouldBeEmpty();
     }
+
+    [Fact]
+    public void SectionName_WithInvalidSectionRootName_ShouldThrowException()
+    {
+        var options = new WritableConfigurationOptions<TestSettings>();
+
+        Should.Throw<ArgumentException>(() => options.SectionRootName = "Invalid:Name");
+        Should.Throw<ArgumentException>(() => options.SectionRootName = "Invalid__Name");
+    }
 }

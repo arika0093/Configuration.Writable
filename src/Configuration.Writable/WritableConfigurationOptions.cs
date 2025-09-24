@@ -1,4 +1,5 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
+using System;
 using System.IO;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
@@ -46,7 +47,26 @@ public record WritableConfigurationOptions<T>
     /// If empty, that means the root of the configuration file.
     /// If use multiple configuration file for same type T, you must set different SectionName for each.
     /// </summary>
-    public string SectionRootName { get; set; } = "UserSettings";
+    public string SectionRootName
+    {
+        get => _sectionName;
+        set
+        {
+            if (value == null)
+            {
+                _sectionName = string.Empty;
+                return;
+            }
+            if (value.Contains(":") || value.Contains("__"))
+            {
+                throw new ArgumentException(
+                    "SectionName cannot contain ':' or '__' characters. These are reserved for hierarchical section delimiters."
+                );
+            }
+            _sectionName = value.Trim();
+        }
+    }
+    private string _sectionName = "UserSettings";
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
