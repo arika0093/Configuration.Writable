@@ -207,9 +207,9 @@ public class MyService(IWritableOptions<UserSetting> config)
 {
     public void GetAndSave()
     {
-        // cannot use .CurrentValue directly because multiple settings are registered
-        var firstSetting = config.Get("First").CurrentValue;
-        var secondSetting = config.Get("Second").CurrentValue;
+        // cannot use .CurrentValue if multiple settings of the same type are registered
+        var firstSetting = config.Get("First");
+        var secondSetting = config.Get("Second");
         // and you can must specify instance name when saving
         await config.SaveAsync("First", setting => {
             setting.Name = "first name";
