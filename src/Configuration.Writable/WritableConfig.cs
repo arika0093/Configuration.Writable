@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Configuration.Writable.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +12,22 @@ namespace Configuration.Writable;
 /// </summary>
 public static class WritableConfig
 {
+    // Store instances for different types to ensure singleton behavior per type
+    private static readonly Dictionary<Type, WritableConfigSimpleInstance> _instances = new();
+
+    // Cache the service provider to avoid multiple builds
+    private static WritableConfigSimpleInstance GetInternalInstance<T>()
+        where T : class
+    {
+        var type = typeof(T);
+        if (!_instances.TryGetValue(type, out WritableConfigSimpleInstance? value))
+        {
+            value = new WritableConfigSimpleInstance();
+            _instances[type] = value;
+        }
+        return value;
+    }
+
     /// <summary>
     /// Initializes writable configuration with default settings.
     /// </summary>
@@ -23,21 +41,13 @@ public static class WritableConfig
     public static void Initialize<T>(
         Action<WritableConfigurationOptionsBuilder<T>> configurationOptions
     )
-        where T : class
-    {
-        // reset instance
-        _serviceProviderCache = null;
-        ServiceCollection = new ServiceCollection();
-        Configuration = new ConfigurationManager();
-        // add default configuration sources
-        ServiceCollection.AddUserConfigurationFile(Configuration, configurationOptions);
-    }
+        where T : class => GetInternalInstance<T>().Initialize(configurationOptions);
 
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
     public static IWritableOptions<T> GetInstance<T>()
-        where T : class => ServiceProvider.GetRequiredService<IWritableOptions<T>>();
+        where T : class => GetInternalInstance<T>().GetInstance<T>();
 
     /// <summary>
     /// Retrieves writable configuration options for the specified options type.
@@ -86,24 +96,4 @@ public static class WritableConfig
     /// <param name="action">An action to update the configuration value.</param>
     public static Task SaveAsync<T>(Action<T> action)
         where T : class => GetInstance<T>().SaveAsync(action);
-
-    private static IServiceCollection ServiceCollection { get; set; } = new ServiceCollection();
-
-    private static IConfigurationManager Configuration { get; set; } = new ConfigurationManager();
-
-    private static IServiceProvider ServiceProvider
-    {
-        get
-        {
-            if (ServiceCollection.Count == 0)
-            {
-                throw new InvalidOperationException(
-                    "WritableConfig is not initialized. Please call Initialize<T>() first."
-                );
-            }
-            return _serviceProviderCache ??= ServiceCollection.BuildServiceProvider();
-        }
-    }
-
-    private static IServiceProvider? _serviceProviderCache;
 }
