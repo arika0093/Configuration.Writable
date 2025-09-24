@@ -1,11 +1,10 @@
-﻿#pragma warning disable IDE0130
-using System;
-using Configuration.Writable;
+﻿using System;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-namespace Microsoft.Extensions.Hosting;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Provides extension methods for writable configuration.
