@@ -186,6 +186,23 @@ opt.SectionName = "MyAppSettings";
 opt.SectionName = "";
 ```
 
+### InstanceName
+TODO.
+
+## Interfaces
+### `IReadonlyOptions<T>`
+TODO.
+
+### `IWritableOptions<T>`
+TODO.
+
+## Testing
+### Use In-Memory FileWriter
+TODO.
+
+### Use Temporary File
+TODO.
+
 ## Why This Library?
 There are many ways to handle user settings in C# applications. However, each has some drawbacks, and no de facto standard exists.
 
