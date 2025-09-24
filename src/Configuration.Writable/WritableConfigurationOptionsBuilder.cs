@@ -155,17 +155,6 @@ public record WritableConfigurationOptionsBuilder<T>
     }
 
     /// <summary>
-    /// Sets the configuration to use a temporary file location that is not persisted across application restarts.
-    /// This is useful for testing purposes where you want to avoid affecting real user settings.
-    /// </summary>
-    /// <returns>The full path to the configuration file.</returns>
-    public string UseTemporarySaveLocation()
-    {
-        FilePath = new TemporaryFile().FilePath;
-        return ConfigFilePath;
-    }
-
-    /// <summary>
     /// Configures the current instance to use the specified in-memory file writer for file operations. for testing purpose.
     /// </summary>
     /// <param name="inMemoryFileWriter">The in-memory file writer to use for subsequent file write and read operations.</param>
