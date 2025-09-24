@@ -126,10 +126,24 @@ public record WritableConfigurationOptions<T>
     /// </remarks>
     /// <param name="applicationId">The unique identifier of the application. This is used to determine the subdirectory within the user
     /// configuration root directory.</param>
-    public void UseStandardSaveLocation(string applicationId)
+    /// <returns>The full path to the configuration file.</returns>
+    public string UseStandardSaveLocation(string applicationId)
     {
         var root = UserConfigurationPath.GetUserConfigRootDirectory();
         ConfigFolder = Path.Combine(root, applicationId);
+        return ConfigFilePath;
+    }
+
+    /// <summary>
+    /// Sets the configuration to use a temporary file location that is not persisted across application restarts.
+    /// This is useful for testing purposes where you want to avoid affecting real user settings.
+    /// </summary>
+    /// <returns>The full path to the configuration file.</returns>
+    public string UseTemporarySaveLocation()
+    {
+        ConfigFolder = null;
+        FilePath = Path.GetRandomFileName();
+        return ConfigFilePath;
     }
 
     /// <summary>
