@@ -7,7 +7,7 @@ namespace Configuration.Writable.Tests;
 
 public class TemporaryFileTests
 {
-    [Fact]
+    [FactOnWindows]
     public void Constructor_WithValidFilePath_SetsPropertiesCorrectly()
     {
         var filePath = @"C:\temp\test.txt";
