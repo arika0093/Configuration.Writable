@@ -161,8 +161,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <returns>The full path to the configuration file.</returns>
     public string UseTemporarySaveLocation()
     {
-        ConfigFolder = Path.GetTempPath();
-        FilePath = Path.GetRandomFileName();
+        FilePath = new TemporaryFile().FilePath;
         return ConfigFilePath;
     }
 

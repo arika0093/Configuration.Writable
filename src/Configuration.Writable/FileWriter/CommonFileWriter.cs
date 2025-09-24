@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.FileWriter;
 
@@ -42,7 +43,7 @@ public class CommonFileWriter : IFileWriter
                 GenerateBackupFile(path);
 
                 string temporaryFilePath = GetTemporaryFilePath(path);
-                try
+                using (new TemporaryFile(temporaryFilePath))
                 {
                     // Write to temporary file first
                     await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken);
@@ -57,14 +58,6 @@ public class CommonFileWriter : IFileWriter
                     }
                     // Exit if successful
                     return;
-                }
-                finally
-                {
-                    // Clean up temporary files
-                    if (File.Exists(temporaryFilePath))
-                    {
-                        File.Delete(temporaryFilePath);
-                    }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

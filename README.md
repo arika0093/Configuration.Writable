@@ -137,7 +137,6 @@ Currently, the following providers are available:
 | [WritableConfigYamlProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/WritableConfigYamlProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  |
 | [WritableConfigEncryptProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Encrypt/WritableConfigEncryptProvider.cs) | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
 
-For example:
 ```csharp
 // use Json format with indentation
 opt.Provider = new WritableConfigJsonProvider() {
@@ -189,19 +188,42 @@ opt.SectionName = "";
 ### InstanceName
 TODO.
 
-## Interfaces
-### `IReadonlyOptions<T>`
-TODO.
+## Merge Settings
 
-### `IWritableOptions<T>`
-TODO.
 
 ## Testing
-### Use In-Memory FileWriter
-TODO.
+You can use `InMemoryFileWriter` to test reading and writing settings without touching the file system.
 
-### Use Temporary File
-TODO.
+```csharp
+// setup
+var sampleFileName = Path.GetRandomFileName();
+var _fileWriter = new InMemoryFileWriter();
+
+WritableConfig.Initialize<UserSetting>(opt => {
+    opt.FileName = sampleFileName;
+    opt.UseInMemoryFileWriter(_fileWriter);
+});
+var option = WritableConfig.GetInstance<UserSetting>();
+
+// and your test execution
+await options.SaveAsync(setting => {
+    setting.Name = "test name";
+    setting.Age = 99;
+});
+
+// check the saved content
+Assert.True(_fileWriter.FileExists(sampleFileName));
+var savedText = _fileWriter.ReadAllText(sampleFileName);
+Assert.Contains("test name", savedText);
+```
+
+Also, you can use `UseTemporaryFileWriter` to automatically clean up temporary files after tests.
+
+```csharp
+
+
+```
+
 
 ## Why This Library?
 There are many ways to handle user settings in C# applications. However, each has some drawbacks, and no de facto standard exists.
