@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
@@ -66,7 +67,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
         CancellationToken cancellationToken = default
     )
     {
-        var current = CurrentValue;
+        var current = DeepCopy(CurrentValue);
         configUpdator(current);
         return SaveCoreAsync(current, GetOption(name), cancellationToken);
     }
@@ -141,6 +142,17 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     private void SetCachedValue(string instanceName, T value)
     {
         CachedValue[instanceName] = value;
+    }
+
+    /// <summary>
+    /// Creates a deep copy of the specified object using JSON serialization/deserialization.
+    /// </summary>
+    /// <param name="original">The original object to copy.</param>
+    /// <returns>A deep copy of the original object.</returns>
+    private static T DeepCopy(T original)
+    {
+        var json = JsonSerializer.Serialize(original);
+        return JsonSerializer.Deserialize<T>(json)!;
     }
 }
 
