@@ -174,7 +174,7 @@ public record WritableConfigurationOptionsBuilder<T>
             Provider = Provider,
             ConfigFilePath = ConfigFilePath,
             InstanceName = InstanceName,
-            SectionName = SectionRootName,
+            SectionName = SectionName,
         };
     }
 
