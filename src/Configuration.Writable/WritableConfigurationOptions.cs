@@ -49,12 +49,12 @@ public record WritableConfigurationOptions<T>
     /// </summary>
     public string SectionRootName
     {
-        get => _sectionName;
+        get => _sectionRootName;
         set
         {
             if (value == null)
             {
-                _sectionName = string.Empty;
+                _sectionRootName = string.Empty;
                 return;
             }
             if (value.Contains(":") || value.Contains("__"))
@@ -63,10 +63,10 @@ public record WritableConfigurationOptions<T>
                     "SectionName cannot contain ':' or '__' characters. These are reserved for hierarchical section delimiters."
                 );
             }
-            _sectionName = value.Trim();
+            _sectionRootName = value.Trim();
         }
     }
-    private string _sectionName = "UserSettings";
+    private string _sectionRootName = "UserSettings";
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
