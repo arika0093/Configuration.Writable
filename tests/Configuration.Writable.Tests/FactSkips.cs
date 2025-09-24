@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
-
 namespace Configuration.Writable.Tests;
 
 /// <summary>
