@@ -186,10 +186,55 @@ opt.SectionName = "";
 ```
 
 ### InstanceName
+If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
+
+```csharp
+// first setting
+builder.AddUserConfigurationFile<UserSetting>(opt => {
+    opt.FileName = "firstsettings.json";
+    opt.InstanceName = "First";
+    // save section will be "UserSettings-First"
+});
+// second setting
+builder.AddUserConfigurationFile<UserSetting>(opt => {
+    opt.FileName = "secondsettings.json";
+    opt.InstanceName = "Second";
+    // save section will be "UserSettings-Second"
+});
+
+// and get each setting from DI
+public class MyService(IWritableOptions<UserSetting> config)
+{
+    public void GetAndSave()
+    {
+        // cannot use .CurrentValue directly because multiple settings are registered
+        var firstSetting = config.Get("First").CurrentValue;
+        var secondSetting = config.Get("Second").CurrentValue;
+        // and you can must specify instance name when saving
+        await config.SaveAsync("First", setting => {
+            setting.Name = "first name";
+        });
+        await config.SaveAsync("Second", setting => {
+            setting.Name = "second name";
+        });
+    }
+}
+```
+
+> [!Warning]
+> It is recommended to avoid managing multiple settings of the same type as much as possible and to create a single class that wraps them.
+> ```csharp
+> // recommended
+> public class AllSettings
+> {
+>     public UserSetting First { get; set; } = new UserSetting();
+>     public UserSetting Second { get; set; } = new UserSetting();
+> }
+> ```
+
+
+## Merge multiple settings
 TODO.
-
-## Merge Settings
-
 
 ## Testing
 You can use `InMemoryFileWriter` to test reading and writing settings without touching the file system.
@@ -216,14 +261,6 @@ Assert.True(_fileWriter.FileExists(sampleFileName));
 var savedText = _fileWriter.ReadAllText(sampleFileName);
 Assert.Contains("test name", savedText);
 ```
-
-Also, you can use `UseTemporaryFileWriter` to automatically clean up temporary files after tests.
-
-```csharp
-
-
-```
-
 
 ## Why This Library?
 There are many ways to handle user settings in C# applications. However, each has some drawbacks, and no de facto standard exists.
