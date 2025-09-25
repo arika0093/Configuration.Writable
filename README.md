@@ -103,8 +103,7 @@ You can change various settings as arguments to `Initialize` or `AddUserConfigur
 
 ```csharp
 // Without DI
-var options = WritableConfig.GetInstance<UserSetting>();
-options.Initialize(opt => { /* ... */ });
+WritableConfig.Initialize<SampleSetting>(opt => { /* ... */ });
 
 // With DI
 builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
@@ -123,6 +122,9 @@ opt.FileName = "../myconfig";
 opt.FileName = "config/myconfig";
 
 // to save to a common settings directory
+//   in Windows: %APPDATA%/MyAppId
+//   in macOS: ~/Library/Application Support/MyAppId
+//   in Linux: $XDG_CONFIG_HOME/MyAppId
 opt.UseStandardSaveLocation("MyAppId");
 ```
 
