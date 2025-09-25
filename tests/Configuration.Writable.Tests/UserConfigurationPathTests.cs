@@ -18,18 +18,47 @@ public class UserConfigurationPathTests
     }
 
     [FactOnMacOS]
-    public void GetUserConfigRootDirectory_OnMacOS_ShouldReturnLibraryApplicationSupport()
+    public void GetUserConfigRootDirectory_OnMacOS_WithXDGConfigHome_ShouldReturnXDGPath()
     {
-        var path = UserConfigurationPath.GetUserConfigRootDirectory();
-        var expectedPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-            "Library",
-            "Application Support"
-        );
+        var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+        var testXdgPath = "/tmp/test_xdg_config";
 
-        path.ShouldBe(expectedPath);
-        path.ShouldContain("Library");
-        path.ShouldContain("Application Support");
+        try
+        {
+            Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", testXdgPath);
+
+            var path = UserConfigurationPath.GetUserConfigRootDirectory();
+
+            path.ShouldBe(testXdgPath);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", originalXdgConfig);
+        }
+    }
+
+    [FactOnMacOS]
+    public void GetUserConfigRootDirectory_OnMacOS_WithoutXDGConfigHome_ShouldReturnLibraryApplicationSupport()
+    {
+        var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", null);
+
+            var path = UserConfigurationPath.GetUserConfigRootDirectory();
+            var expectedPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                "Library",
+                "Application Support"
+            );
+
+            path.ShouldBe(expectedPath);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", originalXdgConfig);
+        }
     }
 
     [FactOnLinux]
@@ -83,42 +112,5 @@ public class UserConfigurationPathTests
         var path2 = UserConfigurationPath.GetUserConfigRootDirectory();
 
         path1.ShouldBe(path2);
-    }
-
-    [Fact]
-    public void GetUserConfigRootDirectory_PlatformSpecific_ShouldMatchCurrentPlatform()
-    {
-        var path = UserConfigurationPath.GetUserConfigRootDirectory();
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            path.ShouldBe(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            var expectedPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                "Library",
-                "Application Support"
-            );
-            path.ShouldBe(expectedPath);
-        }
-        else
-        {
-            // Linux or other Unix-like systems
-            var xdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
-            if (!string.IsNullOrEmpty(xdgConfig))
-            {
-                path.ShouldBe(xdgConfig);
-            }
-            else
-            {
-                var expectedPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                    ".config"
-                );
-                path.ShouldBe(expectedPath);
-            }
-        }
     }
 }

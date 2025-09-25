@@ -123,8 +123,8 @@ opt.FileName = "config/myconfig";
 
 // to save to a common settings directory
 //   in Windows: %APPDATA%/MyAppId
-//   in macOS: ~/Library/Application Support/MyAppId
-//   in Linux: $XDG_CONFIG_HOME/MyAppId
+//   in macOS: $XDG_CONFIG_HOME/MyAppId or ~/Library/Application Support/MyAppId
+//   in Linux: $XDG_CONFIG_HOME/MyAppId or ~/.config/MyAppId
 opt.UseStandardSaveLocation("MyAppId");
 ```
 

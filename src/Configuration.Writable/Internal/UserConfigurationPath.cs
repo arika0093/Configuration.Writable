@@ -19,24 +19,31 @@ internal static class UserConfigurationPath
             // Windows: %APPDATA%
             return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         }
+        var xdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            // macOS: ~/Library/Application Support
+            // macOS: ~/Library/Application Support or $XDG_CONFIG_HOME
+            if (!string.IsNullOrEmpty(xdgConfig))
+            {
+                return xdgConfig;
+            }
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 "Library",
                 "Application Support"
             );
         }
-        // Linux: XDG_CONFIG_HOME or ~/.config
-        var xdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
-        if (!string.IsNullOrEmpty(xdgConfig))
+        else
         {
-            return xdgConfig;
+            // Linux: XDG_CONFIG_HOME or ~/.config
+            if (!string.IsNullOrEmpty(xdgConfig))
+            {
+                return xdgConfig;
+            }
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                ".config"
+            );
         }
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-            ".config"
-        );
     }
 }
