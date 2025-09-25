@@ -64,7 +64,7 @@ First, call `builder.AddUserConfigurationFile` to register the settings.
 // Program.cs
 builder.AddUserConfigurationFile<UserSetting>();
 
-// If you're not using IHostApplication, do the following:
+// If you're not using IHostApplicationBuilder, do the following:
 var configuration = new ConfigurationManager();
 services.AddUserConfigurationFile<UserSetting>(configuration);
 ```
@@ -282,7 +282,7 @@ Assert.Contains("test name", savedText);
 ### IReadonlyOptions<T>
 An interface for reading the settings of the registered type `T`.  
 It automatically reflects the latest settings when the underlying configuration is updated.  
-This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from `MS.E.C` (it actually uses `IOptionsMonitor<T>` internally).
+This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from `MS.E.C`.
 
 ```csharp
 public interface IReadonlyOptions<T> : IOptionsMonitor<T> where T : class
@@ -334,7 +334,7 @@ I examined the major ones among these, but couldn't adopt them for the following
 
 ### Using `Microsoft.Extensions.Configuration`
 Considering these current situations, `Microsoft.Extensions.Configuration` (`MS.E.C`) can be said to be the most standardized configuration management method in modern times.  
-It provides many features such as multi-file integration, support for various formats including environment variables, and configuration change reflection, and integrates seamlessly with `IHostApplication`.  
+It provides many features such as multi-file integration, support for various formats including environment variables, and configuration change reflection, and integrates seamlessly with `IHostApplicationBuilder`.  
 However, since it's primarily designed for application settings, it's insufficient for handling user settings. The major problem is that configuration writing is not supported.  
 Another issue is that it's based on DI, making it somewhat cumbersome to use in console applications.  
 Apps that want to use configuration files are more likely to not use DI (examples include `WinForms`, `WPF`, `console apps`, etc.).  
