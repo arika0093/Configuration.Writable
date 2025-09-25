@@ -155,6 +155,12 @@ opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 ```
 
 ### FileWriter
+Default FileWriter (`CommonFileWriter`) support following features:
+
+* Automatically retry when file access fails (default is max 3 times, wait 100ms each)
+* Create backup files (default is disabled)
+* Atomic file writing (write to a temporary file first, then rename it)
+
 If you want to change the way files are written, create a class that implements `IFileWriter` and specify it in `opt.FileWriter`.
 
 For example, if you want to keep backup files when saving, use `CommonFileWriter` with `BackupMaxCount > 0`.

@@ -20,6 +20,17 @@ public class CommonFileWriter : IFileWriter
     /// </summary>
     public virtual int BackupMaxCount { get; set; } = 0;
 
+    /// <summary>
+    /// The maximum number of retry attempts when a file write operation fails due to an exception. Defaults to 3.
+    /// </summary>
+    public virtual int MaxRetryCount { get; set; } = 3;
+
+    /// <summary>
+    /// A function that provides the delay in milliseconds before each retry attempt based on the current retry attempt number.
+    /// Defaults to a function that returns 100 milliseconds for any attempt.
+    /// </summary>
+    public virtual Func<int, int> RetryDelay { get; set; } = retryAttempt => 100;
+
     /// <inheritdoc />
     public virtual async Task SaveToFileAsync(
         string path,
@@ -27,10 +38,9 @@ public class CommonFileWriter : IFileWriter
         CancellationToken cancellationToken
     )
     {
-        const int maxRetryCount = 3;
         int retryCount = 0;
         Exception? lastException = null;
-        while (retryCount < maxRetryCount)
+        while (retryCount < MaxRetryCount)
         {
             await _semaphore.WaitAsync(cancellationToken);
             try
@@ -64,19 +74,16 @@ public class CommonFileWriter : IFileWriter
             {
                 lastException = ex;
                 retryCount++;
-                if (retryCount >= maxRetryCount)
-                {
-                    throw;
-                }
                 // Wait 100ms before retrying
-                await Task.Delay(100, cancellationToken);
+                var delayMs = RetryDelay(retryCount);
+                await Task.Delay(delayMs, cancellationToken);
             }
             finally
             {
                 _semaphore.Release();
             }
         }
-        // Should not reach here, but throw last exception if it does
+        // throw last exception
         if (lastException != null)
         {
             throw lastException;
