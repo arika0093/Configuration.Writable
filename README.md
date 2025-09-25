@@ -1,7 +1,7 @@
 # Configuration.Writable
 [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/arika0093/Configuration.Writable?style=flat-square)
 
-A lightweight library that extends `Microsoft.Extensions.Configuration` to easily handle user settings.
+A lightweight library that extends `Microsoft.Extensions.Configuration`(`MS.E.C`) to easily handle user settings.
 
 ## Features
 * Read and write user settings with type safety.
@@ -161,7 +161,7 @@ opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 Default FileWriter (`CommonFileWriter`) support following features:
 
 * Automatically retry when file access fails (default is max 3 times, wait 100ms each)
-* Create backup files rounded by timestamp (default is disabled)
+* Create backup files rotated by timestamp (default is disabled)
 * Atomic file writing (write to a temporary file first, then rename it)
 
 If you want to change the way files are written, create a class that implements `IFileWriter` and specify it in `opt.FileWriter`.
@@ -278,6 +278,29 @@ var savedText = _fileWriter.ReadAllText(sampleFileName);
 Assert.Contains("test name", savedText);
 ```
 
+## Interfaces
+### IReadonlyOptions<T>
+An interface for reading the settings of the registered type `T`.  
+It automatically reflects the latest settings when the underlying configuration is updated.  
+This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from `MS.E.C` (it actually uses `IOptionsMonitor<T>` internally).
+
+```csharp
+public interface IReadonlyOptions<T> : IOptionsMonitor<T> where T : class
+```
+
+The main differences (additional features) compared to `IOptionsMonitor<T>` are as follows:
+
+* The `GetConfigurationOptions` method to retrieve configuration options (`WritableConfigOptions`)
+* Even in environments where file change detection is not possible (for example, on network shares or in Docker environments, [change detection is not supported by default](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#ioptionsmonitor)), you can always get the latest settings by using the cache maintained when saving via `IWritableOptions<T>`
+
+### IWritableOptions<T>
+An interface for reading and writing the settings of the registered type `T`.  
+It provides the same functionality as `IReadonlyOptions<T>`, with additional support for saving settings.
+
+```csharp
+public interface IWritableOptions<T> : IReadonlyOptions<T> where T : class
+```
+
 ## Why This Library?
 There are many ways to handle user settings in C# applications. However, each has some drawbacks, and no de facto standard exists.
 
@@ -318,7 +341,7 @@ Apps that want to use configuration files are more likely to not use DI (example
 
 ### `Configuration.Writable`
 The preamble has gotten long, but it's time for promotion!  
-This library extends `Microsoft.Extensions.Configuration` to make writing user settings easy.  
+This library extends `MS.E.C` to make writing user settings easy.  
 It's also designed to be easily usable in applications that don't use DI.  
 
 Please give it a try. It's simple!
