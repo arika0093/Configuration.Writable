@@ -158,7 +158,7 @@ opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 Default FileWriter (`CommonFileWriter`) support following features:
 
 * Automatically retry when file access fails (default is max 3 times, wait 100ms each)
-* Create backup files (default is disabled)
+* Create backup files rounded by timestamp (default is disabled)
 * Atomic file writing (write to a temporary file first, then rename it)
 
 If you want to change the way files are written, create a class that implements `IFileWriter` and specify it in `opt.FileWriter`.
@@ -229,7 +229,10 @@ public class MyService(IWritableOptions<UserSetting> config)
 }
 ```
 
-> [!Warning]
+> [!WARNING]
+> This feature is not supported when not using DI (using `WritableConfig` directly).
+
+> [!NOTE]
 > It is recommended to avoid managing multiple settings of the same type as much as possible and to create a single class that wraps them.
 > ```csharp
 > // recommended
