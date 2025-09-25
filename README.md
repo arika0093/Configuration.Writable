@@ -5,9 +5,10 @@ A lightweight library that extends `Microsoft.Extensions.Configuration` to easil
 
 ## Features
 * Read and write user settings with type safety.
-* Extends `Microsoft.Extensions.Configuration` and integrates seamlessly with `IHostApplication`.
-* Simple API that can be easily used in applications both with and without DI.
-* Supports various file formats (Json, Xml, Yaml, Encrypted, etc...) via providers.
+* [Built-in](#filewriter) Atomic file writing, automatic retry, and backup creation.
+* Extends `Microsoft.Extensions.Configuration` and integrates seamlessly with `IHostApplicationBuilder`.
+* Simple API that can be easily used in applications both [with](#with-di) and [without](#without-di) DI.
+* Supports various file formats (Json, Xml, Yaml, Encrypted, etc...) via [providers](#provider).
 
 [More...](#why-this-library)
 
@@ -29,7 +30,8 @@ public class UserSetting
 }
 ```
 
-### Without DI (Console, WinForms, WPF, etc.)
+### Without DI
+If you are not using DI (for example, in `WinForms`, `WPF`, `console apps`, etc.),
 Use `WritableConfig` as the starting point for reading and writing settings.
 
 ```csharp
@@ -54,7 +56,8 @@ await options.SaveAsync(setting =>
 // By default, it's saved to ./usersettings.json
 ```
 
-### With DI (ASP.NET Core, Blazor, Worker Service, etc.)
+### With DI
+If you are using DI (for example, in `ASP.NET Core`, `Blazor`, `Worker Service`, etc.), integrate with `IHostApplicationBuilder` or `IServiceCollection`.
 First, call `builder.AddUserConfigurationFile` to register the settings.
 
 ```csharp
@@ -66,7 +69,7 @@ var configuration = new ConfigurationManager();
 services.AddUserConfigurationFile<UserSetting>(configuration);
 ```
 
-Then, obtain and use `IReadonlyOptions<T>` or `IWritableOptions<T>` from the DI container as follows:
+Then, inject `IReadonlyOptions<T>` or `IWritableOptions<T>` to read and write settings.
 
 ```csharp
 // read config in your class
@@ -169,6 +172,9 @@ For example, if you want to keep backup files when saving, use `CommonFileWriter
 opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
 ```
 
+### Logging
+TODO
+
 ### SectionName
 In default, the entire settings are saved in the following structure:
 ```jsonc
@@ -229,9 +235,6 @@ public class MyService(IWritableOptions<UserSetting> config)
 }
 ```
 
-> [!WARNING]
-> This feature is not supported when not using DI (using `WritableConfig` directly).
-
 > [!NOTE]
 > It is recommended to avoid managing multiple settings of the same type as much as possible and to create a single class that wraps them.
 > ```csharp
@@ -243,6 +246,8 @@ public class MyService(IWritableOptions<UserSetting> config)
 > }
 > ```
 
+> [!WARNING]
+> When not using DI (directly using `WritableConfig`), managing multiple settings is intentionally not supported to prevent complicating the usage.
 
 ## Merge multiple settings
 TODO.
