@@ -66,4 +66,32 @@ public class WritableConfigurationOptionsBuilderTests
         Should.Throw<ArgumentException>(() => options.SectionRootName = "Invalid:Name");
         Should.Throw<ArgumentException>(() => options.SectionRootName = "Invalid__Name");
     }
+
+    [Fact]
+    public void ConfigFilePath_WithRelativePath_ShouldUseRuntimeFolderAsBase()
+    {
+        var originalCurrentDirectory = Directory.GetCurrentDirectory();
+        try
+        {
+            var options = new WritableConfigurationOptionsBuilder<TestSettings>
+            {
+                FilePath = "config/relative/test",
+            };
+
+            var expectedBasePath = AppContext.BaseDirectory;
+            var expectedPath = Path.Combine(expectedBasePath, "config", "relative", "test.json");
+
+            var actualPath = options.ConfigFilePath;
+            actualPath.ShouldBe(expectedPath);
+
+            Directory.SetCurrentDirectory(Path.GetTempPath());
+
+            var actualPathAfterCdChange = options.ConfigFilePath;
+            actualPathAfterCdChange.ShouldBe(expectedPath);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalCurrentDirectory);
+        }
+    }
 }
