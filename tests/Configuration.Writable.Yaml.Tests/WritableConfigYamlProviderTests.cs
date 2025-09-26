@@ -3,12 +3,19 @@ using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileWriter;
+using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Yaml.Tests;
 
 public class WritableConfigYamlProviderTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
+    private WritableConfigSimpleInstance _instance = null!;
+
+    public WritableConfigYamlProviderTests()
+    {
+        _instance = new WritableConfigSimpleInstance();
+    }
 
     public class TestSettings
     {
@@ -37,7 +44,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -53,7 +60,8 @@ public class WritableConfigYamlProviderTests
             Nested = new NestedSettings { Description = "nested_yaml_test", Price = 99.99 },
         };
 
-        WritableConfig.Save(settings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(settings).ConfigureAwait(false).GetAwaiter().GetResult();
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -70,7 +78,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -86,16 +94,18 @@ public class WritableConfigYamlProviderTests
             Nested = new NestedSettings { Description = "nested_persist", Price = 123.45 },
         };
 
-        WritableConfig.Save(originalSettings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        instance = _instance.GetInstance<TestSettings>();
+        var loadedSettings = instance.CurrentValue;
         loadedSettings.Name.ShouldBe("yaml_persistence_test");
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -110,14 +120,15 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        await WritableConfig.SaveAsync<TestSettings>(settings =>
+        var instance = _instance.GetInstance<TestSettings>();
+        await instance.SaveAsync(settings =>
         {
             settings.Name = "async_yaml_test";
             settings.Value = 888;
@@ -126,7 +137,7 @@ public class WritableConfigYamlProviderTests
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        var loadedSettings = instance.CurrentValue;
         loadedSettings.Name.ShouldBe("async_yaml_test");
         loadedSettings.Value.ShouldBe(888);
         loadedSettings.Nested.Description.ShouldBe("async_nested");
@@ -137,7 +148,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -152,7 +163,8 @@ public class WritableConfigYamlProviderTests
             IsEnabled = true,
         };
 
-        WritableConfig.Save(newSettings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -163,7 +175,7 @@ public class WritableConfigYamlProviderTests
         fileContent.ShouldContain("123");
 
         // Verify the nested structure
-        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        var loadedSettings = instance.CurrentValue;
         loadedSettings.Name.ShouldBe("yaml_nested_test");
         loadedSettings.Value.ShouldBe(123);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -174,7 +186,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -189,7 +201,8 @@ public class WritableConfigYamlProviderTests
             IsEnabled = false,
         };
 
-        WritableConfig.Save(newSettings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -200,7 +213,7 @@ public class WritableConfigYamlProviderTests
         fileContent.ShouldContain("456");
 
         // Verify the nested structure
-        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        var loadedSettings = instance.CurrentValue;
         loadedSettings.Name.ShouldBe("yaml_db_test");
         loadedSettings.Value.ShouldBe(456);
         loadedSettings.IsEnabled.ShouldBeFalse();
@@ -211,7 +224,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -226,7 +239,8 @@ public class WritableConfigYamlProviderTests
             IsEnabled = true,
         };
 
-        WritableConfig.Save(newSettings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -238,7 +252,7 @@ public class WritableConfigYamlProviderTests
         fileContent.ShouldContain("yaml_deep_nested");
 
         // Verify the nested structure
-        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        var loadedSettings = instance.CurrentValue;
         loadedSettings.Name.ShouldBe("yaml_deep_nested");
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();

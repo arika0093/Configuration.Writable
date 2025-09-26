@@ -7,7 +7,7 @@ namespace Configuration.Writable.Internal;
 /// <summary>
 /// Provides methods to initialize and retrieve writable configuration instances for a specified options type.
 /// </summary>
-internal class WritableConfigSimpleInstance
+public class WritableConfigSimpleInstance
 {
     /// <summary>
     /// Initializes writable configuration with default settings.
