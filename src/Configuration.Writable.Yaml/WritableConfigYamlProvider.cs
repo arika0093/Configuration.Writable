@@ -48,8 +48,9 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         string yamlString;
         if (!string.IsNullOrWhiteSpace(sectionName))
         {
-            var wrapper = new Dictionary<string, T> { [sectionName] = config };
-            yamlString = serializer.Serialize(wrapper);
+            // Use the new nested section creation method
+            var nestedSection = CreateNestedSection(sectionName, config);
+            yamlString = serializer.Serialize(nestedSection);
         }
         else
         {

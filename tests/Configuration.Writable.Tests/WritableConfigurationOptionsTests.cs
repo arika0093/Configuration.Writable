@@ -59,12 +59,18 @@ public class WritableConfigurationOptionsBuilderTests
     }
 
     [Fact]
-    public void SectionName_WithInvalidSectionRootName_ShouldThrowException()
+    public void SectionName_WithHierarchicalSectionRootName_ShouldSupportColonAndUnderscoreSeparators()
     {
         var options = new WritableConfigurationOptionsBuilder<TestSettings>();
 
-        Should.Throw<ArgumentException>(() => options.SectionRootName = "Invalid:Name");
-        Should.Throw<ArgumentException>(() => options.SectionRootName = "Invalid__Name");
+        options.SectionRootName = "App:Settings";
+        options.SectionName.ShouldBe("App:Settings");
+
+        options.SectionRootName = "Database__Connection";
+        options.SectionName.ShouldBe("Database__Connection");
+
+        options.SectionRootName = "App:Config__Settings";
+        options.SectionName.ShouldBe("App:Config__Settings");
     }
 
     [Fact]

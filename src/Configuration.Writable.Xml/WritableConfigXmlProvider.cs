@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -44,16 +45,28 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
         }
         else
         {
+            // Split section name by ':' or '__' and create nested XML structure
+            var parts = sectionName.Split(new string[] { ":", "__" }, StringSplitOptions.RemoveEmptyEntries);
+
             // first serialize to <AnyName>...</AnyName>
             var serializer = new XmlSerializer(typeof(T));
             using var sw = new StringWriter();
             serializer.Serialize(sw, config);
             var xmlDocument = new XmlDocument();
             xmlDocument.LoadXml(sw.ToString());
-            // secondly, wrap with <configuration><{sectionName}>...</{sectionName}></configuration>
+
+            // Build nested XML structure
+            var innerXml = xmlDocument.DocumentElement?.InnerXml ?? "";
+
+            // Build the nested structure from innermost to outermost
+            for (int i = parts.Length - 1; i >= 0; i--)
+            {
+                innerXml = $"<{parts[i]}>{innerXml}</{parts[i]}>";
+            }
+
             var xmlString = $"""
                 <?xml version="1.0" encoding="utf-8"?>
-                <configuration><{sectionName}>{xmlDocument.DocumentElement?.InnerXml}</{sectionName}></configuration>
+                <configuration>{innerXml}</configuration>
                 """;
             return Encoding.UTF8.GetBytes(xmlString);
         }

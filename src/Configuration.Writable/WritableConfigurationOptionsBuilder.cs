@@ -50,6 +50,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Gets or sets the name of the configuration section. Defaults to "UserSettings".
     /// If empty, that means the root of the configuration file.
     /// If use multiple configuration file for same type T, you must set different SectionName for each.
+    /// Supports hierarchical sections using ':' or '__' separators (e.g., "App:Settings" or "Database__Connection").
     /// </summary>
     public string SectionRootName
     {
@@ -60,12 +61,6 @@ public record WritableConfigurationOptionsBuilder<T>
             {
                 _sectionRootName = string.Empty;
                 return;
-            }
-            if (value.Contains(":") || value.Contains("__"))
-            {
-                throw new ArgumentException(
-                    "SectionName cannot contain ':' or '__' characters. These are reserved for hierarchical section delimiters."
-                );
             }
             _sectionRootName = value.Trim();
         }

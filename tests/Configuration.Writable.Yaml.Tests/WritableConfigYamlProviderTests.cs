@@ -131,4 +131,116 @@ public class WritableConfigYamlProviderTests
         loadedSettings.Value.ShouldBe(888);
         loadedSettings.Nested.Description.ShouldBe("async_nested");
     }
+
+    [Fact]
+    public void Save_WithColonSeparatedSectionName_ShouldCreateNestedYaml()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigYamlProvider();
+            options.SectionRootName = "App:Settings";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "yaml_nested_test",
+            Value = 123,
+            IsEnabled = true,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("app:");
+        fileContent.ShouldContain("settings:");
+        fileContent.ShouldContain("yaml_nested_test");
+        fileContent.ShouldContain("123");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("yaml_nested_test");
+        loadedSettings.Value.ShouldBe(123);
+        loadedSettings.IsEnabled.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedYaml()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigYamlProvider();
+            options.SectionRootName = "Database__Connection";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "yaml_db_test",
+            Value = 456,
+            IsEnabled = false,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("database:");
+        fileContent.ShouldContain("connection:");
+        fileContent.ShouldContain("yaml_db_test");
+        fileContent.ShouldContain("456");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("yaml_db_test");
+        loadedSettings.Value.ShouldBe(456);
+        loadedSettings.IsEnabled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedYaml()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigYamlProvider();
+            options.SectionRootName = "App:Database:Connection:Settings";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "yaml_deep_nested",
+            Value = 789,
+            IsEnabled = true,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("app:");
+        fileContent.ShouldContain("database:");
+        fileContent.ShouldContain("connection:");
+        fileContent.ShouldContain("settings:");
+        fileContent.ShouldContain("yaml_deep_nested");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("yaml_deep_nested");
+        loadedSettings.Value.ShouldBe(789);
+        loadedSettings.IsEnabled.ShouldBeTrue();
+    }
 }

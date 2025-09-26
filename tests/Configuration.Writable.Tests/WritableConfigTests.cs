@@ -130,6 +130,151 @@ public class WritableConfigTests
         path.ShouldNotBeNullOrEmpty();
         path.ShouldEndWith(".json");
     }
+
+    [Fact]
+    public void Save_WithColonSeparatedSectionName_ShouldCreateNestedJson()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.SectionRootName = "App:Settings";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "nested_test",
+            Value = 123,
+            IsEnabled = true,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("\"App\"");
+        fileContent.ShouldContain("\"Settings\"");
+        fileContent.ShouldContain("\"nested_test\"");
+        fileContent.ShouldContain("123");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("nested_test");
+        loadedSettings.Value.ShouldBe(123);
+        loadedSettings.IsEnabled.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedJson()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.SectionRootName = "Database__Connection";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "db_test",
+            Value = 456,
+            IsEnabled = false,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("\"Database\"");
+        fileContent.ShouldContain("\"Connection\"");
+        fileContent.ShouldContain("\"db_test\"");
+        fileContent.ShouldContain("456");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("db_test");
+        loadedSettings.Value.ShouldBe(456);
+        loadedSettings.IsEnabled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedJson()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.SectionRootName = "App:Database:Connection:Settings";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "deep_nested",
+            Value = 789,
+            IsEnabled = true,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("\"App\"");
+        fileContent.ShouldContain("\"Database\"");
+        fileContent.ShouldContain("\"Connection\"");
+        fileContent.ShouldContain("\"Settings\"");
+        fileContent.ShouldContain("\"deep_nested\"");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("deep_nested");
+        loadedSettings.Value.ShouldBe(789);
+        loadedSettings.IsEnabled.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Save_WithMixedSeparators_ShouldCreateNestedJson()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.SectionRootName = "App:Config__Settings";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "mixed_separators",
+            Value = 999,
+            IsEnabled = false,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("\"App\"");
+        fileContent.ShouldContain("\"Config\"");
+        fileContent.ShouldContain("\"Settings\"");
+        fileContent.ShouldContain("\"mixed_separators\"");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("mixed_separators");
+        loadedSettings.Value.ShouldBe(999);
+        loadedSettings.IsEnabled.ShouldBeFalse();
+    }
 }
 
 file class TestSettings

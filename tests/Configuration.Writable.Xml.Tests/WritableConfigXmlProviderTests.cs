@@ -154,4 +154,124 @@ public class WritableConfigXmlProviderTests
         loadedSettings.Name.ShouldBe("async_xml_test");
         loadedSettings.Value.ShouldBe(777);
     }
+
+    [Fact]
+    public void Save_WithColonSeparatedSectionName_ShouldCreateNestedXml()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigXmlProvider();
+            options.SectionRootName = "App:Settings";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "xml_nested_test",
+            Value = 123,
+            IsEnabled = true,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("<App>");
+        fileContent.ShouldContain("<Settings>");
+        fileContent.ShouldContain("<Name>xml_nested_test</Name>");
+        fileContent.ShouldContain("<Value>123</Value>");
+        fileContent.ShouldContain("</Settings>");
+        fileContent.ShouldContain("</App>");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("xml_nested_test");
+        loadedSettings.Value.ShouldBe(123);
+        loadedSettings.IsEnabled.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedXml()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigXmlProvider();
+            options.SectionRootName = "Database__Connection";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "xml_db_test",
+            Value = 456,
+            IsEnabled = false,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("<Database>");
+        fileContent.ShouldContain("<Connection>");
+        fileContent.ShouldContain("<Name>xml_db_test</Name>");
+        fileContent.ShouldContain("<Value>456</Value>");
+        fileContent.ShouldContain("</Connection>");
+        fileContent.ShouldContain("</Database>");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("xml_db_test");
+        loadedSettings.Value.ShouldBe(456);
+        loadedSettings.IsEnabled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedXml()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        WritableConfig.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigXmlProvider();
+            options.SectionRootName = "App:Database:Connection:Settings";
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "xml_deep_nested",
+            Value = 789,
+            IsEnabled = true,
+        };
+
+        WritableConfig.Save(newSettings);
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldContain("<App>");
+        fileContent.ShouldContain("<Database>");
+        fileContent.ShouldContain("<Connection>");
+        fileContent.ShouldContain("<Settings>");
+        fileContent.ShouldContain("<Name>xml_deep_nested</Name>");
+        fileContent.ShouldContain("</Settings>");
+        fileContent.ShouldContain("</Connection>");
+        fileContent.ShouldContain("</Database>");
+        fileContent.ShouldContain("</App>");
+
+        // Verify the nested structure
+        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        loadedSettings.Name.ShouldBe("xml_deep_nested");
+        loadedSettings.Value.ShouldBe(789);
+        loadedSettings.IsEnabled.ShouldBeTrue();
+    }
 }
