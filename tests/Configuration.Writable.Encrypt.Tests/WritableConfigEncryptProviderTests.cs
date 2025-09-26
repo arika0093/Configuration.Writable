@@ -4,12 +4,19 @@ using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileWriter;
+using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Encrypt.Tests;
 
 public class WritableConfigEncryptProviderTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
+    private WritableConfigSimpleInstance _instance = null!;
+
+    public WritableConfigEncryptProviderTests()
+    {
+        _instance = new WritableConfigSimpleInstance();
+    }
 
     public class TestSettings
     {
@@ -71,7 +78,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
@@ -86,7 +93,8 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "topsecret",
         };
 
-        WritableConfig.Save(settings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(settings).ConfigureAwait(false).GetAwaiter().GetResult();
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -105,7 +113,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
@@ -120,21 +128,23 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "supersecret",
         };
 
-        WritableConfig.Save(originalSettings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
 
         // Debug: Verify file was created and has content
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
         var fileBytes = _fileWriter.ReadAllBytes(testFileName);
         fileBytes.Length.ShouldBeGreaterThan(16); // Should have at least IV (16 bytes) + some encrypted content
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        instance = _instance.GetInstance<TestSettings>();
+        var loadedSettings = instance.CurrentValue;
         loadedSettings.Name.ShouldBe("encrypt_persistence_test");
         loadedSettings.Value.ShouldBe(777);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -148,7 +158,7 @@ public class WritableConfigEncryptProviderTests
         var encryptionKey1 = "myencryptionkey123456789012345";
         var encryptionKey2 = "differentkey12345678901234567";
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey1);
@@ -162,13 +172,14 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "keytest",
         };
 
-        WritableConfig.Save(originalSettings);
+        var instance = _instance.GetInstance<TestSettings>();
+        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
 
         // When loading with a different key, it should fail to decrypt and throw an exception
         // or use default values depending on implementation
         Should.Throw<System.Security.Cryptography.CryptographicException>(() =>
         {
-            WritableConfig.Initialize<TestSettings>(options =>
+            _instance.Initialize<TestSettings>(options =>
             {
                 options.FilePath = testFileName;
                 options.Provider = new WritableConfigEncryptProvider(encryptionKey2);
@@ -183,14 +194,15 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "asyncencryptionkey12345678901";
 
-        WritableConfig.Initialize<TestSettings>(options =>
+        _instance.Initialize<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        await WritableConfig.SaveAsync<TestSettings>(settings =>
+        var instance = _instance.GetInstance<TestSettings>();
+        await instance.SaveAsync(settings =>
         {
             settings.Name = "async_encrypt_test";
             settings.Value = 666;
@@ -199,7 +211,7 @@ public class WritableConfigEncryptProviderTests
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        var loadedSettings = WritableConfig.GetCurrentValue<TestSettings>();
+        var loadedSettings = instance.CurrentValue;
         loadedSettings.Name.ShouldBe("async_encrypt_test");
         loadedSettings.Value.ShouldBe(666);
         loadedSettings.SecretKey.ShouldBe("asyncsecret");
