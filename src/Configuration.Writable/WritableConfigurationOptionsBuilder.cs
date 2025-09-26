@@ -180,7 +180,11 @@ public record WritableConfigurationOptionsBuilder<T>
         get
         {
             var filePath = FilePath;
+#if NETSTANDARD
+            if (string.IsNullOrWhiteSpace(filePath) || filePath is null)
+#else
             if (string.IsNullOrWhiteSpace(filePath))
+#endif
             {
                 if (InstanceName != Microsoft.Extensions.Options.Options.DefaultName)
                 {
