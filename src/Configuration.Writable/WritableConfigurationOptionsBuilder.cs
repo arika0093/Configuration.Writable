@@ -3,6 +3,9 @@ using System;
 using System.IO;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
+using System.Linq;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace Configuration.Writable;
 
@@ -35,7 +38,26 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Gets or sets the path of the file used to store user settings. Defaults to InstanceName or "usersettings" if InstanceName is not set. <br/>
     /// Extension is determined by the Provider. <br/>
     /// </summary>
-    public string? FilePath { get; set; }
+    [DisallowNull]
+    public string? FilePath
+    {
+        get => _filePath;
+        set
+        {
+            // check if contains invalid path chars
+            var containedInvalidChars = Path.GetInvalidFileNameChars()
+                .Where(c => c != Path.DirectorySeparatorChar && c != Path.AltDirectorySeparatorChar)
+                .Where(c => value.Contains(c));
+            if (containedInvalidChars.Any())
+            {
+                throw new ArgumentException(
+                    $"FileName contains invalid characters: {string.Join(", ", containedInvalidChars.Select(c => $"'{c}'"))}"
+                );
+            }
+            _filePath = value.Trim();
+        }
+    }
+    private string? _filePath = null;
 
     /// <summary>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
@@ -77,39 +99,29 @@ public record WritableConfigurationOptionsBuilder<T>
     public bool RegisterInstanceToContainer { get; set; } = false;
 
     /// <summary>
-    /// Gets the full file path to the configuration file, combining config folder and file name.
+    /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
+    /// If ConfigFolder is set, the file will be saved in that folder; otherwise, it will be saved in the same folder as the executable.
     /// </summary>
     public string ConfigFilePath
     {
         get
         {
-            var fileName = FilePath;
-            if (fileName == null)
-            {
-                if (InstanceName != Microsoft.Extensions.Options.Options.DefaultName)
-                {
-                    fileName = InstanceName;
-                }
-                else
-                {
-                    fileName = DefaultFileName;
-                }
-            }
-            // if no extension, add default extension
-            var fileNameWithExtension = Path.GetFileName(fileName);
-            if (
-                !fileNameWithExtension.Contains(".")
-                && !string.IsNullOrWhiteSpace(Provider.FileExtension)
-            )
-            {
-                fileNameWithExtension += $".{Provider.FileExtension}";
-            }
+            var filePath = FilePathWithExtension;
             // if ConfigFolder is set, combine it with the directory of FileName (if any)
-            var directoryName = Path.GetDirectoryName(fileName) ?? "";
+            var directoryName = Path.GetDirectoryName(filePath) ?? "";
             var combinedDir = string.IsNullOrWhiteSpace(ConfigFolder)
-                ? Path.Combine(directoryName, fileNameWithExtension)
-                : Path.Combine(ConfigFolder, directoryName, fileNameWithExtension);
-            return Path.GetFullPath(combinedDir);
+                ? Path.Combine(directoryName, filePath)
+                : Path.Combine(ConfigFolder, directoryName, filePath);
+
+            // Since combinedDir may be a relative path, convert it to an absolute path.
+            // In this case, the base folder is the folder where the executable file exists.
+            var baseDir = AppContext.BaseDirectory;
+#if NET
+            var fullPath = Path.GetFullPath(combinedDir, baseDir);
+#else
+            var fullPath = Path.GetFullPath(Path.Combine(baseDir, combinedDir));
+#endif
+            return fullPath;
         }
     }
 
@@ -180,4 +192,31 @@ public record WritableConfigurationOptionsBuilder<T>
 
     // configuration folder path, if set, appended to the directory of FileName (if any)
     private string? ConfigFolder { get; set; } = null;
+
+    // get the file name with extension, if no extension, add default extension from provider
+    private string FilePathWithExtension
+    {
+        get
+        {
+            var filePath = FilePath;
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                if (InstanceName != Microsoft.Extensions.Options.Options.DefaultName)
+                {
+                    filePath = InstanceName;
+                }
+                else
+                {
+                    filePath = DefaultFileName;
+                }
+            }
+            // if no extension, add default extension
+            var fileName = Path.GetFileName(filePath);
+            if (!fileName.Contains(".") && !string.IsNullOrWhiteSpace(Provider.FileExtension))
+            {
+                filePath += $".{Provider.FileExtension}";
+            }
+            return filePath;
+        }
+    }
 }
