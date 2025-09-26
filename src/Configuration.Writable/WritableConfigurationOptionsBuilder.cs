@@ -1,11 +1,11 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
-using System.Linq;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace Configuration.Writable;
 
@@ -39,25 +39,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Extension is determined by the Provider. <br/>
     /// </summary>
     [DisallowNull]
-    public string? FilePath
-    {
-        get => _filePath;
-        set
-        {
-            // check if contains invalid path chars
-            var containedInvalidChars = Path.GetInvalidFileNameChars()
-                .Where(c => c != Path.DirectorySeparatorChar && c != Path.AltDirectorySeparatorChar)
-                .Where(c => value.Contains(c));
-            if (containedInvalidChars.Any())
-            {
-                throw new ArgumentException(
-                    $"FileName contains invalid characters: {string.Join(", ", containedInvalidChars.Select(c => $"'{c}'"))}"
-                );
-            }
-            _filePath = value.Trim();
-        }
-    }
-    private string? _filePath = null;
+    public string? FilePath { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
@@ -108,10 +90,9 @@ public record WritableConfigurationOptionsBuilder<T>
         {
             var filePath = FilePathWithExtension;
             // if ConfigFolder is set, combine it with the directory of FileName (if any)
-            var directoryName = Path.GetDirectoryName(filePath) ?? "";
             var combinedDir = string.IsNullOrWhiteSpace(ConfigFolder)
-                ? Path.Combine(directoryName, filePath)
-                : Path.Combine(ConfigFolder, directoryName, filePath);
+                ? filePath
+                : Path.Combine(ConfigFolder, filePath);
 
             // Since combinedDir may be a relative path, convert it to an absolute path.
             // In this case, the base folder is the folder where the executable file exists.
