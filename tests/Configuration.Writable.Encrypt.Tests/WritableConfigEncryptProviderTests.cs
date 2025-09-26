@@ -73,7 +73,7 @@ public class WritableConfigEncryptProviderTests
     }
 
     [Fact]
-    public void Initialize_WithEncryptProvider_ShouldCreateEncryptedFile()
+    public async Task Initialize_WithEncryptProvider_ShouldCreateEncryptedFile()
     {
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
@@ -94,7 +94,7 @@ public class WritableConfigEncryptProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(settings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -108,7 +108,7 @@ public class WritableConfigEncryptProviderTests
     }
 
     [Fact]
-    public void LoadAndSave_WithEncryptProvider_ShouldPreserveData()
+    public async Task LoadAndSave_WithEncryptProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
@@ -129,7 +129,7 @@ public class WritableConfigEncryptProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(originalSettings);
 
         // Debug: Verify file was created and has content
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -152,7 +152,7 @@ public class WritableConfigEncryptProviderTests
     }
 
     [Fact]
-    public void LoadWithDifferentKey_ShouldHandleDecryptionFailure()
+    public async Task LoadWithDifferentKey_ShouldHandleDecryptionFailure()
     {
         var testFileName = Path.GetRandomFileName();
         var encryptionKey1 = "myencryptionkey123456789012345";
@@ -173,7 +173,7 @@ public class WritableConfigEncryptProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(originalSettings);
 
         // When loading with a different key, it should fail to decrypt and throw an exception
         // or use default values depending on implementation

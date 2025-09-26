@@ -40,7 +40,7 @@ public class WritableConfigYamlProviderTests
     }
 
     [Fact]
-    public void Initialize_WithYamlProvider_ShouldCreateYamlFile()
+    public async Task Initialize_WithYamlProvider_ShouldCreateYamlFile()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -61,7 +61,7 @@ public class WritableConfigYamlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(settings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -74,7 +74,7 @@ public class WritableConfigYamlProviderTests
     }
 
     [Fact]
-    public void LoadAndSave_WithYamlProvider_ShouldPreserveData()
+    public async Task LoadAndSave_WithYamlProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -95,7 +95,7 @@ public class WritableConfigYamlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(originalSettings);
 
         _instance.Initialize<TestSettings>(options =>
         {
@@ -144,7 +144,7 @@ public class WritableConfigYamlProviderTests
     }
 
     [Fact]
-    public void Save_WithColonSeparatedSectionName_ShouldCreateNestedYaml()
+    public async Task Save_WithColonSeparatedSectionName_ShouldCreateNestedYaml()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -164,7 +164,7 @@ public class WritableConfigYamlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -182,7 +182,7 @@ public class WritableConfigYamlProviderTests
     }
 
     [Fact]
-    public void Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedYaml()
+    public async Task Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedYaml()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -202,7 +202,7 @@ public class WritableConfigYamlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -220,7 +220,7 @@ public class WritableConfigYamlProviderTests
     }
 
     [Fact]
-    public void Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedYaml()
+    public async Task Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedYaml()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -240,7 +240,7 @@ public class WritableConfigYamlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 

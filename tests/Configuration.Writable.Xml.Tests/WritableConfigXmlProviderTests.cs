@@ -33,7 +33,7 @@ public class WritableConfigXmlProviderTests
     }
 
     [Fact]
-    public void Initialize_WithXmlProvider_ShouldCreateXmlFile()
+    public async Task Initialize_WithXmlProvider_ShouldCreateXmlFile()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -53,7 +53,7 @@ public class WritableConfigXmlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(settings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -64,7 +64,7 @@ public class WritableConfigXmlProviderTests
     }
 
     [Fact]
-    public void LoadAndSave_WithXmlProvider_ShouldPreserveSimpleData()
+    public async Task LoadAndSave_WithXmlProvider_ShouldPreserveSimpleData()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -84,7 +84,7 @@ public class WritableConfigXmlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(originalSettings);
 
         _instance.Initialize<TestSettings>(options =>
         {
@@ -101,7 +101,7 @@ public class WritableConfigXmlProviderTests
     }
 
     [Fact]
-    public void LoadAndSave_WithXmlProvider_ShouldPreserveData()
+    public async Task LoadAndSave_WithXmlProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -122,7 +122,7 @@ public class WritableConfigXmlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(originalSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(originalSettings);
 
         _instance.Initialize<TestSettings>(options =>
         {
@@ -167,7 +167,7 @@ public class WritableConfigXmlProviderTests
     }
 
     [Fact]
-    public void Save_WithColonSeparatedSectionName_ShouldCreateNestedXml()
+    public async Task Save_WithColonSeparatedSectionName_ShouldCreateNestedXml()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -187,7 +187,7 @@ public class WritableConfigXmlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -207,7 +207,7 @@ public class WritableConfigXmlProviderTests
     }
 
     [Fact]
-    public void Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedXml()
+    public async Task Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedXml()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -227,7 +227,7 @@ public class WritableConfigXmlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -247,7 +247,7 @@ public class WritableConfigXmlProviderTests
     }
 
     [Fact]
-    public void Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedXml()
+    public async Task Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedXml()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -267,7 +267,7 @@ public class WritableConfigXmlProviderTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 

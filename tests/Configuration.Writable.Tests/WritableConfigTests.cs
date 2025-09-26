@@ -51,7 +51,7 @@ public class WritableConfigTests
     }
 
     [Fact]
-    public void Save_ShouldPersistConfiguration()
+    public async Task Save_ShouldPersistConfiguration()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -69,7 +69,7 @@ public class WritableConfigTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -109,7 +109,7 @@ public class WritableConfigTests
     }
 
     [Fact]
-    public void SaveWithAction_ShouldUpdateConfiguration()
+    public async Task SaveWithAction_ShouldUpdateConfiguration()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -120,11 +120,11 @@ public class WritableConfigTests
         });
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(settings =>
+        await instance.SaveAsync(settings =>
         {
             settings.Name = "action_updated";
             settings.Value = 300;
-        }).ConfigureAwait(false).GetAwaiter().GetResult();
+        });
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -145,7 +145,7 @@ public class WritableConfigTests
     }
 
     [Fact]
-    public void Save_WithColonSeparatedSectionName_ShouldCreateNestedJson()
+    public async Task Save_WithColonSeparatedSectionName_ShouldCreateNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -164,7 +164,7 @@ public class WritableConfigTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -182,7 +182,7 @@ public class WritableConfigTests
     }
 
     [Fact]
-    public void Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedJson()
+    public async Task Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -201,7 +201,7 @@ public class WritableConfigTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -219,7 +219,7 @@ public class WritableConfigTests
     }
 
     [Fact]
-    public void Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedJson()
+    public async Task Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -238,7 +238,7 @@ public class WritableConfigTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -257,7 +257,7 @@ public class WritableConfigTests
     }
 
     [Fact]
-    public void Save_WithMixedSeparators_ShouldCreateNestedJson()
+    public async Task Save_WithMixedSeparators_ShouldCreateNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
 
@@ -276,7 +276,7 @@ public class WritableConfigTests
         };
 
         var instance = _instance.GetInstance<TestSettings>();
-        instance.SaveAsync(newSettings).ConfigureAwait(false).GetAwaiter().GetResult();
+        await instance.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
