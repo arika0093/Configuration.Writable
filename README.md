@@ -131,6 +131,8 @@ opt.FileName = "config/myconfig";
 opt.UseStandardSaveLocation("MyAppId");
 ```
 
+If you want toggle between development and production environments, TODO.
+
 ### Provider
 If you want to change the format when saving files, create a class that implements `IWritableConfigProvider` and specify it in `opt.Provider`.
 Currently, the following providers are available:
@@ -235,19 +237,17 @@ public class MyService(IWritableOptions<UserSetting> config)
 }
 ```
 
-> [!NOTE]
-> It is recommended to avoid managing multiple settings of the same type as much as possible and to create a single class that wraps them.
-> ```csharp
-> // recommended
-> public class AllSettings
-> {
->     public UserSetting First { get; set; } = new UserSetting();
->     public UserSetting Second { get; set; } = new UserSetting();
-> }
-> ```
-
 > [!WARNING]
 > When not using DI (directly using `WritableConfig`), managing multiple settings is intentionally not supported to prevent complicating the usage.
+
+## Tips
+### Default Values
+TODO.
+
+### Secret Value (Password, API Key, etc.)
+TODO.
+
+
 
 ## Merge multiple settings
 TODO.
@@ -336,16 +336,14 @@ I examined the major ones among these, but couldn't adopt them for the following
 Considering these current situations, `Microsoft.Extensions.Configuration` (`MS.E.C`) can be said to be the most standardized configuration management method in modern times.  
 It provides many features such as multi-file integration, support for various formats including environment variables, and configuration change reflection, and integrates seamlessly with `IHostApplicationBuilder`.  
 However, since it's primarily designed for application settings, it's insufficient for handling user settings. The major problem is that configuration writing is not supported.  
-Another issue is that it's based on DI, making it somewhat cumbersome to use in console applications.  
-Apps that want to use configuration files are more likely to not use DI (examples include `WinForms`, `WPF`, `console apps`, etc.).  
+Another issue is that, being based on DI (Dependency Injection), it can be somewhat cumbersome to use in certain types of applications.
+For example, applications like `WinForms`, `WPF`, or `Console Apps` that want to use configuration files are less likely to utilize DI.
 
 ### `Configuration.Writable`
 The preamble has gotten long, but it's time for promotion!  
 This library extends `MS.E.C` to make writing user settings easy.  
 It's also designed to be easily usable in applications that don't use DI.  
 
-Please give it a try. It's simple!
 
 ## License
 This project is licensed under the Apache-2.0 License.
-
