@@ -42,7 +42,7 @@ WritableConfig.Initialize<SampleSetting>();
 
 // -------------
 // get the writable config instance with the specified setting class
-var options = WritableConfig.GetInstance<SampleSetting>();
+var options = WritableConfig.GetOption<SampleSetting>();
 
 // get the config instance
 var sampleSetting = options.CurrentValue;
@@ -253,18 +253,20 @@ TODO.
 TODO.
 
 ## Testing
-You can use `InMemoryFileWriter` to test reading and writing settings without touching the file system.
+To prepare a disposable configuration instance, use `WritableConfigurationSimpleInstance`.
+and you can use `InMemoryFileWriter` to test reading and writing settings without touching the file system.  
 
 ```csharp
 // setup
 var sampleFileName = Path.GetRandomFileName();
+var _instance = new WritableConfigurationSimpleInstance();
 var _fileWriter = new InMemoryFileWriter();
 
-WritableConfig.Initialize<UserSetting>(opt => {
+_instance.Initialize<UserSetting>(opt => {
     opt.FileName = sampleFileName;
     opt.UseInMemoryFileWriter(_fileWriter);
 });
-var option = WritableConfig.GetInstance<UserSetting>();
+var option = _instance.GetOption<UserSetting>();
 
 // and your test execution
 await options.SaveAsync(setting => {

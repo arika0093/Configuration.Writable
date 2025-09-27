@@ -29,7 +29,7 @@ WritableConfig.Initialize<SampleSetting>(opt =>
 
 // -------------------------------
 // get the config instance
-var options = WritableConfig.GetInstance<SampleSetting>();
+var options = WritableConfig.GetOption<SampleSetting>();
 
 var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}, LastUpdatedAt: {sampleSetting.LastUpdatedAt}");

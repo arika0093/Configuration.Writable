@@ -52,8 +52,8 @@ public class WritableConfigXmlProviderTests
             Items = ["xml1", "xml2", "xml3"],
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(settings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -83,8 +83,8 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(originalSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(originalSettings);
 
         _instance.Initialize<TestSettings>(options =>
         {
@@ -94,7 +94,7 @@ public class WritableConfigXmlProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("xml_persistence_test");
         loadedSettings.Value.ShouldBe(999);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -121,8 +121,8 @@ public class WritableConfigXmlProviderTests
             Items = ["persist1", "persist2"],
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(originalSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(originalSettings);
 
         _instance.Initialize<TestSettings>(options =>
         {
@@ -132,7 +132,7 @@ public class WritableConfigXmlProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("xml_persistence_test");
         loadedSettings.Value.ShouldBe(999);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -152,8 +152,8 @@ public class WritableConfigXmlProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(settings =>
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(settings =>
         {
             settings.Name = "async_xml_test";
             settings.Value = 777;
@@ -161,7 +161,7 @@ public class WritableConfigXmlProviderTests
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("async_xml_test");
         loadedSettings.Value.ShouldBe(777);
     }
@@ -186,8 +186,8 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -200,7 +200,7 @@ public class WritableConfigXmlProviderTests
         fileContent.ShouldContain("</App>");
 
         // Verify the nested structure
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("xml_nested_test");
         loadedSettings.Value.ShouldBe(123);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -226,8 +226,8 @@ public class WritableConfigXmlProviderTests
             IsEnabled = false,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -240,7 +240,7 @@ public class WritableConfigXmlProviderTests
         fileContent.ShouldContain("</Database>");
 
         // Verify the nested structure
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("xml_db_test");
         loadedSettings.Value.ShouldBe(456);
         loadedSettings.IsEnabled.ShouldBeFalse();
@@ -266,8 +266,8 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -283,7 +283,7 @@ public class WritableConfigXmlProviderTests
         fileContent.ShouldContain("</App>");
 
         // Verify the nested structure
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("xml_deep_nested");
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();

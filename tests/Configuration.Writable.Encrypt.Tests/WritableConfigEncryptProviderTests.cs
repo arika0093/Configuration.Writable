@@ -93,8 +93,8 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "topsecret",
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(settings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -128,8 +128,8 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "supersecret",
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(originalSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(originalSettings);
 
         // Debug: Verify file was created and has content
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -143,8 +143,8 @@ public class WritableConfigEncryptProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        instance = _instance.GetInstance<TestSettings>();
-        var loadedSettings = instance.CurrentValue;
+        option = _instance.GetOption<TestSettings>();
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("encrypt_persistence_test");
         loadedSettings.Value.ShouldBe(777);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -172,8 +172,8 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "keytest",
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(originalSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(originalSettings);
 
         // When loading with a different key, it should fail to decrypt and throw an exception
         // or use default values depending on implementation
@@ -201,8 +201,8 @@ public class WritableConfigEncryptProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(settings =>
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(settings =>
         {
             settings.Name = "async_encrypt_test";
             settings.Value = 666;
@@ -211,7 +211,7 @@ public class WritableConfigEncryptProviderTests
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("async_encrypt_test");
         loadedSettings.Value.ShouldBe(666);
         loadedSettings.SecretKey.ShouldBe("asyncsecret");

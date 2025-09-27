@@ -23,8 +23,8 @@ public class WritableConfigTests
     {
         _instance.Initialize<TestSettings>();
 
-        var instance = _instance.GetInstance<TestSettings>();
-        var settings = instance.CurrentValue;
+        var option = _instance.GetOption<TestSettings>();
+        var settings = option.CurrentValue;
         settings.ShouldNotBeNull();
         settings.Name.ShouldBe("default");
         settings.Value.ShouldBe(42);
@@ -32,21 +32,21 @@ public class WritableConfigTests
     }
 
     [Fact]
-    public void GetInstance_ShouldReturnWritableConfig()
+    public void GetOption_ShouldReturnWritableConfig()
     {
         _instance.Initialize<TestSettings>();
-        var instance = _instance.GetInstance<TestSettings>();
-        instance.ShouldNotBeNull();
-        instance.ShouldBeAssignableTo<IWritableOptions<TestSettings>>();
+        var option = _instance.GetOption<TestSettings>();
+        option.ShouldNotBeNull();
+        option.ShouldBeAssignableTo<IWritableOptions<TestSettings>>();
     }
 
     [Fact]
-    public void GetInstance_ShouldThrowIfNotInitialized()
+    public void GetOption_ShouldThrowIfNotInitialized()
     {
         var uninitializedInstance = new WritableConfigSimpleInstance();
         Should.Throw<InvalidOperationException>(() =>
         {
-            var instance = uninitializedInstance.GetInstance<TestSettings2>();
+            var instance = uninitializedInstance.GetOption<TestSettings2>();
         });
     }
 
@@ -68,12 +68,12 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("updated");
         loadedSettings.Value.ShouldBe(100);
         loadedSettings.IsEnabled.ShouldBeFalse();
@@ -97,12 +97,12 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("async_updated");
         loadedSettings.Value.ShouldBe(200);
         loadedSettings.IsEnabled.ShouldBeFalse();
@@ -119,8 +119,8 @@ public class WritableConfigTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(settings =>
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(settings =>
         {
             settings.Name = "action_updated";
             settings.Value = 300;
@@ -128,7 +128,7 @@ public class WritableConfigTests
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("action_updated");
         loadedSettings.Value.ShouldBe(300);
     }
@@ -138,8 +138,8 @@ public class WritableConfigTests
     {
         _instance.Initialize<TestSettings>();
 
-        var instance = _instance.GetInstance<TestSettings>();
-        var path = instance.GetConfigurationOptions().ConfigFilePath;
+        var option = _instance.GetOption<TestSettings>();
+        var path = option.GetConfigurationOptions().ConfigFilePath;
         path.ShouldNotBeNullOrEmpty();
         path.ShouldEndWith(".json");
     }
@@ -163,8 +163,8 @@ public class WritableConfigTests
             IsEnabled = true,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -175,7 +175,7 @@ public class WritableConfigTests
         fileContent.ShouldContain("123");
 
         // Verify the nested structure
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("nested_test");
         loadedSettings.Value.ShouldBe(123);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -200,8 +200,8 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -212,7 +212,7 @@ public class WritableConfigTests
         fileContent.ShouldContain("456");
 
         // Verify the nested structure
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("db_test");
         loadedSettings.Value.ShouldBe(456);
         loadedSettings.IsEnabled.ShouldBeFalse();
@@ -237,8 +237,8 @@ public class WritableConfigTests
             IsEnabled = true,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -250,7 +250,7 @@ public class WritableConfigTests
         fileContent.ShouldContain("\"deep_nested\"");
 
         // Verify the nested structure
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("deep_nested");
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
@@ -275,8 +275,8 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var instance = _instance.GetInstance<TestSettings>();
-        await instance.SaveAsync(newSettings);
+        var option = _instance.GetOption<TestSettings>();
+        await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
@@ -287,7 +287,7 @@ public class WritableConfigTests
         fileContent.ShouldContain("\"mixed_separators\"");
 
         // Verify the nested structure
-        var loadedSettings = instance.CurrentValue;
+        var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("mixed_separators");
         loadedSettings.Value.ShouldBe(999);
         loadedSettings.IsEnabled.ShouldBeFalse();

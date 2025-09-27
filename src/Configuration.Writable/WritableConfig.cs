@@ -46,6 +46,6 @@ public static class WritableConfig
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
-    public static IWritableOptions<T> GetInstance<T>()
-        where T : class => GetInternalInstance<T>().GetInstance<T>();
+    public static IWritableOptions<T> GetOption<T>()
+        where T : class => GetInternalInstance<T>().GetOption<T>();
 }
