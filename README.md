@@ -1,7 +1,7 @@
 # Configuration.Writable
 [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/arika0093/Configuration.Writable?style=flat-square)
 
-A lightweight library that extends `Microsoft.Extensions.Configuration`(`MS.E.C`) to easily handle user settings.
+A lightweight library that extends `Microsoft.Extensions.Configuration` to easily handle user settings.
 
 ## Features
 * Read and write user settings with type safety.

@@ -79,11 +79,6 @@ public class OutputFormatStabilityTests
         actualOutput.ShouldContain("Nested description");
         actualOutput.ShouldContain("99.99");
         actualOutput.ShouldContain("false");
-
-        // Store actual output for debugging
-        Console.WriteLine("=== Actual JSON Output ===");
-        Console.WriteLine(actualOutput);
-        Console.WriteLine("=== End JSON Output ===");
     }
 
     [Fact]
@@ -118,11 +113,6 @@ public class OutputFormatStabilityTests
         actualOutput.ShouldContain("Database");
         actualOutput.ShouldContain("TestString");
         actualOutput.ShouldContain("42");
-
-        // Store actual output for debugging
-        Console.WriteLine("=== Actual JSON Section Output ===");
-        Console.WriteLine(actualOutput);
-        Console.WriteLine("=== End JSON Section Output ===");
     }
 
     [Fact]
@@ -155,11 +145,6 @@ public class OutputFormatStabilityTests
         actualOutput.ShouldNotContain("\n"); // No newlines
         actualOutput.ShouldContain("TestString");
         actualOutput.ShouldContain("42");
-
-        // Store actual output for debugging
-        Console.WriteLine("=== Actual JSON Compact Output ===");
-        Console.WriteLine(actualOutput);
-        Console.WriteLine("=== End JSON Compact Output ===");
     }
 
     [Fact]
@@ -222,11 +207,6 @@ public class OutputFormatStabilityTests
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
 
-        // Print actual output for debugging
-        Console.WriteLine("=== Actual JSON Special Characters Output ===");
-        Console.WriteLine(actualOutput);
-        Console.WriteLine("=== End JSON Special Characters Output ===");
-
         // Verify proper JSON escaping (JSON uses Unicode escapes for some characters)
         actualOutput.ShouldContain("Test with");
         actualOutput.ShouldContain("quotes");
@@ -235,11 +215,6 @@ public class OutputFormatStabilityTests
         actualOutput.ShouldContain("item");
         actualOutput.ShouldContain("with");
         actualOutput.ShouldContain("backslashes");
-
-        // Store actual output for debugging
-        Console.WriteLine("=== Actual JSON Special Characters Output ===");
-        Console.WriteLine(actualOutput);
-        Console.WriteLine("=== End JSON Special Characters Output ===");
     }
 
     [Fact]
@@ -276,11 +251,6 @@ public class OutputFormatStabilityTests
         // Verify empty values are properly serialized
         actualOutput.ShouldContain("\"\""); // Empty string value
         actualOutput.ShouldContain("[]"); // Empty array
-
-        // Store actual output for debugging
-        Console.WriteLine("=== Actual JSON Empty Values Output ===");
-        Console.WriteLine(actualOutput);
-        Console.WriteLine("=== End JSON Empty Values Output ===");
     }
 
     /// <summary>
@@ -326,11 +296,5 @@ public class OutputFormatStabilityTests
             actualText,
             "Byte array should roundtrip through UTF-8 correctly"
         );
-
-        // Store actual output for debugging
-        Console.WriteLine("=== Actual JSON Byte Output ===");
-        Console.WriteLine($"Length: {actualBytes.Length} bytes");
-        Console.WriteLine($"Content: {actualText}");
-        Console.WriteLine("=== End JSON Byte Output ===");
     }
 }
