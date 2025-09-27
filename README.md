@@ -253,7 +253,7 @@ If a new property is added to the settings class during an update, that property
 // if the settings file contains only {"Name": "custom name"}
 var setting = options.CurrentValue;
 // setting.Name is "custom name"
-// setting.Age is 20
+// setting.Age is 20 (the default value)
 ```
 
 ### Secret Value (Password, API Key, etc.)
@@ -261,16 +261,6 @@ A good way to include user passwords and the like in settings is to split the cl
 For example, split the class and save one part encrypted.
 
 ```csharp
-public class UserSetting
-{
-    public string Name { get; set; } = "default name";
-    public int Age { get; set; } = 20;
-}
-public class UserSecretSetting
-{
-    public string Password { get; set; } = "";
-}
-
 WritableConfig.Initialize<UserSetting>(opt => {
     opt.FilePath = "usersettings";
 });
@@ -280,10 +270,15 @@ WritableConfig.Initialize<UserSecretSetting>(opt => {
     opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 });
 
-// and get each setting
+// and get/save each setting
 var userOptions = WritableConfig.GetOption<UserSetting>();
 var secretOptions = WritableConfig.GetOption<UserSecretSetting>();
 // ...
+
+// ---
+// setting classes
+public class UserSetting(string Name, int Age);
+public class UserSecretSetting(string Password);
 ```
 
 ## Merge multiple settings
