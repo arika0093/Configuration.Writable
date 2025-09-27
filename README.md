@@ -200,18 +200,22 @@ Logging is enabled by default in DI environments.
 If you are not using DI, or if you want to override the logging settings, you can enable logging by specifying `opt.Logger`.
 
 ```csharp
+// without DI
 // package add Microsoft.Extensions.Logging.Console
 opt.Logger = LoggerFactory
     // enable console logging 
     .Create(builder => builder.AddConsole())
-    .CreateLogger("UserConfig");
+    .CreateLogger("Configuration.Writable");
+
+// with DI
+// nothing to do (uses the logger from DI)
 ```
 
 ### SectionName
 In default, the entire settings are saved in the following structure:
 ```jsonc
 {
-  // "SectionRootName" is specified by opt.SectionName (default is "UserSettings")
+  // opt.SectionRootName value (default is "UserSettings")
   "UserSettings": {
     // the type name of the setting class ("UserSetting" here)
     // InstanceName is appended if specified (e.g. "UserSetting-First")
