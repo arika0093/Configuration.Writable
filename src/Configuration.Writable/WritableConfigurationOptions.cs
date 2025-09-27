@@ -44,35 +44,7 @@ public record WritableConfigurationOptions<T>
     public ILogger? Logger { get; init; }
 
     /// <summary>
-    /// Gets or sets the logger factory for creating loggers.
-    /// Used when Logger is not explicitly set in DI scenarios.
+    /// Gets the effective logger
     /// </summary>
-    public Func<ILogger?>? LoggerFactory { get; init; }
-
-    /// <summary>
-    /// Gets the effective logger, resolving from LoggerFactory if needed.
-    /// </summary>
-    public ILogger? EffectiveLogger
-    {
-        get
-        {
-            if (Logger != null)
-                return Logger;
-
-            if (LoggerFactory != null)
-            {
-                try
-                {
-                    return LoggerFactory.Invoke();
-                }
-                catch
-                {
-                    // If logger factory fails, return null to disable logging
-                    return null;
-                }
-            }
-
-            return null;
-        }
-    }
+    public ILogger? EffectiveLogger => Logger;
 }
