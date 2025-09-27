@@ -53,7 +53,9 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         {
             // Use the new nested section creation method
             var nestedSection = CreateNestedSection(sectionName, serializeNode ?? new JsonObject());
-            root = JsonSerializer.SerializeToNode(nestedSection, serializerOptions) as JsonObject ?? new JsonObject();
+            root =
+                JsonSerializer.SerializeToNode(nestedSection, serializerOptions) as JsonObject
+                ?? new JsonObject();
         }
         else
         {

@@ -46,7 +46,10 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
         else
         {
             // Split section name by ':' or '__' and create nested XML structure
-            var parts = sectionName.Split(new string[] { ":", "__" }, StringSplitOptions.RemoveEmptyEntries);
+            var parts = sectionName.Split(
+                new string[] { ":", "__" },
+                StringSplitOptions.RemoveEmptyEntries
+            );
 
             // first serialize to <AnyName>...</AnyName>
             var serializer = new XmlSerializer(typeof(T));
