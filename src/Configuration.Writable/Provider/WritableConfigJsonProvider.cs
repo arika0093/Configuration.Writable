@@ -52,57 +52,41 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         var sectionName = options.SectionName;
         var serializerOptions = JsonSerializerOptions;
 
-        try
+        // generate saved json object
+        var serializeNode = JsonSerializer.SerializeToNode<T>(config, serializerOptions);
+        JsonObject root;
+
+        if (!string.IsNullOrWhiteSpace(sectionName))
         {
-            // generate saved json object
-            var serializeNode = JsonSerializer.SerializeToNode<T>(config, serializerOptions);
-            JsonObject root;
-
-            if (!string.IsNullOrWhiteSpace(sectionName))
-            {
-                options.EffectiveLogger?.Log(
-                    LogLevel.Debug,
-                    "Creating nested section structure for section: {SectionName}",
-                    sectionName
-                );
-                // Use the new nested section creation method
-                var nestedSection = CreateNestedSection(
-                    sectionName,
-                    serializeNode ?? new JsonObject()
-                );
-                root =
-                    JsonSerializer.SerializeToNode(nestedSection, serializerOptions) as JsonObject
-                    ?? new JsonObject();
-            }
-            else
-            {
-                options.EffectiveLogger?.Log(
-                    LogLevel.Debug,
-                    "Serializing configuration as root object"
-                );
-                // if section name is empty, write the config as root
-                root = serializeNode as JsonObject ?? new JsonObject();
-            }
-            // convert to string
-            var jsonString = root?.ToJsonString(serializerOptions) ?? "{}";
-            var bytes = Encoding.GetBytes(jsonString);
-
             options.EffectiveLogger?.Log(
                 LogLevel.Debug,
-                "JSON serialization completed successfully, size: {Size} bytes",
-                bytes.Length
+                "Creating nested section structure for section: {SectionName}",
+                sectionName
             );
-            return bytes;
+            // Use the new nested section creation method
+            var nestedSection = CreateNestedSection(sectionName, serializeNode ?? new JsonObject());
+            root =
+                JsonSerializer.SerializeToNode(nestedSection, serializerOptions) as JsonObject
+                ?? new JsonObject();
         }
-        catch (Exception ex)
+        else
         {
             options.EffectiveLogger?.Log(
-                LogLevel.Error,
-                ex,
-                "Failed to serialize configuration of type {ConfigType} to JSON",
-                typeof(T).Name
+                LogLevel.Debug,
+                "Serializing configuration as root object"
             );
-            throw;
+            // if section name is empty, write the config as root
+            root = serializeNode as JsonObject ?? new JsonObject();
         }
+        // convert to string
+        var jsonString = root?.ToJsonString(serializerOptions) ?? "{}";
+        var bytes = Encoding.GetBytes(jsonString);
+
+        options.EffectiveLogger?.Log(
+            LogLevel.Debug,
+            "JSON serialization completed successfully, size: {Size} bytes",
+            bytes.Length
+        );
+        return bytes;
     }
 }
