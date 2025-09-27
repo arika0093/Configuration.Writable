@@ -34,7 +34,7 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
         where T : class;
 
     /// <inheritdoc />
-    public virtual Task SaveAsync<T>(
+    public virtual async Task SaveAsync<T>(
         T config,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
@@ -48,14 +48,18 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
         );
 
         var contents = GetSaveContents(config, options);
-        var task = FileWriter.SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken);
+        await FileWriter.SaveToFileAsync(
+            options.ConfigFilePath,
+            contents,
+            cancellationToken,
+            options.EffectiveLogger
+        );
 
         options.EffectiveLogger?.Log(
             LogLevel.Information,
             "Configuration saved successfully to {FilePath}",
             options.ConfigFilePath
         );
-        return task;
     }
 
     /// <summary>

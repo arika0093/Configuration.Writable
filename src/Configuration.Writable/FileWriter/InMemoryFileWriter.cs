@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FileWriter;
 
@@ -19,7 +20,8 @@ public class InMemoryFileWriter : IFileWriter
     public Task SaveToFileAsync(
         string path,
         ReadOnlyMemory<byte> content,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default,
+        ILogger? logger = null
     )
     {
         cancellationToken.ThrowIfCancellationRequested();

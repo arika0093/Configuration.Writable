@@ -12,6 +12,8 @@ namespace Configuration.Writable;
 /// </summary>
 public static class WritableConfigurationExtensions
 {
+    private const string LoggerCategoryName = "Configuration.Writable";
+
     /// <summary>
     /// Adds a user-defined configuration file to the application's configuration system and registers the specified
     /// options type for dependency injection.
@@ -102,9 +104,6 @@ public static class WritableConfigurationExtensions
         var fileReadStream = confBuilder.FileReadStream;
         var options = confBuilder.BuildOptions();
 
-        // Setup auto-logger factory using DI registration
-        var shouldAutoConfigureLogger = options.Logger == null;
-
         var filePath = options.ConfigFilePath;
         // set FileWriter and Stream
         if (fileWriter != null)
@@ -158,22 +157,13 @@ public static class WritableConfigurationExtensions
         }
 
         // add WritableConfigurationOptions<T> enumerable
-        if (shouldAutoConfigureLogger)
+        if (options.Logger == null)
         {
             // Register options with a factory that resolves logger from DI
             services.AddSingleton<WritableConfigurationOptions<T>>(provider =>
             {
-                ILogger? logger = null;
-                try
-                {
-                    var loggerFactory = provider.GetService<ILoggerFactory>();
-                    logger = loggerFactory?.CreateLogger<T>();
-                }
-                catch
-                {
-                    // Ignore if logger resolution fails
-                }
-
+                var loggerFactory = provider.GetService<ILoggerFactory>();
+                var logger = loggerFactory?.CreateLogger(LoggerCategoryName);
                 return new WritableConfigurationOptions<T>
                 {
                     Provider = options.Provider,

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Internal;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FileWriter;
 
@@ -35,35 +36,53 @@ public class CommonFileWriter : IFileWriter
     public virtual async Task SaveToFileAsync(
         string path,
         ReadOnlyMemory<byte> content,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default,
+        ILogger? logger = null
     )
     {
         int retryCount = 0;
         Exception? lastException = null;
         while (retryCount < MaxRetryCount)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            logger?.LogTrace(
+                "Attempt {RetryCount} to write file: {FilePath}",
+                retryCount + 1,
+                path
+            );
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
                 // Create directory if it does not exist
                 var directory = Path.GetDirectoryName(path)!;
-                Directory.CreateDirectory(directory);
+                if (!Directory.Exists(directory))
+                {
+                    logger?.LogTrace("Creating directory: {Directory}", directory);
+                    Directory.CreateDirectory(directory);
+                    logger?.LogTrace("Directory created: {Directory}", directory);
+                }
 
                 // Generate backup file
-                GenerateBackupFile(path);
+                GenerateBackupFile(path, logger);
 
                 string temporaryFilePath = GetTemporaryFilePath(path);
                 using (new TemporaryFile(temporaryFilePath))
                 {
+                    logger?.LogDebug(
+                        "Writing to temporary file: {TemporaryFilePath}",
+                        temporaryFilePath
+                    );
                     // Write to temporary file first
                     await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken);
                     // Replace original file
                     if (File.Exists(path))
                     {
+                        logger?.LogDebug("Replacing original file: {FilePath}", path);
                         File.Replace(temporaryFilePath, path, null);
                     }
                     else
                     {
+                        logger?.LogDebug("Moving temporary file to: {FilePath}", path);
                         File.Move(temporaryFilePath, path);
                     }
                     // Exit if successful
@@ -72,6 +91,12 @@ public class CommonFileWriter : IFileWriter
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                logger?.LogWarning(
+                    ex,
+                    "Failed to write file on attempt {RetryCount}: {FilePath}",
+                    retryCount + 1,
+                    path
+                );
                 lastException = ex;
                 retryCount++;
                 // Wait 100ms before retrying
@@ -111,35 +136,47 @@ public class CommonFileWriter : IFileWriter
     /// maximum backup count.
     /// </summary>
     /// <param name="path">The full path of the file to back up. Must not be null or empty.</param>
-    protected virtual void GenerateBackupFile(string path)
+    /// <param name="logger">An optional logger for logging operations and errors.</param>
+    protected virtual void GenerateBackupFile(string path, ILogger? logger)
     {
         // if file does not exist, do nothing
         if (!File.Exists(path))
         {
+            logger?.LogTrace("File does not exist, skipping backup: {FilePath}", path);
             return;
         }
         // if backup count is 0, do nothing
         if (BackupMaxCount == 0)
         {
+            logger?.LogTrace("BackupMaxCount is 0, skipping backup: {FilePath}", path);
             return;
         }
         // delete older backup files
         var backupFilesOrderByCreated = Directory
             .GetFiles(Path.GetDirectoryName(path)!, "*.bak")
             .Select(f => new FileInfo(f))
+            .Where(f => f.Name.StartsWith(Path.GetFileNameWithoutExtension(path)))
             .OrderBy(f => f.CreationTimeUtc)
             .ToList();
+
+        logger?.LogTrace(
+            "Found {BackupFileCount} backup files for {FilePath}",
+            backupFilesOrderByCreated.Count,
+            path
+        );
         if (backupFilesOrderByCreated.Count >= BackupMaxCount)
         {
             // delete oldest files
             var deleteCount = backupFilesOrderByCreated.Count - BackupMaxCount + 1;
             foreach (var file in backupFilesOrderByCreated.Take(deleteCount))
             {
+                logger?.LogDebug("Deleting old backup file: {BackupFilePath}", file.FullName);
                 file.Delete();
             }
         }
         // create backup file
         var backupFilePath = GetTemporaryFilePath(path) + ".bak";
+        logger?.LogDebug("Creating backup file for: {FilePath}", backupFilePath);
         File.Copy(path, backupFilePath);
     }
 

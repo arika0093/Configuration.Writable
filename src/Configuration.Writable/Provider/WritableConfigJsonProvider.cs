@@ -44,7 +44,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         where T : class
     {
         options.EffectiveLogger?.Log(
-            LogLevel.Debug,
+            LogLevel.Trace,
             "Serializing configuration of type {ConfigType} to JSON",
             typeof(T).Name
         );
@@ -56,7 +56,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         var serializeNode = JsonSerializer.SerializeToNode<T>(config, serializerOptions);
 
         options.EffectiveLogger?.Log(
-            LogLevel.Debug,
+            LogLevel.Trace,
             "Creating nested section structure for section: {SectionName}",
             sectionName
         );
@@ -69,7 +69,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         var bytes = Encoding.GetBytes(jsonString);
 
         options.EffectiveLogger?.Log(
-            LogLevel.Debug,
+            LogLevel.Trace,
             "JSON serialization completed successfully, size: {Size} bytes",
             bytes.Length
         );
