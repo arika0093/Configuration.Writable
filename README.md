@@ -196,7 +196,16 @@ opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
 ```
 
 ### Logging
-TODO
+Logging is enabled by default in DI environments.  
+If you are not using DI, or if you want to override the logging settings, you can enable logging by specifying `opt.Logger`.
+
+```csharp
+// package add Microsoft.Extensions.Logging.Console
+opt.Logger = LoggerFactory
+    // enable console logging 
+    .Create(builder => builder.AddConsole())
+    .CreateLogger("UserConfig");
+```
 
 ### SectionName
 In default, the entire settings are saved in the following structure:

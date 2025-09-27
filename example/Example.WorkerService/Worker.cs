@@ -26,8 +26,6 @@ public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
                 },
                 stoppingToken
             );
-            Console.WriteLine(":: Config saved.");
-            Console.WriteLine($"   at {options.GetConfigurationOptions().ConfigFilePath}");
 
             // get updated config instance
             var updatedSampleSetting = options.CurrentValue;

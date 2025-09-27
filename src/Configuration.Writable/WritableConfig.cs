@@ -49,14 +49,7 @@ public static class WritableConfig
     /// </summary>
     /// <param name="logger">The logger to use for configuration operations.</param>
     public static void Initialize<T>(ILogger logger)
-        where T : class => Initialize<T>(options => options.UseLogger(logger));
-
-    /// <summary>
-    /// Initializes writable configuration with a logger factory for Console applications.
-    /// </summary>
-    /// <param name="loggerFactory">The logger factory to create a logger from.</param>
-    public static void Initialize<T>(ILoggerFactory loggerFactory)
-        where T : class => Initialize<T>(options => options.UseLogger(loggerFactory));
+        where T : class => Initialize<T>(options => options.Logger = logger);
 
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
