@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -74,6 +75,41 @@ public record WritableConfigurationOptionsBuilder<T>
     /// if you specify InstanceName, you can get it with [FromKeyedServices("instance-name")].
     /// </summary>
     public bool RegisterInstanceToContainer { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the logger for configuration operations.
+    /// If null, logging is disabled. Defaults to null.
+    /// </summary>
+    public ILogger? Logger { get; set; }
+
+    /// <summary>
+    /// Gets or sets the logger factory function for creating loggers in DI scenarios.
+    /// </summary>
+    public Func<ILogger?>? LoggerFactory { get; set; }
+
+    /// <summary>
+    /// Sets the logger for configuration operations.
+    /// </summary>
+    /// <param name="logger">The logger instance to use.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    public WritableConfigurationOptionsBuilder<T> UseLogger(ILogger logger)
+    {
+        Logger = logger;
+        LoggerFactory = null; // Clear factory since explicit logger is set
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the logger using a logger factory.
+    /// </summary>
+    /// <param name="loggerFactory">The logger factory to create a logger from.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    public WritableConfigurationOptionsBuilder<T> UseLogger(ILoggerFactory loggerFactory)
+    {
+        Logger = loggerFactory.CreateLogger<T>();
+        LoggerFactory = null; // Clear factory since explicit logger is set
+        return this;
+    }
 
     /// <summary>
     /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
@@ -163,6 +199,8 @@ public record WritableConfigurationOptionsBuilder<T>
             ConfigFilePath = ConfigFilePath,
             InstanceName = InstanceName,
             SectionName = SectionName,
+            Logger = Logger,
+            LoggerFactory = LoggerFactory,
         };
     }
 

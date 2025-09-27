@@ -3,6 +3,7 @@ using Configuration.Writable.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -79,6 +80,14 @@ public static class WritableConfigurationExtensions
         // build options
         var confBuilder = new WritableConfigurationOptionsBuilder<T>();
         configureOptions(confBuilder);
+
+        // Auto-configure logger factory if no logger is explicitly set
+        if (confBuilder.Logger == null && confBuilder.LoggerFactory == null)
+        {
+            // Mark that auto-configuration should be done
+            confBuilder.LoggerFactory = () => null; // Placeholder, will be replaced in registration
+        }
+
         return services.AddUserConfigurationFile<T>(configuration, confBuilder);
     }
 
@@ -100,6 +109,9 @@ public static class WritableConfigurationExtensions
         var fileWriter = confBuilder.FileWriter;
         var fileReadStream = confBuilder.FileReadStream;
         var options = confBuilder.BuildOptions();
+
+        // Setup auto-logger factory using DI registration
+        var shouldAutoConfigureLogger = options.Logger == null && options.LoggerFactory != null;
 
         var filePath = options.ConfigFilePath;
         // set FileWriter and Stream
@@ -154,7 +166,37 @@ public static class WritableConfigurationExtensions
         }
 
         // add WritableConfigurationOptions<T> enumerable
-        services.AddSingleton(options);
+        if (shouldAutoConfigureLogger)
+        {
+            // Register options with a factory that resolves logger from DI
+            services.AddSingleton<WritableConfigurationOptions<T>>(provider =>
+            {
+                ILogger? logger = null;
+                try
+                {
+                    var loggerFactory = provider.GetService<ILoggerFactory>();
+                    logger = loggerFactory?.CreateLogger<T>();
+                }
+                catch
+                {
+                    // Ignore if logger resolution fails
+                }
+
+                return new WritableConfigurationOptions<T>
+                {
+                    Provider = options.Provider,
+                    ConfigFilePath = options.ConfigFilePath,
+                    InstanceName = options.InstanceName,
+                    SectionName = options.SectionName,
+                    Logger = logger,
+                    LoggerFactory = null,
+                };
+            });
+        }
+        else
+        {
+            services.AddSingleton(options);
+        }
         // add IReadonlyOptions<T> and IWritableOptions<T>
         services.AddSingleton<WritableConfiguration<T>>();
         services.AddSingleton<IReadonlyOptions<T>>(p =>

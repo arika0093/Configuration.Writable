@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -42,6 +43,20 @@ public static class WritableConfig
         Action<WritableConfigurationOptionsBuilder<T>> configurationOptions
     )
         where T : class => GetInternalInstance<T>().Initialize(configurationOptions);
+
+    /// <summary>
+    /// Initializes writable configuration with a logger for Console applications.
+    /// </summary>
+    /// <param name="logger">The logger to use for configuration operations.</param>
+    public static void Initialize<T>(ILogger logger)
+        where T : class => Initialize<T>(options => options.UseLogger(logger));
+
+    /// <summary>
+    /// Initializes writable configuration with a logger factory for Console applications.
+    /// </summary>
+    /// <param name="loggerFactory">The logger factory to create a logger from.</param>
+    public static void Initialize<T>(ILoggerFactory loggerFactory)
+        where T : class => Initialize<T>(options => options.UseLogger(loggerFactory));
 
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.

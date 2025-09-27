@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -40,8 +41,21 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
     )
         where T : class
     {
+        options.EffectiveLogger?.Log(
+            LogLevel.Debug,
+            "Saving configuration to {FilePath}",
+            options.ConfigFilePath
+        );
+
         var contents = GetSaveContents(config, options);
-        return FileWriter.SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken);
+        var task = FileWriter.SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken);
+
+        options.EffectiveLogger?.Log(
+            LogLevel.Information,
+            "Configuration saved successfully to {FilePath}",
+            options.ConfigFilePath
+        );
+        return task;
     }
 
     /// <summary>

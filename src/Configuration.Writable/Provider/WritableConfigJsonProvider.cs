@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -42,28 +43,66 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
     )
         where T : class
     {
+        options.EffectiveLogger?.Log(
+            LogLevel.Debug,
+            "Serializing configuration of type {ConfigType} to JSON",
+            typeof(T).Name
+        );
+
         var sectionName = options.SectionName;
         var serializerOptions = JsonSerializerOptions;
 
-        // generate saved json object
-        var serializeNode = JsonSerializer.SerializeToNode<T>(config, serializerOptions);
-        JsonObject root;
+        try
+        {
+            // generate saved json object
+            var serializeNode = JsonSerializer.SerializeToNode<T>(config, serializerOptions);
+            JsonObject root;
 
-        if (!string.IsNullOrWhiteSpace(sectionName))
-        {
-            // Use the new nested section creation method
-            var nestedSection = CreateNestedSection(sectionName, serializeNode ?? new JsonObject());
-            root =
-                JsonSerializer.SerializeToNode(nestedSection, serializerOptions) as JsonObject
-                ?? new JsonObject();
+            if (!string.IsNullOrWhiteSpace(sectionName))
+            {
+                options.EffectiveLogger?.Log(
+                    LogLevel.Debug,
+                    "Creating nested section structure for section: {SectionName}",
+                    sectionName
+                );
+                // Use the new nested section creation method
+                var nestedSection = CreateNestedSection(
+                    sectionName,
+                    serializeNode ?? new JsonObject()
+                );
+                root =
+                    JsonSerializer.SerializeToNode(nestedSection, serializerOptions) as JsonObject
+                    ?? new JsonObject();
+            }
+            else
+            {
+                options.EffectiveLogger?.Log(
+                    LogLevel.Debug,
+                    "Serializing configuration as root object"
+                );
+                // if section name is empty, write the config as root
+                root = serializeNode as JsonObject ?? new JsonObject();
+            }
+            // convert to string
+            var jsonString = root?.ToJsonString(serializerOptions) ?? "{}";
+            var bytes = Encoding.GetBytes(jsonString);
+
+            options.EffectiveLogger?.Log(
+                LogLevel.Debug,
+                "JSON serialization completed successfully, size: {Size} bytes",
+                bytes.Length
+            );
+            return bytes;
         }
-        else
+        catch (Exception ex)
         {
-            // if section name is empty, write the config as root
-            root = serializeNode as JsonObject ?? new JsonObject();
+            options.EffectiveLogger?.Log(
+                LogLevel.Error,
+                ex,
+                "Failed to serialize configuration of type {ConfigType} to JSON",
+                typeof(T).Name
+            );
+            throw;
         }
-        // convert to string
-        var jsonString = root?.ToJsonString(serializerOptions) ?? "{}";
-        return Encoding.GetBytes(jsonString);
     }
 }

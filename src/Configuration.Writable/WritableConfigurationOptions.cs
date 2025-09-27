@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -35,4 +36,43 @@ public record WritableConfigurationOptions<T>
     /// If use multiple configuration file for same type T, you must set different SectionName for each.
     /// </summary>
     public required string SectionName { get; init; }
+
+    /// <summary>
+    /// Gets or sets the logger for configuration operations.
+    /// If null, logging is disabled. Defaults to null.
+    /// </summary>
+    public ILogger? Logger { get; init; }
+
+    /// <summary>
+    /// Gets or sets the logger factory for creating loggers.
+    /// Used when Logger is not explicitly set in DI scenarios.
+    /// </summary>
+    public Func<ILogger?>? LoggerFactory { get; init; }
+
+    /// <summary>
+    /// Gets the effective logger, resolving from LoggerFactory if needed.
+    /// </summary>
+    public ILogger? EffectiveLogger
+    {
+        get
+        {
+            if (Logger != null)
+                return Logger;
+
+            if (LoggerFactory != null)
+            {
+                try
+                {
+                    return LoggerFactory.Invoke();
+                }
+                catch
+                {
+                    // If logger factory fails, return null to disable logging
+                    return null;
+                }
+            }
+
+            return null;
+        }
+    }
 }
