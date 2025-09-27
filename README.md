@@ -131,7 +131,28 @@ opt.FilePath = "config/myconfig";
 opt.UseStandardSaveLocation("MyAppId");
 ```
 
-If you want toggle between development and production environments, TODO.
+If you want toggle between development and production environments, you can use `#if DEBUG` pattern or `Environtment.IsDevelopment()`.
+
+```csharp
+// without DI
+WritableConfig.Initialize<UserSetting>(opt => {
+#if DEBUG
+    opt.FilePath = "devsettings.json";
+#else
+    opt.UseStandardSaveLocation("MyAppId");
+#endif
+});
+
+// if use IHostApplicationBuilder
+builder.AddUserConfigurationFile<UserSetting>(opt => {
+    if (builder.Environment.IsDevelopment()) {
+        opt.FilePath = "devsettings.json";
+    }
+    else {
+        opt.UseStandardSaveLocation("MyAppId");
+    }
+});
+```
 
 ### Provider
 If you want to change the format when saving files, create a class that implements `IWritableConfigProvider` and specify it in `opt.Provider`.
@@ -257,8 +278,7 @@ var setting = options.CurrentValue;
 ```
 
 ### Secret Value (Password, API Key, etc.)
-A good way to include user passwords and the like in settings is to split the class and save one part encrypted.  
-For example, split the class and save one part encrypted.
+A good way to include user passwords and the like in settings is to split the class and save one part encrypted.
 
 ```csharp
 WritableConfig.Initialize<UserSetting>(opt => {
@@ -277,12 +297,9 @@ var secretOptions = WritableConfig.GetOption<UserSecretSetting>();
 
 // ---
 // setting classes
-public class UserSetting(string Name, int Age);
-public class UserSecretSetting(string Password);
+public class UserSetting(string Name, int Age);  // non-secret
+public class UserSecretSetting(string Password); // secret
 ```
-
-## Merge multiple settings
-TODO.
 
 ## Testing
 To prepare a disposable configuration instance, use `WritableConfigurationSimpleInstance`.
@@ -291,14 +308,14 @@ and you can use `InMemoryFileWriter` to test reading and writing settings withou
 ```csharp
 // setup
 var sampleFilePath = Path.GetRandomFilePath();
-var _instance = new WritableConfigurationSimpleInstance();
-var _fileWriter = new InMemoryFileWriter();
+var instance = new WritableConfigurationSimpleInstance();
+var fileWriter = new InMemoryFileWriter();
 
-_instance.Initialize<UserSetting>(opt => {
+instance.Initialize<UserSetting>(opt => {
     opt.FilePath = sampleFilePath;
-    opt.UseInMemoryFileWriter(_fileWriter);
+    opt.UseInMemoryFileWriter(fileWriter);
 });
-var option = _instance.GetOption<UserSetting>();
+var option = instance.GetOption<UserSetting>();
 
 // and your test execution
 await options.SaveAsync(setting => {
@@ -307,8 +324,8 @@ await options.SaveAsync(setting => {
 });
 
 // check the saved content
-Assert.True(_fileWriter.FileExists(sampleFilePath));
-var savedText = _fileWriter.ReadAllText(sampleFilePath);
+Assert.True(fileWriter.FileExists(sampleFilePath));
+var savedText = fileWriter.ReadAllText(sampleFilePath);
 Assert.Contains("test name", savedText);
 ```
 
