@@ -251,11 +251,7 @@ public class XmlOutputFormatStabilityTests
         var actualOutput = _fileWriter.ReadAllText(testFileName);
 
         // Verify root configuration format
-#if NET
         actualOutput.ShouldStartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-#else
-        actualOutput.ShouldStartWith("<?xml version=\"1.0\"?>");
-#endif
         actualOutput.ShouldContain("<configuration>");
         actualOutput.ShouldContain("</configuration>");
         actualOutput.ShouldNotContain("<App>"); // No nested sections when section name is empty
