@@ -219,11 +219,11 @@ This serves as a guardrail to prevent conflicts with settings from other librari
 You can freely change this section name.
 
 ```csharp
-// change the section name to "MyAppSettings"
-opt.SectionName = "MyAppSettings";
+// change the section root name to "MyAppSettings"
+opt.SectionRootName = "MyAppSettings";
 
-// nothing use section (written at the root, not recommended)
-opt.SectionName = "";
+// nothing use root section (written at the root, not recommended)
+opt.SectionRootName = "";
 ```
 
 ### InstanceName
@@ -234,13 +234,13 @@ If you want to manage multiple settings of the same type, you must specify diffe
 builder.AddUserConfigurationFile<UserSetting>(opt => {
     opt.FilePath = "firstsettings.json";
     opt.InstanceName = "First";
-    // save section will be "UserSettings-First"
+    // save section will be "UserSettings:UserSetting-First"
 });
 // second setting
 builder.AddUserConfigurationFile<UserSetting>(opt => {
     opt.FilePath = "secondsettings.json";
     opt.InstanceName = "Second";
-    // save section will be "UserSettings-Second"
+    // save section will be "UserSettings:UserSetting-Second"
 });
 
 // and get each setting from DI
@@ -302,13 +302,13 @@ public class UserSecretSetting(string Password); // secret
 ```
 
 ## Testing
-To prepare a disposable configuration instance, use `WritableConfigurationSimpleInstance`.
+To prepare a disposable configuration instance, use `WritableConfigSimpleInstance`.
 and you can use `InMemoryFileWriter` to test reading and writing settings without touching the file system.  
 
 ```csharp
 // setup
 var sampleFilePath = Path.GetRandomFilePath();
-var instance = new WritableConfigurationSimpleInstance();
+var instance = new WritableConfigSimpleInstance();
 var fileWriter = new InMemoryFileWriter();
 
 instance.Initialize<UserSetting>(opt => {
