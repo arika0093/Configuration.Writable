@@ -28,7 +28,8 @@ public class OutputFormatStabilityTests
         public double DoubleValue { get; set; } = 3.14159;
         public bool BoolValue { get; set; } = true;
         public string[] ArrayValue { get; set; } = ["item1", "item2", "item3"];
-        public DateTime DateTimeValue { get; set; } = new DateTime(2023, 12, 25, 10, 30, 45, DateTimeKind.Utc);
+        public DateTime DateTimeValue { get; set; } =
+            new DateTime(2023, 12, 25, 10, 30, 45, DateTimeKind.Utc);
         public NestedConfiguration Nested { get; set; } = new();
     }
 
@@ -53,8 +54,8 @@ public class OutputFormatStabilityTests
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     WriteIndented = true, // Use consistent formatting for stability tests
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-                }
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                },
             };
             options.UseInMemoryFileWriter(_fileWriter);
         });
@@ -99,8 +100,8 @@ public class OutputFormatStabilityTests
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     WriteIndented = true,
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-                }
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                },
             };
             options.SectionRootName = "ApplicationSettings:Database";
             options.UseInMemoryFileWriter(_fileWriter);
@@ -137,8 +138,8 @@ public class OutputFormatStabilityTests
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
-                    WriteIndented = false // Compact format
-                }
+                    WriteIndented = false, // Compact format
+                },
             };
             options.UseInMemoryFileWriter(_fileWriter);
         });
@@ -168,21 +169,27 @@ public class OutputFormatStabilityTests
         var writer = new CommonFileWriter();
 
         var testContent = """
-        {
-          "test": "value",
-          "number": 42,
-          "array": ["a", "b", "c"]
-        }
-        """;
+            {
+              "test": "value",
+              "number": 42,
+              "array": ["a", "b", "c"]
+            }
+            """;
 
         var contentBytes = Encoding.UTF8.GetBytes(testContent);
         await writer.SaveToFileAsync(tempFile.FilePath, contentBytes, CancellationToken.None);
 
         var savedBytes = File.ReadAllBytes(tempFile.FilePath);
-        savedBytes.ShouldBe(contentBytes, "CommonFileWriter should save exact byte content without modification");
+        savedBytes.ShouldBe(
+            contentBytes,
+            "CommonFileWriter should save exact byte content without modification"
+        );
 
         var savedText = File.ReadAllText(tempFile.FilePath, Encoding.UTF8);
-        savedText.ShouldBe(testContent, "CommonFileWriter should preserve exact text content including formatting");
+        savedText.ShouldBe(
+            testContent,
+            "CommonFileWriter should preserve exact text content including formatting"
+        );
     }
 
     [Fact]
@@ -194,7 +201,7 @@ public class OutputFormatStabilityTests
         var specialConfig = new TestConfiguration
         {
             StringValue = "Test with \"quotes\" and \\ backslashes",
-            ArrayValue = ["item with spaces", "item\"with\"quotes", "item\\with\\backslashes"]
+            ArrayValue = ["item with spaces", "item\"with\"quotes", "item\\with\\backslashes"],
         };
 
         instance.Initialize<TestConfiguration>(options =>
@@ -204,8 +211,8 @@ public class OutputFormatStabilityTests
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
-                    WriteIndented = true
-                }
+                    WriteIndented = true,
+                },
             };
             options.UseInMemoryFileWriter(_fileWriter);
         });
@@ -245,10 +252,7 @@ public class OutputFormatStabilityTests
         {
             StringValue = "",
             ArrayValue = [],
-            Nested = new NestedConfiguration
-            {
-                Description = ""
-            }
+            Nested = new NestedConfiguration { Description = "" },
         };
 
         instance.Initialize<TestConfiguration>(options =>
@@ -258,8 +262,8 @@ public class OutputFormatStabilityTests
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
-                    WriteIndented = true
-                }
+                    WriteIndented = true,
+                },
             };
             options.UseInMemoryFileWriter(_fileWriter);
         });
@@ -296,8 +300,8 @@ public class OutputFormatStabilityTests
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
-                    WriteIndented = false
-                }
+                    WriteIndented = false,
+                },
             };
             options.UseInMemoryFileWriter(_fileWriter);
         });
@@ -311,11 +315,17 @@ public class OutputFormatStabilityTests
 
         // Verify byte count is consistent
         var expectedByteCount = Encoding.UTF8.GetByteCount(actualText);
-        actualBytes.Length.ShouldBe(expectedByteCount, "Byte count should match UTF-8 encoding of the text");
+        actualBytes.Length.ShouldBe(
+            expectedByteCount,
+            "Byte count should match UTF-8 encoding of the text"
+        );
 
         // Verify content is valid UTF-8
         var reconstructedText = Encoding.UTF8.GetString(actualBytes);
-        reconstructedText.ShouldBe(actualText, "Byte array should roundtrip through UTF-8 correctly");
+        reconstructedText.ShouldBe(
+            actualText,
+            "Byte array should roundtrip through UTF-8 correctly"
+        );
 
         // Store actual output for debugging
         Console.WriteLine("=== Actual JSON Byte Output ===");

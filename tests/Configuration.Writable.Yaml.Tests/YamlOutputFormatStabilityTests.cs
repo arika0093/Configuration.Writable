@@ -22,7 +22,8 @@ public class YamlOutputFormatStabilityTests
         public double DoubleValue { get; set; } = 3.14159;
         public bool BoolValue { get; set; } = true;
         public string[] ArrayValue { get; set; } = ["item1", "item2", "item3"];
-        public DateTime DateTimeValue { get; set; } = new DateTime(2023, 12, 25, 10, 30, 45, DateTimeKind.Utc);
+        public DateTime DateTimeValue { get; set; } =
+            new DateTime(2023, 12, 25, 10, 30, 45, DateTimeKind.Utc);
         public NestedConfiguration Nested { get; set; } = new();
     }
 
@@ -107,7 +108,7 @@ public class YamlOutputFormatStabilityTests
         var specialConfig = new TestConfiguration
         {
             StringValue = "Test with \"quotes\" and: colons",
-            ArrayValue = ["item with spaces", "item:with:colons", "item\"with\"quotes"]
+            ArrayValue = ["item with spaces", "item:with:colons", "item\"with\"quotes"],
         };
 
         instance.Initialize<TestConfiguration>(options =>
@@ -142,10 +143,7 @@ public class YamlOutputFormatStabilityTests
         {
             StringValue = "",
             ArrayValue = [],
-            Nested = new NestedConfiguration
-            {
-                Description = ""
-            }
+            Nested = new NestedConfiguration { Description = "" },
         };
 
         instance.Initialize<TestConfiguration>(options =>
@@ -176,10 +174,7 @@ public class YamlOutputFormatStabilityTests
         {
             IntValue = -42,
             DoubleValue = -3.14159,
-            Nested = new NestedConfiguration
-            {
-                Price = 0.01m
-            }
+            Nested = new NestedConfiguration { Price = 0.01m },
         };
 
         instance.Initialize<TestConfiguration>(options =>
