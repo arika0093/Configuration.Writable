@@ -4,7 +4,7 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <PackageDescription></PackageDescription>
+    <PackageDescription>A lightweight library that extends `Microsoft.Extensions.Configuration` to easily handle user settings.</PackageDescription>
     <PackageProjectUrl>https://arika0093.github.io/Configuration.Writable</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arika0093/Configuration.Writable</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -38,8 +38,5 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Configuration.Writable.Tests</_Parameter1>
     </AssemblyAttribute>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

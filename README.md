@@ -397,7 +397,7 @@ I examined the major ones among these, but couldn't adopt them for the following
   * Collection writing is [not supported](https://github.com/aloneguid/config#json) in the JSON provider
 
 ### Using `Microsoft.Extensions.Configuration`
-Considering these current situations, `Microsoft.Extensions.Configuration` (`MS.E.C`) can be said to be the most standardized configuration management method in modern times.  
+`Microsoft.Extensions.Configuration` (`MS.E.C`) can be said to be the most standardized configuration management method in modern times.  
 It provides many features such as multi-file integration, support for various formats including environment variables, and configuration change reflection, and integrates seamlessly with `IHostApplicationBuilder`.  
 However, since it's primarily designed for application settings, it's insufficient for handling user settings. The major problem is that configuration writing is not supported.  
 Another issue is that, being based on DI (Dependency Injection), it can be somewhat cumbersome to use in certain types of applications.
