@@ -103,7 +103,7 @@ public static class WritableConfigurationExtensions
         var options = confBuilder.BuildOptions();
 
         // Setup auto-logger factory using DI registration
-        var shouldAutoConfigureLogger = options.Logger == null && options.LoggerFactory != null;
+        var shouldAutoConfigureLogger = options.Logger == null;
 
         var filePath = options.ConfigFilePath;
         // set FileWriter and Stream
@@ -181,7 +181,6 @@ public static class WritableConfigurationExtensions
                     InstanceName = options.InstanceName,
                     SectionName = options.SectionName,
                     Logger = logger,
-                    LoggerFactory = null,
                 };
             });
         }
