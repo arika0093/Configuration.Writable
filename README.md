@@ -44,7 +44,7 @@ WritableConfig.Initialize<SampleSetting>();
 // get the writable config instance with the specified setting class
 var options = WritableConfig.GetOption<SampleSetting>();
 
-// get the config instance
+// get the UserSetting instance
 var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}");
 
@@ -78,7 +78,7 @@ public class ConfigReadService(IReadonlyOptions<UserSetting> config)
 {
     public void Print()
     {
-        // get the config instance
+        // get the UserSetting instance
         var sampleSetting = config.CurrentValue;
         Console.WriteLine($">> Name: {sampleSetting.Name}");
     }
@@ -89,7 +89,7 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> config)
 {
     public async Task UpdateAsync()
     {
-        // get the config instance
+        // get the cUserSetting instance
         var sampleSetting = config.CurrentValue;
         // and save to storage
         await config.SaveAsync(setting =>
@@ -114,15 +114,15 @@ builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
 
 ### Save Location
 Default behavior save to `./usersettings.json`.  
-If you want to change the save location, use `opt.FileName` or `opt.UseStandardSaveLocation("MyAppId")`.
+If you want to change the save location, use `opt.FilePath` or `opt.UseStandardSaveLocation("MyAppId")`.
 
 For example:
 ```csharp
 // to save to the parent directory
-opt.FileName = "../myconfig";
+opt.FilePath = "../myconfig";
 
 // to save to child directory
-opt.FileName = "config/myconfig";
+opt.FilePath = "config/myconfig";
 
 // to save to a common settings directory
 //   in Windows: %APPDATA%/MyAppId
@@ -181,10 +181,14 @@ TODO
 In default, the entire settings are saved in the following structure:
 ```jsonc
 {
-  // settings saved to under "UserSettings" section
+  // "SectionRootName" is specified by opt.SectionName (default is "UserSettings")
   "UserSettings": {
-    "Name": "custom name",
-    "Age": 30
+    // the type name of the setting class ("UserSetting" here)
+    // InstanceName is appended if specified (e.g. "UserSetting-First")
+    "UserSetting": {
+      "Name": "custom name",
+      "Age": 30
+    }
   }
 }
 ```
@@ -207,13 +211,13 @@ If you want to manage multiple settings of the same type, you must specify diffe
 ```csharp
 // first setting
 builder.AddUserConfigurationFile<UserSetting>(opt => {
-    opt.FileName = "firstsettings.json";
+    opt.FilePath = "firstsettings.json";
     opt.InstanceName = "First";
     // save section will be "UserSettings-First"
 });
 // second setting
 builder.AddUserConfigurationFile<UserSetting>(opt => {
-    opt.FileName = "secondsettings.json";
+    opt.FilePath = "secondsettings.json";
     opt.InstanceName = "Second";
     // save section will be "UserSettings-Second"
 });
@@ -242,12 +246,45 @@ public class MyService(IWritableOptions<UserSetting> config)
 
 ## Tips
 ### Default Values
-TODO.
+Due to the specifications of `MS.E.C`, properties that do not exist in the configuration file will use their default values.  
+If a new property is added to the settings class during an update, that property will not exist in the configuration file, so the default value will be used.
+
+```csharp
+// if the settings file contains only {"Name": "custom name"}
+var setting = options.CurrentValue;
+// setting.Name is "custom name"
+// setting.Age is 20
+```
 
 ### Secret Value (Password, API Key, etc.)
-TODO.
+A good way to include user passwords and the like in settings is to split the class and save one part encrypted.  
+For example, split the class and save one part encrypted.
 
+```csharp
+public class UserSetting
+{
+    public string Name { get; set; } = "default name";
+    public int Age { get; set; } = 20;
+}
+public class UserSecretSetting
+{
+    public string Password { get; set; } = "";
+}
 
+WritableConfig.Initialize<UserSetting>(opt => {
+    opt.FilePath = "usersettings";
+});
+WritableConfig.Initialize<UserSecretSetting>(opt => {
+    opt.FilePath = "my-secret-folder/secrets";
+    // dotnet add package Configuration.Writable.Encrypt
+    opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
+});
+
+// and get each setting
+var userOptions = WritableConfig.GetOption<UserSetting>();
+var secretOptions = WritableConfig.GetOption<UserSecretSetting>();
+// ...
+```
 
 ## Merge multiple settings
 TODO.
@@ -258,12 +295,12 @@ and you can use `InMemoryFileWriter` to test reading and writing settings withou
 
 ```csharp
 // setup
-var sampleFileName = Path.GetRandomFileName();
+var sampleFilePath = Path.GetRandomFilePath();
 var _instance = new WritableConfigurationSimpleInstance();
 var _fileWriter = new InMemoryFileWriter();
 
 _instance.Initialize<UserSetting>(opt => {
-    opt.FileName = sampleFileName;
+    opt.FilePath = sampleFilePath;
     opt.UseInMemoryFileWriter(_fileWriter);
 });
 var option = _instance.GetOption<UserSetting>();
@@ -275,8 +312,8 @@ await options.SaveAsync(setting => {
 });
 
 // check the saved content
-Assert.True(_fileWriter.FileExists(sampleFileName));
-var savedText = _fileWriter.ReadAllText(sampleFileName);
+Assert.True(_fileWriter.FileExists(sampleFilePath));
+var savedText = _fileWriter.ReadAllText(sampleFilePath);
 Assert.Contains("test name", savedText);
 ```
 
