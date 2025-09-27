@@ -45,18 +45,9 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         var sectionName = options.SectionName;
         var serializer = Serializer;
 
-        string yamlString;
-        if (!string.IsNullOrWhiteSpace(sectionName))
-        {
-            // Use the new nested section creation method
-            var nestedSection = CreateNestedSection(sectionName, config);
-            yamlString = serializer.Serialize(nestedSection);
-        }
-        else
-        {
-            yamlString = serializer.Serialize(config);
-        }
-
+        // Use the new nested section creation method
+        var nestedSection = CreateNestedSection(sectionName, config);
+        var yamlString = serializer.Serialize(nestedSection);
         return Encoding.GetBytes(yamlString);
     }
 }

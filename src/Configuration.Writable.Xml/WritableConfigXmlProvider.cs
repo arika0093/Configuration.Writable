@@ -33,45 +33,29 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
         where T : class
     {
         var sectionName = options.SectionName;
-        if (string.IsNullOrWhiteSpace(sectionName))
+        // Split section name by ':' or '__' and create nested XML structure
+        var parts = GetSplitedSections(sectionName);
+
+        // first serialize to <AnyName>...</AnyName>
+        var serializer = new XmlSerializer(typeof(T));
+        using var sw = new StringWriter();
+        serializer.Serialize(sw, config);
+        var xmlDocument = new XmlDocument();
+        xmlDocument.LoadXml(sw.ToString());
+
+        // Build nested XML structure
+        var innerXml = xmlDocument.DocumentElement?.InnerXml ?? "";
+
+        // Build the nested structure from innermost to outermost
+        for (int i = parts.Length - 1; i >= 0; i--)
         {
-            // save to <configuration>...</configuration>
-            var serializer = new XmlSerializer(typeof(T), new XmlRootAttribute("configuration"));
-            var ns = new XmlSerializerNamespaces();
-            ns.Add("", "");
-            using var ms = new MemoryStream();
-            serializer.Serialize(ms, config, ns);
-            return new ReadOnlyMemory<byte>(ms.ToArray());
+            innerXml = $"<{parts[i]}>{innerXml}</{parts[i]}>";
         }
-        else
-        {
-            // Split section name by ':' or '__' and create nested XML structure
-            var parts = sectionName.Split(
-                new string[] { ":", "__" },
-                StringSplitOptions.RemoveEmptyEntries
-            );
 
-            // first serialize to <AnyName>...</AnyName>
-            var serializer = new XmlSerializer(typeof(T));
-            using var sw = new StringWriter();
-            serializer.Serialize(sw, config);
-            var xmlDocument = new XmlDocument();
-            xmlDocument.LoadXml(sw.ToString());
-
-            // Build nested XML structure
-            var innerXml = xmlDocument.DocumentElement?.InnerXml ?? "";
-
-            // Build the nested structure from innermost to outermost
-            for (int i = parts.Length - 1; i >= 0; i--)
-            {
-                innerXml = $"<{parts[i]}>{innerXml}</{parts[i]}>";
-            }
-
-            var xmlString = $"""
-                <?xml version="1.0" encoding="utf-8"?>
-                <configuration>{innerXml}</configuration>
-                """;
-            return Encoding.UTF8.GetBytes(xmlString);
-        }
+        var xmlString = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <configuration>{innerXml}</configuration>
+            """;
+        return Encoding.UTF8.GetBytes(xmlString);
     }
 }

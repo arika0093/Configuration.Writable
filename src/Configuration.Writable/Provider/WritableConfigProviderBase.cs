@@ -73,7 +73,7 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
         }
 
         // Split by ':' or '__' separators
-        var parts = sectionName.Split([":", "__"], StringSplitOptions.RemoveEmptyEntries);
+        var parts = GetSplitedSections(sectionName);
 
         if (parts.Length <= 1)
         {
@@ -90,4 +90,13 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
 
         return current;
     }
+
+    /// <summary>
+    /// Splits the specified section name into its constituent parts using colon (:) and double underscore (__) as
+    /// delimiters.
+    /// </summary>
+    /// <param name="sectionName">The section name to split. Cannot be null.</param>
+    /// <returns>An array of strings containing the individual sections. The array does not include empty entries.</returns>
+    protected static string[] GetSplitedSections(string sectionName) =>
+        sectionName.Split([":", "__"], StringSplitOptions.RemoveEmptyEntries);
 }

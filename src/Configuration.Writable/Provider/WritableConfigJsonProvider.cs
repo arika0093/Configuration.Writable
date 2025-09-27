@@ -54,30 +54,16 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
 
         // generate saved json object
         var serializeNode = JsonSerializer.SerializeToNode<T>(config, serializerOptions);
-        JsonObject root;
 
-        if (!string.IsNullOrWhiteSpace(sectionName))
-        {
-            options.EffectiveLogger?.Log(
-                LogLevel.Debug,
-                "Creating nested section structure for section: {SectionName}",
-                sectionName
-            );
-            // Use the new nested section creation method
-            var nestedSection = CreateNestedSection(sectionName, serializeNode ?? new JsonObject());
-            root =
-                JsonSerializer.SerializeToNode(nestedSection, serializerOptions) as JsonObject
-                ?? new JsonObject();
-        }
-        else
-        {
-            options.EffectiveLogger?.Log(
-                LogLevel.Debug,
-                "Serializing configuration as root object"
-            );
-            // if section name is empty, write the config as root
-            root = serializeNode as JsonObject ?? new JsonObject();
-        }
+        options.EffectiveLogger?.Log(
+            LogLevel.Debug,
+            "Creating nested section structure for section: {SectionName}",
+            sectionName
+        );
+        // Use the new nested section creation method
+        var nestedSection = CreateNestedSection(sectionName, serializeNode ?? new JsonObject());
+        var sNode = JsonSerializer.SerializeToNode(nestedSection, serializerOptions);
+        JsonObject root = sNode as JsonObject ?? [];
         // convert to string
         var jsonString = root?.ToJsonString(serializerOptions) ?? "{}";
         var bytes = Encoding.GetBytes(jsonString);
