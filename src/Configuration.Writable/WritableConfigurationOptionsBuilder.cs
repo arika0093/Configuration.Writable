@@ -118,9 +118,9 @@ public record WritableConfigurationOptionsBuilder<T>
             }
             if (string.IsNullOrWhiteSpace(InstanceName))
             {
-                return SectionRootName;
+                return $"{SectionRootName}:{typeof(T).Name}";
             }
-            return $"{SectionRootName}-{InstanceName}";
+            return $"{SectionRootName}:{typeof(T).Name}-{InstanceName}";
         }
     }
 
