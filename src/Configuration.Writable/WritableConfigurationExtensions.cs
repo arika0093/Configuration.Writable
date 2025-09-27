@@ -80,14 +80,6 @@ public static class WritableConfigurationExtensions
         // build options
         var confBuilder = new WritableConfigurationOptionsBuilder<T>();
         configureOptions(confBuilder);
-
-        // Auto-configure logger factory if no logger is explicitly set
-        if (confBuilder.Logger == null && confBuilder.LoggerFactory == null)
-        {
-            // Mark that auto-configuration should be done
-            confBuilder.LoggerFactory = () => null; // Placeholder, will be replaced in registration
-        }
-
         return services.AddUserConfigurationFile<T>(configuration, confBuilder);
     }
 

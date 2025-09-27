@@ -1,5 +1,6 @@
 ﻿using Configuration.Writable;
 using Example.ConsoleApp;
+using Microsoft.Extensions.Logging;
 
 // initialize the writable config system
 // default save location is ./userconfig.json
@@ -25,6 +26,12 @@ WritableConfig.Initialize<SampleSetting>(opt =>
 
     // if you want to keep backup files, use CommonFileWriter with BackupMaxCount > 0
     // opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
+
+    // if you want to use logging, set Logger
+    // required NuGet package: Microsoft.Extensions.Logging.Console
+    // opt.Logger = LoggerFactory
+    //    .Create(builder => builder.AddConsole())
+    //    .CreateLogger("UserConfig");
 });
 
 // -------------------------------
