@@ -294,7 +294,7 @@ public class WritableConfigTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(Timeout = 10000)]
     public void SaveAsync_OnSynchronizationContext_ShouldNotDeadlock()
     {
         var testFileName = Path.GetRandomFileName();
@@ -322,7 +322,9 @@ public class WritableConfigTests
             SynchronizationContext.SetSynchronizationContext(mockContext);
 
             // This should not deadlock even with a synchronization context
+#pragma warning disable xUnit1031 // Do not use blocking task operations in test method
             option.SaveAsync(newSettings).Wait();
+#pragma warning restore xUnit1031 // Do not use blocking task operations in test method
 
             _fileWriter.FileExists(testFileName).ShouldBeTrue();
 
