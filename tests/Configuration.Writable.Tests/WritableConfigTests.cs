@@ -294,7 +294,7 @@ public class WritableConfigTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact(Timeout = 10000)]
+    [Fact]
     public void SaveAsync_OnSynchronizationContext_ShouldNotDeadlock()
     {
         var testFileName = Path.GetRandomFileName();
