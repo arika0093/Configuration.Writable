@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
@@ -292,6 +293,49 @@ public class WritableConfigTests
         loadedSettings.Value.ShouldBe(999);
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
+
+    [Fact]
+    public void SaveAsync_OnSynchronizationContext_ShouldNotDeadlock()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        _instance.Initialize<TestSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var newSettings = new TestSettings
+        {
+            Name = "synccontext_test",
+            Value = 888,
+            IsEnabled = false,
+        };
+
+        var option = _instance.GetOption<TestSettings>();
+
+        // Simulate a synchronization context that could cause deadlock
+        var previousContext = SynchronizationContext.Current;
+        try
+        {
+            var mockContext = new MockSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(mockContext);
+
+            // This should not deadlock even with a synchronization context
+            option.SaveAsync(newSettings).Wait();
+
+            _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+            var loadedSettings = option.CurrentValue;
+            loadedSettings.Name.ShouldBe("synccontext_test");
+            loadedSettings.Value.ShouldBe(888);
+            loadedSettings.IsEnabled.ShouldBeFalse();
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
+        }
+    }
 }
 
 file class TestSettings
@@ -302,3 +346,17 @@ file class TestSettings
 }
 
 file class TestSettings2 : TestSettings;
+
+file class MockSynchronizationContext : SynchronizationContext
+{
+    public override void Post(SendOrPostCallback d, object? state)
+    {
+        // Execute synchronously to simulate a context that could cause deadlock
+        d(state);
+    }
+
+    public override void Send(SendOrPostCallback d, object? state)
+    {
+        d(state);
+    }
+}
