@@ -1,7 +1,7 @@
 # Configuration.Writable
 [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/arika0093/Configuration.Writable?style=flat-square)
 
-A lightweight library that extends `Microsoft.Extensions.Configuration` to easily handle user settings.
+A lightweight library that extends `Microsoft.Extensions.Configuration` to easily write settings with type safety.
 
 ## Features
 * Read and write user settings with type safety.
@@ -405,9 +405,8 @@ For example, applications like `WinForms`, `WPF`, or `Console Apps` that want to
 
 ### `Configuration.Writable`
 The preamble has gotten long, but it's time for promotion!  
-This library extends `MS.E.C` to make writing user settings easy.  
+This library extends `MS.E.C` to make writing user settings easy.  The name of this library is `Configuration.Writable` because it adds the "writable" feature.
 It's also designed to be easily usable in applications that don't use DI.  
-
 
 ## License
 This project is licensed under the Apache-2.0 License.
