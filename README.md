@@ -42,14 +42,14 @@ WritableConfig.Initialize<SampleSetting>();
 
 // -------------
 // get the writable config instance with the specified setting class
-var options = WritableConfig.GetOption<SampleSetting>();
+var option = WritableConfig.GetOption<SampleSetting>();
 
 // get the UserSetting instance
-var sampleSetting = options.CurrentValue;
+var sampleSetting = option.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}");
 
 // and save to storage
-await options.SaveAsync(setting =>
+await option.SaveAsync(setting =>
 {
     setting.Name = "new name";
 });
@@ -74,25 +74,25 @@ Then, inject `IReadonlyOptions<T>` or `IWritableOptions<T>` to read and write se
 ```csharp
 // read config in your class
 // you can also use IOptions<T>, IOptionsMonitor<T> or IOptionsSnapshot<T>
-public class ConfigReadService(IReadonlyOptions<UserSetting> config)
+public class ConfigReadService(IReadonlyOptions<UserSetting> option)
 {
     public void Print()
     {
         // get the UserSetting instance
-        var sampleSetting = config.CurrentValue;
+        var sampleSetting = option.CurrentValue;
         Console.WriteLine($">> Name: {sampleSetting.Name}");
     }
 }
 
 // read and write config in your class
-public class ConfigReadWriteService(IWritableOptions<UserSetting> config)
+public class ConfigReadWriteService(IWritableOptions<UserSetting> option)
 {
     public async Task UpdateAsync()
     {
         // get the cUserSetting instance
-        var sampleSetting = config.CurrentValue;
+        var sampleSetting = option.CurrentValue;
         // and save to storage
-        await config.SaveAsync(setting =>
+        await option.SaveAsync(setting =>
         {
             setting.Name = "new name";
         });
@@ -257,18 +257,18 @@ builder.AddUserConfigurationFile<UserSetting>(opt => {
 });
 
 // and get each setting from DI
-public class MyService(IWritableOptions<UserSetting> config)
+public class MyService(IWritableOptions<UserSetting> option)
 {
     public void GetAndSave()
     {
         // cannot use .CurrentValue if multiple settings of the same type are registered
-        var firstSetting = config.Get("First");
-        var secondSetting = config.Get("Second");
+        var firstSetting = option.Get("First");
+        var secondSetting = option.Get("Second");
         // and you can must specify instance name when saving
-        await config.SaveAsync("First", setting => {
+        await option.SaveAsync("First", setting => {
             setting.Name = "first name";
         });
-        await config.SaveAsync("Second", setting => {
+        await option.SaveAsync("Second", setting => {
             setting.Name = "second name";
         });
     }
@@ -331,7 +331,7 @@ instance.Initialize<UserSetting>(opt => {
 var option = instance.GetOption<UserSetting>();
 
 // and your test execution
-await options.SaveAsync(setting => {
+await option.SaveAsync(setting => {
     setting.Name = "test name";
     setting.Age = 99;
 });
