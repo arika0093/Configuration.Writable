@@ -48,14 +48,12 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
         );
 
         var contents = GetSaveContents(config, options);
-        await FileWriter
-            .SaveToFileAsync(
-                options.ConfigFilePath,
-                contents,
-                cancellationToken,
-                options.EffectiveLogger
-            )
-            .ConfigureAwait(false);
+        await FileWriter.SaveToFileAsync(
+            options.ConfigFilePath,
+            contents,
+            cancellationToken,
+            options.EffectiveLogger
+        ).ConfigureAwait(false);
 
         options.EffectiveLogger?.Log(
             LogLevel.Information,

@@ -73,8 +73,7 @@ public class CommonFileWriter : IFileWriter
                         temporaryFilePath
                     );
                     // Write to temporary file first
-                    await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken)
-                        .ConfigureAwait(false);
+                    await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken).ConfigureAwait(false);
                     // Replace original file
                     if (File.Exists(path))
                     {
