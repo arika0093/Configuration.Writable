@@ -1,0 +1,16 @@
+namespace Configuration.Writable
+{
+    public class WritableConfigEncryptProvider : Configuration.Writable.WritableConfigProviderBase
+    {
+        public WritableConfigEncryptProvider(byte[] key) { }
+        public WritableConfigEncryptProvider(string key) { }
+        public System.Security.Cryptography.Aes Aes { get; }
+        public override string FileExtension { get; }
+        public Configuration.Writable.WritableConfigJsonProvider JsonProvider { get; init; }
+        public byte[] Key { get; }
+        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, System.IO.Stream stream) { }
+        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, string path) { }
+        public override System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+    }
+}
