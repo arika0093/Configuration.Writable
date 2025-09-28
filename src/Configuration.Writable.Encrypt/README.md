@@ -20,7 +20,7 @@ WritableConfig.Initialize<UserSecretSetting>(opt => {
 ```csharp
 builder = new HostApplicationBuilder(args);
 builder.AddUserConfigurationFile<UserSecretSetting>(opt => {
-		opt.FilePath = "my-secret-folder/secrets";
-		opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
+    opt.FilePath = "my-secret-folder/secrets";
+    opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 });
 ```
