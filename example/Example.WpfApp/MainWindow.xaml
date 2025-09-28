@@ -1,0 +1,63 @@
+﻿<Window
+  x:Class="Example.WpfApp.MainWindow"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:local="clr-namespace:Example.WpfApp"
+  mc:Ignorable="d"
+  Title="MainWindow"
+  Height="200"
+  Width="490"
+>
+  <Window.DataContext>
+    <local:SampleSetting />
+  </Window.DataContext>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <TextBlock
+      Text="Configuration.Writable"
+      FontSize="24"
+      HorizontalAlignment="Center"
+      Margin="10"
+    />
+    <TextBox
+      HorizontalAlignment="Center"
+      Grid.Row="2"
+      TextWrapping="Wrap"
+      Text="{Binding Name}"
+      VerticalAlignment="Top"
+      Width="400"
+      Margin="4"
+      FontSize="14"
+    />
+    <TextBox
+      HorizontalAlignment="Center"
+      Grid.Row="3"
+      TextWrapping="Wrap"
+      Text="{Binding LastUpdatedAtString}"
+      VerticalAlignment="Top"
+      Width="400"
+      IsReadOnly="True"
+      Margin="4"
+      FontSize="14"
+    />
+    <Button
+      Content="Save"
+      Grid.Row="4"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      Width="100"
+      Height="30"
+      Click="Button_Click"
+      Margin="10"
+      FontSize="14"
+    />
+  </Grid>
+</Window>
