@@ -50,7 +50,7 @@ public class CommonFileWriter : IFileWriter
                 retryCount + 1,
                 path
             );
-            await _semaphore.WaitAsync(cancellationToken);
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 // Create directory if it does not exist
@@ -73,7 +73,7 @@ public class CommonFileWriter : IFileWriter
                         temporaryFilePath
                     );
                     // Write to temporary file first
-                    await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken);
+                    await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken).ConfigureAwait(false);
                     // Replace original file
                     if (File.Exists(path))
                     {
@@ -101,7 +101,7 @@ public class CommonFileWriter : IFileWriter
                 retryCount++;
                 // Wait 100ms before retrying
                 var delayMs = RetryDelay(retryCount);
-                await Task.Delay(delayMs, cancellationToken);
+                await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
             }
             finally
             {

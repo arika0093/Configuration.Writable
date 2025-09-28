@@ -53,7 +53,7 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
             contents,
             cancellationToken,
             options.EffectiveLogger
-        );
+        ).ConfigureAwait(false);
 
         options.EffectiveLogger?.Log(
             LogLevel.Information,
