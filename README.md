@@ -418,8 +418,8 @@ Therefore, this library currently does not support saving integrated (merged) se
 
 ### Dynamic Addition and Removal of Configuration Files
 For example, in applications like `VSCode`, in addition to global settings, you can manage settings by dynamically adding or removing files such as `.vscode/settings.json` found in the currently opened folder.
-This library assumes that configuration files are added or removed all at once during application startup, and does not support dynamic addition or removal of configuration files at runtime.
-
+This library assumes that configuration files are added all at once during application startup, and does not support dynamic addition or removal of configuration files at runtime.
+(Also, related to the first limitation, it becomes unclear which configuration file should be saved to.)
 
 ## License
 This project is licensed under the Apache-2.0 License.
