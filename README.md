@@ -380,7 +380,7 @@ When considering type safety, the first approach that comes to mind is creating 
 This method isn't bad, but the drawback is that there are too many things to consider.
 
 * You need to write configuration management code yourself
-* You need to implement many features like backup creation, settings merging, and update handling
+* You need to implement many features like backup creation, update handling
 * Integrating multiple configuration sources requires extra effort
 * You need to implement configuration change reflection yourself
 
@@ -407,6 +407,19 @@ For example, applications like `WinForms`, `WPF`, or `Console Apps` that want to
 The preamble has gotten long, but it's time for promotion!  
 This library extends `MS.E.C` to make writing user settings easy.  The name of this library is `Configuration.Writable` because it adds the "writable" feature.
 It's also designed to be easily usable in applications that don't use DI.  
+
+## Limitations
+this library currently does **not** support the following features.
+
+### Saving Integrated Settings
+`MS.E.C` provides a feature to integrate multiple configuration sources, but saving settings in this scenario introduces a problem.  
+Since the settings are presented as a merged view, it becomes unclear "which source" should be updated with "which value" when saving.  
+Therefore, this library currently does not support saving integrated (merged) settings.
+
+### Dynamic Addition and Removal of Configuration Files
+For example, in applications like `VSCode`, in addition to global settings, you can manage settings by dynamically adding or removing files such as `.vscode/settings.json` found in the currently opened folder.
+This library assumes that configuration files are added or removed all at once during application startup, and does not support dynamic addition or removal of configuration files at runtime.
+
 
 ## License
 This project is licensed under the Apache-2.0 License.
