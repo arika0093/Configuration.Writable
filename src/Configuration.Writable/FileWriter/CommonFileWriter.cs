@@ -12,7 +12,7 @@ namespace Configuration.Writable.FileWriter;
 /// <summary>
 /// Provides functionality to write data to a file, ensuring thread safety and data integrity.
 /// </summary>
-public class CommonFileWriter : IFileWriter
+public class CommonFileWriter : IFileWriter, IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -181,8 +181,13 @@ public class CommonFileWriter : IFileWriter
         File.Copy(path, backupFilePath);
     }
 
-    // write content to file
-    private static Task WriteContentToFileAsync(
+    /// <summary>
+    /// Writes the specified content to a file asynchronously.
+    /// </summary>
+    /// <param name="path">The full path of the file to write to. Must not be null or empty.</param>
+    /// <param name="content">The content to write to the file as a read-only memory of bytes.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    protected virtual Task WriteContentToFileAsync(
         string path,
         ReadOnlyMemory<byte> content,
         CancellationToken cancellationToken
@@ -196,4 +201,16 @@ public class CommonFileWriter : IFileWriter
         return Task.Run(() => File.WriteAllBytes(path, content.ToArray()), cancellationToken);
 #endif
     }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the resources used by the <see cref="CommonFileWriter"/> instance.
+    /// </summary>
+    protected virtual void Dispose(bool disposing) => _semaphore.Dispose();
 }
