@@ -113,7 +113,7 @@ builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
 ```
 
 ### Save Location
-Default behavior save to `./usersettings.json`.  
+Default behavior save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
 If you want to change the save location, use `opt.FilePath` or `opt.UseStandardSaveLocation("MyAppId")`.
 
 For example:
