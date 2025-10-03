@@ -1,15 +1,18 @@
 ﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
 namespace Configuration.Writable.FileWriter
 {
-    public class CommonFileWriter : Configuration.Writable.FileWriter.IFileWriter
+    public class CommonFileWriter : Configuration.Writable.FileWriter.IFileWriter, System.IDisposable
     {
         public CommonFileWriter() { }
         public virtual int BackupMaxCount { get; set; }
         public virtual int MaxRetryCount { get; set; }
         public virtual System.Func<int, int> RetryDelay { get; set; }
+        public void Dispose() { }
+        protected virtual void Dispose(bool disposing) { }
         protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
         protected virtual string GetTemporaryFilePath(string path) { }
         public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null) { }
+        protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
     }
     public interface IFileWriter
     {
