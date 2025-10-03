@@ -22,7 +22,7 @@ internal class EncryptConfigurationProvider(EncryptConfigurationSource source)
     public override void Load(Stream stream)
     {
         // read IV from the stream
-        var aes = source.AesInstance;
+        using var aes = Aes.Create();
         var iv = new byte[16];
 #if NET
         stream.ReadExactly(iv);

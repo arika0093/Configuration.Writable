@@ -63,11 +63,6 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
     }
     private byte[] _key = [];
 
-    /// <summary>
-    /// Gets the Advanced Encryption Standard (AES) cryptographic algorithm instance.
-    /// </summary>
-    public Aes Aes { get; private set; } = Aes.Create();
-
     /// <inheritdoc />
     public override string FileExtension => "";
 
@@ -77,7 +72,6 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
         configuration.Add<EncryptConfigurationSource>(source =>
         {
             source.Key = Key;
-            source.AesInstance = Aes;
             source.FileProvider = null;
             source.Path = path;
             source.Optional = true;
@@ -92,7 +86,6 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
         configuration.Add<EncryptConfigurationSource>(source =>
         {
             source.Key = Key;
-            source.AesInstance = Aes;
             source.FileProvider = null;
             source.ReloadOnChange = false;
             source.EncryptedStream = stream;
@@ -110,11 +103,12 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
         var jsonBytes = JsonProvider.GetSaveContents(config, options);
 
         // encrypt it
-        var encryptor = Aes.CreateEncryptor(Key, Aes.IV);
+        using var aes = Aes.Create();
+        var encryptor = aes.CreateEncryptor(Key, aes.IV);
 
         using var ms = new MemoryStream();
         // prepend IV to the stream
-        ms.Write(Aes.IV, 0, Aes.IV.Length);
+        ms.Write(aes.IV, 0, aes.IV.Length);
         using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
         {
             using var bw = new BinaryWriter(cs);
