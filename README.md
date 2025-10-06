@@ -131,24 +131,21 @@ opt.FilePath = "config/myconfig";
 opt.UseStandardSaveLocation("MyAppId");
 ```
 
-If you want toggle between development and production environments, you can use `#if DEBUG` pattern or `Environtment.IsDevelopment()`.
+If you want toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
 
 ```csharp
 // without DI
 WritableConfig.Initialize<UserSetting>(opt => {
-#if DEBUG
-    opt.FilePath = "devsettings.json";
-#else
+    opt.FilePath = "mysettings.json";
+#if RELEASE
     opt.UseStandardSaveLocation("MyAppId");
 #endif
 });
 
 // if use IHostApplicationBuilder
 builder.AddUserConfigurationFile<UserSetting>(opt => {
-    if (builder.Environment.IsDevelopment()) {
-        opt.FilePath = "devsettings.json";
-    }
-    else {
+    opt.FilePath = "mysettings.json";
+    if (builder.Environment.IsProduction()) {
         opt.UseStandardSaveLocation("MyAppId");
     }
 });
