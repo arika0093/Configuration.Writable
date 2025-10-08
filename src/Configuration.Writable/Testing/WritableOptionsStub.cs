@@ -93,3 +93,18 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
         return Task.CompletedTask;
     }
 }
+
+/// <summary>
+/// A static factory class for creating instances of <see cref="WritableOptionsStub{T}"/>.
+/// </summary>
+public static class WritableOptionsStub
+{
+    /// <summary>
+    /// Creates a new instance of <see cref="WritableOptionsStub{T}"/> with the specified initial value.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration object.</typeparam>
+    /// <param name="value">The initial value to be used for the default name.</param>
+    /// <returns>A new instance of <see cref="WritableOptionsStub{T}"/>.</returns>
+    public static WritableOptionsStub<T> Create<T>(T value)
+        where T : class => new(value);
+}

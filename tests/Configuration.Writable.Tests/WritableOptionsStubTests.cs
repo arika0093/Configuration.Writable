@@ -26,6 +26,27 @@ public class WritableOptionsStubTests
         setting.Name.ShouldBe("UpdatedName");
         setting.Age.ShouldBe(30);
     }
+
+    [Fact]
+    public async Task WritableOptionsStub_UseReadonlyOptionService_NoGenerics_Test()
+    {
+        var setting = new UserSettings { Name = "InitialName", Age = 20 };
+        var options = WritableOptionsStub.Create(setting);
+        var service = new SampleReadonlyService(options);
+        var act = await service.ReadName();
+        act.ShouldBe("InitialName");
+    }
+
+    [Fact]
+    public async Task WritableOptionsStub_UseWritableOptionService_NoGenerics_Test()
+    {
+        var setting = new UserSettings { Name = "InitialName", Age = 20 };
+        var options = WritableOptionsStub.Create(setting);
+        var service = new SampleWritableService(options);
+        await service.UpdateSettings("UpdatedName", 30);
+        setting.Name.ShouldBe("UpdatedName");
+        setting.Age.ShouldBe(30);
+    }
 }
 
 file class SampleReadonlyService(IReadonlyOptions<UserSettings> option)

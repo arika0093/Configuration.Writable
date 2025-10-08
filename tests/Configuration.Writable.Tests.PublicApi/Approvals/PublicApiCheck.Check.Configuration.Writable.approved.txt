@@ -152,6 +152,11 @@ namespace Configuration.Writable
 }
 namespace Configuration.Writable.Testing
 {
+    public static class WritableOptionsStub
+    {
+        public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(T value)
+            where T :  class { }
+    }
     public class WritableOptionsStub<T> : Configuration.Writable.IReadonlyOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class
     {

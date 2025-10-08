@@ -332,7 +332,7 @@ If you simply want to obtain `IReadonlyOptions<T>` or `IWritableOptions<T>`, usi
 using Configuration.Writable.Testing;
 
 var settingValue = new UserSetting();
-var options = new WritableOptionsStub(settingValue);
+var options = WritableOptionsStub.Create(settingValue);
 
 // and use options in your test
 var yourService = new YourService(options);
