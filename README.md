@@ -1,7 +1,7 @@
 # Configuration.Writable
 [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/arika0093/Configuration.Writable?style=flat-square)
 
-A lightweight library that extends `Microsoft.Extensions.Configuration` to easily write settings with type safety.
+A lightweight library that extends `Microsoft.Extensions.Configuration`(`MS.E.C`) to easily write settings with type safety.
 
 ## Features
 * Read and write user settings with type safety.
@@ -321,7 +321,7 @@ public class MyService(IWritableOptions<UserSetting> option)
 
 ## Tips
 ### Default Values
-Due to the specifications of Microsoft.Extensions.Configuration, properties that do not exist in the configuration file will use their default values.  
+Due to the specifications of MS.E.C, properties that do not exist in the configuration file will use their default values.  
 If a new property is added to the settings class during an update, that property will not exist in the configuration file, so the default value will be used.
 
 ```csharp
@@ -331,7 +331,7 @@ var setting = options.CurrentValue;
 // setting.Age is 20 (the default value)
 ```
 
-### Secret Value (Password, API Key, etc.)
+### Secret Values
 A good way to include user passwords and the like in settings is to split the class and save one part encrypted.
 
 ```csharp
@@ -400,15 +400,15 @@ Assert.Contains("expected name", json);
 ### IReadOnlyOptions<T>
 An interface for reading the settings of the registered type `T`.  
 It automatically reflects the latest settings when the underlying configuration is updated.  
-This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from `MS.E.C`.
+This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from MS.E.C.
 
 ```csharp
 public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class
 ```
 
-The main additional features compared to `IOptionsMonitor<T>` are as follows:
+The additional features compared to `IOptionsMonitor<T>` are as follows:
 
-* The `GetConfigurationOptions` method to retrieve configuration options (`WritableConfigOptions`)
+* The `GetConfigurationOptions` method to retrieve configuration options.
 * In environments where file change detection is not possible (for example, on network shares or in Docker environments where [change detection is not supported by default](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#ioptionsmonitor)), you can always get the latest settings. This is achieved by using the cache maintained when saving via `IWritableOptions<T>`
 
 ### IWritableOptions<T>
@@ -423,12 +423,12 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
 this library currently does **not** support the following features.
 
 ### Saving Integrated Settings
-`MS.E.C` provides a feature to integrate multiple configuration sources, but saving settings in this scenario introduces a problem.  
+MS.E.C provides a feature to integrate multiple configuration sources, but saving settings in this scenario introduces a problem.  
 Since the settings are presented as a merged view, it becomes unclear "which source" should be updated with "which value" when saving.  
 Therefore, this library currently does not support saving integrated (merged) settings.
 
 ### Dynamic Addition and Removal of Configuration Files
-For example, in applications like `VSCode`, in addition to global settings, you can manage settings by dynamically adding or removing files such as `.vscode/settings.json` found in the currently opened folder.
+For example, in applications like VSCode, in addition to global settings, you can manage settings by dynamically adding or removing files such as `.vscode/settings.json` found in the currently opened folder.
 This library assumes that configuration files are added all at once during application startup, and does not support dynamic addition or removal of configuration files at runtime.
 (Also, related to the first limitation, it becomes unclear which configuration file should be saved to.)
 
