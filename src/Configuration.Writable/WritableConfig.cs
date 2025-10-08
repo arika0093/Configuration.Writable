@@ -14,19 +14,23 @@ namespace Configuration.Writable;
 public static class WritableConfig
 {
     // Store instances for different types to ensure singleton behavior per type
-    private static readonly Dictionary<Type, WritableConfigSimpleInstance> _instances = new();
+    private static readonly Dictionary<Type, object> _instances = [];
 
     // Cache the service provider to avoid multiple builds
-    private static WritableConfigSimpleInstance GetInternalInstance<T>()
+    private static WritableConfigSimpleInstance<T> GetInternalInstance<T>()
         where T : class
     {
         var type = typeof(T);
-        if (!_instances.TryGetValue(type, out WritableConfigSimpleInstance? value))
+        if (_instances.TryGetValue(type, out var rst))
         {
-            value = new WritableConfigSimpleInstance();
-            _instances[type] = value;
+            return (WritableConfigSimpleInstance<T>)rst;
         }
-        return value;
+        else
+        {
+            var instance = new WritableConfigSimpleInstance<T>();
+            _instances[type] = instance;
+            return instance;
+        }
     }
 
     /// <summary>
@@ -55,5 +59,5 @@ public static class WritableConfig
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
     public static IWritableOptions<T> GetOption<T>()
-        where T : class => GetInternalInstance<T>().GetOption<T>();
+        where T : class => GetInternalInstance<T>().GetOption();
 }
