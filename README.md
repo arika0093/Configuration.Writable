@@ -216,7 +216,7 @@ opt.Logger = LoggerFactory
     .CreateLogger("Configuration.Writable");
 
 // with DI
-// nothing to do (uses the logger from DI)
+// no setup required (uses the logger from DI)
 ```
 
 ### SectionName
