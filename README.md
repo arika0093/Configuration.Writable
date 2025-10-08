@@ -31,7 +31,7 @@ public class UserSetting
 ```
 
 ### Without DI
-If you are not using DI (for example, in `WinForms`, `WPF`, `console apps`, etc.),
+If you are not using DI (for example, in WinForms, WPF, console apps, etc.),
 Use `WritableConfig` as the starting point for reading and writing settings.
 
 ```csharp
@@ -57,7 +57,7 @@ await option.SaveAsync(setting =>
 ```
 
 ### With DI
-If you are using DI (for example, in `ASP.NET Core`, `Blazor`, `Worker Service`, etc.), integrate with `IHostApplicationBuilder` or `IServiceCollection`.
+If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), integrate with `IHostApplicationBuilder` or `IServiceCollection`.
 First, call `builder.AddUserConfigurationFile` to register the settings.
 
 ```csharp
@@ -134,6 +134,10 @@ opt.UseStandardSaveLocation("MyAppId");
 If you want toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
 
 ```csharp
+// those pattern are saved to
+// - development: ./mysettings.json (executable directory)
+// - production:  %APPDATA%/MyAppId/mysettings.json (on Windows)
+
 // without DI
 WritableConfig.Initialize<UserSetting>(opt => {
     opt.FilePath = "mysettings.json";
