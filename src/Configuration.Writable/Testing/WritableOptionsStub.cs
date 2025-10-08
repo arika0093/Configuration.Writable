@@ -14,7 +14,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
 {
     private const string DefaultName = "";
 
-    private Dictionary<string?, T> NamedValues { get; } = [];
+    private Dictionary<string, T> NamedValues { get; } = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableOptionsStub{T}"/> class.
@@ -29,7 +29,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
     /// Initializes a new instance of the <see cref="WritableOptionsStub{T}"/> class.
     /// </summary>
     /// <param name="namedValues">A dictionary containing named configuration values.</param>
-    public WritableOptionsStub(Dictionary<string?, T> namedValues)
+    public WritableOptionsStub(Dictionary<string, T> namedValues)
     {
         NamedValues = namedValues;
     }
@@ -38,7 +38,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
     public T CurrentValue => NamedValues[DefaultName];
 
     /// <inheritdoc/>
-    public T Get(string? name) => NamedValues[name];
+    public T Get(string? name) => NamedValues[name!];
 
     /// <inheritdoc/>
     public WritableConfigurationOptions<T> GetConfigurationOptions() =>
