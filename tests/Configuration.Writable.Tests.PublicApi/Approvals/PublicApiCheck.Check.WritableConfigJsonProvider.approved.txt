@@ -143,16 +143,13 @@ namespace Configuration.Writable
 }
 namespace Configuration.Writable.Internal
 {
-    public class WritableConfigSimpleInstance
+    public class WritableConfigSimpleInstance<T>
+        where T :  class
     {
         public WritableConfigSimpleInstance() { }
-        public Configuration.Writable.IWritableOptions<T> GetOption<T>()
-            where T :  class { }
-        public void Initialize<T>()
-            where T :  class { }
-        public void Initialize<T>(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder)
-            where T :  class { }
-        public void Initialize<T>(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions)
-            where T :  class { }
+        public Configuration.Writable.IWritableOptions<T> GetOption() { }
+        public void Initialize() { }
+        public void Initialize(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
+        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
     }
 }
