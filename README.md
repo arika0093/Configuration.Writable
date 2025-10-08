@@ -312,31 +312,37 @@ public class UserSecretSetting(string Password); // secret
 ```
 
 ## Testing
-To prepare a disposable configuration instance, use `WritableConfigSimpleInstance`.
-and you can use `InMemoryFileWriter` to test reading and writing settings without touching the file system.  
+If you simply want to obtain `IReadonlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsInstance` is straightforward.
 
 ```csharp
-// setup
-var sampleFilePath = Path.GetRandomFilePath();
-var instance = new WritableConfigSimpleInstance();
-var fileWriter = new InMemoryFileWriter();
+var settingValue = new UserSetting();
+var options = new WritableOptionsInstance(settingValue);
 
-instance.Initialize<UserSetting>(opt => {
+// and use options in your test
+var yourService = new YourService(options);
+yourService.DoSomething();
+
+// settingValue is updated when yourService changes it
+Assert.Equal("expected name", settingValue.Name);
+```
+
+If you want to perform tests that actually involve writing to the file system, use `WritableConfigSimpleInstance`.
+
+```csharp
+var sampleFilePath = Path.GetTempFileName();
+var instance = new WritableConfigSimpleInstance<UserSetting>();
+instance.Initialize(opt => {
     opt.FilePath = sampleFilePath;
-    opt.UseInMemoryFileWriter(fileWriter);
 });
-var option = instance.GetOption<UserSetting>();
+var option = instance.GetOption();
 
-// and your test execution
-await option.SaveAsync(setting => {
-    setting.Name = "test name";
-    setting.Age = 99;
-});
+// and use options in your test
+var yourService = new YourService(options);
+yourService.DoSomething();
 
-// check the saved content
-Assert.True(fileWriter.FileExists(sampleFilePath));
-var savedText = fileWriter.ReadAllText(sampleFilePath);
-Assert.Contains("test name", savedText);
+// sampleFilePath now contains the updated settings
+var json = File.ReadAllText(sampleFilePath);
+Assert.Contains("expected name", json);
 ```
 
 ## Interfaces
