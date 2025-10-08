@@ -315,6 +315,9 @@ public class UserSetting(string Name, int Age);  // non-secret
 public class UserSecretSetting(string Password); // secret
 ```
 
+> [!WARNING]
+> Do not store values that must not be disclosed to others (e.g., database passwords). This feature is solely intended to prevent others from viewing values entered by the user.
+
 ## Testing
 If you simply want to obtain `IReadonlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 
