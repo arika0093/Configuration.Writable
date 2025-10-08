@@ -2,7 +2,7 @@
 There are many ways to handle user settings in C# applications. However, each has some drawbacks, and no de facto standard exists.
 
 ### Using `app.config` (`Settings.settings`)
-This is an old-fashioned approach that yields many search results (unfortunately!). When you start using it, you'll likely encounter the following issues:
+This is an old-fashioned approach that yields many search results. When you start using it, you'll likely encounter the following issues:
 
 * You need to manually write XML-based configuration files (or use Visual Studio's cumbersome GUI)
 * It lacks type safety and is unsuitable for complex settings

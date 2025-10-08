@@ -126,7 +126,7 @@ By default, settings are stored in this structure:
 * The type name is automatically used as the 2nd level section, eliminating the need for manual configuration in most cases.
 
 ### Changing the structure
-See [SectionName](#sectionname) for details.
+See [SectionName](#sectionname).
 
 ## Customization
 ### Configuration Method
@@ -220,6 +220,7 @@ Default FileWriter (`CommonFileWriter`) supports the following features:
 * Automatically retry when file access fails (default is max 3 times, wait 100ms each)
 * Create backup files rotated by timestamp (default is disabled)
 * Atomic file writing (write to a temporary file first, then rename it)
+* Thread-safe: uses internal semaphore to ensure safe concurrent access
 
 If you want to change the way files are written, create a class that implements `IFileWriter` and specify it in `opt.FileWriter`.
 
