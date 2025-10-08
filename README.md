@@ -100,6 +100,34 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> option)
 }
 ```
 
+## Configuration Structure
+### Default
+When saving settings, they are written to a configuration file in a structured format.  
+By default, settings are stored in this structure:
+
+```jsonc
+{
+  // root section, here is "UserSettings" by default
+  "UserSettings": {
+    // second level section, the type name of the setting class (e.g. "UserSetting")
+    // If InstanceName is specified, it becomes "TypeName-InstanceName"
+    "UserSetting": {
+      // properties of UserSetting
+      "Name": "custom name",
+      "Age": 30
+    }
+  }
+}
+```
+
+### Why this structure?
+* 1st level section ("UserSettings") is to avoid conflicts with settings from other libraries (such as ASP.NET Core).
+* 2nd level section  (the type name of the settings class) is to avoid conflicts when merging multiple configurations using this library.
+* The type name is automatically used as the 2nd level section, eliminating the need for manual configuration in most cases.
+
+### Changing the structure
+See [SectionName](#sectionname) for details.
+
 ## Customization
 ### Configuration Method
 You can change various settings as arguments to `Initialize` or `AddUserConfigurationFile`.
@@ -252,31 +280,41 @@ opt.Logger = LoggerFactory
 ```
 
 ### SectionName
-In default, the entire settings are saved in the following structure:
+By default, the section path is automatically determined as `UserSettings:{TypeName}(-{InstanceName})`.  
+To customize the entire section path, use `opt.SectionName`:
+
+```csharp
+opt.SectionName = "MyAppSettings:Foo:Bar";
+```
+
+Then, the settings will be saved in this structure:
+
 ```jsonc
 {
-  // opt.SectionRootName value (default is "UserSettings")
-  "UserSettings": {
-    // the type name of the setting class ("UserSetting" here)
-    // InstanceName is appended if specified (e.g. "UserSetting-First")
-    "UserSetting": {
-      "Name": "custom name",
-      "Age": 30
+  "MyAppSettings": {
+    "Foo": {
+      "Bar": {
+        // ...
+      }
     }
   }
 }
 ```
 
-As you can see, the settings are written under the “UserSettings” section.
-This serves as a guardrail to prevent conflicts with settings from other libraries (such as `ASP.NET Core`).
-You can freely change this section name.
+If you want to save settings at the root level (not recommended), set `opt.SectionName` to an empty string.
 
 ```csharp
-// change the section root name to "MyAppSettings"
-opt.SectionRootName = "MyAppSettings";
+opt.SectionName = "";
+```
 
-// don't use root section (written at the root, not recommended)
-opt.SectionRootName = "";
+then, the settings will be saved in this structure:
+
+```jsonc
+{
+  // properties of UserSetting directly at the root level
+  "Name": "custom name",
+  "Age": 30
+}
 ```
 
 ### InstanceName
