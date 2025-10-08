@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Configuration.Writable.Testing;
 
 /// <summary>
-/// A simple stub implementation of <see cref="IWritableOptions{T}"/> for testing purposes.
+/// A simple stub implementation of <see cref="IWritableOptions{T}"/> or <see cref="IReadonlyOptions{T}"/> for testing purposes.
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class WritableOptionsStub<T> : IWritableOptions<T>
