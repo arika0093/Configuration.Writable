@@ -5,7 +5,7 @@ A lightweight library that extends `Microsoft.Extensions.Configuration` to easil
 
 ## Features
 * Read and write user settings with type safety.
-* [Built-in](#filewriter) Atomic file writing, automatic retry, and backup creation.
+* [Built-in](#filewriter): Atomic file writing, automatic retry, and backup creation.
 * Extends `Microsoft.Extensions.Configuration` and integrates seamlessly with `IHostApplicationBuilder`.
 * Simple API that can be easily used in applications both [with](#with-di) and [without](#without-di) DI.
 * Supports various file formats (Json, Xml, Yaml, Encrypted, etc...) via [providers](#provider).
@@ -20,7 +20,7 @@ Install `Configuration.Writable` from NuGet.
 dotnet add package Configuration.Writable
 ```
 
-Then, prepare a class (`UserSetting`) that you want to read and write as settings in advance.
+Then, prepare a class (`UserSetting`) in advance that you want to read and write as settings.
 
 ```csharp
 public class UserSetting
@@ -37,7 +37,7 @@ Use `WritableConfig` as the starting point for reading and writing settings.
 ```csharp
 using Configuration.Writable;
 
-// initialize at once (application startup)
+// initialize once (at application startup)
 WritableConfig.Initialize<SampleSetting>();
 
 // -------------
@@ -146,7 +146,7 @@ WritableConfig.Initialize<UserSetting>(opt => {
 #endif
 });
 
-// if use IHostApplicationBuilder
+// if using IHostApplicationBuilder
 builder.AddUserConfigurationFile<UserSetting>(opt => {
     opt.FilePath = "mysettings.json";
     if (builder.Environment.IsProduction()) {
@@ -182,7 +182,7 @@ opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 ```
 
 ### FileWriter
-Default FileWriter (`CommonFileWriter`) support following features:
+Default FileWriter (`CommonFileWriter`) supports the following features:
 
 * Automatically retry when file access fails (default is max 3 times, wait 100ms each)
 * Create backup files rotated by timestamp (default is disabled)
@@ -288,7 +288,7 @@ public class MyService(IWritableOptions<UserSetting> option)
 
 ## Tips
 ### Default Values
-Due to the specifications of `MS.E.C`, properties that do not exist in the configuration file will use their default values.  
+Due to the specifications of Microsoft.Extensions.Configuration, properties that do not exist in the configuration file will use their default values.  
 If a new property is added to the settings class during an update, that property will not exist in the configuration file, so the default value will be used.
 
 ```csharp
@@ -302,14 +302,16 @@ var setting = options.CurrentValue;
 A good way to include user passwords and the like in settings is to split the class and save one part encrypted.
 
 ```csharp
-WritableConfig.Initialize<UserSetting>(opt => {
-    opt.FilePath = "usersettings";
-});
-WritableConfig.Initialize<UserSecretSetting>(opt => {
-    opt.FilePath = "my-secret-folder/secrets";
-    // dotnet add package Configuration.Writable.Encrypt
-    opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
-});
+// register multiple settings in DI
+builder
+    .AddUserConfigurationFile<UserSetting>(opt => {
+        opt.FilePath = "usersettings";
+    })
+    .AddUserConfigurationFile<UserSecretSetting>(opt => {
+        opt.FilePath = "my-secret-folder/secrets";
+        // dotnet add package Configuration.Writable.Encrypt
+        opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
+    });
 
 // and get/save each setting
 var userOptions = WritableConfig.GetOption<UserSetting>();
@@ -371,10 +373,10 @@ This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https
 public interface IReadonlyOptions<T> : IOptionsMonitor<T> where T : class
 ```
 
-The main differences (additional features) compared to `IOptionsMonitor<T>` are as follows:
+The main additional features compared to `IOptionsMonitor<T>` are as follows:
 
 * The `GetConfigurationOptions` method to retrieve configuration options (`WritableConfigOptions`)
-* Even in environments where file change detection is not possible (for example, on network shares or in Docker environments, [change detection is not supported by default](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#ioptionsmonitor)), you can always get the latest settings by using the cache maintained when saving via `IWritableOptions<T>`
+* In environments where file change detection is not possible (for example, on network shares or in Docker environments where [change detection is not supported by default](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#ioptionsmonitor)), you can always get the latest settings. This is achieved by using the cache maintained when saving via `IWritableOptions<T>`
 
 ### IWritableOptions<T>
 An interface for reading and writing the settings of the registered type `T`.  

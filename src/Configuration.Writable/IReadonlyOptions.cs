@@ -9,12 +9,12 @@ public interface IReadonlyOptions<T> : IOptionsMonitor<T>
     where T : class
 {
     /// <summary>
-    /// Retrieves a writable configuration settings object for the default configuration section.
+    /// Retrieves the configuration settings object for the default configuration section.
     /// </summary>
     WritableConfigurationOptions<T> GetConfigurationOptions();
 
     /// <summary>
-    /// Retrieves a writable configuration settings object for the specified configuration section name.
+    /// Retrieves the configuration settings object for the specified configuration section name.
     /// </summary>
     /// <param name="name">The name of the configuration section to retrieve options for.</param>
     WritableConfigurationOptions<T> GetConfigurationOptions(string name);

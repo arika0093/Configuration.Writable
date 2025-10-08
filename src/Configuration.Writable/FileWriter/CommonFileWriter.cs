@@ -119,8 +119,8 @@ public class CommonFileWriter : IFileWriter, IDisposable
     /// <summary>
     /// Generates a unique temporary file path based on the specified file path.
     /// </summary>
-    /// <param name="path">The original file path to use as a base for generating the temporary file path. Must not be null and must
-    /// include a file name.</param>
+    /// <param name="path">The original file path to use as a base for generating the temporary file path. Cannot be null and must
+    /// contain a file name.</param>
     protected virtual string GetTemporaryFilePath(string path)
     {
         var extension = Path.GetExtension(path);

@@ -18,7 +18,7 @@ public interface IWritableConfigProvider
     public IFileWriter FileWriter { get; internal set; }
 
     /// <summary>
-    /// Gets the file extension associated with the current file, exluding the leading period (e.g., "txt").
+    /// Gets the file extension associated with the current file, excluding the leading period (e.g., "txt").
     /// </summary>
     string FileExtension { get; }
 

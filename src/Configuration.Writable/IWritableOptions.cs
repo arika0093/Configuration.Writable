@@ -29,19 +29,19 @@ public interface IWritableOptions<T> : IReadonlyOptions<T>
     /// <summary>
     /// Asynchronously updates and saves the configuration using the provided updater action.
     /// </summary>
-    /// <param name="configUpdator">An action to update the configuration.</param>
+    /// <param name="configUpdater">An action to update the configuration.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    Task SaveAsync(Action<T> configUpdator, CancellationToken cancellationToken = default);
+    Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously updates and saves the configuration using the provided updater action.
     /// </summary>
-    /// <param name="configUpdator">An action to update the configuration.</param>
+    /// <param name="configUpdater">An action to update the configuration.</param>
     /// <param name="name">The name of the options instance to save.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     Task SaveAsync(
         string name,
-        Action<T> configUpdator,
+        Action<T> configUpdater,
         CancellationToken cancellationToken = default
     );
 }
