@@ -190,10 +190,17 @@ Default FileWriter (`CommonFileWriter`) support following features:
 
 If you want to change the way files are written, create a class that implements `IFileWriter` and specify it in `opt.FileWriter`.
 
-For example, if you want to keep backup files when saving, use `CommonFileWriter` with `BackupMaxCount > 0`.
 ```csharp
-// keep 5 backup files when saving
-opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
+using Configuration.Writable.FileWriter;
+
+opt.FileWriter = new CommonFileWriter() {
+    // retry up to 5 times when file access fails
+    MaxRetryCount = 5,
+    // wait 100ms, 200ms, 300ms, ... before each retry
+    RetryDelay = (attempt) => 100 * attempt,
+    // keep 5 backup files when saving
+    BackupMaxCount = 5,
+};
 ```
 
 ### Logging
