@@ -184,7 +184,7 @@ builder.AddUserConfigurationFile<UserSetting>(opt => {
 ```
 
 ### Provider
-If you want to change the format when saving files, create a class that implements `IWritableConfigProvider` and specify it in `opt.Provider`.
+If you want to change the format when saving files, specify `opt.Provider`.
 Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
@@ -204,10 +204,15 @@ opt.Provider = new WritableConfigJsonProvider() {
 // (you need to install Configuration.Writable.Yaml package)
 opt.Provider = new WritableConfigYamlProvider();
 
-// use encrypted Json format
+// use encrypted format
+// NOTE: Be aware that this is a simple encryption.
 // (you need to install Configuration.Writable.Encrypt package)
 opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 ```
+
+> [!NOTE]
+> To reduce dependencies and allow users to choose only the features they need, providers are offered as separate packages.
+> That said, the JSON provider is built into the main package because since many users are likely to use the JSON format.
 
 ### FileWriter
 Default FileWriter (`CommonFileWriter`) supports the following features:
