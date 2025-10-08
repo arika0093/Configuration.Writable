@@ -12,19 +12,14 @@ namespace Configuration.Writable.Tests;
 public class WritableConfigTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
-    private WritableConfigSimpleInstance _instance = null!;
-
-    public WritableConfigTests()
-    {
-        _instance = new WritableConfigSimpleInstance();
-    }
 
     [Fact]
     public void Initialize_ShouldCreateConfiguration()
     {
-        _instance.Initialize<TestSettings>();
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize();
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         var settings = option.CurrentValue;
         settings.ShouldNotBeNull();
         settings.Name.ShouldBe("default");
@@ -35,8 +30,9 @@ public class WritableConfigTests
     [Fact]
     public void GetOption_ShouldReturnWritableConfig()
     {
-        _instance.Initialize<TestSettings>();
-        var option = _instance.GetOption<TestSettings>();
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize();
+        var option = _instance.GetOption();
         option.ShouldNotBeNull();
         option.ShouldBeAssignableTo<IWritableOptions<TestSettings>>();
     }
@@ -44,10 +40,10 @@ public class WritableConfigTests
     [Fact]
     public void GetOption_ShouldThrowIfNotInitialized()
     {
-        var uninitializedInstance = new WritableConfigSimpleInstance();
+        var uninitializedInstance = new WritableConfigSimpleInstance<TestSettings>();
         Should.Throw<InvalidOperationException>(() =>
         {
-            var instance = uninitializedInstance.GetOption<TestSettings2>();
+            var instance = uninitializedInstance.GetOption();
         });
     }
 
@@ -56,7 +52,8 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -69,7 +66,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -85,7 +82,8 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -98,7 +96,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -114,13 +112,14 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(settings =>
         {
             settings.Name = "action_updated";
@@ -137,9 +136,10 @@ public class WritableConfigTests
     [Fact]
     public void GetConfigFilePath_ShouldReturnCorrectPath()
     {
-        _instance.Initialize<TestSettings>();
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize();
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         var path = option.GetConfigurationOptions().ConfigFilePath;
         path.ShouldNotBeNullOrEmpty();
         path.ShouldEndWith(".json");
@@ -150,7 +150,8 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.SectionRootName = "App:Settings";
@@ -164,7 +165,7 @@ public class WritableConfigTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -187,7 +188,8 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.SectionRootName = "Database__Connection";
@@ -201,7 +203,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -224,7 +226,8 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.SectionRootName = "App:Database:Connection:Settings";
@@ -238,7 +241,7 @@ public class WritableConfigTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -262,7 +265,8 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.SectionRootName = "App:Config__Settings";
@@ -276,7 +280,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -299,7 +303,8 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -312,7 +317,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
 
         // Simulate a synchronization context that could cause deadlock
         var previousContext = SynchronizationContext.Current;
@@ -346,8 +351,6 @@ file class TestSettings
     public int Value { get; set; } = 42;
     public bool IsEnabled { get; set; } = true;
 }
-
-file class TestSettings2 : TestSettings;
 
 file class MockSynchronizationContext : SynchronizationContext
 {

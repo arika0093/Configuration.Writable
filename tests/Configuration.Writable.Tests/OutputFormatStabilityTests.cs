@@ -44,9 +44,9 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.json";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigJsonProvider
@@ -61,7 +61,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -85,9 +85,9 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.json";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigJsonProvider
@@ -103,7 +103,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -119,9 +119,9 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_CompactFormat_ShouldBeStable()
     {
         const string testFileName = "stability_compact_test.json";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigJsonProvider
@@ -135,7 +135,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -181,7 +181,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.json";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
         {
@@ -189,7 +189,7 @@ public class OutputFormatStabilityTests
             ArrayValue = ["item with spaces", "item\"with\"quotes", "item\\with\\backslashes"],
         };
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigJsonProvider
@@ -202,7 +202,7 @@ public class OutputFormatStabilityTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(specialConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -221,7 +221,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_EmptyAndNullValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.json";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var emptyConfig = new TestConfiguration
         {
@@ -230,7 +230,7 @@ public class OutputFormatStabilityTests
             Nested = new NestedConfiguration { Description = "" },
         };
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigJsonProvider
@@ -243,7 +243,7 @@ public class OutputFormatStabilityTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(emptyConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -261,9 +261,9 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_ByteLevel_ShouldBeStable()
     {
         const string testFileName = "stability_byte_test.json";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigJsonProvider
@@ -277,7 +277,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var actualBytes = _fileWriter.ReadAllBytes(testFileName);

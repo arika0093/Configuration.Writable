@@ -43,11 +43,11 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_test.enc";
         const string encryptionKey = "TestKey1234567890123456789012"; // 32 chars
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
@@ -55,7 +55,7 @@ public class EncryptOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         // For encrypted files, we verify structure rather than exact content due to IV randomness
@@ -110,11 +110,11 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_section_test.enc";
         const string encryptionKey = "SectionKey12345678901234567890"; // 32 chars
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
@@ -123,7 +123,7 @@ public class EncryptOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
@@ -167,13 +167,13 @@ public class EncryptOutputFormatStabilityTests
         {
             var testFileName = $"stability_key_{keyLength}_test.enc";
             var encryptionKey = new string('A', keyLength);
-            var instance = new WritableConfigSimpleInstance();
+            var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
             var encryptProvider = new WritableConfigEncryptProvider(
                 Encoding.UTF8.GetBytes(encryptionKey)
             );
 
-            instance.Initialize<TestConfiguration>(options =>
+            instance.Initialize(options =>
             {
                 options.FilePath = testFileName;
                 options.Provider = encryptProvider;
@@ -181,7 +181,7 @@ public class EncryptOutputFormatStabilityTests
             });
 
             var testConfig = new TestConfiguration();
-            var option = instance.GetOption<TestConfiguration>();
+            var option = instance.GetOption();
             await option.SaveAsync(testConfig);
 
             var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
@@ -215,7 +215,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_large_test.enc";
         const string encryptionKey = "LargeDataKey1234567890123456789"; // 32 chars
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var largeConfig = new TestConfiguration
         {
@@ -225,14 +225,14 @@ public class EncryptOutputFormatStabilityTests
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(largeConfig);
 
         var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
@@ -271,7 +271,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_special_chars_test.enc";
         const string encryptionKey = "SpecialKey1234567890123456789012"; // 32 chars
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
         {
@@ -281,14 +281,14 @@ public class EncryptOutputFormatStabilityTests
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(specialConfig);
 
         var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);

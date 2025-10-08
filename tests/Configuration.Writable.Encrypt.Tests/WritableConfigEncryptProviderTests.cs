@@ -72,8 +72,8 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
@@ -88,7 +88,7 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "topsecret",
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -108,8 +108,8 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
@@ -124,7 +124,7 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "supersecret",
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(originalSettings);
 
         // Debug: Verify file was created and has content
@@ -132,14 +132,14 @@ public class WritableConfigEncryptProviderTests
         var fileBytes = _fileWriter.ReadAllBytes(testFileName);
         fileBytes.Length.ShouldBeGreaterThan(16); // Should have at least IV (16 bytes) + some encrypted content
 
-        _instance.Initialize<TestSettings>(options =>
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        option = _instance.GetOption<TestSettings>();
+        option = _instance.GetOption();
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("encrypt_persistence_test");
         loadedSettings.Value.ShouldBe(777);
@@ -154,8 +154,8 @@ public class WritableConfigEncryptProviderTests
         var encryptionKey1 = "myencryptionkey123456789012345";
         var encryptionKey2 = "differentkey12345678901234567";
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey1);
@@ -169,14 +169,14 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "keytest",
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(originalSettings);
 
         // When loading with a different key, it should fail to decrypt and throw an exception
         // or use default values depending on implementation
         Should.Throw<System.Security.Cryptography.CryptographicException>(() =>
         {
-            _instance.Initialize<TestSettings>(options =>
+            _instance.Initialize(options =>
             {
                 options.FilePath = testFileName;
                 options.Provider = new WritableConfigEncryptProvider(encryptionKey2);
@@ -191,15 +191,15 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "asyncencryptionkey12345678901";
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(settings =>
         {
             settings.Name = "async_encrypt_test";

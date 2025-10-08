@@ -38,9 +38,9 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.yaml";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -48,7 +48,7 @@ public class YamlOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -74,9 +74,9 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.yaml";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -85,7 +85,7 @@ public class YamlOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -103,7 +103,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.yaml";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
         {
@@ -111,14 +111,14 @@ public class YamlOutputFormatStabilityTests
             ArrayValue = ["item with spaces", "item:with:colons", "item\"with\"quotes"],
         };
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(specialConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -137,7 +137,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_EmptyValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.yaml";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var emptyConfig = new TestConfiguration
         {
@@ -146,14 +146,14 @@ public class YamlOutputFormatStabilityTests
             Nested = new NestedConfiguration { Description = "" },
         };
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(emptyConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -168,7 +168,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_NumericValues_ShouldBeStable()
     {
         const string testFileName = "stability_numeric_test.yaml";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var numericConfig = new TestConfiguration
         {
@@ -177,14 +177,14 @@ public class YamlOutputFormatStabilityTests
             Nested = new NestedConfiguration { Price = 0.01m },
         };
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(numericConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -199,9 +199,9 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_MultipleSections_ShouldBeStable()
     {
         const string testFileName = "stability_multi_section_test.yaml";
-        var instance = new WritableConfigSimpleInstance();
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
-        instance.Initialize<TestConfiguration>(options =>
+        instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -210,7 +210,7 @@ public class YamlOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption<TestConfiguration>();
+        var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);

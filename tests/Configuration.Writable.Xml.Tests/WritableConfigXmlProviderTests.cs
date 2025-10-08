@@ -31,8 +31,8 @@ public class WritableConfigXmlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -47,7 +47,7 @@ public class WritableConfigXmlProviderTests
             Items = ["xml1", "xml2", "xml3"],
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -63,8 +63,8 @@ public class WritableConfigXmlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -79,10 +79,10 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(originalSettings);
 
-        _instance.Initialize<TestSettings>(options =>
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -101,8 +101,8 @@ public class WritableConfigXmlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -118,10 +118,10 @@ public class WritableConfigXmlProviderTests
             Items = ["persist1", "persist2"],
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(originalSettings);
 
-        _instance.Initialize<TestSettings>(options =>
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -142,15 +142,15 @@ public class WritableConfigXmlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(settings =>
         {
             settings.Name = "async_xml_test";
@@ -169,8 +169,8 @@ public class WritableConfigXmlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -185,7 +185,7 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -210,8 +210,8 @@ public class WritableConfigXmlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -226,7 +226,7 @@ public class WritableConfigXmlProviderTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -251,8 +251,8 @@ public class WritableConfigXmlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
@@ -267,7 +267,7 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();

@@ -38,8 +38,8 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -55,7 +55,7 @@ public class WritableConfigYamlProviderTests
             Nested = new NestedSettings { Description = "nested_yaml_test", Price = 99.99 },
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -73,8 +73,8 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -90,17 +90,17 @@ public class WritableConfigYamlProviderTests
             Nested = new NestedSettings { Description = "nested_persist", Price = 123.45 },
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(originalSettings);
 
-        _instance.Initialize<TestSettings>(options =>
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        option = _instance.GetOption<TestSettings>();
+        option = _instance.GetOption();
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("yaml_persistence_test");
         loadedSettings.Value.ShouldBe(789);
@@ -116,15 +116,15 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(settings =>
         {
             settings.Name = "async_yaml_test";
@@ -145,8 +145,8 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -161,7 +161,7 @@ public class WritableConfigYamlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -184,8 +184,8 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -200,7 +200,7 @@ public class WritableConfigYamlProviderTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -223,8 +223,8 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance();
-        _instance.Initialize<TestSettings>(options =>
+        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
@@ -239,7 +239,7 @@ public class WritableConfigYamlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption<TestSettings>();
+        var option = _instance.GetOption();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
