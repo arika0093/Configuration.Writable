@@ -89,7 +89,7 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> option)
 {
     public async Task UpdateAsync()
     {
-        // get the cUserSetting instance
+        // get the UserSetting instance
         var sampleSetting = option.CurrentValue;
         // and save to storage
         await option.SaveAsync(setting =>
@@ -113,7 +113,7 @@ builder.AddUserConfigurationFile<UserSetting>(opt => { /* ... */ });
 ```
 
 ### Save Location
-Default behavior save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
+Default behavior is to save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
 If you want to change the save location, use `opt.FilePath` or `opt.UseStandardSaveLocation("MyAppId")`.
 
 For example:
@@ -131,7 +131,7 @@ opt.FilePath = "config/myconfig";
 opt.UseStandardSaveLocation("MyAppId");
 ```
 
-If you want toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
+If you want to toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
 
 ```csharp
 // those pattern are saved to
@@ -243,7 +243,7 @@ You can freely change this section name.
 // change the section root name to "MyAppSettings"
 opt.SectionRootName = "MyAppSettings";
 
-// nothing use root section (written at the root, not recommended)
+// don't use root section (written at the root, not recommended)
 opt.SectionRootName = "";
 ```
 
@@ -272,7 +272,7 @@ public class MyService(IWritableOptions<UserSetting> option)
         // cannot use .CurrentValue if multiple settings of the same type are registered
         var firstSetting = option.Get("First");
         var secondSetting = option.Get("Second");
-        // and you can must specify instance name when saving
+        // and you must specify instance name when saving
         await option.SaveAsync("First", setting => {
             setting.Name = "first name";
         });
