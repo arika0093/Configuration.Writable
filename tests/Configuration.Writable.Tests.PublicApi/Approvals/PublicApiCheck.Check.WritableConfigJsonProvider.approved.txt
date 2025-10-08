@@ -153,3 +153,21 @@ namespace Configuration.Writable.Internal
         public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
     }
 }
+namespace Configuration.Writable.Testing
+{
+    public class WritableOptionsStub<T> : Configuration.Writable.IReadonlyOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class
+    {
+        public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }
+        public WritableOptionsStub(T value) { }
+        public T CurrentValue { get; }
+        public T Get(string? name) { }
+        public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions() { }
+        public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name) { }
+        public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
+        public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdator, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdator, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+}
