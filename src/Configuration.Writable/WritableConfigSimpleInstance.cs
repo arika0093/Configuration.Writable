@@ -22,8 +22,7 @@ public class WritableConfigSimpleInstance<T>
     public void Initialize(Action<WritableConfigurationOptionsBuilder<T>> configurationOptions)
     {
         Reset();
-        // add default configuration sources
-        ServiceCollection.AddUserConfigurationFile(Configuration, configurationOptions);
+        Add(configurationOptions);
     }
 
     /// <summary>
@@ -33,6 +32,25 @@ public class WritableConfigSimpleInstance<T>
     public void Initialize(WritableConfigurationOptionsBuilder<T> configurationBuilder)
     {
         Reset();
+        Add(configurationBuilder);
+    }
+
+    /// <summary>
+    /// Adds writable configuration with custom options.
+    /// </summary>
+    /// <param name="configurationOptions">An action to customize the configuration options.</param>
+    public void Add(Action<WritableConfigurationOptionsBuilder<T>> configurationOptions)
+    {
+        // add default configuration sources
+        ServiceCollection.AddUserConfigurationFile(Configuration, configurationOptions);
+    }
+
+    /// <summary>
+    /// Adds writable configuration with custom options.
+    /// </summary>
+    /// <param name="configurationBuilder">A pre-configured options builder to customize the configuration options.</param>
+    public void Add(WritableConfigurationOptionsBuilder<T> configurationBuilder)
+    {
         // add default configuration sources
         ServiceCollection.AddUserConfigurationFile(Configuration, configurationBuilder);
     }

@@ -48,13 +48,6 @@ public static class WritableConfig
         where T : class => GetInternalInstance<T>().Initialize(configurationOptions);
 
     /// <summary>
-    /// Initializes writable configuration with a logger for Console applications.
-    /// </summary>
-    /// <param name="logger">The logger to use for configuration operations.</param>
-    public static void Initialize<T>(ILogger logger)
-        where T : class => Initialize<T>(options => options.Logger = logger);
-
-    /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
     public static IWritableOptions<T> GetOption<T>()

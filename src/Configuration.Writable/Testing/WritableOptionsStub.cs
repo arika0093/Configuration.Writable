@@ -107,4 +107,13 @@ public static class WritableOptionsStub
     /// <returns>A new instance of <see cref="WritableOptionsStub{T}"/>.</returns>
     public static WritableOptionsStub<T> Create<T>(T value)
         where T : class => new(value);
+
+    /// <summary>
+    /// Creates a new instance of <see cref="WritableOptionsStub{T}"/> with the specified named values.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration object.</typeparam>
+    /// <param name="namedValues">A dictionary containing named configuration values.</param>
+    /// <returns>A new instance of <see cref="WritableOptionsStub{T}"/>.</returns>
+    public static WritableOptionsStub<T> Create<T>(Dictionary<string, T> namedValues)
+        where T : class => new(namedValues);
 }

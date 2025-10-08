@@ -64,8 +64,6 @@ namespace Configuration.Writable
             where T :  class { }
         public static void Initialize<T>()
             where T :  class { }
-        public static void Initialize<T>(Microsoft.Extensions.Logging.ILogger logger)
-            where T :  class { }
         public static void Initialize<T>(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions)
             where T :  class { }
     }
@@ -98,6 +96,8 @@ namespace Configuration.Writable
         where T :  class
     {
         public WritableConfigSimpleInstance() { }
+        public void Add(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
+        public void Add(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
         public Configuration.Writable.IWritableOptions<T> GetOption() { }
         public void Initialize() { }
         public void Initialize(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
@@ -154,6 +154,8 @@ namespace Configuration.Writable.Testing
 {
     public static class WritableOptionsStub
     {
+        public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(System.Collections.Generic.Dictionary<string, T> namedValues)
+            where T :  class { }
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(T value)
             where T :  class { }
     }
