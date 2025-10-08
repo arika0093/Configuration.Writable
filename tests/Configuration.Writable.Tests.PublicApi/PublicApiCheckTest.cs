@@ -25,7 +25,7 @@ public static class PublicApiCheck
         );
         publicApi.ShouldMatchApproved(c =>
         {
-            c.WithDiscriminator(typeof(T).Name);
+            c.WithDiscriminator(typeof(T).Assembly.GetName().Name!);
             c.SubFolder("Approvals");
         });
     }

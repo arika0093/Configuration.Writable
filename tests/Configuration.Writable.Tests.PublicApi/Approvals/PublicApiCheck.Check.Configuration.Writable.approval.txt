@@ -1,4 +1,4 @@
-﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
 namespace Configuration.Writable.FileWriter
 {
     public class CommonFileWriter : Configuration.Writable.FileWriter.IFileWriter, System.IDisposable
