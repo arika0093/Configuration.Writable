@@ -203,6 +203,38 @@ opt.FileWriter = new CommonFileWriter() {
 };
 ```
 
+### Direct Reference Without Option Type
+If you want to directly reference the settings class, specify `opt.RegisterInstanceToContainer = true`.
+
+> [!NOTE]
+> Note that the dynamic update feature provided by `IOptionsMonitor<T>` will not be available.
+> The instance will always reflect the settings as they were at the time of creation, so be mindful of the lifecycle.
+
+```csharp
+builder.AddUserConfigurationFile<UserSetting>(opt => {
+    opt.RegisterInstanceToContainer = true;
+});
+
+// you can use UserSetting directly
+public class MyService(UserSetting setting)
+{
+    public void Print()
+    {
+        Console.WriteLine($">> Name: {setting.Name}");
+    }
+}
+
+// and you can also use IReadonlyOptions<T> as usual
+public class MyOtherService(IReadonlyOptions<UserSetting> option)
+{
+    public void Print()
+    {
+        var setting = option.CurrentValue;
+        Console.WriteLine($">> Name: {setting.Name}");
+    }
+}
+```
+
 ### Logging
 Logging is enabled by default in DI environments.  
 If you are not using DI, or if you want to override the logging settings, you can enable logging by specifying `opt.Logger`.
@@ -283,8 +315,9 @@ public class MyService(IWritableOptions<UserSetting> option)
 }
 ```
 
-> [!WARNING]
-> When not using DI (directly using `WritableConfig`), managing multiple settings is intentionally not supported to prevent complicating the usage.
+> [!NOTE]
+> When not using DI (direct use of WritableConfig), managing multiple configurations is intentionally not supported.
+> This is to avoid complicating usage.
 
 ## Tips
 ### Default Values
