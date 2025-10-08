@@ -27,7 +27,7 @@ public class WritableConfigurationExtensionsTests
         services.AddUserConfigurationFile<TestSettings>(config);
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
-        var readonlyOptions = serviceProvider.GetService<IReadonlyOptions<TestSettings>>();
+        var readonlyOptions = serviceProvider.GetService<IReadOnlyOptions<TestSettings>>();
         writableOptions.ShouldNotBeNull();
         readonlyOptions.ShouldNotBeNull();
     }
@@ -49,7 +49,7 @@ public class WritableConfigurationExtensionsTests
         );
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
-        var readonlyOptions = serviceProvider.GetService<IReadonlyOptions<TestSettings>>();
+        var readonlyOptions = serviceProvider.GetService<IReadOnlyOptions<TestSettings>>();
         writableOptions.ShouldNotBeNull();
         readonlyOptions.ShouldNotBeNull();
         writableOptions.GetConfigurationOptions().ConfigFilePath.ShouldBe(testFilePath);
@@ -63,7 +63,7 @@ public class WritableConfigurationExtensionsTests
 
         var host = builder.Build();
         var writableOptions = host.Services.GetService<IWritableOptions<TestSettings>>();
-        var readonlyOptions = host.Services.GetService<IReadonlyOptions<TestSettings>>();
+        var readonlyOptions = host.Services.GetService<IReadOnlyOptions<TestSettings>>();
 
         writableOptions.ShouldNotBeNull();
         readonlyOptions.ShouldNotBeNull();

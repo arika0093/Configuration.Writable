@@ -69,12 +69,12 @@ var configuration = new ConfigurationManager();
 services.AddUserConfigurationFile<UserSetting>(configuration);
 ```
 
-Then, inject `IReadonlyOptions<T>` or `IWritableOptions<T>` to read and write settings.
+Then, inject `IReadOnlyOptions<T>` or `IWritableOptions<T>` to read and write settings.
 
 ```csharp
 // read config in your class
 // you can also use IOptions<T>, IOptionsMonitor<T> or IOptionsSnapshot<T>
-public class ConfigReadService(IReadonlyOptions<UserSetting> option)
+public class ConfigReadService(IReadOnlyOptions<UserSetting> option)
 {
     public void Print()
     {
@@ -224,8 +224,8 @@ public class MyService(UserSetting setting)
     }
 }
 
-// and you can also use IReadonlyOptions<T> as usual
-public class MyOtherService(IReadonlyOptions<UserSetting> option)
+// and you can also use IReadOnlyOptions<T> as usual
+public class MyOtherService(IReadOnlyOptions<UserSetting> option)
 {
     public void Print()
     {
@@ -361,7 +361,7 @@ public class UserSecretSetting(string Password); // secret
 > Do not store values that must not be disclosed to others (e.g., database passwords). This feature is solely intended to prevent others from viewing values entered by the user.
 
 ## Testing
-If you simply want to obtain `IReadonlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
+If you simply want to obtain `IReadOnlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 
 ```csharp
 using Configuration.Writable.Testing;
@@ -397,13 +397,13 @@ Assert.Contains("expected name", json);
 ```
 
 ## Interfaces
-### IReadonlyOptions<T>
+### IReadOnlyOptions<T>
 An interface for reading the settings of the registered type `T`.  
 It automatically reflects the latest settings when the underlying configuration is updated.  
 This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from `MS.E.C`.
 
 ```csharp
-public interface IReadonlyOptions<T> : IOptionsMonitor<T> where T : class
+public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class
 ```
 
 The main additional features compared to `IOptionsMonitor<T>` are as follows:
@@ -413,10 +413,10 @@ The main additional features compared to `IOptionsMonitor<T>` are as follows:
 
 ### IWritableOptions<T>
 An interface for reading and writing the settings of the registered type `T`.  
-It provides the same functionality as `IReadonlyOptions<T>`, with additional support for saving settings.
+It provides the same functionality as `IReadOnlyOptions<T>`, with additional support for saving settings.
 
 ```csharp
-public interface IWritableOptions<T> : IReadonlyOptions<T> where T : class
+public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
 ```
 
 ## Limitations

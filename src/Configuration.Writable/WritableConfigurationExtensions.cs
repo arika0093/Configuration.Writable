@@ -139,7 +139,7 @@ public static class WritableConfigurationExtensions
             if (string.IsNullOrEmpty(options.InstanceName))
             {
                 services.AddSingleton(provider =>
-                    provider.GetRequiredService<IReadonlyOptions<T>>().CurrentValue
+                    provider.GetRequiredService<IReadOnlyOptions<T>>().CurrentValue
                 );
             }
             else
@@ -149,7 +149,7 @@ public static class WritableConfigurationExtensions
                     (provider, _) =>
                     {
                         return provider
-                            .GetRequiredService<IReadonlyOptions<T>>()
+                            .GetRequiredService<IReadOnlyOptions<T>>()
                             .Get(options.InstanceName);
                     }
                 );
@@ -178,9 +178,9 @@ public static class WritableConfigurationExtensions
         {
             services.AddSingleton(options);
         }
-        // add IReadonlyOptions<T> and IWritableOptions<T>
+        // add IReadOnlyOptions<T> and IWritableOptions<T>
         services.AddSingleton<WritableConfiguration<T>>();
-        services.AddSingleton<IReadonlyOptions<T>>(p =>
+        services.AddSingleton<IReadOnlyOptions<T>>(p =>
             p.GetRequiredService<WritableConfiguration<T>>()
         );
         services.AddSingleton<IWritableOptions<T>>(p =>

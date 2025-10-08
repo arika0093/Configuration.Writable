@@ -33,7 +33,7 @@ namespace Configuration.Writable.FileWriter
 }
 namespace Configuration.Writable
 {
-    public interface IReadonlyOptions<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
+    public interface IReadOnlyOptions<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class
     {
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
@@ -50,7 +50,7 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class;
     }
-    public interface IWritableOptions<T> : Configuration.Writable.IReadonlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+    public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class
     {
         System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdator, System.Threading.CancellationToken cancellationToken = default);
@@ -159,7 +159,7 @@ namespace Configuration.Writable.Testing
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(T value)
             where T :  class { }
     }
-    public class WritableOptionsStub<T> : Configuration.Writable.IReadonlyOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+    public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class
     {
         public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }

@@ -49,7 +49,7 @@ public class WritableOptionsStubTests
     }
 }
 
-file class SampleReadonlyService(IReadonlyOptions<UserSettings> option)
+file class SampleReadonlyService(IReadOnlyOptions<UserSettings> option)
 {
     public async Task<string?> ReadName()
     {
