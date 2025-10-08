@@ -312,11 +312,13 @@ public class UserSecretSetting(string Password); // secret
 ```
 
 ## Testing
-If you simply want to obtain `IReadonlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsInstance` is straightforward.
+If you simply want to obtain `IReadonlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 
 ```csharp
+using Configuration.Writable.Testing;
+
 var settingValue = new UserSetting();
-var options = new WritableOptionsInstance(settingValue);
+var options = new WritableOptionsStub(settingValue);
 
 // and use options in your test
 var yourService = new YourService(options);
