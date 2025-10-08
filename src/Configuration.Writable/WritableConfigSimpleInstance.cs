@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Configuration.Writable.Internal;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Provides methods to initialize and retrieve writable configuration instances for a specified options type.

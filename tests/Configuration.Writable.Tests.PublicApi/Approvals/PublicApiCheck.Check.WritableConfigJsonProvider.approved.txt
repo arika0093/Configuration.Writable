@@ -94,6 +94,15 @@ namespace Configuration.Writable
         protected static object CreateNestedSection(string sectionName, object value) { }
         protected static string[] GetSplitedSections(string sectionName) { }
     }
+    public class WritableConfigSimpleInstance<T>
+        where T :  class
+    {
+        public WritableConfigSimpleInstance() { }
+        public Configuration.Writable.IWritableOptions<T> GetOption() { }
+        public void Initialize() { }
+        public void Initialize(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
+        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
+    }
     public static class WritableConfigurationExtensions
     {
         public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddUserConfigurationFile<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder)
@@ -139,18 +148,6 @@ namespace Configuration.Writable
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required Configuration.Writable.IWritableConfigProvider Provider { get; init; }
         public required string SectionName { get; init; }
-    }
-}
-namespace Configuration.Writable.Internal
-{
-    public class WritableConfigSimpleInstance<T>
-        where T :  class
-    {
-        public WritableConfigSimpleInstance() { }
-        public Configuration.Writable.IWritableOptions<T> GetOption() { }
-        public void Initialize() { }
-        public void Initialize(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
-        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
     }
 }
 namespace Configuration.Writable.Testing
