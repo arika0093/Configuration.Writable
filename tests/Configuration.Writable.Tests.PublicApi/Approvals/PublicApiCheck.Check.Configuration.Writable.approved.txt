@@ -53,9 +53,9 @@ namespace Configuration.Writable
     public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class
     {
-        System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdator, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
-        System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdator, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
     }
     public static class WritableConfig
@@ -169,9 +169,9 @@ namespace Configuration.Writable.Testing
         public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions() { }
         public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name) { }
         public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
-        public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdator, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdator, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
     }
 }

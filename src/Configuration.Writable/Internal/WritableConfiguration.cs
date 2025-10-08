@@ -63,18 +63,18 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     /// <inheritdoc />
     public Task SaveAsync(
         string name,
-        Action<T> configUpdator,
+        Action<T> configUpdater,
         CancellationToken cancellationToken = default
     )
     {
         var current = DeepCopy(CurrentValue);
-        configUpdator(current);
+        configUpdater(current);
         return SaveCoreAsync(current, GetOption(name), cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task SaveAsync(Action<T> configUpdator, CancellationToken cancellationToken = default) =>
-        SaveAsync(Options.DefaultName, configUpdator, cancellationToken);
+    public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
+        SaveAsync(Options.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
     public T CurrentValue =>
