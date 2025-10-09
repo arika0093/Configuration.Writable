@@ -295,7 +295,9 @@ To customize the entire section path, use `opt.SectionName`.
   "MyAppSettings": {
     "Foo": {
       "Bar": {
-        // ...
+        // properties of UserSetting
+        "Name": "custom name",
+        "Age": 30
       }
     }
   }
