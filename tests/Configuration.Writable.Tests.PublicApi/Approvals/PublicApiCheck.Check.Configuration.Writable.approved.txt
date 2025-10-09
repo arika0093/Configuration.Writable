@@ -136,13 +136,9 @@ namespace Configuration.Writable
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseCurrentDirectory() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseExecutableDirectory() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("FileWriter")]
         public void UseInMemoryFileWriter(Configuration.Writable.FileWriter.InMemoryFileWriter inMemoryFileWriter) { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseStandardSaveLocation(string applicationId) { }
     }
     public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>

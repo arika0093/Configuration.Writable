@@ -75,7 +75,8 @@ public record WritableConfigurationOptionsBuilder<T>
             {
                 UseExecutableDirectory();
             }
-            var combinedDir = Path.Combine(ConfigFolder, filePath);
+            // ConfigFolder is not null
+            var combinedDir = Path.Combine(ConfigFolder!, filePath);
             var fullPath = Path.GetFullPath(combinedDir);
             return fullPath;
         }
@@ -132,7 +133,6 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <param name="applicationId">The unique identifier of the application. This is used to determine the subdirectory within the user
     /// configuration root directory.</param>
     /// <returns>The full path to the configuration file.</returns>
-    [MemberNotNull(nameof(ConfigFolder))]
     public string UseStandardSaveLocation(string applicationId)
     {
         var root = UserConfigurationPath.GetUserConfigRootDirectory();
@@ -147,7 +147,6 @@ public record WritableConfigurationOptionsBuilder<T>
     /// This uses <see cref="AppContext.BaseDirectory"/> to determine the executable directory.
     /// </remarks>
     /// <returns>The full path to the configuration file.</returns>
-    [MemberNotNull(nameof(ConfigFolder))]
     public string UseExecutableDirectory()
     {
         ConfigFolder = AppContext.BaseDirectory;
@@ -161,7 +160,6 @@ public record WritableConfigurationOptionsBuilder<T>
     /// This uses <see cref="Directory.GetCurrentDirectory()"/> to determine the current directory.
     /// </remarks>
     /// <returns>The full path to the configuration file.</returns>
-    [MemberNotNull(nameof(ConfigFolder))]
     public string UseCurrentDirectory()
     {
         ConfigFolder = Directory.GetCurrentDirectory();
@@ -172,7 +170,6 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Configures the current instance to use the specified in-memory file writer for file operations. for testing purpose.
     /// </summary>
     /// <param name="inMemoryFileWriter">The in-memory file writer to use for subsequent file write and read operations.</param>
-    [MemberNotNull(nameof(FileWriter))]
     public void UseInMemoryFileWriter(InMemoryFileWriter inMemoryFileWriter)
     {
         FileWriter = inMemoryFileWriter;
