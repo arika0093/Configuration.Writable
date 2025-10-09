@@ -140,9 +140,7 @@ namespace Configuration.Writable
         public string UseCurrentDirectory() { }
         [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseExecutableDirectory() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull(new string[] {
-                "FileWriter",
-                "FileReadStream"})]
+        [System.Diagnostics.CodeAnalysis.MemberNotNull("FileWriter")]
         public void UseInMemoryFileWriter(Configuration.Writable.FileWriter.InMemoryFileWriter inMemoryFileWriter) { }
         [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseStandardSaveLocation(string applicationId) { }

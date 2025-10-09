@@ -172,7 +172,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Configures the current instance to use the specified in-memory file writer for file operations. for testing purpose.
     /// </summary>
     /// <param name="inMemoryFileWriter">The in-memory file writer to use for subsequent file write and read operations.</param>
-    [MemberNotNull(nameof(FileWriter), nameof(FileReadStream))]
+    [MemberNotNull(nameof(FileWriter))]
     public void UseInMemoryFileWriter(InMemoryFileWriter inMemoryFileWriter)
     {
         FileWriter = inMemoryFileWriter;
