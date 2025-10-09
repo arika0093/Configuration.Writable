@@ -240,8 +240,8 @@ opt.FileWriter = new CommonFileWriter() {
 If you want to directly reference the settings class, specify `opt.RegisterInstanceToContainer = true`.
 
 > [!NOTE]
-> Note that the dynamic update feature provided by `IOptionsMonitor<T>` will not be available.
-> The instance will always reflect the settings as they were at the time of creation, so be mindful of the lifecycle.
+> The dynamic update functionality provided by `IOptionsMonitor<T>` will no longer be available.
+> Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
 
 ```csharp
 builder.AddUserConfigurationFile<UserSetting>(opt => {
