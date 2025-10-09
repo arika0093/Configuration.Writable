@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileWriter;
@@ -18,6 +19,109 @@ namespace Configuration.Writable.Encrypt.Tests;
 public class EncryptOutputFormatStabilityTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
+    private const string ReferenceFilesPath = "ReferenceFiles";
+
+    /// <summary>
+    /// Helper method to decrypt encrypted content and return the JSON
+    /// </summary>
+    private static string DecryptContent(byte[] encryptedBytes, string encryptionKey)
+    {
+        var iv = new byte[16];
+        Array.Copy(encryptedBytes, 0, iv, 0, 16);
+        var encryptedData = new byte[encryptedBytes.Length - 16];
+        Array.Copy(encryptedBytes, 16, encryptedData, 0, encryptedData.Length);
+
+        using var aes = Aes.Create();
+        var key = encryptionKey;
+        if (key.Length < 32)
+        {
+            key = key.PadRight(32, '0');
+        }
+        aes.Key = Encoding.UTF8.GetBytes(key);
+        aes.IV = iv;
+
+        using var decryptor = aes.CreateDecryptor();
+        using var ms = new MemoryStream(encryptedData);
+        using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+        using var reader = new StreamReader(cs);
+
+        return reader.ReadToEnd();
+    }
+
+    /// <summary>
+    /// Helper method to compare JSON semantically (ignores whitespace and property order)
+    /// </summary>
+    private static bool JsonEquals(string json1, string json2)
+    {
+        using var doc1 = JsonDocument.Parse(json1);
+        using var doc2 = JsonDocument.Parse(json2);
+        return JsonElementEquals(doc1.RootElement, doc2.RootElement);
+    }
+
+    /// <summary>
+    /// Recursive helper to compare JsonElement objects semantically
+    /// </summary>
+    private static bool JsonElementEquals(JsonElement element1, JsonElement element2)
+    {
+        if (element1.ValueKind != element2.ValueKind)
+            return false;
+
+        switch (element1.ValueKind)
+        {
+            case JsonValueKind.Object:
+                var props1 = element1.EnumerateObject().OrderBy(p => p.Name).ToList();
+                var props2 = element2.EnumerateObject().OrderBy(p => p.Name).ToList();
+
+                if (props1.Count != props2.Count)
+                    return false;
+
+                for (int i = 0; i < props1.Count; i++)
+                {
+                    if (props1[i].Name != props2[i].Name)
+                        return false;
+                    if (!JsonElementEquals(props1[i].Value, props2[i].Value))
+                        return false;
+                }
+                return true;
+
+            case JsonValueKind.Array:
+                var array1 = element1.EnumerateArray().ToList();
+                var array2 = element2.EnumerateArray().ToList();
+
+                if (array1.Count != array2.Count)
+                    return false;
+
+                for (int i = 0; i < array1.Count; i++)
+                {
+                    if (!JsonElementEquals(array1[i], array2[i]))
+                        return false;
+                }
+                return true;
+
+            case JsonValueKind.String:
+                return element1.GetString() == element2.GetString();
+
+            case JsonValueKind.Number:
+                return element1.GetRawText() == element2.GetRawText();
+
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+            case JsonValueKind.Null:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Helper method to load reference file content
+    /// </summary>
+    private static string LoadReferenceFile(string fileName)
+    {
+        var path = Path.Combine(ReferenceFilesPath, fileName);
+        return File.ReadAllText(path);
+    }
 
     public class TestConfiguration
     {
@@ -70,39 +174,14 @@ public class EncryptOutputFormatStabilityTests
             "Encrypted file should contain IV + encrypted data"
         );
 
-        // Verify we can decrypt and get expected JSON structure
-        var iv = new byte[16];
-        Array.Copy(encryptedBytes, 0, iv, 0, 16);
-        var encryptedData = new byte[encryptedBytes.Length - 16];
-        Array.Copy(encryptedBytes, 16, encryptedData, 0, encryptedData.Length);
+        // Decrypt and compare with reference JSON
+        var decryptedJson = DecryptContent(encryptedBytes, encryptionKey);
+        var expectedJson = LoadReferenceFile("encrypt_basic.json");
 
-        using var aes = Aes.Create();
-        var key = encryptionKey;
-        if (key.Length < 32)
-        {
-            key = key.PadRight(32, '0');
-        }
-        aes.Key = Encoding.UTF8.GetBytes(key);
-        aes.IV = iv;
-
-        using var decryptor = aes.CreateDecryptor();
-        using var ms = new MemoryStream(encryptedData);
-        using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-        using var reader = new StreamReader(cs);
-
-        var decryptedJson = reader.ReadToEnd();
-
-        // Verify the decrypted content contains expected JSON structure
-        decryptedJson.ShouldContain("\"StringValue\":\"TestString\"");
-        decryptedJson.ShouldContain("\"IntValue\":42");
-        decryptedJson.ShouldContain("\"DoubleValue\":3.1415"); // Allow for precision differences between .NET versions
-        decryptedJson.ShouldContain("\"BoolValue\":true");
-        decryptedJson.ShouldContain("\"ArrayValue\":");
-        decryptedJson.ShouldContain("\"DateTimeValue\":\"2023-12-25T10:30:45Z\"");
-        decryptedJson.ShouldContain("\"Nested\":");
-        decryptedJson.ShouldContain("\"Description\":\"Nested description\"");
-        decryptedJson.ShouldContain("\"Price\":99.99");
-        decryptedJson.ShouldContain("\"IsActive\":false");
+        // Compare JSON semantically (ignoring whitespace and property order)
+        JsonEquals(decryptedJson, expectedJson).ShouldBeTrue(
+            "Decrypted JSON content should semantically match the reference file"
+        );
     }
 
     [Fact]
@@ -129,32 +208,14 @@ public class EncryptOutputFormatStabilityTests
         var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
         encryptedBytes.Length.ShouldBeGreaterThan(16);
 
-        // Decrypt and verify nested structure
-        var iv = new byte[16];
-        Array.Copy(encryptedBytes, 0, iv, 0, 16);
-        var encryptedData = new byte[encryptedBytes.Length - 16];
-        Array.Copy(encryptedBytes, 16, encryptedData, 0, encryptedData.Length);
+        // Decrypt and compare with reference JSON
+        var decryptedJson = DecryptContent(encryptedBytes, encryptionKey);
+        var expectedJson = LoadReferenceFile("encrypt_section.json");
 
-        using var aes = Aes.Create();
-        var key = encryptionKey;
-        if (key.Length < 32)
-        {
-            key = key.PadRight(32, '0');
-        }
-        aes.Key = Encoding.UTF8.GetBytes(key);
-        aes.IV = iv;
-
-        using var decryptor = aes.CreateDecryptor();
-        using var ms = new MemoryStream(encryptedData);
-        using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-        using var reader = new StreamReader(cs);
-
-        var decryptedJson = reader.ReadToEnd();
-
-        // Verify nested section structure in decrypted JSON
-        decryptedJson.ShouldContain("\"ApplicationSettings\":");
-        decryptedJson.ShouldContain("\"Database\":");
-        decryptedJson.ShouldContain("\"StringValue\":\"TestString\"");
+        // Compare JSON semantically (ignoring whitespace and property order)
+        JsonEquals(decryptedJson, expectedJson).ShouldBeTrue(
+            "Decrypted JSON content with section name should semantically match the reference file"
+        );
     }
 
     [Fact]
@@ -293,34 +354,13 @@ public class EncryptOutputFormatStabilityTests
 
         var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
 
-        // Decrypt and verify special characters are preserved
-        var iv = new byte[16];
-        Array.Copy(encryptedBytes, 0, iv, 0, 16);
-        var encryptedData = new byte[encryptedBytes.Length - 16];
-        Array.Copy(encryptedBytes, 16, encryptedData, 0, encryptedData.Length);
+        // Decrypt and compare with reference JSON
+        var decryptedJson = DecryptContent(encryptedBytes, encryptionKey);
+        var expectedJson = LoadReferenceFile("encrypt_special_chars.json");
 
-        using var aes = Aes.Create();
-        var key = encryptionKey;
-        if (key.Length < 32)
-        {
-            key = key.PadRight(32, '0');
-        }
-        aes.Key = Encoding.UTF8.GetBytes(key);
-        aes.IV = iv;
-
-        using var decryptor = aes.CreateDecryptor();
-        using var ms = new MemoryStream(encryptedData);
-        using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-        using var reader = new StreamReader(cs);
-
-        var decryptedJson = reader.ReadToEnd();
-
-        // Verify content is preserved through encryption/decryption
-        decryptedJson.ShouldContain("Test with special characters");
-        decryptedJson.ShouldContain("ArrayValue");
-        decryptedJson.ShouldContain("item1");
-        decryptedJson.ShouldContain("item2");
-        decryptedJson.ShouldContain("item3");
-        decryptedJson.Length.ShouldBeGreaterThan(100); // Verify reasonable content size
+        // Compare JSON semantically (ignoring whitespace and property order)
+        JsonEquals(decryptedJson, expectedJson).ShouldBeTrue(
+            "Decrypted JSON content with special characters should semantically match the reference file"
+        );
     }
 }

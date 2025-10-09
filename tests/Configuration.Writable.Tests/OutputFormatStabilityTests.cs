@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
@@ -17,6 +19,82 @@ namespace Configuration.Writable.Tests;
 public class OutputFormatStabilityTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
+    private const string ReferenceFilesPath = "ReferenceFiles";
+
+    /// <summary>
+    /// Helper method to compare JSON semantically (ignores whitespace and property order)
+    /// </summary>
+    private static bool JsonEquals(string json1, string json2)
+    {
+        using var doc1 = JsonDocument.Parse(json1);
+        using var doc2 = JsonDocument.Parse(json2);
+        return JsonElementEquals(doc1.RootElement, doc2.RootElement);
+    }
+
+    /// <summary>
+    /// Recursive helper to compare JsonElement objects semantically
+    /// </summary>
+    private static bool JsonElementEquals(JsonElement element1, JsonElement element2)
+    {
+        if (element1.ValueKind != element2.ValueKind)
+            return false;
+
+        switch (element1.ValueKind)
+        {
+            case JsonValueKind.Object:
+                var props1 = element1.EnumerateObject().OrderBy(p => p.Name).ToList();
+                var props2 = element2.EnumerateObject().OrderBy(p => p.Name).ToList();
+
+                if (props1.Count != props2.Count)
+                    return false;
+
+                for (int i = 0; i < props1.Count; i++)
+                {
+                    if (props1[i].Name != props2[i].Name)
+                        return false;
+                    if (!JsonElementEquals(props1[i].Value, props2[i].Value))
+                        return false;
+                }
+                return true;
+
+            case JsonValueKind.Array:
+                var array1 = element1.EnumerateArray().ToList();
+                var array2 = element2.EnumerateArray().ToList();
+
+                if (array1.Count != array2.Count)
+                    return false;
+
+                for (int i = 0; i < array1.Count; i++)
+                {
+                    if (!JsonElementEquals(array1[i], array2[i]))
+                        return false;
+                }
+                return true;
+
+            case JsonValueKind.String:
+                return element1.GetString() == element2.GetString();
+
+            case JsonValueKind.Number:
+                return element1.GetRawText() == element2.GetRawText();
+
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+            case JsonValueKind.Null:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Helper method to load reference file content
+    /// </summary>
+    private static string LoadReferenceFile(string fileName)
+    {
+        var path = Path.Combine(ReferenceFilesPath, fileName);
+        return File.ReadAllText(path);
+    }
 
     /// <summary>
     /// Test configuration class with comprehensive data types for format validation
@@ -51,10 +129,10 @@ public class OutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigJsonProvider
             {
-                JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
+                JsonSerializerOptions = new JsonSerializerOptions
                 {
                     WriteIndented = true, // Use consistent formatting for stability tests
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 },
             };
             options.UseInMemoryFileWriter(_fileWriter);
@@ -65,20 +143,12 @@ public class OutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("json_basic.json");
 
-        // Verify the output contains the expected structure and values
-        // Note: The actual output may include nested sections like "UserSettings" -> "TestConfiguration"
-        actualOutput.ShouldContain("TestString");
-        actualOutput.ShouldContain("42");
-        actualOutput.ShouldContain("3.1415"); // Allow for precision differences between .NET versions
-        actualOutput.ShouldContain("true");
-        actualOutput.ShouldContain("item1");
-        actualOutput.ShouldContain("item2");
-        actualOutput.ShouldContain("item3");
-        actualOutput.ShouldContain("2023-12-25T10:30:45Z");
-        actualOutput.ShouldContain("Nested description");
-        actualOutput.ShouldContain("99.99");
-        actualOutput.ShouldContain("false");
+        // Compare JSON semantically (ignoring whitespace and property order)
+        JsonEquals(actualOutput, expectedOutput).ShouldBeTrue(
+            "JSON output format should semantically match the reference file"
+        );
     }
 
     [Fact]
@@ -107,12 +177,12 @@ public class OutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("json_section.json");
 
-        // Verify nested section structure - actual output may have different casing/nesting
-        actualOutput.ShouldContain("ApplicationSettings");
-        actualOutput.ShouldContain("Database");
-        actualOutput.ShouldContain("TestString");
-        actualOutput.ShouldContain("42");
+        // Compare JSON semantically (ignoring whitespace and property order)
+        JsonEquals(actualOutput, expectedOutput).ShouldBeTrue(
+            "JSON output with section name should semantically match the reference file"
+        );
     }
 
     [Fact]
@@ -139,12 +209,12 @@ public class OutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("json_compact.json");
 
-        // Verify compact format (no extra whitespace)
-        actualOutput.ShouldNotContain("  "); // No double spaces
-        actualOutput.ShouldNotContain("\n"); // No newlines
-        actualOutput.ShouldContain("TestString");
-        actualOutput.ShouldContain("42");
+        // Compare JSON semantically (ignoring whitespace and property order)
+        JsonEquals(actualOutput, expectedOutput).ShouldBeTrue(
+            "JSON output in compact format should semantically match the reference file"
+        );
     }
 
     [Fact]

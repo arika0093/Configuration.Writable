@@ -1,0 +1,1 @@
+{"ApplicationSettings":{"Database":{"StringValue":"TestString","IntValue":42,"DoubleValue":3.14159,"BoolValue":true,"ArrayValue":["item1","item2","item3"],"DateTimeValue":"2023-12-25T10:30:45Z","Nested":{"Description":"Nested description","Price":99.99,"IsActive":false}}}}

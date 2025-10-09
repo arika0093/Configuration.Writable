@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration><UserSettings><TestConfiguration><StringValue>TestString</StringValue><IntValue>42</IntValue><DoubleValue>3.14159</DoubleValue><BoolValue>true</BoolValue><ArrayValue><string>item1</string><string>item2</string><string>item3</string></ArrayValue><DateTimeValue>2023-12-25T10:30:45Z</DateTimeValue><Nested><Description>Nested description</Description><Price>99.99</Price><IsActive>false</IsActive></Nested></TestConfiguration></UserSettings></configuration>

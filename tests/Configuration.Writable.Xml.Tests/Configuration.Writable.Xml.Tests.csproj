@@ -4,4 +4,7 @@
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
     <ProjectReference Include="..\Configuration.Writable.Tests\Configuration.Writable.Tests.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="ReferenceFiles\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

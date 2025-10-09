@@ -1,0 +1,15 @@
+UserSettings:
+  TestConfiguration:
+    stringValue: TestString
+    intValue: -42
+    doubleValue: -3.14159
+    boolValue: true
+    arrayValue:
+    - item1
+    - item2
+    - item3
+    dateTimeValue: 2023-12-25T10:30:45.0000000Z
+    nested:
+      description: Nested description
+      price: 0.01
+      isActive: false

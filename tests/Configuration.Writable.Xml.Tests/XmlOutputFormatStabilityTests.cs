@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Configuration.Writable;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
@@ -14,6 +16,25 @@ namespace Configuration.Writable.Xml.Tests;
 public class XmlOutputFormatStabilityTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
+    private const string ReferenceFilesPath = "ReferenceFiles";
+
+    /// <summary>
+    /// Helper method to normalize XML for comparison (ignores whitespace/formatting differences)
+    /// </summary>
+    private static string NormalizeXml(string xml)
+    {
+        var doc = XDocument.Parse(xml);
+        return doc.ToString(SaveOptions.DisableFormatting);
+    }
+
+    /// <summary>
+    /// Helper method to load reference file content
+    /// </summary>
+    private static string LoadReferenceFile(string fileName)
+    {
+        var path = Path.Combine(ReferenceFilesPath, fileName);
+        return File.ReadAllText(path);
+    }
 
     public class TestConfiguration
     {
@@ -52,30 +73,16 @@ public class XmlOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("xml_basic.xml");
 
-        // Verify XML structure and content - order and format must remain stable
-        actualOutput.ShouldStartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        actualOutput.ShouldContain("<configuration>");
-        actualOutput.ShouldContain("<StringValue>TestString</StringValue>");
-        actualOutput.ShouldContain("<IntValue>42</IntValue>");
-        actualOutput.ShouldContain("<DoubleValue>3.1415"); // Allow for precision differences between .NET versions
-        actualOutput.ShouldContain("<BoolValue>true</BoolValue>");
-        actualOutput.ShouldContain("<ArrayValue>");
-        actualOutput.ShouldContain("<string>item1</string>");
-        actualOutput.ShouldContain("<string>item2</string>");
-        actualOutput.ShouldContain("<string>item3</string>");
-        actualOutput.ShouldContain("</ArrayValue>");
-        actualOutput.ShouldContain("<DateTimeValue>2023-12-25T10:30:45Z</DateTimeValue>");
-        actualOutput.ShouldContain("<Nested>");
-        actualOutput.ShouldContain("<Description>Nested description</Description>");
-        actualOutput.ShouldContain("<Price>99.99</Price>");
-        actualOutput.ShouldContain("<IsActive>false</IsActive>");
-        actualOutput.ShouldContain("</Nested>");
-        actualOutput.ShouldContain("</configuration>");
+        // Compare normalized XML (to handle potential whitespace differences)
+        var actualNormalized = NormalizeXml(actualOutput);
+        var expectedNormalized = NormalizeXml(expectedOutput);
 
-        // Verify the output contains no unexpected formatting or whitespace variations
-        actualOutput.ShouldNotContain("  <"); // No double indentation
-        actualOutput.ShouldNotContain("\r\n\r\n"); // No double line breaks
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "XML output format should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -97,15 +104,16 @@ public class XmlOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("xml_section.xml");
 
-        // Verify XML output with nested sections
-        actualOutput.ShouldStartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        actualOutput.ShouldContain("<App>");
-        actualOutput.ShouldContain("<Database>");
-        actualOutput.ShouldContain("<StringValue>TestString</StringValue>");
-        actualOutput.ShouldContain("<IntValue>42</IntValue>");
-        actualOutput.ShouldContain("</Database>");
-        actualOutput.ShouldContain("</App>");
+        // Compare normalized XML
+        var actualNormalized = NormalizeXml(actualOutput);
+        var expectedNormalized = NormalizeXml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "XML output with section name should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -131,14 +139,16 @@ public class XmlOutputFormatStabilityTests
         await option.SaveAsync(specialConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("xml_special_chars.xml");
 
-        // Verify proper XML escaping
-        actualOutput.ShouldContain(
-            "<StringValue>Test with &lt;tags&gt; &amp; \"quotes\"</StringValue>"
+        // Compare normalized XML
+        var actualNormalized = NormalizeXml(actualOutput);
+        var expectedNormalized = NormalizeXml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "XML output with special characters should exactly match the reference file"
         );
-        actualOutput.ShouldContain("<string>item&lt;1&gt;</string>");
-        actualOutput.ShouldContain("<string>item&amp;2</string>");
-        actualOutput.ShouldContain("<string>item\"3\"</string>");
     }
 
     [Fact]
@@ -165,12 +175,16 @@ public class XmlOutputFormatStabilityTests
         await option.SaveAsync(emptyConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("xml_empty.xml");
 
-        // Verify empty values are properly serialized in XML
-        // Note: XML may use different formatting for empty values
-        actualOutput.ShouldContain("StringValue");
-        actualOutput.ShouldContain("ArrayValue");
-        actualOutput.ShouldContain("Description");
+        // Compare normalized XML
+        var actualNormalized = NormalizeXml(actualOutput);
+        var expectedNormalized = NormalizeXml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "XML output with empty values should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -197,11 +211,16 @@ public class XmlOutputFormatStabilityTests
         await option.SaveAsync(numericConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("xml_numeric.xml");
 
-        // Verify numeric values maintain precision and format
-        actualOutput.ShouldContain("<IntValue>-42</IntValue>");
-        actualOutput.ShouldContain("<DoubleValue>-3.1415"); // Allow for precision differences between .NET versions
-        actualOutput.ShouldContain("<Price>0.01</Price>");
+        // Compare normalized XML
+        var actualNormalized = NormalizeXml(actualOutput);
+        var expectedNormalized = NormalizeXml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "XML output with numeric values should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -223,11 +242,16 @@ public class XmlOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("xml_multi_section.xml");
 
-        // Verify deep nesting structure - compact format for deep sections
-        actualOutput.ShouldContain("<configuration><App><Database><Connection><Settings>");
-        actualOutput.ShouldContain("<StringValue>TestString</StringValue>");
-        actualOutput.ShouldContain("</Settings></Connection></Database></App></configuration>");
+        // Compare normalized XML
+        var actualNormalized = NormalizeXml(actualOutput);
+        var expectedNormalized = NormalizeXml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "XML output with multiple sections should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -249,11 +273,15 @@ public class XmlOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("xml_no_section.xml");
 
-        // Verify root configuration format
-        actualOutput.ShouldStartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        actualOutput.ShouldContain("<configuration>");
-        actualOutput.ShouldContain("</configuration>");
-        actualOutput.ShouldNotContain("<App>"); // No nested sections when section name is empty
+        // Compare normalized XML
+        var actualNormalized = NormalizeXml(actualOutput);
+        var expectedNormalized = NormalizeXml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "XML output without section name should exactly match the reference file"
+        );
     }
 }

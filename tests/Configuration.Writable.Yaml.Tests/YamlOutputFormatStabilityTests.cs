@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileWriter;
@@ -14,6 +15,26 @@ namespace Configuration.Writable.Yaml.Tests;
 public class YamlOutputFormatStabilityTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
+    private const string ReferenceFilesPath = "ReferenceFiles";
+
+    /// <summary>
+    /// Helper method to normalize YAML for comparison (normalizes line endings)
+    /// YAML is whitespace-sensitive, so we only normalize line endings
+    /// </summary>
+    private static string NormalizeYaml(string yaml)
+    {
+        // Only normalize line endings - YAML is whitespace-sensitive
+        return yaml.Replace("\r\n", "\n").TrimEnd();
+    }
+
+    /// <summary>
+    /// Helper method to load reference file content
+    /// </summary>
+    private static string LoadReferenceFile(string fileName)
+    {
+        var path = Path.Combine(ReferenceFilesPath, fileName);
+        return File.ReadAllText(path);
+    }
 
     public class TestConfiguration
     {
@@ -52,22 +73,16 @@ public class YamlOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("yaml_basic.yaml");
 
-        // Verify YAML output contains expected structure and values
-        // Note: The actual output includes UserSettings -> TestConfiguration nesting
-        actualOutput.ShouldContain("stringValue: TestString");
-        actualOutput.ShouldContain("intValue: 42");
-        actualOutput.ShouldContain("doubleValue: 3.1415"); // Allow for precision differences between .NET versions
-        actualOutput.ShouldContain("boolValue: true");
-        actualOutput.ShouldContain("arrayValue:");
-        actualOutput.ShouldContain("- item1");
-        actualOutput.ShouldContain("- item2");
-        actualOutput.ShouldContain("- item3");
-        actualOutput.ShouldContain("dateTimeValue: 2023-12-25T10:30:45.0000000Z");
-        actualOutput.ShouldContain("nested:");
-        actualOutput.ShouldContain("description: Nested description");
-        actualOutput.ShouldContain("price: 99.99");
-        actualOutput.ShouldContain("isActive: false");
+        // Compare normalized YAML (normalize line endings only)
+        var actualNormalized = NormalizeYaml(actualOutput);
+        var expectedNormalized = NormalizeYaml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "YAML output format should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -89,14 +104,16 @@ public class YamlOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("yaml_section.yaml");
 
-        // Verify YAML output with nested sections
-        actualOutput.ShouldContain("app:");
-        actualOutput.ShouldContain("settings:");
-        actualOutput.ShouldContain("stringValue: TestString");
-        actualOutput.ShouldContain("intValue: 42");
-        actualOutput.ShouldContain("doubleValue: 3.1415"); // Allow for precision differences between .NET versions
-        actualOutput.ShouldContain("boolValue: true");
+        // Compare normalized YAML
+        var actualNormalized = NormalizeYaml(actualOutput);
+        var expectedNormalized = NormalizeYaml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "YAML output with section name should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -122,15 +139,16 @@ public class YamlOutputFormatStabilityTests
         await option.SaveAsync(specialConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("yaml_special_chars.yaml");
 
-        // Verify proper YAML escaping and quoting (YAML uses single quotes for some special chars)
-        actualOutput.ShouldContain("Test with");
-        actualOutput.ShouldContain("quotes");
-        actualOutput.ShouldContain("colons");
-        actualOutput.ShouldContain("item with spaces");
-        actualOutput.ShouldContain("item");
-        actualOutput.ShouldContain("with");
-        actualOutput.ShouldContain("colons");
+        // Compare normalized YAML
+        var actualNormalized = NormalizeYaml(actualOutput);
+        var expectedNormalized = NormalizeYaml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "YAML output with special characters should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -157,11 +175,16 @@ public class YamlOutputFormatStabilityTests
         await option.SaveAsync(emptyConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("yaml_empty.yaml");
 
-        // Verify empty values are properly serialized in YAML
-        actualOutput.ShouldContain("stringValue:");
-        actualOutput.ShouldContain("arrayValue:");
-        actualOutput.ShouldContain("description:");
+        // Compare normalized YAML
+        var actualNormalized = NormalizeYaml(actualOutput);
+        var expectedNormalized = NormalizeYaml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "YAML output with empty values should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -188,11 +211,16 @@ public class YamlOutputFormatStabilityTests
         await option.SaveAsync(numericConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("yaml_numeric.yaml");
 
-        // Verify numeric values maintain precision and format
-        actualOutput.ShouldContain("intValue: -42");
-        actualOutput.ShouldContain("doubleValue: -3.1415"); // Allow for precision differences between .NET versions
-        actualOutput.ShouldContain("price: 0.01");
+        // Compare normalized YAML
+        var actualNormalized = NormalizeYaml(actualOutput);
+        var expectedNormalized = NormalizeYaml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "YAML output with numeric values should exactly match the reference file"
+        );
     }
 
     [Fact]
@@ -214,12 +242,15 @@ public class YamlOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var expectedOutput = LoadReferenceFile("yaml_multi_section.yaml");
 
-        // Verify deep nesting structure
-        actualOutput.ShouldContain("app:");
-        actualOutput.ShouldContain("  database:");
-        actualOutput.ShouldContain("    connection:");
-        actualOutput.ShouldContain("      settings:");
-        actualOutput.ShouldContain("        stringValue: TestString");
+        // Compare normalized YAML
+        var actualNormalized = NormalizeYaml(actualOutput);
+        var expectedNormalized = NormalizeYaml(expectedOutput);
+
+        actualNormalized.ShouldBe(
+            expectedNormalized,
+            "YAML output with multiple sections should exactly match the reference file"
+        );
     }
 }
