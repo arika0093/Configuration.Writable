@@ -98,7 +98,7 @@ public class OutputFormatStabilityTests
                     PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
                 },
             };
-            options.SectionRootName = "ApplicationSettings:Database";
+            options.SectionName = "ApplicationSettings:Database";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 

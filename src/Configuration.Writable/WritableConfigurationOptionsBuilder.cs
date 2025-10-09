@@ -36,37 +36,16 @@ public record WritableConfigurationOptionsBuilder<T>
     public Stream? FileReadStream { get; set; } = null;
 
     /// <summary>
-    /// Gets or sets the path of the file used to store user settings. Defaults to InstanceName or "usersettings" if InstanceName is not set. <br/>
-    /// Extension is determined by the Provider. <br/>
+    /// Gets or sets the path of the file used to store user settings. <br/>
+    /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
+    /// Extension is determined by the Provider so it can be omitted.
     /// </summary>
-    [DisallowNull]
     public string? FilePath { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
     /// </summary>
     public string InstanceName { get; set; } = Microsoft.Extensions.Options.Options.DefaultName;
-
-    /// <summary>
-    /// Gets or sets the name of the configuration section. Defaults to "UserSettings".
-    /// If empty, that means the root of the configuration file.
-    /// If use multiple configuration file for same type T, you must set different SectionName for each.
-    /// Supports hierarchical sections using ':' or '__' separators (e.g., "App:Settings" or "Database__Connection").
-    /// </summary>
-    public string SectionRootName
-    {
-        get => _sectionRootName;
-        set
-        {
-            if (value == null)
-            {
-                _sectionRootName = string.Empty;
-                return;
-            }
-            _sectionRootName = value.Trim();
-        }
-    }
-    private string _sectionRootName = "UserSettings";
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
@@ -78,7 +57,7 @@ public record WritableConfigurationOptionsBuilder<T>
 
     /// <summary>
     /// Gets or sets the logger for configuration operations.
-    /// If null, logging is disabled. Defaults to null.
+    /// If null, logging is disabled or use provider's default logger. Defaults to null.
     /// </summary>
     public ILogger? Logger { get; set; }
 
@@ -91,43 +70,54 @@ public record WritableConfigurationOptionsBuilder<T>
         get
         {
             var filePath = FilePathWithExtension;
-            // if ConfigFolder is set, combine it with the directory of FileName (if any)
-            var combinedDir = string.IsNullOrWhiteSpace(ConfigFolder)
-                ? filePath
-                : Path.Combine(ConfigFolder, filePath);
-
-            // Since combinedDir may be a relative path, convert it to an absolute path.
-            // In this case, the base folder is the folder where the executable file exists.
-            var baseDir = AppContext.BaseDirectory;
-#if NET
-            var fullPath = Path.GetFullPath(combinedDir, baseDir);
-#else
-            var fullPath = Path.GetFullPath(Path.Combine(baseDir, combinedDir));
-#endif
+            // if ConfigFolder is not set, use executable directory as default
+            if (string.IsNullOrWhiteSpace(ConfigFolder))
+            {
+                UseExecutableDirectory();
+            }
+            var combinedDir = Path.Combine(ConfigFolder, filePath);
+            var fullPath = Path.GetFullPath(combinedDir);
             return fullPath;
         }
     }
 
     /// <summary>
-    /// Gets the full section name composed of the section root name and instance name.
+    /// Get or sets the name of the configuration section. <br/>
+    /// You can use ":" or "__" to specify nested sections, e.g. "Parent:Child". <br/>
+    /// If empty that means the root of the configuration file. <br/>
+    /// If null, the default section name will be used.
+    /// </summary>
+    [AllowNull]
+    public string SectionName
+    {
+        get { return _sectionName ?? DefaultSectionName; }
+        set { _sectionName = value; }
+    }
+    private string? _sectionName = null;
+
+    /// <summary>
+    /// Gets or sets the default root element name used for configuration sections.
+    /// Defaults to "UserSettings".
+    /// </summary>
+    public string DefaultSectionRootName { get; set; } = "UserSettings";
+
+    /// <summary>
+    /// Gets the default configuration section name. Defaults to "UserSettings:{TypeName}[-{InstanceName}]".
     /// </summary>
     /// <remarks>
-    /// multiple configuration files for the same type T must have different SectionName values.
-    /// so combine SectionRootName and InstanceName to make it unique.
+    /// If you want override the section name, set <see cref="SectionName"/> property. <br/>
+    /// Or you want override only the root part, set <see cref="DefaultSectionRootName"/> property.
     /// </remarks>
-    public string SectionName
+    public string DefaultSectionName
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(SectionRootName))
+            var section = $"{DefaultSectionRootName}:{typeof(T).Name}";
+            if (!string.IsNullOrWhiteSpace(InstanceName))
             {
-                return string.Empty;
+                section += $"-{InstanceName}";
             }
-            if (string.IsNullOrWhiteSpace(InstanceName))
-            {
-                return $"{SectionRootName}:{typeof(T).Name}";
-            }
-            return $"{SectionRootName}:{typeof(T).Name}-{InstanceName}";
+            return section;
         }
     }
 
@@ -142,6 +132,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <param name="applicationId">The unique identifier of the application. This is used to determine the subdirectory within the user
     /// configuration root directory.</param>
     /// <returns>The full path to the configuration file.</returns>
+    [MemberNotNull(nameof(ConfigFolder))]
     public string UseStandardSaveLocation(string applicationId)
     {
         var root = UserConfigurationPath.GetUserConfigRootDirectory();
@@ -156,6 +147,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// This uses <see cref="AppContext.BaseDirectory"/> to determine the executable directory.
     /// </remarks>
     /// <returns>The full path to the configuration file.</returns>
+    [MemberNotNull(nameof(ConfigFolder))]
     public string UseExecutableDirectory()
     {
         ConfigFolder = AppContext.BaseDirectory;
@@ -169,6 +161,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// This uses <see cref="Directory.GetCurrentDirectory()"/> to determine the current directory.
     /// </remarks>
     /// <returns>The full path to the configuration file.</returns>
+    [MemberNotNull(nameof(ConfigFolder))]
     public string UseCurrentDirectory()
     {
         ConfigFolder = Directory.GetCurrentDirectory();
@@ -179,6 +172,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Configures the current instance to use the specified in-memory file writer for file operations. for testing purpose.
     /// </summary>
     /// <param name="inMemoryFileWriter">The in-memory file writer to use for subsequent file write and read operations.</param>
+    [MemberNotNull(nameof(FileWriter), nameof(FileReadStream))]
     public void UseInMemoryFileWriter(InMemoryFileWriter inMemoryFileWriter)
     {
         FileWriter = inMemoryFileWriter;

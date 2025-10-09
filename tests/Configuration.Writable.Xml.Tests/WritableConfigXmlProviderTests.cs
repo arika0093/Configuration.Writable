@@ -68,7 +68,7 @@ public class WritableConfigXmlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "";
+            options.SectionName = "";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -86,7 +86,7 @@ public class WritableConfigXmlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "";
+            options.SectionName = "";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -106,7 +106,7 @@ public class WritableConfigXmlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "";
+            options.SectionName = "";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -125,7 +125,7 @@ public class WritableConfigXmlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "";
+            options.SectionName = "";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -174,7 +174,7 @@ public class WritableConfigXmlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "App:Settings";
+            options.SectionName = "App:Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -215,7 +215,7 @@ public class WritableConfigXmlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "Database__Connection";
+            options.SectionName = "Database__Connection";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -256,7 +256,7 @@ public class WritableConfigXmlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "App:Database:Connection:Settings";
+            options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 

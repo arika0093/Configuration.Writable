@@ -150,7 +150,7 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.SectionRootName = "App:Settings";
+            options.SectionName = "App:Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -189,7 +189,7 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.SectionRootName = "Database__Connection";
+            options.SectionName = "Database__Connection";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -228,7 +228,7 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.SectionRootName = "App:Database:Connection:Settings";
+            options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 

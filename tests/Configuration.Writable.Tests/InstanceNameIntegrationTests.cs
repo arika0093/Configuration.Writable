@@ -108,7 +108,6 @@ public class InstanceNameIntegrationTests
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
-            opt.SectionRootName = "UserSetting";
             opt.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -116,7 +115,6 @@ public class InstanceNameIntegrationTests
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
-            opt.SectionRootName = "UserSetting";
             opt.UseInMemoryFileWriter(_fileWriter);
         });
 

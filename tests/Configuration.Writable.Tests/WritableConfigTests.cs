@@ -154,7 +154,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.SectionRootName = "App:Settings";
+            options.SectionName = "App:Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -192,7 +192,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.SectionRootName = "Database__Connection";
+            options.SectionName = "Database__Connection";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -230,7 +230,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.SectionRootName = "App:Database:Connection:Settings";
+            options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -269,7 +269,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.SectionRootName = "App:Config__Settings";
+            options.SectionName = "App:Config__Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 

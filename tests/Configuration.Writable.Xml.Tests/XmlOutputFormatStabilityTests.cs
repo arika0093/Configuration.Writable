@@ -88,7 +88,7 @@ public class XmlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "App:Database";
+            options.SectionName = "App:Database";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -214,7 +214,7 @@ public class XmlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = "App:Database:Connection:Settings";
+            options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -240,7 +240,7 @@ public class XmlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.SectionRootName = ""; // Empty section name
+            options.SectionName = ""; // Empty section name
             options.UseInMemoryFileWriter(_fileWriter);
         });
 

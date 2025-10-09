@@ -80,7 +80,7 @@ public class YamlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.SectionRootName = "app:settings";
+            options.SectionName = "app:settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
@@ -205,7 +205,7 @@ public class YamlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.SectionRootName = "app:database:connection:settings";
+            options.SectionName = "app:database:connection:settings";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 

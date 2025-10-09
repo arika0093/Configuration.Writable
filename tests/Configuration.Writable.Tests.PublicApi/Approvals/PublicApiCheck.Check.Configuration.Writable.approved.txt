@@ -125,6 +125,8 @@ namespace Configuration.Writable
     {
         public WritableConfigurationOptionsBuilder() { }
         public string ConfigFilePath { get; }
+        public string DefaultSectionName { get; }
+        public string DefaultSectionRootName { get; set; }
         public string? FilePath { get; set; }
         public System.IO.Stream? FileReadStream { get; set; }
         public Configuration.Writable.FileWriter.IFileWriter? FileWriter { get; set; }
@@ -132,12 +134,17 @@ namespace Configuration.Writable
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public Configuration.Writable.IWritableConfigProvider Provider { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
-        public string SectionName { get; }
-        public string SectionRootName { get; set; }
+        public string SectionName { get; set; }
         public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
+        [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseCurrentDirectory() { }
+        [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseExecutableDirectory() { }
+        [System.Diagnostics.CodeAnalysis.MemberNotNull(new string[] {
+                "FileWriter",
+                "FileReadStream"})]
         public void UseInMemoryFileWriter(Configuration.Writable.FileWriter.InMemoryFileWriter inMemoryFileWriter) { }
+        [System.Diagnostics.CodeAnalysis.MemberNotNull("ConfigFolder")]
         public string UseStandardSaveLocation(string applicationId) { }
     }
     public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>

@@ -48,29 +48,26 @@ public class WritableConfigurationOptionsBuilderTests
     }
 
     [Fact]
-    public void SectionName_WithEmptySectionRootName_ShouldReturnEmpty()
+    public void SectionName_WithEmptySectionName_ShouldReturnEmpty()
     {
-        var options = new WritableConfigurationOptionsBuilder<TestSettings>
-        {
-            SectionRootName = "",
-        };
+        var options = new WritableConfigurationOptionsBuilder<TestSettings> { SectionName = "" };
 
         options.SectionName.ShouldBeEmpty();
     }
 
     [Fact]
-    public void SectionName_WithHierarchicalSectionRootName_ShouldSupportColonAndUnderscoreSeparators()
+    public void SectionName_WithHierarchicalSectionName_ShouldSupportColonAndUnderscoreSeparators()
     {
         var options = new WritableConfigurationOptionsBuilder<TestSettings>();
 
-        options.SectionRootName = "App:Settings";
-        options.SectionName.ShouldBe("App:Settings:TestSettings");
+        options.SectionName = "App:Settings";
+        options.SectionName.ShouldBe("App:Settings");
 
-        options.SectionRootName = "Database__Connection";
-        options.SectionName.ShouldBe("Database__Connection:TestSettings");
+        options.SectionName = "Database__Connection";
+        options.SectionName.ShouldBe("Database__Connection");
 
-        options.SectionRootName = "App:Config__Settings";
-        options.SectionName.ShouldBe("App:Config__Settings:TestSettings");
+        options.SectionName = "App:Config__Settings";
+        options.SectionName.ShouldBe("App:Config__Settings");
     }
 
     [Fact]
@@ -104,10 +101,7 @@ public class WritableConfigurationOptionsBuilderTests
     [Fact]
     public void UseExecutableDirectory_ShouldSetConfigFolderToBaseDirectory()
     {
-        var options = new WritableConfigurationOptionsBuilder<TestSettings>
-        {
-            FilePath = "test",
-        };
+        var options = new WritableConfigurationOptionsBuilder<TestSettings> { FilePath = "test" };
 
         var configPath = options.UseExecutableDirectory();
 

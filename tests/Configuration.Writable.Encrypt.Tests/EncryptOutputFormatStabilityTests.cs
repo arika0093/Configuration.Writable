@@ -118,7 +118,7 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.SectionRootName = "ApplicationSettings:Database";
+            options.SectionName = "ApplicationSettings:Database";
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
