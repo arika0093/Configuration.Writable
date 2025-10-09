@@ -101,7 +101,6 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> option)
 ```
 
 ## Configuration Structure
-### Default
 When saving settings, they are written to a configuration file in a structured format.  
 By default, settings are stored in this structure:
 
@@ -120,13 +119,13 @@ By default, settings are stored in this structure:
 }
 ```
 
-### Why this structure?
+The reasons for this structure are as follows:
+
 * 1st level section ("UserSettings") is to avoid conflicts with settings from other libraries (such as ASP.NET Core).
 * 2nd level section  (the type name of the settings class) is to avoid conflicts when merging multiple configurations using this library.
 * The type name is automatically used as the 2nd level section, eliminating the need for manual configuration in most cases.
 
-### Changing the structure
-See [SectionName](#sectionname).
+Of course, you can customize this structure as needed. see [SectionName](#sectionname).
 
 ## Customization
 ### Configuration Method
