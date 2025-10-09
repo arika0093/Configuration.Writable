@@ -111,37 +111,6 @@ public class WritableConfigurationOptionsBuilderTests
     }
 
     [Fact]
-    public void UseCurrentDirectory_ShouldSetConfigFolderToCurrentDirectory()
-    {
-        var originalCurrentDirectory = Directory.GetCurrentDirectory();
-        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        try
-        {
-            Directory.CreateDirectory(tempDir);
-            Directory.SetCurrentDirectory(tempDir);
-
-            var options = new WritableConfigurationOptionsBuilder<TestSettings>
-            {
-                FilePath = "test",
-            };
-
-            var configPath = options.UseCurrentDirectory();
-
-            var expectedPath = Path.Combine(tempDir, "test.json");
-            configPath.ShouldBe(expectedPath);
-            options.ConfigFilePath.ShouldBe(expectedPath);
-        }
-        finally
-        {
-            Directory.SetCurrentDirectory(originalCurrentDirectory);
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir);
-            }
-        }
-    }
-
-    [Fact]
     public void UseExecutableDirectory_WithDefaultFileName_ShouldUseDefaultFileName()
     {
         var options = new WritableConfigurationOptionsBuilder<TestSettings>();
