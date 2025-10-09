@@ -75,6 +75,26 @@ public class OutputFormatStabilityTests
                 return element1.GetString() == element2.GetString();
 
             case JsonValueKind.Number:
+                // Compare numbers by their numeric value, not raw text representation
+                // to handle differences in decimal/double serialization across .NET versions
+                // (e.g., "99.99" vs "99.990000", or "3.14159" vs "3.1415899999999999")
+
+                // Try double comparison first (most common for floating point)
+                if (element1.TryGetDouble(out var dbl1) && element2.TryGetDouble(out var dbl2))
+                {
+                    // Use epsilon comparison for floating point values
+                    return Math.Abs(dbl1 - dbl2) < 1e-10;
+                }
+
+                // Try decimal comparison for exact decimal values
+                if (element1.TryGetDecimal(out var dec1) && element2.TryGetDecimal(out var dec2))
+                    return dec1 == dec2;
+
+                // Try int64 for integer values
+                if (element1.TryGetInt64(out var i641) && element2.TryGetInt64(out var i642))
+                    return i641 == i642;
+
+                // Fallback to raw text comparison for other number types
                 return element1.GetRawText() == element2.GetRawText();
 
             case JsonValueKind.True:
