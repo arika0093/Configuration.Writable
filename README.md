@@ -287,16 +287,11 @@ opt.Logger = LoggerFactory
 
 ### SectionName
 By default, the section path is automatically determined as `UserSettings:{TypeName}(-{InstanceName})`.  
-To customize the entire section path, use `opt.SectionName`:
-
-```csharp
-opt.SectionName = "MyAppSettings:Foo:Bar";
-```
-
-Then, the settings will be saved in this structure:
+To customize the entire section path, use `opt.SectionName`.
 
 ```jsonc
 {
+  // opt.SectionName = "MyAppSettings:Foo:Bar"
   "MyAppSettings": {
     "Foo": {
       "Bar": {
@@ -307,17 +302,10 @@ Then, the settings will be saved in this structure:
 }
 ```
 
-If you want to save settings at the root level (not recommended), set `opt.SectionName` to an empty string.
-
-```csharp
-opt.SectionName = "";
-```
-
-then, the settings will be saved in this structure:
-
 ```jsonc
 {
-  // properties of UserSetting directly at the root level
+  // opt.SectionName = "" (empty string)
+  // properties of UserSetting directly at the root level (not recommended)
   "Name": "custom name",
   "Age": 30
 }
