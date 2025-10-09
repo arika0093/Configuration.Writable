@@ -25,7 +25,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfigurationFile<TestSettings>(options =>
+        builder.AddUserConfig<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -47,7 +47,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfigurationFile<TestSettings>(options =>
+        builder.AddUserConfig<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -73,7 +73,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfigurationFile<TestSettings>(options =>
+        builder.AddUserConfig<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -95,7 +95,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfigurationFile<TestSettings>(options =>
+        builder.AddUserConfig<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.InstanceName = "custom";
@@ -119,7 +119,7 @@ public class IOptionsIntegrationTests
 
         // First, save some configuration
         var builder1 = Host.CreateApplicationBuilder();
-        builder1.AddUserConfigurationFile<TestSettings>(options =>
+        builder1.AddUserConfig<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -141,7 +141,7 @@ public class IOptionsIntegrationTests
 
         // Then, read it back using IOptions
         var builder2 = Host.CreateApplicationBuilder();
-        builder2.AddUserConfigurationFile<TestSettings>(options =>
+        builder2.AddUserConfig<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);

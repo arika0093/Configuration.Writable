@@ -42,7 +42,7 @@ public class WritableConfigSimpleInstance<T>
     public void Add(Action<WritableConfigurationOptionsBuilder<T>> configurationOptions)
     {
         // add default configuration sources
-        ServiceCollection.AddUserConfigurationFile(Configuration, configurationOptions);
+        ServiceCollection.AddUserConfig(Configuration, configurationOptions);
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public class WritableConfigSimpleInstance<T>
     public void Add(WritableConfigurationOptionsBuilder<T> configurationBuilder)
     {
         // add default configuration sources
-        ServiceCollection.AddUserConfigurationFile(Configuration, configurationBuilder);
+        ServiceCollection.AddUserConfig(Configuration, configurationBuilder);
     }
 
     /// <summary>

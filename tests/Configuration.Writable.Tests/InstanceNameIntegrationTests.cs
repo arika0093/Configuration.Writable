@@ -26,7 +26,7 @@ public class InstanceNameIntegrationTests
         var builder = Host.CreateApplicationBuilder();
 
         // first setting
-        builder.AddUserConfigurationFile<UserSetting>(opt =>
+        builder.AddUserConfig<UserSetting>(opt =>
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
@@ -34,7 +34,7 @@ public class InstanceNameIntegrationTests
         });
 
         // second setting
-        builder.AddUserConfigurationFile<UserSetting>(opt =>
+        builder.AddUserConfig<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
@@ -104,7 +104,7 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.AddUserConfigurationFile<UserSetting>(opt =>
+        builder.AddUserConfig<UserSetting>(opt =>
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
@@ -112,7 +112,7 @@ public class InstanceNameIntegrationTests
             opt.UseInMemoryFileWriter(_fileWriter);
         });
 
-        builder.AddUserConfigurationFile<UserSetting>(opt =>
+        builder.AddUserConfig<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
@@ -158,14 +158,14 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.AddUserConfigurationFile<UserSetting>(opt =>
+        builder.AddUserConfig<UserSetting>(opt =>
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
             opt.UseInMemoryFileWriter(_fileWriter);
         });
 
-        builder.AddUserConfigurationFile<UserSetting>(opt =>
+        builder.AddUserConfig<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
@@ -190,7 +190,7 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.AddUserConfigurationFile<UserSetting>(opt =>
+        builder.AddUserConfig<UserSetting>(opt =>
         {
             opt.FilePath = fileName;
             opt.UseInMemoryFileWriter(_fileWriter);

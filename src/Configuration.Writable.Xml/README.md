@@ -18,7 +18,7 @@ WritableConfig.Initialize<UserSecretSetting>(opt => {
 
 ```csharp
 builder = new HostApplicationBuilder(args);
-builder.AddUserConfigurationFile<UserSecretSetting>(opt => {
+builder.AddUserConfig<UserSecretSetting>(opt => {
     opt.Provider = new WritableConfigXmlProvider();
 });
 ```

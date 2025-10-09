@@ -12,7 +12,7 @@ internal class Program
         var builder = Host.CreateApplicationBuilder(args);
 
         // add Configuration.Writable
-        builder.AddUserConfigurationFile<SampleSetting>(opt =>
+        builder.AddUserConfig<SampleSetting>(opt =>
         {
             opt.FilePath = "config/sample";
         });
