@@ -150,6 +150,32 @@ public record WritableConfigurationOptionsBuilder<T>
     }
 
     /// <summary>
+    /// Sets the configuration folder to the directory where the executable is located. (default behavior)
+    /// </summary>
+    /// <remarks>
+    /// This uses <see cref="AppContext.BaseDirectory"/> to determine the executable directory.
+    /// </remarks>
+    /// <returns>The full path to the configuration file.</returns>
+    public string UseExecutableDirectory()
+    {
+        ConfigFolder = AppContext.BaseDirectory;
+        return ConfigFilePath;
+    }
+
+    /// <summary>
+    /// Sets the configuration folder to the current working directory.
+    /// </summary>
+    /// <remarks>
+    /// This uses <see cref="Directory.GetCurrentDirectory()"/> to determine the current directory.
+    /// </remarks>
+    /// <returns>The full path to the configuration file.</returns>
+    public string UseCurrentDirectory()
+    {
+        ConfigFolder = Directory.GetCurrentDirectory();
+        return ConfigFilePath;
+    }
+
+    /// <summary>
     /// Configures the current instance to use the specified in-memory file writer for file operations. for testing purpose.
     /// </summary>
     /// <param name="inMemoryFileWriter">The in-memory file writer to use for subsequent file write and read operations.</param>

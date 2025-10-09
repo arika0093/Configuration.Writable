@@ -135,6 +135,8 @@ namespace Configuration.Writable
         public string SectionName { get; }
         public string SectionRootName { get; set; }
         public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
+        public string UseCurrentDirectory() { }
+        public string UseExecutableDirectory() { }
         public void UseInMemoryFileWriter(Configuration.Writable.FileWriter.InMemoryFileWriter inMemoryFileWriter) { }
         public string UseStandardSaveLocation(string applicationId) { }
     }
