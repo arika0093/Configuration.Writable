@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -18,8 +19,12 @@ namespace Configuration.Writable.Encrypt.Tests;
 /// </summary>
 public class EncryptOutputFormatStabilityTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
+
+    /// <summary>
+    /// Create a new InMemoryFileWriter for each test to ensure test isolation
+    /// </summary>
+    private static InMemoryFileWriter CreateFileWriter() => new();
 
     /// <summary>
     /// Helper method to decrypt encrypted content and return the JSON
@@ -123,6 +128,15 @@ public class EncryptOutputFormatStabilityTests
         return File.ReadAllText(path);
     }
 
+    /// <summary>
+    /// Helper method to load reference binary file content
+    /// </summary>
+    private static byte[] LoadReferenceBinaryFile(string fileName)
+    {
+        var path = Path.Combine(ReferenceFilesPath, fileName);
+        return File.ReadAllBytes(path);
+    }
+
     public class TestConfiguration
     {
         public string StringValue { get; set; } = "TestString";
@@ -147,6 +161,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_test.enc";
         const string encryptionKey = "TestKey1234567890123456789012"; // 32 chars
+        var fileWriter = CreateFileWriter();
         var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
@@ -155,7 +170,7 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileWriter(fileWriter);
         });
 
         var testConfig = new TestConfiguration();
@@ -163,8 +178,8 @@ public class EncryptOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         // For encrypted files, we verify structure rather than exact content due to IV randomness
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
-        var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
+        fileWriter.FileExists(testFileName).ShouldBeTrue();
+        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
 
         // Verify the file has the expected structure:
         // - Should start with IV (16 bytes for AES)
@@ -179,9 +194,8 @@ public class EncryptOutputFormatStabilityTests
         var expectedJson = LoadReferenceFile("encrypt_basic.json");
 
         // Compare JSON semantically (ignoring whitespace and property order)
-        JsonEquals(decryptedJson, expectedJson).ShouldBeTrue(
-            "Decrypted JSON content should semantically match the reference file"
-        );
+        JsonEquals(decryptedJson, expectedJson)
+            .ShouldBeTrue("Decrypted JSON content should semantically match the reference file");
     }
 
     [Fact]
@@ -189,6 +203,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_section_test.enc";
         const string encryptionKey = "SectionKey12345678901234567890"; // 32 chars
+        var fileWriter = CreateFileWriter();
         var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
@@ -198,14 +213,14 @@ public class EncryptOutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
             options.SectionName = "ApplicationSettings:Database";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileWriter(fileWriter);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOption();
         await option.SaveAsync(testConfig);
 
-        var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
+        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
         encryptedBytes.Length.ShouldBeGreaterThan(16);
 
         // Decrypt and compare with reference JSON
@@ -213,15 +228,17 @@ public class EncryptOutputFormatStabilityTests
         var expectedJson = LoadReferenceFile("encrypt_section.json");
 
         // Compare JSON semantically (ignoring whitespace and property order)
-        JsonEquals(decryptedJson, expectedJson).ShouldBeTrue(
-            "Decrypted JSON content with section name should semantically match the reference file"
-        );
+        JsonEquals(decryptedJson, expectedJson)
+            .ShouldBeTrue(
+                "Decrypted JSON content with section name should semantically match the reference file"
+            );
     }
 
     [Fact]
     public async Task EncryptProvider_KeyLength_ShouldBeStable()
     {
         // Test with different key lengths to ensure stability
+        var fileWriter = CreateFileWriter();
         var keyLengths = new[] { 16, 24, 32 };
 
         foreach (var keyLength in keyLengths)
@@ -238,14 +255,14 @@ public class EncryptOutputFormatStabilityTests
             {
                 options.FilePath = testFileName;
                 options.Provider = encryptProvider;
-                options.UseInMemoryFileWriter(_fileWriter);
+                options.UseInMemoryFileWriter(fileWriter);
             });
 
             var testConfig = new TestConfiguration();
             var option = instance.GetOption();
             await option.SaveAsync(testConfig);
 
-            var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
+            var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
             encryptedBytes.Length.ShouldBeGreaterThan(
                 16,
                 $"Key length {keyLength} should produce valid encrypted output"
@@ -276,6 +293,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_large_test.enc";
         const string encryptionKey = "LargeDataKey1234567890123456789"; // 32 chars
+        var fileWriter = CreateFileWriter();
         var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var largeConfig = new TestConfiguration
@@ -290,13 +308,13 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileWriter(fileWriter);
         });
 
         var option = instance.GetOption();
         await option.SaveAsync(largeConfig);
 
-        var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
+        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
         encryptedBytes.Length.ShouldBeGreaterThan(
             1000,
             "Large data should produce correspondingly large encrypted output"
@@ -332,6 +350,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_special_chars_test.enc";
         const string encryptionKey = "SpecialKey1234567890123456789012"; // 32 chars
+        var fileWriter = CreateFileWriter();
         var instance = new WritableConfigSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
@@ -346,21 +365,74 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileWriter(fileWriter);
         });
 
         var option = instance.GetOption();
         await option.SaveAsync(specialConfig);
 
-        var encryptedBytes = _fileWriter.ReadAllBytes(testFileName);
+        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
 
         // Decrypt and compare with reference JSON
         var decryptedJson = DecryptContent(encryptedBytes, encryptionKey);
         var expectedJson = LoadReferenceFile("encrypt_special_chars.json");
 
         // Compare JSON semantically (ignoring whitespace and property order)
-        JsonEquals(decryptedJson, expectedJson).ShouldBeTrue(
-            "Decrypted JSON content with special characters should semantically match the reference file"
-        );
+        JsonEquals(decryptedJson, expectedJson)
+            .ShouldBeTrue(
+                "Decrypted JSON content with special characters should semantically match the reference file"
+            );
+    }
+
+    /// <summary>
+    /// Test that verifies backward compatibility by loading a pre-encrypted file through the provider.
+    /// This simulates the real-world scenario of reading previously saved encrypted configuration.
+    /// </summary>
+    [Fact]
+    public async Task EncryptProvider_CanLoadPreEncryptedConfigurationThroughProvider()
+    {
+        const string testFileName = "load_preencrypted_test.enc";
+        const string encryptionKey = "BackwardCompatKey1234567890123"; // 32 chars
+        const string referenceEncryptedFile = "backward_compat_basic.enc";
+        var fileWriter = CreateFileWriter();
+
+        // Load the pre-encrypted reference file and copy to InMemoryFileWriter
+        var encryptedBytes = LoadReferenceBinaryFile(referenceEncryptedFile);
+        await fileWriter.SaveToFileAsync(testFileName, encryptedBytes);
+
+        // Initialize the provider to read the pre-encrypted file
+        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = encryptProvider;
+            options.UseInMemoryFileWriter(fileWriter);
+        });
+
+        // Load the configuration through the provider
+        var option = instance.GetOption();
+        var loadedConfig = option.CurrentValue;
+
+        // Verify the loaded configuration has expected values
+        loadedConfig.ShouldNotBeNull();
+        loadedConfig.StringValue.ShouldBe("TestString");
+        loadedConfig.IntValue.ShouldBe(42);
+        loadedConfig.DoubleValue.ShouldBe(3.14159);
+        loadedConfig.BoolValue.ShouldBe(true);
+        // Note: Array values may be merged with defaults during configuration loading
+        // Just verify it contains the expected items
+        loadedConfig.ArrayValue.ShouldContain("item1");
+        loadedConfig.ArrayValue.ShouldContain("item2");
+        loadedConfig.ArrayValue.ShouldContain("item3");
+        // Compare DateTime in UTC to avoid timezone issues
+        loadedConfig
+            .DateTimeValue.ToUniversalTime()
+            .ShouldBe(new DateTime(2023, 12, 25, 10, 30, 45, DateTimeKind.Utc));
+        loadedConfig.Nested.ShouldNotBeNull();
+        loadedConfig.Nested.Description.ShouldBe("Nested description");
+        loadedConfig.Nested.Price.ShouldBe(99.99m);
+        loadedConfig.Nested.IsActive.ShouldBe(false);
     }
 }
