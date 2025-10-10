@@ -352,6 +352,69 @@ public class MyService(IWritableOptions<UserSetting> option)
 > When not using DI (direct use of WritableConfig), managing multiple configurations is intentionally not supported.
 > This is to avoid complicating usage.
 
+### Validation
+By default, validation using `DataAnnotations` is enabled.  
+If validation fails, a `ValidationException` is thrown and the settings are not saved.
+
+```csharp
+builder.AddUserConfig<UserSetting>(opt => {
+    // if you want to disable validation of DataAnnotations, do the following:
+    // opt.UseDataAnnotationsValidation = false;
+});
+
+var option = WritableConfig.GetOption<UserSetting>();
+try {
+    await option.SaveAsync(setting => {
+        setting.Name = "ab"; // too short
+        setting.Age = 200;  // out of range
+    });
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($">> Validation failed: {ex.Message}");
+    // setting is not saved if validation fails
+}
+
+internal class UserSetting
+{
+    [Required, MinLength(3)]
+    public string Name { get; set; } = "default name";
+    [Range(0, 150)]
+    public int Age { get; set; } = 20;
+}
+```
+
+Alternatively, you can add custom validation using `WithValidatorFunction` or `WithValidator`.
+
+```csharp
+builder.AddUserConfig<UserSetting>(opt => {
+    // add custom validation function
+    opt.WithValidatorFunction(setting => {
+        if (setting.Name.Contains("invalid"))
+            return ValidationResult.Fail("Name must not contain 'invalid'.");
+        return ValidationResult.Ok();
+    });
+    // or use a custom validator class
+    opt.WithValidator<MyCustomValidator>();
+});
+
+// IValidator sample
+internal class MyCustomValidator : IValidator<UserSetting>
+{
+    public ValidationResult Validate(UserSetting setting)
+    {
+        if (setting.Age < 10)
+            return ValidationResult.Fail("Age must be at least 10.");
+        if (setting.Age > 100)
+            return ValidationResult.Fail("Age must be 100 or less.");
+        return ValidationResult.Ok();
+    }
+}
+```
+
+> [!NOTE]
+> Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
+
 ## Tips
 ### Default Values
 Due to the specifications of MS.E.C, properties that do not exist in the configuration file will use their default values.  
