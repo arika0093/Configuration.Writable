@@ -26,7 +26,7 @@ public class InstanceNameIntegrationTests
         var builder = Host.CreateApplicationBuilder();
 
         // first setting
-        builder.AddUserConfig<UserSetting>(opt =>
+        builder.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
@@ -34,7 +34,7 @@ public class InstanceNameIntegrationTests
         });
 
         // second setting
-        builder.AddUserConfig<UserSetting>(opt =>
+        builder.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
@@ -104,14 +104,14 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.AddUserConfig<UserSetting>(opt =>
+        builder.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
             opt.UseInMemoryFileWriter(_fileWriter);
         });
 
-        builder.AddUserConfig<UserSetting>(opt =>
+        builder.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
@@ -156,14 +156,14 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.AddUserConfig<UserSetting>(opt =>
+        builder.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
             opt.UseInMemoryFileWriter(_fileWriter);
         });
 
-        builder.AddUserConfig<UserSetting>(opt =>
+        builder.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
@@ -188,7 +188,7 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.AddUserConfig<UserSetting>(opt =>
+        builder.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = fileName;
             opt.UseInMemoryFileWriter(_fileWriter);

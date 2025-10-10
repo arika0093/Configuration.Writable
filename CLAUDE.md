@@ -80,7 +80,7 @@ Settings are stored in hierarchical structure:
 - Locked package restore via packages.lock.json
 
 ### API Design Patterns
-- Two usage patterns: With DI (`AddUserConfig<T>()`) and without DI (`WritableConfig.Initialize<T>()`)
+- Two usage patterns: With DI (`AddWritableOptions<T>()`) and without DI (`WritableConfig.Initialize<T>()`)
 - Settings classes use C# properties with default values
 - Support for multiple settings instances via `InstanceName`
 - Configuration options builder pattern for customization

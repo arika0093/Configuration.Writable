@@ -114,19 +114,19 @@ namespace Configuration.Writable
     }
     public static class WritableConfigurationExtensions
     {
-        public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddUserConfig<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder)
+        public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddWritableOptions<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddUserConfig<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration)
             where T :  class { }
-        public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddUserConfig<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
+        public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddWritableOptions<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddUserConfig<T>(this Microsoft.Extensions.Configuration.IConfigurationManager configuration, Microsoft.Extensions.DependencyInjection.IServiceCollection services, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.Configuration.IConfigurationManager configuration, Microsoft.Extensions.DependencyInjection.IServiceCollection services, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddUserConfig<T>(this Microsoft.Extensions.Configuration.IConfigurationManager configuration, Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.Configuration.IConfigurationManager configuration, Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddUserConfig<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddUserConfig<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
             where T :  class { }
     }
     public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>

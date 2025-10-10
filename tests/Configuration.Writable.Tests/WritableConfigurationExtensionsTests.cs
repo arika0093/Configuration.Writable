@@ -20,11 +20,11 @@ public class WritableConfigurationExtensionsTests
     }
 
     [Fact]
-    public void AddUserConfig_WithServiceCollection_ShouldRegisterServices()
+    public void AddWritableOptions_WithServiceCollection_ShouldRegisterServices()
     {
         var config = new ConfigurationManager();
         var services = new ServiceCollection();
-        services.AddUserConfig<TestSettings>(config);
+        services.AddWritableOptions<TestSettings>(config);
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
         var readonlyOptions = serviceProvider.GetService<IReadOnlyOptions<TestSettings>>();
@@ -33,13 +33,13 @@ public class WritableConfigurationExtensionsTests
     }
 
     [Fact]
-    public void AddUserConfig_WithServiceCollection_ShouldUseCustomConfiguration()
+    public void AddWritableOptions_WithServiceCollection_ShouldUseCustomConfiguration()
     {
         var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         var config = new ConfigurationManager();
         var services = new ServiceCollection();
-        services.AddUserConfig<TestSettings>(
+        services.AddWritableOptions<TestSettings>(
             config,
             options =>
             {
@@ -56,10 +56,10 @@ public class WritableConfigurationExtensionsTests
     }
 
     [Fact]
-    public void AddUserConfig_WithHostBuilder_ShouldRegisterServices()
+    public void AddWritableOptions_WithHostBuilder_ShouldRegisterServices()
     {
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfig<TestSettings>();
+        builder.AddWritableOptions<TestSettings>();
 
         var host = builder.Build();
         var writableOptions = host.Services.GetService<IWritableOptions<TestSettings>>();
@@ -70,12 +70,12 @@ public class WritableConfigurationExtensionsTests
     }
 
     [Fact]
-    public void AddUserConfig_WithCustomOptions_ShouldUseCustomConfiguration()
+    public void AddWritableOptions_WithCustomOptions_ShouldUseCustomConfiguration()
     {
         var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfig<TestSettings>(options =>
+        builder.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFilePath;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -94,7 +94,7 @@ public class WritableConfigurationExtensionsTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfig<TestSettings>(options =>
+        builder.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -126,7 +126,7 @@ public class WritableConfigurationExtensionsTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddUserConfig<TestSettings>(options =>
+        builder.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);

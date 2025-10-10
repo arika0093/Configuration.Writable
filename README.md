@@ -58,15 +58,15 @@ await option.SaveAsync(setting =>
 
 ### With DI
 If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), integrate with `IHostApplicationBuilder` or `IServiceCollection`.
-First, call `builder.AddUserConfig` to register the settings.
+First, call `builder.AddWritableOptions` to register the settings.
 
 ```csharp
 // Program.cs
-builder.AddUserConfig<UserSetting>();
+builder.AddWritableOptions<UserSetting>();
 
 // If you're not using IHostApplicationBuilder, do the following:
 var configuration = new ConfigurationManager();
-services.AddUserConfig<UserSetting>(configuration);
+services.AddWritableOptions<UserSetting>(configuration);
 ```
 
 Then, inject `IReadOnlyOptions<T>` or `IWritableOptions<T>` to read and write settings.
@@ -129,14 +129,14 @@ Of course, you can customize this structure as needed. see [SectionName](#sectio
 
 ## Customization
 ### Configuration Method
-You can change various settings as arguments to `Initialize` or `AddUserConfig`.
+You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
 
 ```csharp
 // Without DI
 WritableConfig.Initialize<SampleSetting>(opt => { /* ... */ });
 
 // With DI
-builder.AddUserConfig<UserSetting>(opt => { /* ... */ });
+builder.AddWritableOptions<UserSetting>(opt => { /* ... */ });
 ```
 
 ### Save Location
@@ -174,7 +174,7 @@ WritableConfig.Initialize<UserSetting>(opt => {
 });
 
 // if using IHostApplicationBuilder
-builder.AddUserConfig<UserSetting>(opt => {
+builder.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "mysettings.json";
     if (builder.Environment.IsProduction()) {
         opt.UseStandardSaveLocation("MyAppId");
@@ -244,7 +244,7 @@ If you want to directly reference the settings class, specify `opt.RegisterInsta
 > Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
 
 ```csharp
-builder.AddUserConfig<UserSetting>(opt => {
+builder.AddWritableOptions<UserSetting>(opt => {
     opt.RegisterInstanceToContainer = true;
 });
 
@@ -317,13 +317,13 @@ If you want to manage multiple settings of the same type, you must specify diffe
 
 ```csharp
 // first setting
-builder.AddUserConfig<UserSetting>(opt => {
+builder.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "firstsettings.json";
     opt.InstanceName = "First";
     // save section will be "UserSettings:UserSetting-First"
 });
 // second setting
-builder.AddUserConfig<UserSetting>(opt => {
+builder.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "secondsettings.json";
     opt.InstanceName = "Second";
     // save section will be "UserSettings:UserSetting-Second"
@@ -357,7 +357,7 @@ By default, validation using `DataAnnotations` is enabled.
 If validation fails, a `ValidationException` is thrown and the settings are not saved.
 
 ```csharp
-builder.AddUserConfig<UserSetting>(opt => {
+builder.AddWritableOptions<UserSetting>(opt => {
     // if you want to disable validation of DataAnnotations, do the following:
     // opt.UseDataAnnotationsValidation = false;
 });
@@ -387,7 +387,7 @@ internal class UserSetting
 Alternatively, you can add custom validation using `WithValidatorFunction` or `WithValidator`.
 
 ```csharp
-builder.AddUserConfig<UserSetting>(opt => {
+builder.AddWritableOptions<UserSetting>(opt => {
     // add custom validation function
     opt.WithValidatorFunction(setting => {
         if (setting.Name.Contains("invalid"))
@@ -433,10 +433,10 @@ A good way to include user passwords and the like in settings is to split the cl
 ```csharp
 // register multiple settings in DI
 builder
-    .AddUserConfig<UserSetting>(opt => {
+    .AddWritableOptions<UserSetting>(opt => {
         opt.FilePath = "usersettings";
     })
-    .AddUserConfig<UserSecretSetting>(opt => {
+    .AddWritableOptions<UserSecretSetting>(opt => {
         opt.FilePath = "my-secret-folder/secrets";
         // dotnet add package Configuration.Writable.Encrypt
         opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
