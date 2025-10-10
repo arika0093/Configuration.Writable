@@ -184,6 +184,17 @@ public record WritableConfigurationOptionsBuilder<T>
     }
 
     /// <summary>
+    /// Adds a custom validator of type <typeparamref name="TValidator"/> to be executed before saving configuration.
+    /// </summary>
+    /// <typeparam name="TValidator">The type of the validator to add. Must implement <see cref="IValidator{T}"/> and have a parameterless constructor.</typeparam>
+    public void WithValidator<TValidator>()
+        where TValidator : IValidator<T>, new()
+    {
+        var validatorInstance = new TValidator();
+        WithValidator(validatorInstance);
+    }
+
+    /// <summary>
     /// Adds a custom validator to be executed before saving configuration.
     /// </summary>
     /// <param name="validator">An instance of <see cref="IValidator{T}"/> to validate the configuration.</param>

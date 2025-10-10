@@ -149,6 +149,8 @@ namespace Configuration.Writable
         public string UseExecutableDirectory() { }
         public string UseStandardSaveLocation(string applicationId) { }
         public void WithValidator(Configuration.Writable.IValidator<T> validator) { }
+        public void WithValidator<TValidator>()
+            where TValidator : Configuration.Writable.IValidator<T>, new () { }
         public void WithValidatorFunction(System.Func<T, Configuration.Writable.ValidationResult> validator) { }
     }
     public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>
