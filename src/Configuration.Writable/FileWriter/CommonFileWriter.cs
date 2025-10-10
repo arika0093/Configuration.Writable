@@ -90,7 +90,11 @@ public class CommonFileWriter : IFileWriter, IDisposable
                     return;
                 }
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
             {
                 logger?.LogWarning(
                     ex,
@@ -100,7 +104,7 @@ public class CommonFileWriter : IFileWriter, IDisposable
                 );
                 lastException = ex;
                 retryCount++;
-                // Wait 100ms before retrying
+                // Wait delay before retrying
                 var delayMs = RetryDelay(retryCount);
                 await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
             }
