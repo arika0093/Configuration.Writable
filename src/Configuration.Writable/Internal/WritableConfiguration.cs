@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.Validation;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Internal;
@@ -102,12 +103,23 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     /// <param name="newConfig">The new configuration to save.</param>
     /// <param name="options">The writable configuration options associated with the configuration to be saved.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <exception cref="ValidationException">Thrown when validation fails.</exception>
     private Task SaveCoreAsync(
         T newConfig,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
     {
+        // Validate configuration if a validator is provided
+        if (options.Validator != null)
+        {
+            var validationResult = options.Validator(newConfig);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult);
+            }
+        }
+
         SetCachedValue(options.InstanceName, newConfig);
         return options.Provider.SaveAsync(newConfig, options, cancellationToken);
     }

@@ -1,12 +1,16 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
+using Configuration.Writable.Validation;
 using Microsoft.Extensions.Logging;
+using ValidationResult = Configuration.Writable.Validation.ValidationResult;
 
 namespace Configuration.Writable;
 
@@ -18,6 +22,7 @@ public record WritableConfigurationOptionsBuilder<T>
     where T : class
 {
     private const string DefaultFileName = "usersettings";
+    private readonly List<Func<T, ValidationResult>> _validators = new();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
@@ -60,6 +65,11 @@ public record WritableConfigurationOptionsBuilder<T>
     /// If null, logging is disabled or use provider's default logger. Defaults to null.
     /// </summary>
     public ILogger? Logger { get; set; }
+
+    /// <summary>
+    /// Indicates whether to validate using Data Annotations. Defaults to false.
+    /// </summary>
+    private bool UseDataAnnotations { get; set; } = false;
 
     /// <summary>
     /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
@@ -177,10 +187,56 @@ public record WritableConfigurationOptionsBuilder<T>
     }
 
     /// <summary>
+    /// Adds a custom validation function to be executed before saving configuration.
+    /// </summary>
+    /// <param name="validator">A function that validates the configuration and returns a <see cref="ValidationResult"/>.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    public WritableConfigurationOptionsBuilder<T> WithValidation(
+        Func<T, ValidationResult> validator
+    )
+    {
+        if (validator == null)
+        {
+            throw new ArgumentNullException(nameof(validator));
+        }
+
+        _validators.Add(validator);
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a custom validator to be executed before saving configuration.
+    /// </summary>
+    /// <param name="validator">An instance of <see cref="IValidator{T}"/> to validate the configuration.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    public WritableConfigurationOptionsBuilder<T> WithValidator(IValidator<T> validator)
+    {
+        if (validator == null)
+        {
+            throw new ArgumentNullException(nameof(validator));
+        }
+
+        _validators.Add(validator.Validate);
+        return this;
+    }
+
+    /// <summary>
+    /// Enables validation using Data Annotations attributes on the configuration class.
+    /// </summary>
+    /// <returns>The current builder instance for method chaining.</returns>
+    public WritableConfigurationOptionsBuilder<T> ValidateDataAnnotations()
+    {
+        UseDataAnnotations = true;
+        return this;
+    }
+
+    /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
     public WritableConfigurationOptions<T> BuildOptions()
     {
+        var validator = BuildValidator();
+
         return new WritableConfigurationOptions<T>
         {
             Provider = Provider,
@@ -188,7 +244,61 @@ public record WritableConfigurationOptionsBuilder<T>
             InstanceName = InstanceName,
             SectionName = SectionName,
             Logger = Logger,
+            Validator = validator,
         };
+    }
+
+    /// <summary>
+    /// Builds the composite validator from all registered validators.
+    /// </summary>
+    private Func<T, ValidationResult>? BuildValidator()
+    {
+        var validators = new List<Func<T, ValidationResult>>(_validators);
+
+        // Add Data Annotations validator if enabled
+        if (UseDataAnnotations)
+        {
+            validators.Add(ValidateWithDataAnnotations);
+        }
+
+        if (validators.Count == 0)
+        {
+            return null;
+        }
+
+        return value =>
+        {
+            var results = validators.Select(v => v(value)).ToList();
+            return ValidationResult.Combine(results.ToArray());
+        };
+    }
+
+    /// <summary>
+    /// Validates an object using Data Annotations.
+    /// </summary>
+    private static ValidationResult ValidateWithDataAnnotations(T value)
+    {
+        var context = new System.ComponentModel.DataAnnotations.ValidationContext(value);
+        var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(
+            value,
+            context,
+            validationResults,
+            validateAllProperties: true
+        );
+
+        if (isValid)
+        {
+            return ValidationResult.Success();
+        }
+
+        var errors = validationResults
+            .Where(r => r.ErrorMessage != null)
+            .Select(r => r.ErrorMessage!)
+            .ToList();
+
+        return ValidationResult.Failure(errors);
     }
 
     // configuration folder path, if set, appended to the directory of FileName (if any)

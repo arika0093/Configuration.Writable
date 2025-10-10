@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
+using Configuration.Writable.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
@@ -44,7 +45,8 @@ public record WritableConfigurationOptions<T>
     public ILogger? Logger { get; init; }
 
     /// <summary>
-    /// Gets the effective logger
+    /// Gets or sets the validation function to be executed before saving configuration.
+    /// If null, no validation is performed. Defaults to null.
     /// </summary>
-    public ILogger? EffectiveLogger => Logger;
+    public Func<T, ValidationResult>? Validator { get; init; }
 }

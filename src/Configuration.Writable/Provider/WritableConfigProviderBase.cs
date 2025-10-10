@@ -41,7 +41,7 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
     )
         where T : class
     {
-        options.EffectiveLogger?.Log(
+        options.Logger?.Log(
             LogLevel.Debug,
             "Saving configuration to {FilePath}",
             options.ConfigFilePath
@@ -49,15 +49,10 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
 
         var contents = GetSaveContents(config, options);
         await FileWriter
-            .SaveToFileAsync(
-                options.ConfigFilePath,
-                contents,
-                cancellationToken,
-                options.EffectiveLogger
-            )
+            .SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken, options.Logger)
             .ConfigureAwait(false);
 
-        options.EffectiveLogger?.Log(
+        options.Logger?.Log(
             LogLevel.Information,
             "Configuration saved successfully to {FilePath}",
             options.ConfigFilePath

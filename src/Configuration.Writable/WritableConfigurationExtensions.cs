@@ -169,6 +169,7 @@ public static class WritableConfigurationExtensions
                     InstanceName = options.InstanceName,
                     SectionName = options.SectionName,
                     Logger = logger,
+                    Validator = options.Validator,
                 };
             });
         }
