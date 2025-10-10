@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Configuration.Writable.Validation;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Represents the result of a validation operation.
@@ -29,7 +29,7 @@ public sealed class ValidationResult
     /// Creates a successful validation result.
     /// </summary>
     /// <returns>A successful validation result.</returns>
-    public static ValidationResult Success() => new(true, Array.Empty<string>());
+    public static ValidationResult Ok() => new(true, []);
 
     /// <summary>
     /// Creates a failed validation result with one or more error messages.
@@ -37,7 +37,7 @@ public sealed class ValidationResult
     /// <param name="errors">The error messages describing why validation failed.</param>
     /// <returns>A failed validation result.</returns>
     /// <exception cref="ArgumentException">Thrown when no errors are provided.</exception>
-    public static ValidationResult Failure(params string[] errors)
+    public static ValidationResult Fail(params string[] errors)
     {
         if (errors == null || errors.Length == 0)
         {
@@ -58,7 +58,7 @@ public sealed class ValidationResult
     /// <exception cref="ArgumentException">Thrown when no errors are provided.</exception>
     public static ValidationResult Failure(IEnumerable<string> errors)
     {
-        var errorList = errors?.ToList() ?? new List<string>();
+        var errorList = errors?.ToList() ?? [];
         if (errorList.Count == 0)
         {
             throw new ArgumentException(
@@ -79,11 +79,11 @@ public sealed class ValidationResult
     {
         if (results == null || results.Length == 0)
         {
-            return Success();
+            return Ok();
         }
 
         var allErrors = results.Where(r => !r.IsValid).SelectMany(r => r.Errors).ToList();
 
-        return allErrors.Count == 0 ? Success() : Failure(allErrors);
+        return allErrors.Count == 0 ? Ok() : Failure(allErrors);
     }
 }

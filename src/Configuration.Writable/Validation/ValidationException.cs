@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Configuration.Writable.Validation;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Exception thrown when configuration validation fails.

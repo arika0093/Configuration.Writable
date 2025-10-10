@@ -5,12 +5,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
-using Configuration.Writable.Validation;
 using Microsoft.Extensions.Logging;
-using ValidationResult = Configuration.Writable.Validation.ValidationResult;
 
 namespace Configuration.Writable;
 
@@ -61,15 +58,15 @@ public record WritableConfigurationOptionsBuilder<T>
     public bool RegisterInstanceToContainer { get; set; } = false;
 
     /// <summary>
+    /// Gets or sets a value indicating whether validation using data annotation attributes is enabled. Defaults to true.
+    /// </summary>
+    public bool UseDataAnnotationsValidation { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets the logger for configuration operations.
     /// If null, logging is disabled or use provider's default logger. Defaults to null.
     /// </summary>
     public ILogger? Logger { get; set; }
-
-    /// <summary>
-    /// Indicates whether to validate using Data Annotations. Defaults to false.
-    /// </summary>
-    private bool UseDataAnnotations { get; set; } = false;
 
     /// <summary>
     /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
@@ -191,17 +188,9 @@ public record WritableConfigurationOptionsBuilder<T>
     /// </summary>
     /// <param name="validator">A function that validates the configuration and returns a <see cref="ValidationResult"/>.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    public WritableConfigurationOptionsBuilder<T> WithValidation(
-        Func<T, ValidationResult> validator
-    )
+    public void WithValidation(Func<T, ValidationResult> validator)
     {
-        if (validator == null)
-        {
-            throw new ArgumentNullException(nameof(validator));
-        }
-
         _validators.Add(validator);
-        return this;
     }
 
     /// <summary>
@@ -209,25 +198,9 @@ public record WritableConfigurationOptionsBuilder<T>
     /// </summary>
     /// <param name="validator">An instance of <see cref="IValidator{T}"/> to validate the configuration.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    public WritableConfigurationOptionsBuilder<T> WithValidator(IValidator<T> validator)
+    public void WithValidator(IValidator<T> validator)
     {
-        if (validator == null)
-        {
-            throw new ArgumentNullException(nameof(validator));
-        }
-
         _validators.Add(validator.Validate);
-        return this;
-    }
-
-    /// <summary>
-    /// Enables validation using Data Annotations attributes on the configuration class.
-    /// </summary>
-    /// <returns>The current builder instance for method chaining.</returns>
-    public WritableConfigurationOptionsBuilder<T> ValidateDataAnnotations()
-    {
-        UseDataAnnotations = true;
-        return this;
     }
 
     /// <summary>
@@ -255,21 +228,18 @@ public record WritableConfigurationOptionsBuilder<T>
     {
         var validators = new List<Func<T, ValidationResult>>(_validators);
 
-        // Add Data Annotations validator if enabled
-        if (UseDataAnnotations)
+        if (UseDataAnnotationsValidation)
         {
             validators.Add(ValidateWithDataAnnotations);
         }
-
         if (validators.Count == 0)
         {
             return null;
         }
-
         return value =>
         {
             var results = validators.Select(v => v(value)).ToList();
-            return ValidationResult.Combine(results.ToArray());
+            return ValidationResult.Combine([.. results]);
         };
     }
 
@@ -290,7 +260,7 @@ public record WritableConfigurationOptionsBuilder<T>
 
         if (isValid)
         {
-            return ValidationResult.Success();
+            return ValidationResult.Ok();
         }
 
         var errors = validationResults

@@ -3,12 +3,6 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
-using Configuration.Writable.Internal;
-using Configuration.Writable.Validation;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using ValidationException = Configuration.Writable.Validation.ValidationException;
-using ValidationResult = Configuration.Writable.Validation.ValidationResult;
 
 namespace Configuration.Writable.Tests;
 
@@ -29,8 +23,8 @@ public class ValidationTests
             options.WithValidation(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Failure("MaxConnections must be positive");
-                return ValidationResult.Success();
+                    return ValidationResult.Fail("MaxConnections must be positive");
+                return ValidationResult.Ok();
             });
         });
 
@@ -64,8 +58,8 @@ public class ValidationTests
             options.WithValidation(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Failure("MaxConnections must be positive");
-                return ValidationResult.Success();
+                    return ValidationResult.Fail("MaxConnections must be positive");
+                return ValidationResult.Ok();
             });
         });
 
@@ -96,14 +90,14 @@ public class ValidationTests
             options.WithValidation(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Failure("MaxConnections must be positive");
-                return ValidationResult.Success();
+                    return ValidationResult.Fail("MaxConnections must be positive");
+                return ValidationResult.Ok();
             });
             options.WithValidation(settings =>
             {
                 if (string.IsNullOrWhiteSpace(settings.Email))
-                    return ValidationResult.Failure("Email is required");
-                return ValidationResult.Success();
+                    return ValidationResult.Fail("Email is required");
+                return ValidationResult.Ok();
             });
         });
 
@@ -156,7 +150,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.ValidateDataAnnotations();
+            options.EnableDataAnnotationsValidation();
         });
 
         var invalidSettings = new AnnotatedSettings
@@ -185,7 +179,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.ValidateDataAnnotations();
+            options.EnableDataAnnotationsValidation();
         });
 
         var validSettings = new AnnotatedSettings
@@ -213,12 +207,12 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.ValidateDataAnnotations();
+            options.EnableDataAnnotationsValidation();
             options.WithValidation(settings =>
             {
                 if (settings.Name == "forbidden")
-                    return ValidationResult.Failure("Name 'forbidden' is not allowed");
-                return ValidationResult.Success();
+                    return ValidationResult.Fail("Name 'forbidden' is not allowed");
+                return ValidationResult.Ok();
             });
         });
 
@@ -253,8 +247,8 @@ public class ValidationTests
             options.WithValidation(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Failure("MaxConnections must be positive");
-                return ValidationResult.Success();
+                    return ValidationResult.Fail("MaxConnections must be positive");
+                return ValidationResult.Ok();
             });
         });
 
@@ -274,7 +268,7 @@ public class ValidationTests
     [Fact]
     public void ValidationResult_Success_ShouldCreateSuccessfulResult()
     {
-        var result = ValidationResult.Success();
+        var result = ValidationResult.Ok();
         result.IsValid.ShouldBeTrue();
         result.Errors.ShouldBeEmpty();
     }
@@ -282,7 +276,7 @@ public class ValidationTests
     [Fact]
     public void ValidationResult_Failure_ShouldCreateFailedResult()
     {
-        var result = ValidationResult.Failure("Error 1", "Error 2");
+        var result = ValidationResult.Fail("Error 1", "Error 2");
         result.IsValid.ShouldBeFalse();
         result.Errors.Count.ShouldBe(2);
         result.Errors.ShouldContain("Error 1");
@@ -292,15 +286,15 @@ public class ValidationTests
     [Fact]
     public void ValidationResult_Failure_WithNoErrors_ShouldThrow()
     {
-        Should.Throw<ArgumentException>(() => ValidationResult.Failure());
+        Should.Throw<ArgumentException>(() => ValidationResult.Fail());
     }
 
     [Fact]
     public void ValidationResult_Combine_ShouldMergeResults()
     {
-        var result1 = ValidationResult.Success();
-        var result2 = ValidationResult.Failure("Error 1");
-        var result3 = ValidationResult.Failure("Error 2", "Error 3");
+        var result1 = ValidationResult.Ok();
+        var result2 = ValidationResult.Fail("Error 1");
+        var result3 = ValidationResult.Fail("Error 2", "Error 3");
 
         var combined = ValidationResult.Combine(result1, result2, result3);
 
@@ -314,8 +308,8 @@ public class ValidationTests
     [Fact]
     public void ValidationResult_Combine_AllSuccess_ShouldReturnSuccess()
     {
-        var result1 = ValidationResult.Success();
-        var result2 = ValidationResult.Success();
+        var result1 = ValidationResult.Ok();
+        var result2 = ValidationResult.Ok();
 
         var combined = ValidationResult.Combine(result1, result2);
 
@@ -355,7 +349,7 @@ file class ValidatableSettingsValidator : IValidator<ValidatableSettings>
             errors.Add("Valid email is required");
         }
 
-        return errors.Count == 0 ? ValidationResult.Success() : ValidationResult.Failure(errors);
+        return errors.Count == 0 ? ValidationResult.Ok() : ValidationResult.Failure(errors);
     }
 }
 

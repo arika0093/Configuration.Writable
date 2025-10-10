@@ -1,5 +1,4 @@
-#pragma warning disable S3246 // Generic type parameters should be co/contravariant when possible
-namespace Configuration.Writable.Validation;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Defines a validator for a specific type.
