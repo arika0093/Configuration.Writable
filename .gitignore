@@ -6,9 +6,12 @@ riderModule.iml
 *.DotSettings*
 .idea/
 .vs/
+*.csproj.user
+# public api recieved files
+tests/**/*.received.txt
 # DocFX generated files
 docs/api/
 docs/_site/
 docs/obj/
-*.csproj.user
+# claude
 .claude/
