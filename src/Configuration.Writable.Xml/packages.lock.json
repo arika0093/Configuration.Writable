@@ -362,7 +362,8 @@
           "Microsoft.Extensions.Configuration.Json": "[9.*, )",
           "Microsoft.Extensions.DependencyInjection": "[9.*, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )",
-          "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.*, )"
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[9.*, )",
+          "System.ComponentModel.Annotations": "[5.0.0, )"
         }
       }
     },
