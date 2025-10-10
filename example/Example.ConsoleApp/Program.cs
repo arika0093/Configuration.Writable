@@ -32,6 +32,19 @@ WritableConfig.Initialize<SampleSetting>(opt =>
     // opt.Logger = LoggerFactory
     //    .Create(builder => builder.AddConsole())
     //    .CreateLogger("UserConfig");
+
+    // if you want to validate the config before saving, use
+    // * UseDataAnnotationsValidation: use data annotation attributes in your config class. Defaults to true.
+    // * WithValidation: a simple way to set validation function
+    // * WithValidator: set a custom validation class implementing IValidator<T>
+    //opt.WithValidation(setting =>
+    //{
+    //    if (string.IsNullOrWhiteSpace(setting.Name))
+    //    {
+    //        return ValidationResult.Fail("Name cannot be empty.");
+    //    }
+    //    return ValidationResult.Ok();
+    //});
 });
 
 // -------------------------------
