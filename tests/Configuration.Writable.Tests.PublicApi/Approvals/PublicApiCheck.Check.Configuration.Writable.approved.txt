@@ -27,8 +27,8 @@ namespace Configuration.Writable
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name);
     }
-    public interface IValidator<T>
-        where T :  class
+    public interface IValidator<in T>
+        where in T :  class
     {
         Configuration.Writable.ValidationResult Validate(T value);
     }

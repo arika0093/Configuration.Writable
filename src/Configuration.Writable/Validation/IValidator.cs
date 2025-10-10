@@ -4,7 +4,7 @@ namespace Configuration.Writable;
 /// Defines a validator for a specific type.
 /// </summary>
 /// <typeparam name="T">The type to validate.</typeparam>
-public interface IValidator<T>
+public interface IValidator<in T>
     where T : class
 {
     /// <summary>
