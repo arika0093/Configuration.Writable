@@ -42,7 +42,7 @@ public class CommonFileWriter : IFileWriter, IDisposable
     {
         int retryCount = 0;
         Exception? lastException = null;
-        while (retryCount < MaxRetryCount)
+        do
         {
             cancellationToken.ThrowIfCancellationRequested();
             logger?.LogTrace(
@@ -108,12 +108,8 @@ public class CommonFileWriter : IFileWriter, IDisposable
             {
                 _semaphore.Release();
             }
-        }
-        // throw last exception
-        if (lastException != null)
-        {
-            throw lastException;
-        }
+        } while (retryCount < MaxRetryCount);
+        throw lastException;
     }
 
     /// <summary>
