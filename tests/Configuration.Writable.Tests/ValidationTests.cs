@@ -20,7 +20,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.WithValidation(settings =>
+            options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
                     return ValidationResult.Fail("MaxConnections must be positive");
@@ -55,7 +55,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.WithValidation(settings =>
+            options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
                     return ValidationResult.Fail("MaxConnections must be positive");
@@ -87,13 +87,13 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.WithValidation(settings =>
+            options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
                     return ValidationResult.Fail("MaxConnections must be positive");
                 return ValidationResult.Ok();
             });
-            options.WithValidation(settings =>
+            options.WithValidatorFunction(settings =>
             {
                 if (string.IsNullOrWhiteSpace(settings.Email))
                     return ValidationResult.Fail("Email is required");
@@ -208,7 +208,7 @@ public class ValidationTests
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
             options.UseDataAnnotationsValidation = true;
-            options.WithValidation(settings =>
+            options.WithValidatorFunction(settings =>
             {
                 if (settings.Name == "forbidden")
                     return ValidationResult.Fail("Name 'forbidden' is not allowed");
@@ -244,7 +244,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.WithValidation(settings =>
+            options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
                     return ValidationResult.Fail("MaxConnections must be positive");

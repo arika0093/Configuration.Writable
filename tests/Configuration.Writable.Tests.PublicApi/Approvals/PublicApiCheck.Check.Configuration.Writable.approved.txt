@@ -18,18 +18,6 @@ namespace Configuration.Writable.FileWriter
     {
         System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null);
     }
-    public class InMemoryFileWriter : Configuration.Writable.FileWriter.IFileWriter
-    {
-        public InMemoryFileWriter() { }
-        public void Clear() { }
-        public void DeleteFile(string path) { }
-        public bool FileExists(string path) { }
-        public System.IO.Stream? GetFileStream(string path) { }
-        public string[] GetFiles(string directory, string pattern = "*") { }
-        public byte[] ReadAllBytes(string path) { }
-        public string ReadAllText(string path) { }
-        public System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null) { }
-    }
 }
 namespace Configuration.Writable
 {
@@ -157,13 +145,11 @@ namespace Configuration.Writable
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
-        public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
         public string UseCurrentDirectory() { }
         public string UseExecutableDirectory() { }
-        public void UseInMemoryFileWriter(Configuration.Writable.FileWriter.InMemoryFileWriter inMemoryFileWriter) { }
         public string UseStandardSaveLocation(string applicationId) { }
-        public void WithValidation(System.Func<T, Configuration.Writable.ValidationResult> validator) { }
         public void WithValidator(Configuration.Writable.IValidator<T> validator) { }
+        public void WithValidatorFunction(System.Func<T, Configuration.Writable.ValidationResult> validator) { }
     }
     public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>
         where T :  class

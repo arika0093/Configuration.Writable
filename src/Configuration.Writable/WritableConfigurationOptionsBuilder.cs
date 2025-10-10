@@ -19,7 +19,7 @@ public record WritableConfigurationOptionsBuilder<T>
     where T : class
 {
     private const string DefaultFileName = "usersettings";
-    private readonly List<Func<T, ValidationResult>> _validators = new();
+    private readonly List<Func<T, ValidationResult>> _validators = [];
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
@@ -63,8 +63,8 @@ public record WritableConfigurationOptionsBuilder<T>
     public bool UseDataAnnotationsValidation { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the logger for configuration operations.
-    /// If null, logging is disabled or use provider's default logger. Defaults to null.
+    /// Gets or sets the logger for configuration operations. Defaults to null. <br/>
+    /// If null, logging is disabled or use provider's default logger.
     /// </summary>
     public ILogger? Logger { get; set; }
 
@@ -174,21 +174,11 @@ public record WritableConfigurationOptionsBuilder<T>
     }
 
     /// <summary>
-    /// Configures the current instance to use the specified in-memory file writer for file operations. for testing purpose.
-    /// </summary>
-    /// <param name="inMemoryFileWriter">The in-memory file writer to use for subsequent file write and read operations.</param>
-    public void UseInMemoryFileWriter(InMemoryFileWriter inMemoryFileWriter)
-    {
-        FileWriter = inMemoryFileWriter;
-        FileReadStream = inMemoryFileWriter.GetFileStream(ConfigFilePath);
-    }
-
-    /// <summary>
     /// Adds a custom validation function to be executed before saving configuration.
     /// </summary>
     /// <param name="validator">A function that validates the configuration and returns a <see cref="ValidationResult"/>.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    public void WithValidation(Func<T, ValidationResult> validator)
+    public void WithValidatorFunction(Func<T, ValidationResult> validator)
     {
         _validators.Add(validator);
     }
@@ -206,7 +196,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
-    public WritableConfigurationOptions<T> BuildOptions()
+    internal WritableConfigurationOptions<T> BuildOptions()
     {
         var validator = BuildValidator();
 
