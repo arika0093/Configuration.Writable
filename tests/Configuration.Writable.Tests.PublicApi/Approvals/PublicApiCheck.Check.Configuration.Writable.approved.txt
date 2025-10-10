@@ -39,6 +39,11 @@ namespace Configuration.Writable
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name);
     }
+    public interface IValidator<T>
+        where T :  class
+    {
+        Configuration.Writable.ValidationResult Validate(T value);
+    }
     public interface IWritableConfigProvider
     {
         string FileExtension { get; }
@@ -57,6 +62,22 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public sealed class ValidationException : System.Exception
+    {
+        public ValidationException(Configuration.Writable.ValidationResult validationResult) { }
+        public ValidationException(System.Collections.Generic.IEnumerable<string> errors) { }
+        public ValidationException(params string[] errors) { }
+        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
+    }
+    public sealed class ValidationResult
+    {
+        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
+        public bool IsValid { get; }
+        public static Configuration.Writable.ValidationResult Combine(params Configuration.Writable.ValidationResult[] results) { }
+        public static Configuration.Writable.ValidationResult Fail(params string[] errors) { }
+        public static Configuration.Writable.ValidationResult Failure(System.Collections.Generic.IEnumerable<string> errors) { }
+        public static Configuration.Writable.ValidationResult Ok() { }
     }
     public static class WritableConfig
     {
@@ -135,14 +156,14 @@ namespace Configuration.Writable
         public Configuration.Writable.IWritableConfigProvider Provider { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
+        public bool UseDataAnnotationsValidation { get; set; }
         public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
         public string UseCurrentDirectory() { }
         public string UseExecutableDirectory() { }
         public void UseInMemoryFileWriter(Configuration.Writable.FileWriter.InMemoryFileWriter inMemoryFileWriter) { }
         public string UseStandardSaveLocation(string applicationId) { }
-        public Configuration.Writable.WritableConfigurationOptionsBuilder<T> ValidateDataAnnotations() { }
-        public Configuration.Writable.WritableConfigurationOptionsBuilder<T> WithValidation(System.Func<T, Configuration.Writable.Validation.ValidationResult> validator) { }
-        public Configuration.Writable.WritableConfigurationOptionsBuilder<T> WithValidator(Configuration.Writable.Validation.IValidator<T> validator) { }
+        public void WithValidation(System.Func<T, Configuration.Writable.ValidationResult> validator) { }
+        public void WithValidator(Configuration.Writable.IValidator<T> validator) { }
     }
     public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>
         where T :  class
@@ -153,7 +174,7 @@ namespace Configuration.Writable
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required Configuration.Writable.IWritableConfigProvider Provider { get; init; }
         public required string SectionName { get; init; }
-        public System.Func<T, Configuration.Writable.Validation.ValidationResult>? Validator { get; init; }
+        public System.Func<T, Configuration.Writable.ValidationResult>? Validator { get; init; }
     }
 }
 namespace Configuration.Writable.Testing
@@ -179,29 +200,5 @@ namespace Configuration.Writable.Testing
         public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
-    }
-}
-namespace Configuration.Writable.Validation
-{
-    public interface IValidator<T>
-        where T :  class
-    {
-        Configuration.Writable.Validation.ValidationResult Validate(T value);
-    }
-    public sealed class ValidationException : System.Exception
-    {
-        public ValidationException(Configuration.Writable.Validation.ValidationResult validationResult) { }
-        public ValidationException(System.Collections.Generic.IEnumerable<string> errors) { }
-        public ValidationException(params string[] errors) { }
-        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
-    }
-    public sealed class ValidationResult
-    {
-        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
-        public bool IsValid { get; }
-        public static Configuration.Writable.Validation.ValidationResult Combine(params Configuration.Writable.Validation.ValidationResult[] results) { }
-        public static Configuration.Writable.Validation.ValidationResult Failure(System.Collections.Generic.IEnumerable<string> errors) { }
-        public static Configuration.Writable.Validation.ValidationResult Failure(params string[] errors) { }
-        public static Configuration.Writable.Validation.ValidationResult Success() { }
     }
 }

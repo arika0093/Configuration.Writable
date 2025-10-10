@@ -150,7 +150,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.EnableDataAnnotationsValidation();
+            options.UseDataAnnotationsValidation = true;
         });
 
         var invalidSettings = new AnnotatedSettings
@@ -179,7 +179,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.EnableDataAnnotationsValidation();
+            options.UseDataAnnotationsValidation = true;
         });
 
         var validSettings = new AnnotatedSettings
@@ -207,7 +207,7 @@ public class ValidationTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
-            options.EnableDataAnnotationsValidation();
+            options.UseDataAnnotationsValidation = true;
             options.WithValidation(settings =>
             {
                 if (settings.Name == "forbidden")
