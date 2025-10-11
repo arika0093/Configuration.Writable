@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.Options;
 using Microsoft.Extensions.Options;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
-namespace Configuration.Writable.Internal;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Base class for writable configuration implementations.
@@ -35,7 +37,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
 
     /// <inheritdoc />
     public WritableConfigurationOptions<T> GetConfigurationOptions() =>
-        GetOptions(Options.DefaultName);
+        GetOptions(MEOptions.DefaultName);
 
     /// <inheritdoc />
     public WritableConfigurationOptions<T> GetConfigurationOptions(string name) => GetOptions(name);
@@ -49,7 +51,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
 
     /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveCoreAsync(newConfig, GetOptions(Options.DefaultName), cancellationToken);
+        SaveCoreAsync(newConfig, GetOptions(MEOptions.DefaultName), cancellationToken);
 
     /// <inheritdoc />
     public Task SaveAsync(
@@ -65,7 +67,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
 
     /// <inheritdoc />
     public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
-        SaveAsync(Options.DefaultName, configUpdater, cancellationToken);
+        SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
     public T CurrentValue => _optionMonitorInstance.CurrentValue;

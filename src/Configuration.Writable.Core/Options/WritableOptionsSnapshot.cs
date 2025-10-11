@@ -1,0 +1,30 @@
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.Options;
+using MEOptions = Microsoft.Extensions.Options.Options;
+
+namespace Configuration.Writable.Options;
+
+/// <summary>
+/// Provides a snapshot of options of type <typeparamref name="T"/> that can be read and written during the
+/// application's lifetime.
+/// </summary>
+internal class WritableOptionsSnapshot<T> : IOptionsSnapshot<T>
+    where T : class
+{
+    private readonly Dictionary<string, T> _snapshotValues = [];
+
+    public WritableOptionsSnapshot(WritableOptionsMonitor<T> _optionsMonitor)
+    {
+        var keys = _optionsMonitor.GetInstanceNames();
+        foreach (var key in keys)
+        {
+            _snapshotValues[key] = _optionsMonitor.GetDefaultValue(key);
+        }
+    }
+
+    /// <inheritdoc />
+    public T Value => _snapshotValues[MEOptions.DefaultName];
+
+    /// <inheritdoc />
+    public T Get(string? name) => _snapshotValues[name!];
+}

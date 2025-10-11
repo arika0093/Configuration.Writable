@@ -1,5 +1,5 @@
 ﻿using System;
-using Configuration.Writable.Internal;
+using Configuration.Writable.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -151,7 +151,9 @@ public static class WritableConfigurationExtensions
         // add WritableOptionsMonitor<T> (custom implementation)
         services.AddSingleton<WritableOptionsMonitor<T>>();
 
-        // Register IOptionsMonitor<T>
+        // Register IOptions<T>, IOptionsSnapshot<T> and IOptionsMonitor<T>
+        services.AddSingleton<IOptions<T>, WritableOptions<T>>();
+        services.AddScoped<IOptionsSnapshot<T>, WritableOptionsSnapshot<T>>();
         services.AddSingleton<IOptionsMonitor<T>>(p =>
             p.GetRequiredService<WritableOptionsMonitor<T>>()
         );

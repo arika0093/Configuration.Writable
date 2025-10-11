@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
-namespace Configuration.Writable.Internal;
+namespace Configuration.Writable;
 
 /// <summary>
 /// Custom implementation of IOptionsMonitor that doesn't depend on Microsoft.Extensions.Configuration.
@@ -16,6 +16,7 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     where T : class
 {
     private readonly Dictionary<string, T> _cache = [];
+    private readonly Dictionary<string, T> _defaultValue = [];
     private readonly Dictionary<string, List<Action<T, string?>>> _listeners = [];
     private readonly Dictionary<string, FileSystemWatcher?> _watchers = [];
     private readonly Dictionary<string, WritableConfigurationOptions<T>> _optionsMap;
@@ -28,34 +29,26 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
         // Initialize cache and file watchers
         foreach (var opt in _optionsMap.Values)
         {
-            LoadConfiguration(opt.InstanceName);
+            var defaultValue = LoadConfiguration(opt.InstanceName);
+            // Store the default value for IOptions
+            _defaultValue[opt.InstanceName] = defaultValue;
             SetupFileWatcher(opt);
         }
     }
 
     /// <inheritdoc />
-    public T CurrentValue => Get(Options.DefaultName);
+    public T CurrentValue => Get(MEOptions.DefaultName);
 
     /// <inheritdoc />
     public T Get(string? name)
     {
-        name ??= Options.DefaultName;
-
-        _semaphore.Wait();
-        try
+        name ??= MEOptions.DefaultName;
+        if (_cache.TryGetValue(name, out var cached))
         {
-            if (_cache.TryGetValue(name, out var cached))
-            {
-                return cached;
-            }
-
-            // Load configuration if not cached
-            return LoadConfiguration(name);
+            return cached;
         }
-        finally
-        {
-            _semaphore.Release();
-        }
+        // Load configuration if not cached
+        return LoadConfiguration(name);
     }
 
     /// <inheritdoc />
@@ -84,21 +77,32 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     /// <inheritdoc />
     public void Dispose()
     {
-        _semaphore.Wait();
-        try
+        foreach (var watcher in _watchers.Values)
         {
-            foreach (var watcher in _watchers.Values)
-            {
-                watcher?.Dispose();
-            }
-            _watchers.Clear();
-            _listeners.Clear();
-            _cache.Clear();
+            watcher?.Dispose();
         }
-        finally
+        _watchers.Clear();
+        _listeners.Clear();
+        _cache.Clear();
+    }
+
+    /// <summary>
+    /// Gets all instance names for which options are configured. <br/>
+    /// For use by <see cref="IOptionsSnapshot{TOptions}"/> implementation.
+    /// </summary>
+    internal IEnumerable<string> GetInstanceNames() => _optionsMap.Keys;
+
+    /// <summary>
+    /// Retrieves the default value associated with the specified instance name. <br/>
+    /// For use by <see cref="IOptions{TOptions}"/> implementation.
+    /// </summary>
+    internal T GetDefaultValue(string instanceName)
+    {
+        if (_defaultValue.TryGetValue(instanceName, out var defaultValue))
         {
-            _semaphore.Release();
+            return defaultValue;
         }
+        throw new InvalidOperationException($"No default value found for instance: {instanceName}");
     }
 
     /// <summary>
@@ -107,16 +111,8 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     /// </summary>
     internal void UpdateCache(string instanceName, T value)
     {
-        _semaphore.Wait();
-        try
-        {
-            _cache[instanceName] = value;
-            NotifyListeners(instanceName, value);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        _cache[instanceName] = value;
+        NotifyListeners(instanceName, value);
     }
 
     /// <summary>
@@ -124,17 +120,10 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     /// </summary>
     internal void ClearCache(string instanceName)
     {
-        _semaphore.Wait();
-        try
-        {
-            _cache.Remove(instanceName);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        _cache.Remove(instanceName);
     }
 
+    // Loads configuration from the provider and updates the cache.
     private T LoadConfiguration(string instanceName)
     {
         if (!_optionsMap.TryGetValue(instanceName, out var options))
@@ -144,13 +133,21 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
             );
         }
 
-        // Use the provider to load configuration (provider will check file existence via its FileWriter)
-        T value = options.Provider.LoadConfiguration<T>(options);
-
-        _cache[instanceName] = value;
-        return value;
+        _semaphore.Wait();
+        try
+        {
+            // Use the provider to load configuration (provider will check file existence via its FileWriter)
+            var value = options.Provider.LoadConfiguration<T>(options);
+            _cache[instanceName] = value;
+            return value;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
+    // Sets up a FileSystemWatcher to monitor changes to the configuration file.
     private void SetupFileWatcher(WritableConfigurationOptions<T> options)
     {
         var filePath = options.ConfigFilePath;
@@ -200,24 +197,18 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
         }
     }
 
+    // Called when the configuration file changes
     private void OnFileChanged(string instanceName)
     {
-        _semaphore.Wait();
-        try
-        {
-            // Clear cache to force reload on next Get
-            _cache.Remove(instanceName);
+        // Clear cache to force reload on next Get
+        _cache.Remove(instanceName);
 
-            // Reload and notify listeners
-            var newValue = LoadConfiguration(instanceName);
-            NotifyListeners(instanceName, newValue);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        // Reload and notify listeners
+        var newValue = LoadConfiguration(instanceName);
+        NotifyListeners(instanceName, newValue);
     }
 
+    // Notifies all registered listeners of a configuration change
     private void NotifyListeners(string instanceName, T value)
     {
         if (_listeners.TryGetValue(instanceName, out var listeners))
