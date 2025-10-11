@@ -229,7 +229,6 @@
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options": "[9.*, )",
           "System.ComponentModel.Annotations": "[5.*, )",
@@ -356,7 +355,6 @@
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options": "[9.*, )"
         }
@@ -475,7 +473,6 @@
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options": "[9.*, )"
         }
