@@ -1,8 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
+using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
 
@@ -23,8 +25,8 @@ public class ValidationTests
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Fail("MaxConnections must be positive");
-                return ValidationResult.Ok();
+                    return ValidateOptionsResult.Fail("MaxConnections must be positive");
+                return ValidateOptionsResult.Success;
             });
         });
 
@@ -36,12 +38,12 @@ public class ValidationTests
 
         var option = _instance.GetOptions();
 
-        var exception = await Should.ThrowAsync<ValidationException>(async () =>
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
         {
             await option.SaveAsync(invalidSettings);
         });
 
-        exception.Errors.ShouldContain("MaxConnections must be positive");
+        exception.Failures.ShouldContain("MaxConnections must be positive");
         _fileWriter.FileExists(testFileName).ShouldBeFalse();
     }
 
@@ -58,8 +60,8 @@ public class ValidationTests
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Fail("MaxConnections must be positive");
-                return ValidationResult.Ok();
+                    return ValidateOptionsResult.Fail("MaxConnections must be positive");
+                return ValidateOptionsResult.Success;
             });
         });
 
@@ -90,14 +92,14 @@ public class ValidationTests
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Fail("MaxConnections must be positive");
-                return ValidationResult.Ok();
+                    return ValidateOptionsResult.Fail("MaxConnections must be positive");
+                return ValidateOptionsResult.Success;
             });
             options.WithValidatorFunction(settings =>
             {
                 if (string.IsNullOrWhiteSpace(settings.Email))
-                    return ValidationResult.Fail("Email is required");
-                return ValidationResult.Ok();
+                    return ValidateOptionsResult.Fail("Email is required");
+                return ValidateOptionsResult.Success;
             });
         });
 
@@ -105,14 +107,14 @@ public class ValidationTests
 
         var option = _instance.GetOptions();
 
-        var exception = await Should.ThrowAsync<ValidationException>(async () =>
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
         {
             await option.SaveAsync(invalidSettings);
         });
 
-        exception.Errors.Count.ShouldBe(2);
-        exception.Errors.ShouldContain("MaxConnections must be positive");
-        exception.Errors.ShouldContain("Email is required");
+        exception.Failures.Count().ShouldBe(2);
+        exception.Failures.ShouldContain("MaxConnections must be positive");
+        exception.Failures.ShouldContain("Email is required");
     }
 
     [Fact]
@@ -132,12 +134,12 @@ public class ValidationTests
 
         var option = _instance.GetOptions();
 
-        var exception = await Should.ThrowAsync<ValidationException>(async () =>
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
         {
             await option.SaveAsync(invalidSettings);
         });
 
-        exception.Errors.Count.ShouldBeGreaterThan(0);
+        exception.Failures.Count().ShouldBeGreaterThan(0);
     }
 
     [Fact]
@@ -161,12 +163,12 @@ public class ValidationTests
 
         var option = _instance.GetOptions();
 
-        var exception = await Should.ThrowAsync<ValidationException>(async () =>
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
         {
             await option.SaveAsync(invalidSettings);
         });
 
-        exception.Errors.Count.ShouldBeGreaterThan(0);
+        exception.Failures.Count().ShouldBeGreaterThan(0);
     }
 
     [Fact]
@@ -211,8 +213,8 @@ public class ValidationTests
             options.WithValidatorFunction(settings =>
             {
                 if (settings.Name == "forbidden")
-                    return ValidationResult.Fail("Name 'forbidden' is not allowed");
-                return ValidationResult.Ok();
+                    return ValidateOptionsResult.Fail("Name 'forbidden' is not allowed");
+                return ValidateOptionsResult.Success;
             });
         });
 
@@ -225,13 +227,13 @@ public class ValidationTests
 
         var option = _instance.GetOptions();
 
-        var exception = await Should.ThrowAsync<ValidationException>(async () =>
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
         {
             await option.SaveAsync(invalidSettings);
         });
 
-        exception.Errors.Count.ShouldBeGreaterThan(1);
-        exception.Errors.ShouldContain("Name 'forbidden' is not allowed");
+        exception.Failures.Count().ShouldBeGreaterThan(1);
+        exception.Failures.ShouldContain("Name 'forbidden' is not allowed");
     }
 
     [Fact]
@@ -247,14 +249,14 @@ public class ValidationTests
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
-                    return ValidationResult.Fail("MaxConnections must be positive");
-                return ValidationResult.Ok();
+                    return ValidateOptionsResult.Fail("MaxConnections must be positive");
+                return ValidateOptionsResult.Success;
             });
         });
 
         var option = _instance.GetOptions();
 
-        var exception = await Should.ThrowAsync<ValidationException>(async () =>
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
         {
             await option.SaveAsync(settings =>
             {
@@ -262,68 +264,48 @@ public class ValidationTests
             });
         });
 
-        exception.Errors.ShouldContain("MaxConnections must be positive");
+        exception.Failures.ShouldContain("MaxConnections must be positive");
     }
 
     [Fact]
-    public void ValidationResult_Success_ShouldCreateSuccessfulResult()
+    public void ValidateOptionsResult_Success_ShouldCreateSuccessfulResult()
     {
-        var result = ValidationResult.Ok();
-        result.IsValid.ShouldBeTrue();
-        result.Errors.ShouldBeEmpty();
+        var result = ValidateOptionsResult.Success;
+        result.Succeeded.ShouldBeTrue();
+        result.Failed.ShouldBeFalse();
     }
 
     [Fact]
-    public void ValidationResult_Failure_ShouldCreateFailedResult()
+    public void ValidateOptionsResult_Failure_ShouldCreateFailedResult()
     {
-        var result = ValidationResult.Fail("Error 1", "Error 2");
-        result.IsValid.ShouldBeFalse();
-        result.Errors.Count.ShouldBe(2);
-        result.Errors.ShouldContain("Error 1");
-        result.Errors.ShouldContain("Error 2");
+        var result = ValidateOptionsResult.Fail(new[] { "Error 1", "Error 2" });
+        result.Failed.ShouldBeTrue();
+        result.Succeeded.ShouldBeFalse();
+        result.Failures.Count().ShouldBe(2);
+        result.Failures.ShouldContain("Error 1");
+        result.Failures.ShouldContain("Error 2");
     }
 
     [Fact]
-    public void ValidationResult_Failure_WithNoErrors_ShouldThrow()
+    public void ValidateOptionsResult_Failure_WithSingleError_ShouldCreateFailedResult()
     {
-        Should.Throw<ArgumentException>(() => ValidationResult.Fail());
+        var result = ValidateOptionsResult.Fail("Single error");
+        result.Failed.ShouldBeTrue();
+        result.Succeeded.ShouldBeFalse();
+        result.Failures.Count().ShouldBe(1);
+        result.Failures.ShouldContain("Single error");
     }
 
     [Fact]
-    public void ValidationResult_Combine_ShouldMergeResults()
+    public void OptionsValidationException_ShouldContainFailures()
     {
-        var result1 = ValidationResult.Ok();
-        var result2 = ValidationResult.Fail("Error 1");
-        var result3 = ValidationResult.Fail("Error 2", "Error 3");
-
-        var combined = ValidationResult.Combine(result1, result2, result3);
-
-        combined.IsValid.ShouldBeFalse();
-        combined.Errors.Count.ShouldBe(3);
-        combined.Errors.ShouldContain("Error 1");
-        combined.Errors.ShouldContain("Error 2");
-        combined.Errors.ShouldContain("Error 3");
-    }
-
-    [Fact]
-    public void ValidationResult_Combine_AllSuccess_ShouldReturnSuccess()
-    {
-        var result1 = ValidationResult.Ok();
-        var result2 = ValidationResult.Ok();
-
-        var combined = ValidationResult.Combine(result1, result2);
-
-        combined.IsValid.ShouldBeTrue();
-        combined.Errors.ShouldBeEmpty();
-    }
-
-    [Fact]
-    public void ValidationException_ShouldFormatMessageCorrectly()
-    {
-        var exception = new ValidationException("Error 1", "Error 2");
-        exception.Message.ShouldContain("Error 1");
-        exception.Message.ShouldContain("Error 2");
-        exception.Errors.Count.ShouldBe(2);
+        var failures = new[] { "Error 1", "Error 2" };
+        var exception = new OptionsValidationException("TestOptions", typeof(ValidatableSettings), failures);
+        exception.Failures.Count().ShouldBe(2);
+        exception.Failures.ShouldContain("Error 1");
+        exception.Failures.ShouldContain("Error 2");
+        exception.OptionsName.ShouldBe("TestOptions");
+        exception.OptionsType.ShouldBe(typeof(ValidatableSettings));
     }
 }
 
@@ -333,23 +315,23 @@ file class ValidatableSettings
     public string Email { get; set; } = "";
 }
 
-file class ValidatableSettingsValidator : IValidator<ValidatableSettings>
+file class ValidatableSettingsValidator : IValidateOptions<ValidatableSettings>
 {
-    public ValidationResult Validate(ValidatableSettings value)
+    public ValidateOptionsResult Validate(string? name, ValidatableSettings options)
     {
         var errors = new System.Collections.Generic.List<string>();
 
-        if (value.MaxConnections < 1 || value.MaxConnections > 1000)
+        if (options.MaxConnections < 1 || options.MaxConnections > 1000)
         {
             errors.Add("MaxConnections must be between 1 and 1000");
         }
 
-        if (string.IsNullOrWhiteSpace(value.Email) || !value.Email.Contains("@"))
+        if (string.IsNullOrWhiteSpace(options.Email) || !options.Email.Contains("@"))
         {
             errors.Add("Valid email is required");
         }
 
-        return errors.Count == 0 ? ValidationResult.Ok() : ValidationResult.Failure(errors);
+        return errors.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(errors);
     }
 }
 

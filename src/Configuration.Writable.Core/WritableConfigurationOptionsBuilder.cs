@@ -8,6 +8,7 @@ using System.Linq;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
 
@@ -19,7 +20,7 @@ public record WritableConfigurationOptionsBuilder<T>
     where T : class
 {
     private const string DefaultFileName = "usersettings";
-    private readonly List<Func<T, ValidationResult>> _validators = [];
+    private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
@@ -176,9 +177,9 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Adds a custom validation function to be executed before saving configuration.
     /// </summary>
-    /// <param name="validator">A function that validates the configuration and returns a <see cref="ValidationResult"/>.</param>
+    /// <param name="validator">A function that validates the configuration and returns a <see cref="ValidateOptionsResult"/>.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    public void WithValidatorFunction(Func<T, ValidationResult> validator)
+    public void WithValidatorFunction(Func<T, ValidateOptionsResult> validator)
     {
         _validators.Add(validator);
     }
@@ -186,9 +187,9 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Adds a custom validator of type <typeparamref name="TValidator"/> to be executed before saving configuration.
     /// </summary>
-    /// <typeparam name="TValidator">The type of the validator to add. Must implement <see cref="IValidator{T}"/> and have a parameterless constructor.</typeparam>
+    /// <typeparam name="TValidator">The type of the validator to add. Must implement <see cref="IValidateOptions{TOptions}"/> and have a parameterless constructor.</typeparam>
     public void WithValidator<TValidator>()
-        where TValidator : IValidator<T>, new()
+        where TValidator : IValidateOptions<T>, new()
     {
         var validatorInstance = new TValidator();
         WithValidator(validatorInstance);
@@ -197,11 +198,11 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Adds a custom validator to be executed before saving configuration.
     /// </summary>
-    /// <param name="validator">An instance of <see cref="IValidator{T}"/> to validate the configuration.</param>
+    /// <param name="validator">An instance of <see cref="IValidateOptions{TOptions}"/> to validate the configuration.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    public void WithValidator(IValidator<T> validator)
+    public void WithValidator(IValidateOptions<T> validator)
     {
-        _validators.Add(validator.Validate);
+        _validators.Add(value => validator.Validate(null, value));
     }
 
     /// <summary>
@@ -225,9 +226,9 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Builds the composite validator from all registered validators.
     /// </summary>
-    private Func<T, ValidationResult>? BuildValidator()
+    private Func<T, ValidateOptionsResult>? BuildValidator()
     {
-        var validators = new List<Func<T, ValidationResult>>(_validators);
+        var validators = new List<Func<T, ValidateOptionsResult>>(_validators);
 
         if (UseDataAnnotationsValidation)
         {
@@ -240,17 +241,31 @@ public record WritableConfigurationOptionsBuilder<T>
         return value =>
         {
             var results = validators.Select(v => v(value)).ToList();
-            return ValidationResult.Combine([.. results]);
+            return CombineValidateOptionsResults(results);
         };
+    }
+
+    /// <summary>
+    /// Combines multiple ValidateOptionsResult into a single result.
+    /// </summary>
+    private static ValidateOptionsResult CombineValidateOptionsResults(
+        List<ValidateOptionsResult> results
+    )
+    {
+        var allFailures = results.Where(r => r.Failed).SelectMany(r => r.Failures).ToList();
+
+        return allFailures.Count == 0
+            ? ValidateOptionsResult.Success
+            : ValidateOptionsResult.Fail(allFailures);
     }
 
     /// <summary>
     /// Validates an object using Data Annotations.
     /// </summary>
-    private static ValidationResult ValidateWithDataAnnotations(T value)
+    private static ValidateOptionsResult ValidateWithDataAnnotations(T value)
     {
-        var context = new System.ComponentModel.DataAnnotations.ValidationContext(value);
-        var validationResults = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+        var context = new ValidationContext(value);
+        var validationResults = new List<ValidationResult>();
 
         var isValid = Validator.TryValidateObject(
             value,
@@ -261,7 +276,7 @@ public record WritableConfigurationOptionsBuilder<T>
 
         if (isValid)
         {
-            return ValidationResult.Ok();
+            return ValidateOptionsResult.Success;
         }
 
         var errors = validationResults
@@ -269,7 +284,7 @@ public record WritableConfigurationOptionsBuilder<T>
             .Select(r => r.ErrorMessage!)
             .ToList();
 
-        return ValidationResult.Failure(errors);
+        return ValidateOptionsResult.Fail(errors);
     }
 
     // configuration folder path, if set, appended to the directory of FileName (if any)

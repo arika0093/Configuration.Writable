@@ -86,7 +86,7 @@ internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
     /// <param name="newConfig">The new configuration to save.</param>
     /// <param name="options">The writable configuration options associated with the configuration to be saved.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <exception cref="ValidationException">Thrown when validation fails.</exception>
+    /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">Thrown when validation fails.</exception>
     private async Task SaveCoreAsync(
         T newConfig,
         WritableConfigurationOptions<T> options,
@@ -97,9 +97,13 @@ internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
         if (options.Validator != null)
         {
             var validationResult = options.Validator(newConfig);
-            if (!validationResult.IsValid)
+            if (validationResult.Failed)
             {
-                throw new ValidationException(validationResult);
+                throw new Microsoft.Extensions.Options.OptionsValidationException(
+                    options.InstanceName,
+                    typeof(T),
+                    validationResult.Failures
+                );
             }
         }
 

@@ -31,11 +31,6 @@ namespace Configuration.Writable
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name);
     }
-    public interface IValidator<in T>
-        where in T :  class
-    {
-        Configuration.Writable.ValidationResult Validate(T value);
-    }
     public interface IWritableConfigProvider
     {
         string FileExtension { get; }
@@ -56,22 +51,6 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
-    }
-    public sealed class ValidationException : System.Exception
-    {
-        public ValidationException(Configuration.Writable.ValidationResult validationResult) { }
-        public ValidationException(System.Collections.Generic.IEnumerable<string> errors) { }
-        public ValidationException(params string[] errors) { }
-        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
-    }
-    public sealed class ValidationResult
-    {
-        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
-        public bool IsValid { get; }
-        public static Configuration.Writable.ValidationResult Combine(params Configuration.Writable.ValidationResult[] results) { }
-        public static Configuration.Writable.ValidationResult Fail(params string[] errors) { }
-        public static Configuration.Writable.ValidationResult Failure(System.Collections.Generic.IEnumerable<string> errors) { }
-        public static Configuration.Writable.ValidationResult Ok() { }
     }
     public class WritableConfigJsonProvider : Configuration.Writable.WritableConfigProviderBase
     {
@@ -129,10 +108,10 @@ namespace Configuration.Writable
         public string UseCurrentDirectory() { }
         public string UseExecutableDirectory() { }
         public string UseStandardSaveLocation(string applicationId) { }
-        public void WithValidator(Configuration.Writable.IValidator<T> validator) { }
+        public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
         public void WithValidator<TValidator>()
-            where TValidator : Configuration.Writable.IValidator<T>, new () { }
-        public void WithValidatorFunction(System.Func<T, Configuration.Writable.ValidationResult> validator) { }
+            where TValidator : Microsoft.Extensions.Options.IValidateOptions<T>, new () { }
+        public void WithValidatorFunction(System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult> validator) { }
     }
     public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>
         where T :  class
@@ -143,7 +122,7 @@ namespace Configuration.Writable
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required Configuration.Writable.IWritableConfigProvider Provider { get; init; }
         public required string SectionName { get; init; }
-        public System.Func<T, Configuration.Writable.ValidationResult>? Validator { get; init; }
+        public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }
     }
 }
 namespace Configuration.Writable.Testing

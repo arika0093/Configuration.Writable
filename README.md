@@ -58,11 +58,11 @@ await option.SaveAsync(setting =>
 
 ### With DI
 If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), integrate with `IHostApplicationBuilder` or `IServiceCollection`.
-First, call `builder.AddWritableOptions` to register the settings.
+First, call `builder.Services.AddWritableOptions` to register the settings.
 
 ```csharp
 // Program.cs
-builder.AddWritableOptions<UserSetting>();
+builder.Services.AddWritableOptions<UserSetting>();
 
 // If you're not using IHostApplicationBuilder, do the following:
 var configuration = new ConfigurationManager();
@@ -136,7 +136,7 @@ You can change various settings as arguments to `Initialize` or `AddWritableOpti
 WritableConfig.Initialize<SampleSetting>(opt => { /* ... */ });
 
 // With DI
-builder.AddWritableOptions<UserSetting>(opt => { /* ... */ });
+builder.Services.AddWritableOptions<UserSetting>(opt => { /* ... */ });
 ```
 
 ### Save Location
@@ -174,7 +174,7 @@ WritableConfig.Initialize<UserSetting>(opt => {
 });
 
 // if using IHostApplicationBuilder
-builder.AddWritableOptions<UserSetting>(opt => {
+builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "mysettings.json";
     if (builder.Environment.IsProduction()) {
         opt.UseStandardSaveLocation("MyAppId");
@@ -244,7 +244,7 @@ If you want to directly reference the settings class, specify `opt.RegisterInsta
 > Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
 
 ```csharp
-builder.AddWritableOptions<UserSetting>(opt => {
+builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.RegisterInstanceToContainer = true;
 });
 
@@ -317,13 +317,13 @@ If you want to manage multiple settings of the same type, you must specify diffe
 
 ```csharp
 // first setting
-builder.AddWritableOptions<UserSetting>(opt => {
+builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "firstsettings.json";
     opt.InstanceName = "First";
     // save section will be "UserSettings:UserSetting-First"
 });
 // second setting
-builder.AddWritableOptions<UserSetting>(opt => {
+builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "secondsettings.json";
     opt.InstanceName = "Second";
     // save section will be "UserSettings:UserSetting-Second"
@@ -353,11 +353,13 @@ public class MyService(IWritableOptions<UserSetting> option)
 > This is to avoid complicating usage.
 
 ### Validation
-By default, validation using `DataAnnotations` is enabled.  
-If validation fails, a `ValidationException` is thrown and the settings are not saved.
+By default, validation using `DataAnnotations` is enabled.
+If validation fails, an `OptionsValidationException` is thrown and the settings are not saved.
 
 ```csharp
-builder.AddWritableOptions<UserSetting>(opt => {
+using Microsoft.Extensions.Options;
+
+builder.Services.AddWritableOptions<UserSetting>(opt => {
     // if you want to disable validation of DataAnnotations, do the following:
     // opt.UseDataAnnotationsValidation = false;
 });
@@ -369,7 +371,7 @@ try {
         setting.Age = 200;  // out of range
     });
 }
-catch (ValidationException ex)
+catch (OptionsValidationException ex)
 {
     Console.WriteLine($">> Validation failed: {ex.Message}");
     // setting is not saved if validation fails
@@ -387,27 +389,29 @@ internal class UserSetting
 Alternatively, you can add custom validation using `WithValidatorFunction` or `WithValidator`.
 
 ```csharp
-builder.AddWritableOptions<UserSetting>(opt => {
+using Microsoft.Extensions.Options;
+
+builder.Services.AddWritableOptions<UserSetting>(opt => {
     // add custom validation function
     opt.WithValidatorFunction(setting => {
         if (setting.Name.Contains("invalid"))
-            return ValidationResult.Fail("Name must not contain 'invalid'.");
-        return ValidationResult.Ok();
+            return ValidateOptionsResult.Fail("Name must not contain 'invalid'.");
+        return ValidateOptionsResult.Success;
     });
     // or use a custom validator class
     opt.WithValidator<MyCustomValidator>();
 });
 
-// IValidator sample
-internal class MyCustomValidator : IValidator<UserSetting>
+// IValidateOptions sample
+internal class MyCustomValidator : IValidateOptions<UserSetting>
 {
-    public ValidationResult Validate(UserSetting setting)
+    public ValidateOptionsResult Validate(string? name, UserSetting options)
     {
-        if (setting.Age < 10)
-            return ValidationResult.Fail("Age must be at least 10.");
-        if (setting.Age > 100)
-            return ValidationResult.Fail("Age must be 100 or less.");
-        return ValidationResult.Ok();
+        if (options.Age < 10)
+            return ValidateOptionsResult.Fail("Age must be at least 10.");
+        if (options.Age > 100)
+            return ValidateOptionsResult.Fail("Age must be 100 or less.");
+        return ValidateOptionsResult.Success;
     }
 }
 ```

@@ -4,6 +4,7 @@ using System.IO;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
 
@@ -47,5 +48,5 @@ public record WritableConfigurationOptions<T>
     /// Gets or sets the validation function to be executed before saving configuration.
     /// If null, no validation is performed. Defaults to null.
     /// </summary>
-    public Func<T, ValidationResult>? Validator { get; init; }
+    public Func<T, ValidateOptionsResult>? Validator { get; init; }
 }
