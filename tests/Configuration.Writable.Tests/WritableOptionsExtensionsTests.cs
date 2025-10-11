@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Configuration.Writable.Tests;
 
-public class WritableConfigurationExtensionsTests
+public class WritableOptionsExtensionsTests
 {
     private readonly InMemoryFileWriter _fileWriter = new();
 

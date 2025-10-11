@@ -9,7 +9,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Provides extension methods for writable configuration.
 /// </summary>
-public static class WritableConfigurationExtensions
+public static class WritableOptionsExtensions
 {
     private const string LoggerCategoryName = "Configuration.Writable";
 

@@ -21,7 +21,7 @@ namespace Configuration.Writable
         public void Initialize(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
         public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
     }
-    public static class WritableConfigurationExtensions
+    public static class WritableOptionsExtensions
     {
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
             where T :  class { }
