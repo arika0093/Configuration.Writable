@@ -34,7 +34,7 @@ namespace Configuration.Writable
     public interface IWritableConfigProvider
     {
         string FileExtension { get; }
-        Configuration.Writable.FileWriter.IFileWriter FileWriter { get; }
+        Configuration.Writable.FileWriter.IFileWriter FileWriter { get; set; }
         System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class;
         T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
@@ -105,6 +105,7 @@ namespace Configuration.Writable
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
+        public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
         public string UseCurrentDirectory() { }
         public string UseExecutableDirectory() { }
         public string UseStandardSaveLocation(string applicationId) { }
@@ -123,6 +124,11 @@ namespace Configuration.Writable
         public required Configuration.Writable.IWritableConfigProvider Provider { get; init; }
         public required string SectionName { get; init; }
         public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }
+    }
+    public static class WritableOptionsCoreExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+            where T :  class { }
     }
 }
 namespace Configuration.Writable.Testing

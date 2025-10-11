@@ -106,25 +106,8 @@ public static class WritableConfigurationExtensions
             services.AddSingleton(options);
         }
 
-        // add WritableOptionsMonitor<T> (custom implementation)
-        services.AddSingleton<OptionsMonitorImpl<T>>();
-
-        // Register IOptions<T>, IOptionsSnapshot<T> and IOptionsMonitor<T>
-        services.AddSingleton<IOptions<T>, OptionsImpl<T>>();
-        services.AddScoped<IOptionsSnapshot<T>, OptionsSnapshotImpl<T>>();
-        services.AddSingleton<IOptionsMonitor<T>>(p =>
-            p.GetRequiredService<OptionsMonitorImpl<T>>()
-        );
-
-        // add IReadOnlyOptions<T> and IWritableOptions<T>
-        services.AddSingleton<WritableOptionsImpl<T>>();
-        services.AddSingleton<IReadOnlyOptions<T>>(p =>
-            p.GetRequiredService<WritableOptionsImpl<T>>()
-        );
-        services.AddSingleton<IWritableOptions<T>>(p =>
-            p.GetRequiredService<WritableOptionsImpl<T>>()
-        );
-
+        // add options services
+        services.AddWritableOptionsCore<T>();
         return services;
     }
 }

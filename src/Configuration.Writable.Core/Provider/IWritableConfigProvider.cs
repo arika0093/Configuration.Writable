@@ -14,7 +14,7 @@ public interface IWritableConfigProvider
     /// <summary>
     /// Gets the file provider used for write operations.
     /// </summary>
-    public IFileWriter FileWriter { get; internal set; }
+    public IFileWriter FileWriter { get; set; }
 
     /// <summary>
     /// Gets the file extension associated with the current file, excluding the leading period (e.g., "txt").

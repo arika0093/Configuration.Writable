@@ -208,7 +208,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
-    internal WritableConfigurationOptions<T> BuildOptions()
+    public WritableConfigurationOptions<T> BuildOptions()
     {
         var validator = BuildValidator();
 
