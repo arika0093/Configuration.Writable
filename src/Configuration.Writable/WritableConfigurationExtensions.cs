@@ -151,18 +151,7 @@ public static class WritableConfigurationExtensions
         // add WritableOptionsMonitor<T> (custom implementation)
         services.AddSingleton<WritableOptionsMonitor<T>>();
 
-        // Register IOptions<T>, IOptionsSnapshot<T>, IOptionsMonitor<T>
-        // Note: IOptions.Value should return the current value from monitor
-        services.AddSingleton<IOptions<T>>(p =>
-        {
-            var monitor = p.GetRequiredService<WritableOptionsMonitor<T>>();
-            return new DynamicOptionsWrapper<T>(monitor);
-        });
-        services.AddScoped<IOptionsSnapshot<T>>(p =>
-        {
-            var monitor = p.GetRequiredService<WritableOptionsMonitor<T>>();
-            return new OptionsSnapshot<T>(monitor);
-        });
+        // Register IOptionsMonitor<T>
         services.AddSingleton<IOptionsMonitor<T>>(p =>
             p.GetRequiredService<WritableOptionsMonitor<T>>()
         );

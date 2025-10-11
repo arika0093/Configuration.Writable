@@ -139,7 +139,6 @@ public class IOptionsIntegrationTests
 
         host1.Dispose();
 
-        // Then, read it back using IOptions
         var builder2 = Host.CreateApplicationBuilder();
         builder2.AddWritableOptions<TestSettings>(options =>
         {
@@ -148,9 +147,9 @@ public class IOptionsIntegrationTests
         });
 
         var host2 = builder2.Build();
-        var optionsService = host2.Services.GetRequiredService<IOptions<TestSettings>>();
+        var optionsService = host2.Services.GetRequiredService<IOptionsMonitor<TestSettings>>();
 
-        var settings = optionsService.Value;
+        var settings = optionsService.CurrentValue;
         settings.Name.ShouldBe("saved_name");
         settings.Value.ShouldBe(999);
         settings.IsEnabled.ShouldBeFalse();
