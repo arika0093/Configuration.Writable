@@ -300,7 +300,11 @@ public class ValidationTests
     public void OptionsValidationException_ShouldContainFailures()
     {
         var failures = new[] { "Error 1", "Error 2" };
-        var exception = new OptionsValidationException("TestOptions", typeof(ValidatableSettings), failures);
+        var exception = new OptionsValidationException(
+            "TestOptions",
+            typeof(ValidatableSettings),
+            failures
+        );
         exception.Failures.Count().ShouldBe(2);
         exception.Failures.ShouldContain("Error 1");
         exception.Failures.ShouldContain("Error 2");
@@ -331,7 +335,9 @@ file class ValidatableSettingsValidator : IValidateOptions<ValidatableSettings>
             errors.Add("Valid email is required");
         }
 
-        return errors.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(errors);
+        return errors.Count == 0
+            ? ValidateOptionsResult.Success
+            : ValidateOptionsResult.Fail(errors);
     }
 }
 
