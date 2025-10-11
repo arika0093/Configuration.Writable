@@ -252,7 +252,7 @@ public record WritableConfigurationOptionsBuilder<T>
         List<ValidateOptionsResult> results
     )
     {
-        var allFailures = results.Where(r => r.Failed).SelectMany(r => r.Failures).ToList();
+        var allFailures = results.Where(r => r.Failed).SelectMany(r => r.Failures ?? []).ToList();
 
         return allFailures.Count == 0
             ? ValidateOptionsResult.Success
