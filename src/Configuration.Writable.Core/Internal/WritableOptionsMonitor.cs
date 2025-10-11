@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
@@ -14,11 +15,11 @@ namespace Configuration.Writable.Internal;
 internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposable
     where T : class
 {
-    private readonly Dictionary<string, T> _cache = new();
-    private readonly Dictionary<string, List<Action<T, string?>>> _listeners = new();
-    private readonly Dictionary<string, FileSystemWatcher?> _watchers = new();
+    private readonly Dictionary<string, T> _cache = [];
+    private readonly Dictionary<string, List<Action<T, string?>>> _listeners = [];
+    private readonly Dictionary<string, FileSystemWatcher?> _watchers = [];
     private readonly Dictionary<string, WritableConfigurationOptions<T>> _optionsMap;
-    private readonly object _lockObject = new();
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public WritableOptionsMonitor(IEnumerable<WritableConfigurationOptions<T>> options)
     {
@@ -40,7 +41,8 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     {
         name ??= Options.DefaultName;
 
-        lock (_lockObject)
+        _semaphore.Wait();
+        try
         {
             if (_cache.TryGetValue(name, out var cached))
             {
@@ -50,21 +52,30 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
             // Load configuration if not cached
             return LoadConfiguration(name);
         }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener)
     {
-        lock (_lockObject)
+        _semaphore.Wait();
+        try
         {
             foreach (var instanceName in _optionsMap.Keys)
             {
                 if (!_listeners.ContainsKey(instanceName))
                 {
-                    _listeners[instanceName] = new List<Action<T, string?>>();
+                    _listeners[instanceName] = [];
                 }
                 _listeners[instanceName].Add(listener);
             }
+        }
+        finally
+        {
+            _semaphore.Release();
         }
 
         return new ChangeTrackerDisposable(this, listener);
@@ -73,7 +84,8 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     /// <inheritdoc />
     public void Dispose()
     {
-        lock (_lockObject)
+        _semaphore.Wait();
+        try
         {
             foreach (var watcher in _watchers.Values)
             {
@@ -83,6 +95,10 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
             _listeners.Clear();
             _cache.Clear();
         }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     /// <summary>
@@ -91,10 +107,15 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     /// </summary>
     internal void UpdateCache(string instanceName, T value)
     {
-        lock (_lockObject)
+        _semaphore.Wait();
+        try
         {
             _cache[instanceName] = value;
             NotifyListeners(instanceName, value);
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
@@ -103,9 +124,14 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     /// </summary>
     internal void ClearCache(string instanceName)
     {
-        lock (_lockObject)
+        _semaphore.Wait();
+        try
         {
             _cache.Remove(instanceName);
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
@@ -176,7 +202,8 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
 
     private void OnFileChanged(string instanceName)
     {
-        lock (_lockObject)
+        _semaphore.Wait();
+        try
         {
             // Clear cache to force reload on next Get
             _cache.Remove(instanceName);
@@ -184,6 +211,10 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
             // Reload and notify listeners
             var newValue = LoadConfiguration(instanceName);
             NotifyListeners(instanceName, newValue);
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
@@ -218,12 +249,17 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
             if (_disposed)
                 return;
 
-            lock (_monitor._lockObject)
+            _monitor._semaphore.Wait();
+            try
             {
                 foreach (var listeners in _monitor._listeners.Values)
                 {
                     listeners.Remove(_listener);
                 }
+            }
+            finally
+            {
+                _monitor._semaphore.Release();
             }
 
             _disposed = true;
