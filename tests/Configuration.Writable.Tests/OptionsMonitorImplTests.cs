@@ -98,7 +98,7 @@ public class OptionsMonitorImplTests
     }
 
     [Fact]
-    public void Get_WithCustomName_ShouldReturnCustomValue()
+    public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
         var fileWriter = new InMemoryFileWriter();
@@ -107,7 +107,7 @@ public class OptionsMonitorImplTests
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
         var data = configOptions.Provider.GetSaveContents(testSettings, configOptions);
-        fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data).Wait();
+        await fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data);
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
 
@@ -294,7 +294,7 @@ public class OptionsMonitorImplTests
     }
 
     [Fact]
-    public void GetDefaultValue_ShouldReturnStoredDefaultValue()
+    public async Task GetDefaultValue_ShouldReturnStoredDefaultValue()
     {
         // Arrange
         var fileWriter = new InMemoryFileWriter();
@@ -308,7 +308,7 @@ public class OptionsMonitorImplTests
 
         // Preload data
         var data = configOptions.Provider.GetSaveContents(testSettings, configOptions);
-        fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data).Wait();
+        await fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data);
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
 

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
 using Configuration.Writable.Options;
 
@@ -74,7 +75,7 @@ public class OptionsSnapshotImplTests
     }
 
     [Fact]
-    public void Get_WithCustomName_ShouldReturnCustomValue()
+    public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
         var fileWriter = new InMemoryFileWriter();
@@ -83,7 +84,7 @@ public class OptionsSnapshotImplTests
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
         var data = configOptions.Provider.GetSaveContents(testSettings, configOptions);
-        fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data).Wait();
+        await fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data);
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
@@ -249,7 +250,7 @@ public class OptionsSnapshotImplTests
     }
 
     [Fact]
-    public void Snapshot_ShouldCaptureAllInstancesAtCreationTime()
+    public async Task Snapshot_ShouldCaptureAllInstancesAtCreationTime()
     {
         // Arrange
         var fileWriter = new InMemoryFileWriter();
@@ -259,7 +260,7 @@ public class OptionsSnapshotImplTests
         // Initial data
         var initialSettings = new TestSettings { Name = "initial", Value = 100 };
         var data = configOptions.Provider.GetSaveContents(initialSettings, configOptions);
-        fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data).Wait();
+        await fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data);
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
 

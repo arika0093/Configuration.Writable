@@ -82,7 +82,7 @@ public class OptionsImplTests
     }
 
     [Fact]
-    public void Value_WithPreloadedData_ShouldReturnLoadedData()
+    public async Task Value_WithPreloadedData_ShouldReturnLoadedData()
     {
         // Arrange
         var fileWriter = new InMemoryFileWriter();
@@ -98,7 +98,7 @@ public class OptionsImplTests
 
         // Preload data using the provider
         var data = configOptions.Provider.GetSaveContents(testSettings, configOptions);
-        fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data).Wait();
+        await fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data);
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
