@@ -12,17 +12,17 @@ public static class WritableConfig
     private static readonly Dictionary<Type, object> _instances = [];
 
     // Cache the service provider to avoid multiple builds
-    private static WritableConfigSimpleInstance<T> GetInternalInstance<T>()
+    private static WritableOptionsSimpleInstance<T> GetInternalInstance<T>()
         where T : class
     {
         var type = typeof(T);
         if (_instances.TryGetValue(type, out var rst))
         {
-            return (WritableConfigSimpleInstance<T>)rst;
+            return (WritableOptionsSimpleInstance<T>)rst;
         }
         else
         {
-            var instance = new WritableConfigSimpleInstance<T>();
+            var instance = new WritableOptionsSimpleInstance<T>();
             _instances[type] = instance;
             return instance;
         }

@@ -56,7 +56,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.json";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -89,7 +89,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.json";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -125,7 +125,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_CompactFormat_ShouldBeStable()
     {
         const string testFileName = "stability_compact_test.json";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -189,7 +189,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.json";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
         {
@@ -229,7 +229,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_EmptyAndNullValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.json";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var emptyConfig = new TestConfiguration
         {
@@ -269,7 +269,7 @@ public class OutputFormatStabilityTests
     public async Task JsonProvider_ByteLevel_ShouldBeStable()
     {
         const string testFileName = "stability_byte_test.json";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {

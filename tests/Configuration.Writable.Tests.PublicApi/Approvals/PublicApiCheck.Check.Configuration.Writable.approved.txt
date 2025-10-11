@@ -10,10 +10,10 @@ namespace Configuration.Writable
         public static void Initialize<T>(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions)
             where T :  class { }
     }
-    public class WritableConfigSimpleInstance<T>
+    public class WritableOptionsSimpleInstance<T>
         where T :  class
     {
-        public WritableConfigSimpleInstance() { }
+        public WritableOptionsSimpleInstance() { }
         public void Add(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
         public void Add(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
         public Configuration.Writable.IWritableOptions<T> GetOptions() { }

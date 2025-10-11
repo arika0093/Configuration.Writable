@@ -59,7 +59,7 @@ public class XmlOutputFormatStabilityTests
     public async Task XmlProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.xml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -89,7 +89,7 @@ public class XmlOutputFormatStabilityTests
     public async Task XmlProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.xml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -120,7 +120,7 @@ public class XmlOutputFormatStabilityTests
     public async Task XmlProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.xml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
         {
@@ -155,7 +155,7 @@ public class XmlOutputFormatStabilityTests
     public async Task XmlProvider_EmptyValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.xml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var emptyConfig = new TestConfiguration
         {
@@ -191,7 +191,7 @@ public class XmlOutputFormatStabilityTests
     public async Task XmlProvider_NumericValues_ShouldBeStable()
     {
         const string testFileName = "stability_numeric_test.xml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var numericConfig = new TestConfiguration
         {
@@ -227,7 +227,7 @@ public class XmlOutputFormatStabilityTests
     public async Task XmlProvider_MultipleSections_ShouldBeStable()
     {
         const string testFileName = "stability_multi_section_test.xml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -258,7 +258,7 @@ public class XmlOutputFormatStabilityTests
     public async Task XmlProvider_WithoutSectionName_ShouldBeStable()
     {
         const string testFileName = "stability_no_section_test.xml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {

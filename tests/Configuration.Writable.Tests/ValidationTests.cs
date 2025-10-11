@@ -17,7 +17,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<ValidatableSettings>();
+        var _instance = new WritableOptionsSimpleInstance<ValidatableSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -52,7 +52,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<ValidatableSettings>();
+        var _instance = new WritableOptionsSimpleInstance<ValidatableSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -84,7 +84,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<ValidatableSettings>();
+        var _instance = new WritableOptionsSimpleInstance<ValidatableSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -122,7 +122,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<ValidatableSettings>();
+        var _instance = new WritableOptionsSimpleInstance<ValidatableSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -147,7 +147,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<AnnotatedSettings>();
+        var _instance = new WritableOptionsSimpleInstance<AnnotatedSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -176,7 +176,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<AnnotatedSettings>();
+        var _instance = new WritableOptionsSimpleInstance<AnnotatedSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -204,7 +204,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<AnnotatedSettings>();
+        var _instance = new WritableOptionsSimpleInstance<AnnotatedSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -241,7 +241,7 @@ public class ValidationTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<ValidatableSettings>();
+        var _instance = new WritableOptionsSimpleInstance<ValidatableSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;

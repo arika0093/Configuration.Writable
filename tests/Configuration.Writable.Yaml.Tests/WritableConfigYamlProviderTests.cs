@@ -38,7 +38,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -75,7 +75,7 @@ public class WritableConfigYamlProviderTests
         var provider = new WritableConfigYamlProvider();
         provider.FileWriter = _fileWriter;
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -116,7 +116,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -145,7 +145,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -184,7 +184,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -223,7 +223,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;

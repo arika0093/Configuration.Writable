@@ -6,7 +6,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Provides methods to initialize and retrieve writable configuration instances for a specified options type.
 /// </summary>
-public class WritableConfigSimpleInstance<T>
+public class WritableOptionsSimpleInstance<T>
     where T : class
 {
     private WritableConfigurationOptions<T>? _options = null;
@@ -35,7 +35,7 @@ public class WritableConfigSimpleInstance<T>
         if (_options == null)
         {
             throw new InvalidOperationException(
-                "WritableConfigSimpleInstance is not initialized. Call Initialize() before GetOptions()."
+                "WritableOptionsSimpleInstance is not initialized. Call Initialize() before GetOptions()."
             );
         }
         var options = new List<WritableConfigurationOptions<T>> { _options };

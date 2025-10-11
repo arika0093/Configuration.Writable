@@ -59,7 +59,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.yaml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -89,7 +89,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.yaml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {
@@ -120,7 +120,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.yaml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
         {
@@ -155,7 +155,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_EmptyValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.yaml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var emptyConfig = new TestConfiguration
         {
@@ -191,7 +191,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_NumericValues_ShouldBeStable()
     {
         const string testFileName = "stability_numeric_test.yaml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var numericConfig = new TestConfiguration
         {
@@ -227,7 +227,7 @@ public class YamlOutputFormatStabilityTests
     public async Task YamlProvider_MultipleSections_ShouldBeStable()
     {
         const string testFileName = "stability_multi_section_test.yaml";
-        var instance = new WritableConfigSimpleInstance<TestConfiguration>();
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         instance.Initialize(options =>
         {

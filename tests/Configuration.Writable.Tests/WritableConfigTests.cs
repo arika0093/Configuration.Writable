@@ -16,7 +16,7 @@ public class WritableConfigTests
     [Fact]
     public void Initialize_ShouldCreateConfiguration()
     {
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize();
 
         var option = _instance.GetOptions();
@@ -30,7 +30,7 @@ public class WritableConfigTests
     [Fact]
     public void GetOption_ShouldReturnWritableConfig()
     {
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize();
         var option = _instance.GetOptions();
         option.ShouldNotBeNull();
@@ -40,7 +40,7 @@ public class WritableConfigTests
     [Fact]
     public void GetOption_ShouldThrowIfNotInitialized()
     {
-        var uninitializedInstance = new WritableConfigSimpleInstance<TestSettings>();
+        var uninitializedInstance = new WritableOptionsSimpleInstance<TestSettings>();
         Should.Throw<InvalidOperationException>(() =>
         {
             var instance = uninitializedInstance.GetOptions();
@@ -52,7 +52,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -82,7 +82,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -112,7 +112,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -136,7 +136,7 @@ public class WritableConfigTests
     [Fact]
     public void GetConfigFilePath_ShouldReturnCorrectPath()
     {
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize();
 
         var option = _instance.GetOptions();
@@ -150,7 +150,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -188,7 +188,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -226,7 +226,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -265,7 +265,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -303,7 +303,7 @@ public class WritableConfigTests
     {
         var testFileName = Path.GetRandomFileName();
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;

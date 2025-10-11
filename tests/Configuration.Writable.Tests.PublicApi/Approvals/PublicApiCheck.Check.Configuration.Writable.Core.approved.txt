@@ -81,10 +81,10 @@ namespace Configuration.Writable
         protected static object CreateNestedSection(string sectionName, object value) { }
         protected static string[] GetSplitedSections(string sectionName) { }
     }
-    public class WritableConfigSimpleInstance<T>
+    public class WritableOptionsSimpleInstance<T>
         where T :  class
     {
-        public WritableConfigSimpleInstance() { }
+        public WritableOptionsSimpleInstance() { }
         public Configuration.Writable.IWritableOptions<T> GetOptions() { }
         public void Initialize() { }
         public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }

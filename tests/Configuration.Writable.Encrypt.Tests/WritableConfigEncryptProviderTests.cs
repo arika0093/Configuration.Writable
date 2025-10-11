@@ -72,7 +72,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -110,7 +110,7 @@ public class WritableConfigEncryptProviderTests
         var provider = new WritableConfigEncryptProvider(encryptionKey);
         provider.FileWriter = _fileWriter;
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -158,7 +158,7 @@ public class WritableConfigEncryptProviderTests
         var provider1 = new WritableConfigEncryptProvider(encryptionKey1);
         provider1.FileWriter = _fileWriter;
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
@@ -200,7 +200,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "asyncencryptionkey12345678901";
 
-        var _instance = new WritableConfigSimpleInstance<TestSettings>();
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;

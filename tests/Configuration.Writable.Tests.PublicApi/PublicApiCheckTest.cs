@@ -34,7 +34,7 @@ public static class PublicApiCheck
 public class PublicApiCheckTest
 {
     [Fact]
-    public void Main() => PublicApiCheck.Check<WritableConfigSimpleInstance<Dummy>>();
+    public void Main() => PublicApiCheck.Check<WritableOptionsSimpleInstance<Dummy>>();
 
     [Fact]
     public void Core() => PublicApiCheck.Check<WritableConfigJsonProvider>();
