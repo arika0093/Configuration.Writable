@@ -34,7 +34,10 @@ public static class PublicApiCheck
 public class PublicApiCheckTest
 {
     [Fact]
-    public void Main() => PublicApiCheck.Check<WritableConfigJsonProvider>();
+    public void Main() => PublicApiCheck.Check<WritableConfigSimpleInstance<Dummy>>();
+
+    [Fact]
+    public void Core() => PublicApiCheck.Check<WritableConfigJsonProvider>();
 
     [Fact]
     public void Xml() => PublicApiCheck.Check<WritableConfigXmlProvider>();
@@ -45,3 +48,5 @@ public class PublicApiCheckTest
     [Fact]
     public void Encrypt() => PublicApiCheck.Check<WritableConfigEncryptProvider>();
 }
+
+file class Dummy;

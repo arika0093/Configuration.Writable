@@ -3,7 +3,7 @@
     <RootNamespace>Configuration.Writable</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Configuration.Writable\Configuration.Writable.csproj" />
+    <ProjectReference Include="..\Configuration.Writable.Core\Configuration.Writable.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />

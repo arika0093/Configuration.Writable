@@ -56,10 +56,11 @@
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
-        "resolved": "2.0.0",
-        "contentHash": "SsI4RqI8EH00+cYO96tbftlh87sNUv1eeyuBU1XZdQkG0RrHAOjWgl7P0FoLeTSMXJpOnfweeOWj2d1/5H3FxA==",
+        "resolved": "9.0.9",
+        "contentHash": "w87wF/90/VI0ZQBhf4rbMEeyEy0vi2WKjFmACsNAKNaorY+ZlVz7ddyXkbADvaWouMKffNmR0yQOGcrvSSvKGg==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "2.0.0"
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.9",
+          "Microsoft.Extensions.Primitives": "9.0.9"
         }
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
@@ -265,10 +266,19 @@
       "configuration.writable": {
         "type": "Project",
         "dependencies": {
+          "Configuration.Writable.Core": "[1.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[9.*, )",
-          "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )"
+        }
+      },
+      "configuration.writable.core": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration": "[9.*, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.*, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options": "[9.*, )",
-          "System.ComponentModel.Annotations": "[5.0.0, )",
+          "System.ComponentModel.Annotations": "[5.*, )",
           "System.Text.Json": "[9.*, )"
         }
       }
@@ -311,10 +321,11 @@
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
-        "resolved": "2.0.0",
-        "contentHash": "SsI4RqI8EH00+cYO96tbftlh87sNUv1eeyuBU1XZdQkG0RrHAOjWgl7P0FoLeTSMXJpOnfweeOWj2d1/5H3FxA==",
+        "resolved": "9.0.9",
+        "contentHash": "w87wF/90/VI0ZQBhf4rbMEeyEy0vi2WKjFmACsNAKNaorY+ZlVz7ddyXkbADvaWouMKffNmR0yQOGcrvSSvKGg==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "2.0.0"
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.9",
+          "Microsoft.Extensions.Primitives": "9.0.9"
         }
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
@@ -422,8 +433,17 @@
       "configuration.writable": {
         "type": "Project",
         "dependencies": {
+          "Configuration.Writable.Core": "[1.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[9.*, )",
-          "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )"
+        }
+      },
+      "configuration.writable.core": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration": "[9.*, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.*, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options": "[9.*, )"
         }
       }
@@ -466,10 +486,11 @@
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
-        "resolved": "2.0.0",
-        "contentHash": "SsI4RqI8EH00+cYO96tbftlh87sNUv1eeyuBU1XZdQkG0RrHAOjWgl7P0FoLeTSMXJpOnfweeOWj2d1/5H3FxA==",
+        "resolved": "9.0.9",
+        "contentHash": "w87wF/90/VI0ZQBhf4rbMEeyEy0vi2WKjFmACsNAKNaorY+ZlVz7ddyXkbADvaWouMKffNmR0yQOGcrvSSvKGg==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "2.0.0"
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.9",
+          "Microsoft.Extensions.Primitives": "9.0.9"
         }
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
@@ -570,8 +591,17 @@
       "configuration.writable": {
         "type": "Project",
         "dependencies": {
+          "Configuration.Writable.Core": "[1.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[9.*, )",
-          "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[9.*, )"
+        }
+      },
+      "configuration.writable.core": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration": "[9.*, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.*, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.*, )",
           "Microsoft.Extensions.Options": "[9.*, )"
         }
       }

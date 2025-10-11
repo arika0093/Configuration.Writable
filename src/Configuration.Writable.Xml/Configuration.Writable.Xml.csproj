@@ -6,7 +6,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="9.*" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Configuration.Writable\Configuration.Writable.csproj" />
+    <ProjectReference Include="..\Configuration.Writable.Core\Configuration.Writable.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />

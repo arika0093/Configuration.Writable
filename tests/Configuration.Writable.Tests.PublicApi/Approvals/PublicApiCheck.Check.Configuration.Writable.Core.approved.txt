@@ -1,0 +1,165 @@
+﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
+namespace Configuration.Writable.FileWriter
+{
+    public class CommonFileWriter : Configuration.Writable.FileWriter.IFileWriter, System.IDisposable
+    {
+        public CommonFileWriter() { }
+        public virtual int BackupMaxCount { get; set; }
+        public virtual int MaxRetryCount { get; set; }
+        public virtual System.Func<int, int> RetryDelay { get; set; }
+        public void Dispose() { }
+        protected virtual void Dispose(bool disposing) { }
+        public virtual bool FileExists(string path) { }
+        protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
+        public virtual System.IO.Stream? GetFileStream(string path) { }
+        protected virtual string GetTemporaryFilePath(string path) { }
+        public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null) { }
+        protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public interface IFileWriter
+    {
+        bool FileExists(string path);
+        System.IO.Stream? GetFileStream(string path);
+        System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null);
+    }
+}
+namespace Configuration.Writable
+{
+    public interface IReadOnlyOptions<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class
+    {
+        Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
+        Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name);
+    }
+    public interface IValidator<in T>
+        where in T :  class
+    {
+        Configuration.Writable.ValidationResult Validate(T value);
+    }
+    public interface IWritableConfigProvider
+    {
+        string FileExtension { get; }
+        Configuration.Writable.FileWriter.IFileWriter FileWriter { get; }
+        System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class;
+    }
+    public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class
+    {
+        System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public sealed class ValidationException : System.Exception
+    {
+        public ValidationException(Configuration.Writable.ValidationResult validationResult) { }
+        public ValidationException(System.Collections.Generic.IEnumerable<string> errors) { }
+        public ValidationException(params string[] errors) { }
+        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
+    }
+    public sealed class ValidationResult
+    {
+        public System.Collections.Generic.IReadOnlyList<string> Errors { get; }
+        public bool IsValid { get; }
+        public static Configuration.Writable.ValidationResult Combine(params Configuration.Writable.ValidationResult[] results) { }
+        public static Configuration.Writable.ValidationResult Fail(params string[] errors) { }
+        public static Configuration.Writable.ValidationResult Failure(System.Collections.Generic.IEnumerable<string> errors) { }
+        public static Configuration.Writable.ValidationResult Ok() { }
+    }
+    public class WritableConfigJsonProvider : Configuration.Writable.WritableConfigProviderBase
+    {
+        public WritableConfigJsonProvider() { }
+        public System.Text.Encoding Encoding { get; init; }
+        public override string FileExtension { get; }
+        public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
+        public override System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+    }
+    public abstract class WritableConfigProviderBase : Configuration.Writable.IWritableConfigProvider
+    {
+        protected WritableConfigProviderBase() { }
+        public abstract string FileExtension { get; }
+        public virtual Configuration.Writable.FileWriter.IFileWriter FileWriter { get; set; }
+        public abstract System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        public virtual System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class { }
+        protected static object CreateNestedSection(string sectionName, object value) { }
+        protected static string[] GetSplitedSections(string sectionName) { }
+    }
+    public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
+        where T :  class
+    {
+        public WritableConfigurationOptionsBuilder() { }
+        public string ConfigFilePath { get; }
+        public string DefaultSectionName { get; }
+        public string DefaultSectionRootName { get; set; }
+        public string? FilePath { get; set; }
+        public System.IO.Stream? FileReadStream { get; set; }
+        public Configuration.Writable.FileWriter.IFileWriter? FileWriter { get; set; }
+        public string InstanceName { get; set; }
+        public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
+        public Configuration.Writable.IWritableConfigProvider Provider { get; set; }
+        public bool RegisterInstanceToContainer { get; set; }
+        public string SectionName { get; set; }
+        public bool UseDataAnnotationsValidation { get; set; }
+        public string UseCurrentDirectory() { }
+        public string UseExecutableDirectory() { }
+        public string UseStandardSaveLocation(string applicationId) { }
+        public void WithValidator(Configuration.Writable.IValidator<T> validator) { }
+        public void WithValidator<TValidator>()
+            where TValidator : Configuration.Writable.IValidator<T>, new () { }
+        public void WithValidatorFunction(System.Func<T, Configuration.Writable.ValidationResult> validator) { }
+    }
+    public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>
+        where T :  class
+    {
+        public WritableConfigurationOptions() { }
+        public required string ConfigFilePath { get; init; }
+        public required string InstanceName { get; init; }
+        public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
+        public required Configuration.Writable.IWritableConfigProvider Provider { get; init; }
+        public required string SectionName { get; init; }
+        public System.Func<T, Configuration.Writable.ValidationResult>? Validator { get; init; }
+    }
+}
+namespace Configuration.Writable.Testing
+{
+    public static class WritableOptionsStub
+    {
+        public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(System.Collections.Generic.Dictionary<string, T> namedValues)
+            where T :  class { }
+        public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(T value)
+            where T :  class { }
+    }
+    public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class
+    {
+        public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }
+        public WritableOptionsStub(T value) { }
+        public T CurrentValue { get; }
+        public T Get(string? name) { }
+        public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions() { }
+        public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name) { }
+        public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
+        public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+}
