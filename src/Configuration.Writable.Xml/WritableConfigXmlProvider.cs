@@ -75,13 +75,19 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
 
             // Deserialize from the found section
             using var reader = current.CreateReader();
-            var serializer = new XmlSerializer(typeof(T), new XmlRootAttribute(current.Name.LocalName));
+            var serializer = new XmlSerializer(
+                typeof(T),
+                new XmlRootAttribute(current.Name.LocalName)
+            );
             return (serializer.Deserialize(reader) as T) ?? Activator.CreateInstance<T>();
         }
 
         // Deserialize from root
         using var rootReader = root.CreateReader();
-        var rootSerializer = new XmlSerializer(typeof(T), new XmlRootAttribute(root.Name.LocalName));
+        var rootSerializer = new XmlSerializer(
+            typeof(T),
+            new XmlRootAttribute(root.Name.LocalName)
+        );
         return (rootSerializer.Deserialize(rootReader) as T) ?? Activator.CreateInstance<T>();
     }
 

@@ -90,7 +90,9 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
                 if (current is Dictionary<string, object> stringKeyDict)
                 {
                     // Try case-insensitive lookup to handle naming convention differences
-                    var key = stringKeyDict.Keys.FirstOrDefault(k => string.Equals(k, section, StringComparison.OrdinalIgnoreCase));
+                    var key = stringKeyDict.Keys.FirstOrDefault(k =>
+                        string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
+                    );
                     if (key != null && stringKeyDict.TryGetValue(key, out var value))
                     {
                         current = value;
@@ -104,9 +106,11 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
                 else if (current is Dictionary<object, object> objectKeyDict)
                 {
                     // Handle Dictionary<object, object> for nested sections
-                    var key = objectKeyDict.Keys
-                        .OfType<string>()
-                        .FirstOrDefault(k => string.Equals(k, section, StringComparison.OrdinalIgnoreCase));
+                    var key = objectKeyDict
+                        .Keys.OfType<string>()
+                        .FirstOrDefault(k =>
+                            string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
+                        );
                     if (key != null && objectKeyDict.TryGetValue(key, out var value))
                     {
                         current = value;

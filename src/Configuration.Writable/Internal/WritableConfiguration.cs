@@ -107,7 +107,9 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
         _optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
 
         // Save to file
-        await options.Provider.SaveAsync(newConfig, options, cancellationToken).ConfigureAwait(false);
+        await options
+            .Provider.SaveAsync(newConfig, options, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>

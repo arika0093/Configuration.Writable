@@ -157,7 +157,7 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
             var watcher = new FileSystemWatcher(directory, fileName)
             {
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-                EnableRaisingEvents = true
+                EnableRaisingEvents = true,
             };
 
             watcher.Changed += (sender, args) => OnFileChanged(options.InstanceName);
@@ -204,7 +204,10 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
         private readonly Action<T, string?> _listener;
         private bool _disposed;
 
-        public ChangeTrackerDisposable(WritableOptionsMonitor<T> monitor, Action<T, string?> listener)
+        public ChangeTrackerDisposable(
+            WritableOptionsMonitor<T> monitor,
+            Action<T, string?> listener
+        )
         {
             _monitor = monitor;
             _listener = listener;
@@ -212,7 +215,8 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
 
             lock (_monitor._lockObject)
             {

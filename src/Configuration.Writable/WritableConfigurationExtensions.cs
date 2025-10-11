@@ -53,9 +53,7 @@ public static class WritableConfigurationExtensions
     /// </summary>
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
-    public static IServiceCollection AddWritableOptions<T>(
-        this IServiceCollection services
-    )
+    public static IServiceCollection AddWritableOptions<T>(this IServiceCollection services)
         where T : class
     {
         return services.AddWritableOptions<T>(_ => { });
