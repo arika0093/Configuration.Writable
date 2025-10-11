@@ -15,6 +15,7 @@ public static class InMemoryFileWriterExtensions
         where T : class
     {
         builder.FileWriter = inMemoryFileWriter;
+        builder.Provider.FileWriter = inMemoryFileWriter;
         builder.FileReadStream = inMemoryFileWriter.GetFileStream(builder.ConfigFilePath);
     }
 }

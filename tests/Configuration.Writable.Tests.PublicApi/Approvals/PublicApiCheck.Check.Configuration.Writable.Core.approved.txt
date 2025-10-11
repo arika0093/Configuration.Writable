@@ -102,6 +102,14 @@ namespace Configuration.Writable
         protected static object CreateNestedSection(string sectionName, object value) { }
         protected static string[] GetSplitedSections(string sectionName) { }
     }
+    public class WritableConfigSimpleInstance<T>
+        where T :  class
+    {
+        public WritableConfigSimpleInstance() { }
+        public Configuration.Writable.IWritableOptions<T> GetOptions() { }
+        public void Initialize() { }
+        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
+    }
     public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
         where T :  class
     {

@@ -53,7 +53,7 @@ public class WritableConfigurationExtensionsTests
     public void AddWritableOptions_WithHostBuilder_ShouldRegisterServices()
     {
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>();
+        builder.Services.AddWritableOptions<TestSettings>();
 
         var host = builder.Build();
         var writableOptions = host.Services.GetService<IWritableOptions<TestSettings>>();
@@ -69,7 +69,7 @@ public class WritableConfigurationExtensionsTests
         var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFilePath;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -88,7 +88,7 @@ public class WritableConfigurationExtensionsTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -120,7 +120,7 @@ public class WritableConfigurationExtensionsTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);

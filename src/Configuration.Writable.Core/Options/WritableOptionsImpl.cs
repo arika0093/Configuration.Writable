@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.Options;
-using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
@@ -14,20 +12,20 @@ namespace Configuration.Writable;
 /// Base class for writable configuration implementations.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposable
+internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
     where T : class
 {
-    private readonly WritableOptionsMonitor<T> _optionMonitorInstance;
+    private readonly OptionsMonitorImpl<T> _optionMonitorInstance;
     private readonly IEnumerable<WritableConfigurationOptions<T>> _options;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WritableConfiguration{T}"/> class with the specified options
+    /// Initializes a new instance of the <see cref="WritableOptionsImpl{T}"/> class with the specified options
     /// monitor.
     /// </summary>
-    /// <param name="optionMonitorInstance">An <see cref="WritableOptionsMonitor{T}"/> instance used to monitor and retrieve configuration values.</param>
+    /// <param name="optionMonitorInstance">An <see cref="OptionsMonitorImpl{T}"/> instance used to monitor and retrieve configuration values.</param>
     /// <param name="configOptions">A collection of <see cref="WritableConfigurationOptions{T}"/> instances. </param>
-    public WritableConfiguration(
-        WritableOptionsMonitor<T> optionMonitorInstance,
+    public WritableOptionsImpl(
+        OptionsMonitorImpl<T> optionMonitorInstance,
         IEnumerable<WritableConfigurationOptions<T>> configOptions
     )
     {

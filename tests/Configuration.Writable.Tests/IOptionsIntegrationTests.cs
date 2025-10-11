@@ -25,7 +25,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -47,7 +47,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -73,7 +73,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -95,7 +95,7 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.InstanceName = "custom";
@@ -119,7 +119,7 @@ public class IOptionsIntegrationTests
 
         // First, save some configuration
         var builder1 = Host.CreateApplicationBuilder();
-        builder1.AddWritableOptions<TestSettings>(options =>
+        builder1.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);
@@ -140,7 +140,7 @@ public class IOptionsIntegrationTests
         host1.Dispose();
 
         var builder2 = Host.CreateApplicationBuilder();
-        builder2.AddWritableOptions<TestSettings>(options =>
+        builder2.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileWriter(_fileWriter);

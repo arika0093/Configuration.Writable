@@ -15,39 +15,6 @@ public static class WritableConfigurationExtensions
     private const string LoggerCategoryName = "Configuration.Writable";
 
     /// <summary>
-    /// Adds a user-defined configuration file to the application's configuration system and registers the specified
-    /// options type for dependency injection.
-    /// </summary>
-    /// <typeparam name="T">The type of the options to be configured. This type must be a class.</typeparam>
-    /// <param name="builder">The <see cref="IHostApplicationBuilder"/> to which the configuration file and options will be added.</param>
-    public static IHostApplicationBuilder AddWritableOptions<T>(
-        this IHostApplicationBuilder builder
-    )
-        where T : class
-    {
-        builder.Services.AddWritableOptions<T>(_ => { });
-        return builder;
-    }
-
-    /// <summary>
-    /// Adds a user-defined configuration file to the application's configuration system and registers the specified
-    /// options type for dependency injection.
-    /// </summary>
-    /// <typeparam name="T">The type of the options to be configured. This type must be a class.</typeparam>
-    /// <param name="builder">The <see cref="IHostApplicationBuilder"/> to which the configuration file and options will be added.</param>
-    /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptions{T}"/> used to specify the configuration file
-    /// path, section name, and other options.</param>
-    public static IHostApplicationBuilder AddWritableOptions<T>(
-        this IHostApplicationBuilder builder,
-        Action<WritableConfigurationOptionsBuilder<T>> configureOptions
-    )
-        where T : class
-    {
-        builder.Services.AddWritableOptions<T>(configureOptions);
-        return builder;
-    }
-
-    /// <summary>
     /// Adds a user-specific configuration file to the application's configuration system and registers the specified
     /// options type for dependency injection.
     /// </summary>
@@ -132,15 +99,7 @@ public static class WritableConfigurationExtensions
             {
                 var loggerFactory = provider.GetService<ILoggerFactory>();
                 var logger = loggerFactory?.CreateLogger(LoggerCategoryName);
-                return new WritableConfigurationOptions<T>
-                {
-                    Provider = options.Provider,
-                    ConfigFilePath = options.ConfigFilePath,
-                    InstanceName = options.InstanceName,
-                    SectionName = options.SectionName,
-                    Logger = logger,
-                    Validator = options.Validator,
-                };
+                return options with { Logger = logger };
             });
         }
         else
@@ -149,22 +108,22 @@ public static class WritableConfigurationExtensions
         }
 
         // add WritableOptionsMonitor<T> (custom implementation)
-        services.AddSingleton<WritableOptionsMonitor<T>>();
+        services.AddSingleton<OptionsMonitorImpl<T>>();
 
         // Register IOptions<T>, IOptionsSnapshot<T> and IOptionsMonitor<T>
-        services.AddSingleton<IOptions<T>, WritableOptions<T>>();
-        services.AddScoped<IOptionsSnapshot<T>, WritableOptionsSnapshot<T>>();
+        services.AddSingleton<IOptions<T>, OptionsImpl<T>>();
+        services.AddScoped<IOptionsSnapshot<T>, OptionsSnapshotImpl<T>>();
         services.AddSingleton<IOptionsMonitor<T>>(p =>
-            p.GetRequiredService<WritableOptionsMonitor<T>>()
+            p.GetRequiredService<OptionsMonitorImpl<T>>()
         );
 
         // add IReadOnlyOptions<T> and IWritableOptions<T>
-        services.AddSingleton<WritableConfiguration<T>>();
+        services.AddSingleton<WritableOptionsImpl<T>>();
         services.AddSingleton<IReadOnlyOptions<T>>(p =>
-            p.GetRequiredService<WritableConfiguration<T>>()
+            p.GetRequiredService<WritableOptionsImpl<T>>()
         );
         services.AddSingleton<IWritableOptions<T>>(p =>
-            p.GetRequiredService<WritableConfiguration<T>>()
+            p.GetRequiredService<WritableOptionsImpl<T>>()
         );
 
         return services;

@@ -12,7 +12,7 @@ namespace Configuration.Writable;
 /// Custom implementation of IOptionsMonitor that doesn't depend on Microsoft.Extensions.Configuration.
 /// </summary>
 /// <typeparam name="T">The type of options being monitored.</typeparam>
-internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposable
+internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     where T : class
 {
     private readonly Dictionary<string, T> _cache = [];
@@ -22,7 +22,7 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
     private readonly Dictionary<string, WritableConfigurationOptions<T>> _optionsMap;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public WritableOptionsMonitor(IEnumerable<WritableConfigurationOptions<T>> options)
+    public OptionsMonitorImpl(IEnumerable<WritableConfigurationOptions<T>> options)
     {
         _optionsMap = options.ToDictionary(o => o.InstanceName, o => o);
 
@@ -222,14 +222,11 @@ internal sealed class WritableOptionsMonitor<T> : IOptionsMonitor<T>, IDisposabl
 
     private sealed class ChangeTrackerDisposable : IDisposable
     {
-        private readonly WritableOptionsMonitor<T> _monitor;
+        private readonly OptionsMonitorImpl<T> _monitor;
         private readonly Action<T, string?> _listener;
         private bool _disposed;
 
-        public ChangeTrackerDisposable(
-            WritableOptionsMonitor<T> monitor,
-            Action<T, string?> listener
-        )
+        public ChangeTrackerDisposable(OptionsMonitorImpl<T> monitor, Action<T, string?> listener)
         {
             _monitor = monitor;
             _listener = listener;

@@ -8,12 +8,12 @@ namespace Configuration.Writable.Options;
 /// Provides a snapshot of options of type <typeparamref name="T"/> that can be read and written during the
 /// application's lifetime.
 /// </summary>
-internal class WritableOptionsSnapshot<T> : IOptionsSnapshot<T>
+internal class OptionsSnapshotImpl<T> : IOptionsSnapshot<T>
     where T : class
 {
     private readonly Dictionary<string, T> _snapshotValues = [];
 
-    public WritableOptionsSnapshot(WritableOptionsMonitor<T> _optionsMonitor)
+    public OptionsSnapshotImpl(OptionsMonitorImpl<T> _optionsMonitor)
     {
         var keys = _optionsMonitor.GetInstanceNames();
         foreach (var key in keys)

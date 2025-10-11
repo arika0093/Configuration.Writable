@@ -4,7 +4,7 @@ using Example.WorkerService;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.AddWritableOptions<SampleSetting>(opt =>
+builder.Services.AddWritableOptions<SampleSetting>(opt =>
 {
     // save file location is ./config/mysettings.json
     // extension is determined by the provider (omittable)
