@@ -72,13 +72,14 @@ public class WritableConfigYamlProviderTests
     public async Task LoadAndSave_WithYamlProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
+        var provider = new WritableConfigYamlProvider();
+        provider.FileWriter = _fileWriter;
 
         var _instance = new WritableConfigSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.Provider = provider;
         });
 
         var originalSettings = new TestSettings
@@ -93,11 +94,11 @@ public class WritableConfigYamlProviderTests
         var option = _instance.GetOptions();
         await option.SaveAsync(originalSettings);
 
+        // Re-initialize with the same provider to simulate reloading
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.Provider = provider;
         });
 
         option = _instance.GetOptions();
@@ -105,8 +106,7 @@ public class WritableConfigYamlProviderTests
         loadedSettings.Name.ShouldBe("yaml_persistence_test");
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
-        // Skip array test for now - YAML configuration arrays may need special handling
-        // loadedSettings.Items.ShouldBe(new[] { "yaml_persist1", "yaml_persist2" });
+        loadedSettings.Items.ShouldBe(new[] { "yaml_persist1", "yaml_persist2" });
         loadedSettings.Nested.Description.ShouldBe("nested_persist");
         loadedSettings.Nested.Price.ShouldBe(123.45);
     }

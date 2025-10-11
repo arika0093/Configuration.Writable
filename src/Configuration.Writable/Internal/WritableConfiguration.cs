@@ -15,31 +15,22 @@ namespace Configuration.Writable.Internal;
 internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposable
     where T : class
 {
-    private readonly IOptionsMonitor<T> _optionMonitorInstance;
+    private readonly WritableOptionsMonitor<T> _optionMonitorInstance;
     private readonly IEnumerable<WritableConfigurationOptions<T>> _options;
-    private readonly IDisposable? _onChangeToken;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableConfiguration{T}"/> class with the specified options
     /// monitor.
     /// </summary>
-    /// <param name="optionMonitorInstance">An <see cref="IOptionsMonitor{T}"/> instance used to monitor and retrieve configuration values.</param>
+    /// <param name="optionMonitorInstance">An <see cref="WritableOptionsMonitor{T}"/> instance used to monitor and retrieve configuration values.</param>
     /// <param name="configOptions">A collection of <see cref="WritableConfigurationOptions{T}"/> instances. </param>
     public WritableConfiguration(
-        IOptionsMonitor<T> optionMonitorInstance,
+        WritableOptionsMonitor<T> optionMonitorInstance,
         IEnumerable<WritableConfigurationOptions<T>> configOptions
     )
     {
         _optionMonitorInstance = optionMonitorInstance;
         _options = configOptions;
-
-        // clear cache on receiving change notification
-        _onChangeToken = _optionMonitorInstance.OnChange(
-            (updatedValue, name) =>
-            {
-                CachedValue.Remove(name!);
-            }
-        );
     }
 
     /// <inheritdoc />
@@ -67,7 +58,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
         CancellationToken cancellationToken = default
     )
     {
-        var current = DeepCopy(CurrentValue);
+        var current = DeepCopy(Get(name));
         configUpdater(current);
         return SaveCoreAsync(current, GetOptions(name), cancellationToken);
     }
@@ -77,24 +68,17 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
         SaveAsync(Options.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
-    public T CurrentValue =>
-        CachedValue.GetValueOrDefault(Options.DefaultName) ?? _optionMonitorInstance.CurrentValue;
+    public T CurrentValue => _optionMonitorInstance.CurrentValue;
 
     /// <inheritdoc />
-    public T Get(string? name) =>
-        CachedValue.GetValueOrDefault(name!) ?? _optionMonitorInstance.Get(name);
+    public T Get(string? name) => _optionMonitorInstance.Get(name);
 
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener) =>
         _optionMonitorInstance.OnChange(listener);
 
     /// <inheritdoc />
-    public void Dispose() => _onChangeToken?.Dispose();
-
-    /// <summary>
-    /// A property to cache values in case <see cref="IOptionsMonitor{T}"/> does not work properly in some environments (docker, network shares, etc.)
-    /// </summary>
-    private Dictionary<string, T> CachedValue { get; set; } = [];
+    public void Dispose() => _optionMonitorInstance?.Dispose();
 
     /// <summary>
     /// Asynchronously saves the specified configuration.
@@ -103,7 +87,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     /// <param name="options">The writable configuration options associated with the configuration to be saved.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <exception cref="ValidationException">Thrown when validation fails.</exception>
-    private Task SaveCoreAsync(
+    private async Task SaveCoreAsync(
         T newConfig,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
@@ -119,8 +103,11 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
             }
         }
 
-        SetCachedValue(options.InstanceName, newConfig);
-        return options.Provider.SaveAsync(newConfig, options, cancellationToken);
+        // Update the monitor's cache first
+        _optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
+
+        // Save to file
+        await options.Provider.SaveAsync(newConfig, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -146,16 +133,6 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     }
 
     /// <summary>
-    /// Sets the specified value in the cache for the given key.
-    /// </summary>
-    /// <param name="instanceName">Option's instance name.</param>
-    /// <param name="value">Used to cache values in environments where IOptionsMonitor does not work properly.</param>
-    private void SetCachedValue(string instanceName, T value)
-    {
-        CachedValue[instanceName] = value;
-    }
-
-    /// <summary>
     /// Creates a deep copy of the specified object using JSON serialization/deserialization.
     /// </summary>
     /// <param name="original">The original object to copy.</param>
@@ -166,20 +143,3 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
         return JsonSerializer.Deserialize<T>(json)!;
     }
 }
-
-#if !NET
-file static class DictionaryExtensions
-{
-    public static TValue? GetValueOrDefault<TKey, TValue>(
-        this IDictionary<TKey, TValue> dictionary,
-        TKey key
-    )
-    {
-        if (dictionary.TryGetValue(key, out var value))
-        {
-            return value;
-        }
-        return default;
-    }
-}
-#endif

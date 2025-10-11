@@ -203,6 +203,24 @@ public class CommonFileWriter : IFileWriter, IDisposable
     }
 
     /// <inheritdoc />
+    public virtual bool FileExists(string path)
+    {
+        var normalizedPath = Path.GetFullPath(path);
+        return File.Exists(normalizedPath);
+    }
+
+    /// <inheritdoc />
+    public virtual Stream? GetFileStream(string path)
+    {
+        var normalizedPath = Path.GetFullPath(path);
+        if (!File.Exists(normalizedPath))
+        {
+            return null;
+        }
+        return File.OpenRead(normalizedPath);
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);

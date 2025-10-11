@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
-using Microsoft.Extensions.Configuration;
 
 namespace Configuration.Writable;
 
@@ -18,12 +19,71 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
     public override string FileExtension => "xml";
 
     /// <inheritdoc />
-    public override void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
-        configuration.AddXmlFile(path, optional: true, reloadOnChange: true);
+    public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+        where T : class
+    {
+        var filePath = options.ConfigFilePath;
+        if (!FileWriter.FileExists(filePath))
+        {
+            return Activator.CreateInstance<T>();
+        }
+
+        var stream = FileWriter.GetFileStream(filePath);
+        if (stream == null)
+        {
+            return Activator.CreateInstance<T>();
+        }
+
+        using (stream)
+        {
+            return LoadConfiguration(stream, options);
+        }
+    }
 
     /// <inheritdoc />
-    public override void AddConfigurationFile(IConfigurationBuilder configuration, Stream stream) =>
-        configuration.AddXmlStream(stream);
+    public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+        where T : class
+    {
+        var xmlDoc = XDocument.Load(stream);
+        var root = xmlDoc.Root;
+
+        if (root == null)
+        {
+            return Activator.CreateInstance<T>();
+        }
+
+        // Navigate to the section if specified
+        var sectionName = options.SectionName;
+        if (!string.IsNullOrWhiteSpace(sectionName))
+        {
+            var sections = GetSplitedSections(sectionName);
+            var current = root;
+
+            foreach (var section in sections)
+            {
+                var element = current.Element(section);
+                if (element != null)
+                {
+                    current = element;
+                }
+                else
+                {
+                    // Section not found, return default instance
+                    return Activator.CreateInstance<T>();
+                }
+            }
+
+            // Deserialize from the found section
+            using var reader = current.CreateReader();
+            var serializer = new XmlSerializer(typeof(T), new XmlRootAttribute(current.Name.LocalName));
+            return (serializer.Deserialize(reader) as T) ?? Activator.CreateInstance<T>();
+        }
+
+        // Deserialize from root
+        using var rootReader = root.CreateReader();
+        var rootSerializer = new XmlSerializer(typeof(T), new XmlRootAttribute(root.Name.LocalName));
+        return (rootSerializer.Deserialize(rootReader) as T) ?? Activator.CreateInstance<T>();
+    }
 
     /// <inheritdoc />
     public override ReadOnlyMemory<byte> GetSaveContents<T>(

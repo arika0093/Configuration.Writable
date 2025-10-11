@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Configuration.Writable;
@@ -41,8 +40,8 @@ public class WritableConfigSimpleInstance<T>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
     public void Add(Action<WritableConfigurationOptionsBuilder<T>> configurationOptions)
     {
-        // add default configuration sources
-        ServiceCollection.AddWritableOptions(Configuration, configurationOptions);
+        // add writable options
+        ServiceCollection.AddWritableOptions(configurationOptions);
     }
 
     /// <summary>
@@ -51,8 +50,8 @@ public class WritableConfigSimpleInstance<T>
     /// <param name="configurationBuilder">A pre-configured options builder to customize the configuration options.</param>
     public void Add(WritableConfigurationOptionsBuilder<T> configurationBuilder)
     {
-        // add default configuration sources
-        ServiceCollection.AddWritableOptions(Configuration, configurationBuilder);
+        // add writable options
+        ServiceCollection.AddWritableOptions(configurationBuilder);
     }
 
     /// <summary>
@@ -68,12 +67,9 @@ public class WritableConfigSimpleInstance<T>
     {
         _serviceProviderCache = null;
         ServiceCollection = new ServiceCollection();
-        Configuration = new ConfigurationManager();
     }
 
     private ServiceCollection ServiceCollection { get; set; } = new();
-
-    private IConfigurationManager Configuration { get; set; } = new ConfigurationManager();
 
     private IServiceProvider ServiceProvider
     {

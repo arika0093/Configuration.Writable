@@ -9,13 +9,17 @@ namespace Configuration.Writable.FileWriter
         public virtual System.Func<int, int> RetryDelay { get; set; }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
+        public virtual bool FileExists(string path) { }
         protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
+        public virtual System.IO.Stream? GetFileStream(string path) { }
         protected virtual string GetTemporaryFilePath(string path) { }
         public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null) { }
         protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
     }
     public interface IFileWriter
     {
+        bool FileExists(string path);
+        System.IO.Stream? GetFileStream(string path);
         System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null);
     }
 }
@@ -36,9 +40,11 @@ namespace Configuration.Writable
     {
         string FileExtension { get; }
         Configuration.Writable.FileWriter.IFileWriter FileWriter { get; }
-        void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, System.IO.Stream stream);
-        void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, string path);
         System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class;
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class;
@@ -82,9 +88,11 @@ namespace Configuration.Writable
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, System.IO.Stream stream) { }
-        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, string path) { }
         public override System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class { }
     }
     public abstract class WritableConfigProviderBase : Configuration.Writable.IWritableConfigProvider
@@ -92,9 +100,11 @@ namespace Configuration.Writable
         protected WritableConfigProviderBase() { }
         public abstract string FileExtension { get; }
         public virtual Configuration.Writable.FileWriter.IFileWriter FileWriter { get; set; }
-        public abstract void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, System.IO.Stream stream);
-        public abstract void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, string path);
         public abstract System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class;
+        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class;
         public virtual System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class { }
@@ -114,19 +124,15 @@ namespace Configuration.Writable
     }
     public static class WritableConfigurationExtensions
     {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+            where T :  class { }
         public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddWritableOptions<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
+            where T :  class { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
             where T :  class { }
         public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddWritableOptions<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
-            where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.Configuration.IConfigurationManager configuration, Microsoft.Extensions.DependencyInjection.IServiceCollection services, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
-            where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.Configuration.IConfigurationManager configuration, Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
-            where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
-            where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfigurationManager configuration, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
             where T :  class { }
     }
     public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>

@@ -107,13 +107,14 @@ public class WritableConfigEncryptProviderTests
     {
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
+        var provider = new WritableConfigEncryptProvider(encryptionKey);
+        provider.FileWriter = _fileWriter;
 
         var _instance = new WritableConfigSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigEncryptProvider(encryptionKey);
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.Provider = provider;
         });
 
         var originalSettings = new TestSettings
@@ -132,11 +133,11 @@ public class WritableConfigEncryptProviderTests
         var fileBytes = _fileWriter.ReadAllBytes(testFileName);
         fileBytes.Length.ShouldBeGreaterThan(16); // Should have at least IV (16 bytes) + some encrypted content
 
+        // Re-initialize with the same provider to simulate reloading
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigEncryptProvider(encryptionKey);
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.Provider = provider;
         });
 
         option = _instance.GetOptions();
@@ -154,12 +155,14 @@ public class WritableConfigEncryptProviderTests
         var encryptionKey1 = "myencryptionkey123456789012345";
         var encryptionKey2 = "differentkey12345678901234567";
 
+        var provider1 = new WritableConfigEncryptProvider(encryptionKey1);
+        provider1.FileWriter = _fileWriter;
+
         var _instance = new WritableConfigSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigEncryptProvider(encryptionKey1);
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.Provider = provider1;
         });
 
         var originalSettings = new TestSettings
@@ -172,17 +175,23 @@ public class WritableConfigEncryptProviderTests
         var option = _instance.GetOptions();
         await option.SaveAsync(originalSettings);
 
-        // When loading with a different key, it should fail to decrypt and throw an exception
-        // or use default values depending on implementation
-        Should.Throw<System.Security.Cryptography.CryptographicException>(() =>
+        // When loading with a different key, it should fail to decrypt and return default values
+        var provider2 = new WritableConfigEncryptProvider(encryptionKey2);
+        provider2.FileWriter = _fileWriter;
+
+        _instance.Initialize(options =>
         {
-            _instance.Initialize(options =>
-            {
-                options.FilePath = testFileName;
-                options.Provider = new WritableConfigEncryptProvider(encryptionKey2);
-                options.UseInMemoryFileWriter(_fileWriter);
-            });
+            options.FilePath = testFileName;
+            options.Provider = provider2;
         });
+
+        option = _instance.GetOptions();
+        var loadedSettings = option.CurrentValue;
+
+        // Since decryption failed, should return default values
+        loadedSettings.Name.ShouldBe("default");
+        loadedSettings.Value.ShouldBe(42);
+        loadedSettings.SecretKey.ShouldBe("secret123");
     }
 
     [Fact]

@@ -1,9 +1,9 @@
 ﻿using System;
 using Configuration.Writable.Internal;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
 
@@ -25,7 +25,7 @@ public static class WritableConfigurationExtensions
     )
         where T : class
     {
-        builder.Services.AddWritableOptions<T>(builder.Configuration, _ => { });
+        builder.Services.AddWritableOptions<T>(_ => { });
         return builder;
     }
 
@@ -43,7 +43,7 @@ public static class WritableConfigurationExtensions
     )
         where T : class
     {
-        builder.Services.AddWritableOptions<T>(builder.Configuration, configureOptions);
+        builder.Services.AddWritableOptions<T>(configureOptions);
         return builder;
     }
 
@@ -53,14 +53,12 @@ public static class WritableConfigurationExtensions
     /// </summary>
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
-    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
     public static IServiceCollection AddWritableOptions<T>(
-        this IServiceCollection services,
-        IConfigurationManager configuration
+        this IServiceCollection services
     )
         where T : class
     {
-        return services.AddWritableOptions<T>(configuration, _ => { });
+        return services.AddWritableOptions<T>(_ => { });
     }
 
     /// <summary>
@@ -69,12 +67,10 @@ public static class WritableConfigurationExtensions
     /// </summary>
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
-    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
     /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptionsBuilder{T}"/> used to specify the configuration file
     /// path, section name, and other options.</param>
     public static IServiceCollection AddWritableOptions<T>(
         this IServiceCollection services,
-        IConfigurationManager configuration,
         Action<WritableConfigurationOptionsBuilder<T>> configureOptions
     )
         where T : class
@@ -82,7 +78,7 @@ public static class WritableConfigurationExtensions
         // build options
         var confBuilder = new WritableConfigurationOptionsBuilder<T>();
         configureOptions(confBuilder);
-        return services.AddWritableOptions<T>(configuration, confBuilder);
+        return services.AddWritableOptions<T>(confBuilder);
     }
 
     /// <summary>
@@ -91,46 +87,20 @@ public static class WritableConfigurationExtensions
     /// </summary>
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
-    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
     /// <param name="confBuilder">A pre-configured <see cref="WritableConfigurationOptionsBuilder{T}"/> instance used to specify the configuration file. </param>
     public static IServiceCollection AddWritableOptions<T>(
         this IServiceCollection services,
-        IConfigurationManager configuration,
         WritableConfigurationOptionsBuilder<T> confBuilder
     )
         where T : class
     {
         var fileWriter = confBuilder.FileWriter;
-        var fileReadStream = confBuilder.FileReadStream;
         var options = confBuilder.BuildOptions();
 
-        var filePath = options.ConfigFilePath;
-        // set FileWriter and Stream
+        // set FileWriter
         if (fileWriter != null)
         {
             options.Provider.FileWriter = fileWriter;
-        }
-        // add configuration
-        if (fileReadStream != null)
-        {
-            options.Provider.AddConfigurationFile(configuration, fileReadStream);
-        }
-        else
-        {
-            options.Provider.AddConfigurationFile(configuration, filePath);
-        }
-
-        // add IOptions<T>
-        if (string.IsNullOrWhiteSpace(options.SectionName))
-        {
-            services.Configure<T>(options.InstanceName, configuration);
-        }
-        else
-        {
-            services.Configure<T>(
-                options.InstanceName,
-                configuration.GetSection(options.SectionName)
-            );
         }
 
         // add T instance
@@ -179,6 +149,26 @@ public static class WritableConfigurationExtensions
         {
             services.AddSingleton(options);
         }
+
+        // add WritableOptionsMonitor<T> (custom implementation)
+        services.AddSingleton<WritableOptionsMonitor<T>>();
+
+        // Register IOptions<T>, IOptionsSnapshot<T>, IOptionsMonitor<T>
+        // Note: IOptions.Value should return the current value from monitor
+        services.AddSingleton<IOptions<T>>(p =>
+        {
+            var monitor = p.GetRequiredService<WritableOptionsMonitor<T>>();
+            return new DynamicOptionsWrapper<T>(monitor);
+        });
+        services.AddScoped<IOptionsSnapshot<T>>(p =>
+        {
+            var monitor = p.GetRequiredService<WritableOptionsMonitor<T>>();
+            return new OptionsSnapshot<T>(monitor);
+        });
+        services.AddSingleton<IOptionsMonitor<T>>(p =>
+            p.GetRequiredService<WritableOptionsMonitor<T>>()
+        );
+
         // add IReadOnlyOptions<T> and IWritableOptions<T>
         services.AddSingleton<WritableConfiguration<T>>();
         services.AddSingleton<IReadOnlyOptions<T>>(p =>
@@ -187,37 +177,7 @@ public static class WritableConfigurationExtensions
         services.AddSingleton<IWritableOptions<T>>(p =>
             p.GetRequiredService<WritableConfiguration<T>>()
         );
+
         return services;
     }
-
-    /// <summary>
-    /// Adds a user-specific configuration file to the application's configuration system and registers the specified
-    /// options type for dependency injection.
-    /// </summary>
-    /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
-    /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
-    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
-    /// <param name="configureOptions">A delegate to configure the <see cref="WritableConfigurationOptionsBuilder{T}"/> used to specify the configuration file
-    /// path, section name, and other options.</param>
-    public static IServiceCollection AddWritableOptions<T>(
-        this IConfigurationManager configuration,
-        IServiceCollection services,
-        Action<WritableConfigurationOptionsBuilder<T>> configureOptions
-    )
-        where T : class => services.AddWritableOptions<T>(configuration, configureOptions);
-
-    /// <summary>
-    /// Adds a user-specific configuration file to the application's configuration system and registers the specified
-    /// options type for dependency injection.
-    /// </summary>
-    /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
-    /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
-    /// <param name="configuration">The existing <see cref="IConfiguration"/> instance to extend with the user-specific configuration file.</param>
-    /// <param name="confBuilder">A pre-configured <see cref="WritableConfigurationOptionsBuilder{T}"/> instance used to specify the configuration file. </param>
-    public static IServiceCollection AddWritableOptions<T>(
-        this IConfigurationManager configuration,
-        IServiceCollection services,
-        WritableConfigurationOptionsBuilder<T> confBuilder
-    )
-        where T : class => services.AddWritableOptions<T>(configuration, confBuilder);
 }

@@ -4,7 +4,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
@@ -29,12 +28,61 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
     public override string FileExtension => "json";
 
     /// <inheritdoc />
-    public override void AddConfigurationFile(IConfigurationBuilder configuration, string path) =>
-        configuration.AddJsonFile(path, optional: true, reloadOnChange: true);
+    public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+        where T : class
+    {
+        var filePath = options.ConfigFilePath;
+        if (!FileWriter.FileExists(filePath))
+        {
+            return Activator.CreateInstance<T>();
+        }
+
+        var stream = FileWriter.GetFileStream(filePath);
+        if (stream == null)
+        {
+            return Activator.CreateInstance<T>();
+        }
+
+        using (stream)
+        {
+            return LoadConfiguration(stream, options);
+        }
+    }
 
     /// <inheritdoc />
-    public override void AddConfigurationFile(IConfigurationBuilder configuration, Stream stream) =>
-        configuration.AddJsonStream(stream);
+    public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+        where T : class
+    {
+        var jsonDocument = JsonDocument.Parse(stream);
+        var root = jsonDocument.RootElement;
+
+        // Navigate to the section if specified
+        var sectionName = options.SectionName;
+        if (!string.IsNullOrWhiteSpace(sectionName))
+        {
+            var sections = GetSplitedSections(sectionName);
+            var current = root;
+
+            foreach (var section in sections)
+            {
+                if (current.TryGetProperty(section, out var element))
+                {
+                    current = element;
+                }
+                else
+                {
+                    // Section not found, return default instance
+                    return Activator.CreateInstance<T>();
+                }
+            }
+
+            return JsonSerializer.Deserialize<T>(current.GetRawText(), JsonSerializerOptions)
+                ?? Activator.CreateInstance<T>();
+        }
+
+        return JsonSerializer.Deserialize<T>(root.GetRawText(), JsonSerializerOptions)
+            ?? Activator.CreateInstance<T>();
+    }
 
     /// <inheritdoc />
     public override ReadOnlyMemory<byte> GetSaveContents<T>(

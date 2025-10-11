@@ -3,12 +3,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
-using Microsoft.Extensions.Configuration;
 
 namespace Configuration.Writable;
 
 /// <summary>
-/// Defines a provider for managing writable configurations, including serialization of configuration objects.
+/// Defines a provider for managing writable configurations, including serialization and deserialization of configuration objects.
 /// </summary>
 public interface IWritableConfigProvider
 {
@@ -23,18 +22,23 @@ public interface IWritableConfigProvider
     string FileExtension { get; }
 
     /// <summary>
-    /// Adds a configuration manager to the current configuration pipeline. e.g. AddJsonFile, AddIniFile, AddXmlFile, etc.
+    /// Loads configuration from a file and deserializes it to the specified type.
     /// </summary>
-    /// <param name="configuration">The <see cref="IConfigurationBuilder"/> instance to be added to the pipeline.</param>
-    /// <param name="path">The configuration path where the manager will be applied.</param>
-    void AddConfigurationFile(IConfigurationBuilder configuration, string path);
+    /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
+    /// <param name="options">The options that control how the configuration is loaded.</param>
+    /// <returns>The deserialized configuration object.</returns>
+    T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+        where T : class;
 
     /// <summary>
-    /// Adds a configuration manager to the current configuration pipeline using the provided stream.
+    /// Loads configuration from a stream and deserializes it to the specified type.
     /// </summary>
-    /// <param name="configuration">The <see cref="IConfigurationBuilder"/> instance to be added to the pipeline.</param>
+    /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
     /// <param name="stream">The stream containing the configuration data.</param>
-    void AddConfigurationFile(IConfigurationBuilder configuration, Stream stream);
+    /// <param name="options">The options that control how the configuration is loaded.</param>
+    /// <returns>The deserialized configuration object.</returns>
+    T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+        where T : class;
 
     /// <summary>
     /// Retrieves the serialized byte representation of the specified configuration.

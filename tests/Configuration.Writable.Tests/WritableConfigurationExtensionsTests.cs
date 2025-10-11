@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -22,9 +21,8 @@ public class WritableConfigurationExtensionsTests
     [Fact]
     public void AddWritableOptions_WithServiceCollection_ShouldRegisterServices()
     {
-        var config = new ConfigurationManager();
         var services = new ServiceCollection();
-        services.AddWritableOptions<TestSettings>(config);
+        services.AddWritableOptions<TestSettings>();
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
         var readonlyOptions = serviceProvider.GetService<IReadOnlyOptions<TestSettings>>();
@@ -37,16 +35,12 @@ public class WritableConfigurationExtensionsTests
     {
         var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        var config = new ConfigurationManager();
         var services = new ServiceCollection();
-        services.AddWritableOptions<TestSettings>(
-            config,
-            options =>
-            {
-                options.FilePath = testFilePath;
-                options.UseInMemoryFileWriter(_fileWriter);
-            }
-        );
+        services.AddWritableOptions<TestSettings>(options =>
+        {
+            options.FilePath = testFilePath;
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
         var readonlyOptions = serviceProvider.GetService<IReadOnlyOptions<TestSettings>>();

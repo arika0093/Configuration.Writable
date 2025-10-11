@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileWriter;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
@@ -21,10 +20,12 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
     public virtual IFileWriter FileWriter { get; set; } = new CommonFileWriter();
 
     /// <inheritdoc />
-    public abstract void AddConfigurationFile(IConfigurationBuilder configuration, string path);
+    public abstract T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+        where T : class;
 
     /// <inheritdoc />
-    public abstract void AddConfigurationFile(IConfigurationBuilder configuration, Stream stream);
+    public abstract T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+        where T : class;
 
     /// <inheritdoc />
     public abstract ReadOnlyMemory<byte> GetSaveContents<T>(

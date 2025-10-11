@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Configuration;
 
 namespace Configuration.Writable;
 
@@ -67,29 +66,59 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
     public override string FileExtension => "";
 
     /// <inheritdoc />
-    public override void AddConfigurationFile(IConfigurationBuilder configuration, string path)
+    public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+        where T : class
     {
-        configuration.Add<EncryptConfigurationSource>(source =>
+        var filePath = options.ConfigFilePath;
+        if (!FileWriter.FileExists(filePath))
         {
-            source.Key = Key;
-            source.FileProvider = null;
-            source.Path = path;
-            source.Optional = true;
-            source.ReloadOnChange = true;
-            source.ResolveFileProvider();
-        });
+            return Activator.CreateInstance<T>();
+        }
+
+        var stream = FileWriter.GetFileStream(filePath);
+        if (stream == null)
+        {
+            return Activator.CreateInstance<T>();
+        }
+
+        using (stream)
+        {
+            return LoadConfiguration(stream, options);
+        }
     }
 
     /// <inheritdoc />
-    public override void AddConfigurationFile(IConfigurationBuilder configuration, Stream stream)
+    public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+        where T : class
     {
-        configuration.Add<EncryptConfigurationSource>(source =>
+        try
         {
-            source.Key = Key;
-            source.FileProvider = null;
-            source.ReloadOnChange = false;
-            source.EncryptedStream = stream;
-        });
+            // Read encrypted data
+            using var br = new BinaryReader(stream);
+
+            // Read IV (first 16 bytes for AES)
+            var iv = br.ReadBytes(16);
+
+            // Read the rest as encrypted data
+            var encryptedData = br.ReadBytes((int)(stream.Length - 16));
+
+            // Decrypt
+            using var aes = Aes.Create();
+            aes.Key = Key;
+            aes.IV = iv;
+
+            using var decryptor = aes.CreateDecryptor();
+            using var ms = new MemoryStream(encryptedData);
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+
+            // Use JsonProvider to deserialize the decrypted content
+            return JsonProvider.LoadConfiguration<T>(cs, options);
+        }
+        catch
+        {
+            // If decryption fails, return default instance
+            return Activator.CreateInstance<T>();
+        }
     }
 
     /// <inheritdoc />

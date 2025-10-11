@@ -5,9 +5,11 @@ namespace Configuration.Writable
     {
         public WritableConfigXmlProvider() { }
         public override string FileExtension { get; }
-        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, System.IO.Stream stream) { }
-        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, string path) { }
         public override System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class { }
     }
 }

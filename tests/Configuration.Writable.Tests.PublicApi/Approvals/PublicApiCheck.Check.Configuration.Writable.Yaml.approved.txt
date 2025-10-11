@@ -4,12 +4,15 @@ namespace Configuration.Writable
     public class WritableConfigYamlProvider : Configuration.Writable.WritableConfigProviderBase
     {
         public WritableConfigYamlProvider() { }
+        public YamlDotNet.Serialization.IDeserializer Deserializer { get; init; }
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public YamlDotNet.Serialization.ISerializer Serializer { get; init; }
-        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, System.IO.Stream stream) { }
-        public override void AddConfigurationFile(Microsoft.Extensions.Configuration.IConfigurationBuilder configuration, string path) { }
         public override System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class { }
     }
 }
