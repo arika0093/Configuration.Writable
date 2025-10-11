@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Options;
 
 namespace Example.ConsoleApp;
 
@@ -10,3 +11,6 @@ public record SampleSetting
 
     public DateTime LastUpdatedAt { get; set; } = DateTime.Now;
 }
+
+[OptionsValidator]
+public partial class SampleSettingValidator : IValidateOptions<SampleSetting>;

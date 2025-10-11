@@ -37,14 +37,11 @@ WritableConfig.Initialize<SampleSetting>(opt =>
     // * UseDataAnnotationsValidation: use data annotation attributes in your config class. Defaults to true.
     // * WithValidatorFunction: a simple way to set validation function
     // * WithValidator: set a custom validation class implementing IValidateOptions<T>
-    //opt.WithValidatorFunction(setting =>
-    //{
-    //    if (string.IsNullOrWhiteSpace(setting.Name))
-    //    {
-    //        return Microsoft.Extensions.Options.ValidateOptionsResult.Fail("Name cannot be empty.");
-    //    }
-    //    return Microsoft.Extensions.Options.ValidateOptionsResult.Success;
-    //});
+    //
+    // If use DataAnnotation validation with Source Generators,
+    // see SampleSettingValidator class in this project and comment out below code.
+    opt.UseDataAnnotationsValidation = false;
+    opt.WithValidator<SampleSettingValidator>();
 });
 
 // -------------------------------
