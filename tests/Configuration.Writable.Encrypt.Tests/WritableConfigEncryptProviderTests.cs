@@ -88,7 +88,7 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "topsecret",
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -124,7 +124,7 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "supersecret",
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(originalSettings);
 
         // Debug: Verify file was created and has content
@@ -139,7 +139,7 @@ public class WritableConfigEncryptProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        option = _instance.GetOption();
+        option = _instance.GetOptions();
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("encrypt_persistence_test");
         loadedSettings.Value.ShouldBe(777);
@@ -169,7 +169,7 @@ public class WritableConfigEncryptProviderTests
             SecretKey = "keytest",
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(originalSettings);
 
         // When loading with a different key, it should fail to decrypt and throw an exception
@@ -199,7 +199,7 @@ public class WritableConfigEncryptProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(settings =>
         {
             settings.Name = "async_encrypt_test";

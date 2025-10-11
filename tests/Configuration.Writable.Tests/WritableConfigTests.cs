@@ -19,7 +19,7 @@ public class WritableConfigTests
         var _instance = new WritableConfigSimpleInstance<TestSettings>();
         _instance.Initialize();
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         var settings = option.CurrentValue;
         settings.ShouldNotBeNull();
         settings.Name.ShouldBe("default");
@@ -32,7 +32,7 @@ public class WritableConfigTests
     {
         var _instance = new WritableConfigSimpleInstance<TestSettings>();
         _instance.Initialize();
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         option.ShouldNotBeNull();
         option.ShouldBeAssignableTo<IWritableOptions<TestSettings>>();
     }
@@ -43,7 +43,7 @@ public class WritableConfigTests
         var uninitializedInstance = new WritableConfigSimpleInstance<TestSettings>();
         Should.Throw<InvalidOperationException>(() =>
         {
-            var instance = uninitializedInstance.GetOption();
+            var instance = uninitializedInstance.GetOptions();
         });
     }
 
@@ -66,7 +66,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -96,7 +96,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -119,7 +119,7 @@ public class WritableConfigTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(settings =>
         {
             settings.Name = "action_updated";
@@ -139,7 +139,7 @@ public class WritableConfigTests
         var _instance = new WritableConfigSimpleInstance<TestSettings>();
         _instance.Initialize();
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         var path = option.GetConfigurationOptions().ConfigFilePath;
         path.ShouldNotBeNullOrEmpty();
         path.ShouldEndWith(".json");
@@ -165,7 +165,7 @@ public class WritableConfigTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -203,7 +203,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -241,7 +241,7 @@ public class WritableConfigTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -280,7 +280,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -317,7 +317,7 @@ public class WritableConfigTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
 
         // Simulate a synchronization context that could cause deadlock
         var previousContext = SynchronizationContext.Current;

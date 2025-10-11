@@ -108,7 +108,7 @@ public class EncryptOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         // For encrypted files, we verify structure rather than exact content due to IV randomness
@@ -152,7 +152,7 @@ public class EncryptOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
@@ -195,7 +195,7 @@ public class EncryptOutputFormatStabilityTests
             });
 
             var testConfig = new TestConfiguration();
-            var option = instance.GetOption();
+            var option = instance.GetOptions();
             await option.SaveAsync(testConfig);
 
             var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
@@ -247,7 +247,7 @@ public class EncryptOutputFormatStabilityTests
             options.UseInMemoryFileWriter(fileWriter);
         });
 
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(largeConfig);
 
         var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
@@ -304,7 +304,7 @@ public class EncryptOutputFormatStabilityTests
             options.UseInMemoryFileWriter(fileWriter);
         });
 
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(specialConfig);
 
         var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
@@ -349,7 +349,7 @@ public class EncryptOutputFormatStabilityTests
         });
 
         // Load the configuration through the provider
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         var loadedConfig = option.CurrentValue;
 
         // Verify the loaded configuration has expected values

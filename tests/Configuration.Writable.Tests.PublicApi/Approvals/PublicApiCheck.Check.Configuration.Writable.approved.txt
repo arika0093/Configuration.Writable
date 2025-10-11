@@ -69,7 +69,7 @@ namespace Configuration.Writable
     }
     public static class WritableConfig
     {
-        public static Configuration.Writable.IWritableOptions<T> GetOption<T>()
+        public static Configuration.Writable.IWritableOptions<T> GetOptions<T>()
             where T :  class { }
         public static void Initialize<T>()
             where T :  class { }
@@ -107,7 +107,7 @@ namespace Configuration.Writable
         public WritableConfigSimpleInstance() { }
         public void Add(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
         public void Add(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
-        public Configuration.Writable.IWritableOptions<T> GetOption() { }
+        public Configuration.Writable.IWritableOptions<T> GetOptions() { }
         public void Initialize() { }
         public void Initialize(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
         public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }

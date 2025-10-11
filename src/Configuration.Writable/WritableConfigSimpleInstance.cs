@@ -58,7 +58,7 @@ public class WritableConfigSimpleInstance<T>
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
-    public IWritableOptions<T> GetOption() =>
+    public IWritableOptions<T> GetOptions() =>
         ServiceProvider.GetRequiredService<IWritableOptions<T>>();
 
     /// <summary>

@@ -44,21 +44,21 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
 
     /// <inheritdoc />
     public WritableConfigurationOptions<T> GetConfigurationOptions() =>
-        GetOption(Options.DefaultName);
+        GetOptions(Options.DefaultName);
 
     /// <inheritdoc />
-    public WritableConfigurationOptions<T> GetConfigurationOptions(string name) => GetOption(name);
+    public WritableConfigurationOptions<T> GetConfigurationOptions(string name) => GetOptions(name);
 
     /// <inheritdoc />
     public Task SaveAsync(
         string name,
         T newConfig,
         CancellationToken cancellationToken = default
-    ) => SaveCoreAsync(newConfig, GetOption(name), cancellationToken);
+    ) => SaveCoreAsync(newConfig, GetOptions(name), cancellationToken);
 
     /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveCoreAsync(newConfig, GetOption(Options.DefaultName), cancellationToken);
+        SaveCoreAsync(newConfig, GetOptions(Options.DefaultName), cancellationToken);
 
     /// <inheritdoc />
     public Task SaveAsync(
@@ -69,7 +69,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     {
         var current = DeepCopy(CurrentValue);
         configUpdater(current);
-        return SaveCoreAsync(current, GetOption(name), cancellationToken);
+        return SaveCoreAsync(current, GetOptions(name), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -130,7 +130,7 @@ internal sealed class WritableConfiguration<T> : IWritableOptions<T>, IDisposabl
     /// <returns>The <see cref="WritableConfigurationOptions{T}"/> instance that matches the specified name.</returns>
     /// <exception cref="InvalidOperationException">Thrown if multiple configuration options with the specified name are found, or if no configuration option with
     /// the specified name exists.</exception>
-    private WritableConfigurationOptions<T> GetOption(string name)
+    private WritableConfigurationOptions<T> GetOptions(string name)
     {
         var matchedOptions = _options.Where(o => o.InstanceName == name).ToList();
         if (matchedOptions.Count >= 2)

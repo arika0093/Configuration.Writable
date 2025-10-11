@@ -34,7 +34,7 @@ public class ValidationTests
             Email = "test@example.com",
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
 
         var exception = await Should.ThrowAsync<ValidationException>(async () =>
         {
@@ -69,7 +69,7 @@ public class ValidationTests
             Email = "test@example.com",
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(validSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -103,7 +103,7 @@ public class ValidationTests
 
         var invalidSettings = new ValidatableSettings { MaxConnections = 0, Email = "" };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
 
         var exception = await Should.ThrowAsync<ValidationException>(async () =>
         {
@@ -130,7 +130,7 @@ public class ValidationTests
 
         var invalidSettings = new ValidatableSettings { MaxConnections = -5, Email = "invalid" };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
 
         var exception = await Should.ThrowAsync<ValidationException>(async () =>
         {
@@ -159,7 +159,7 @@ public class ValidationTests
             Email = "not-an-email",
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
 
         var exception = await Should.ThrowAsync<ValidationException>(async () =>
         {
@@ -189,7 +189,7 @@ public class ValidationTests
             Name = "Valid Name",
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(validSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -223,7 +223,7 @@ public class ValidationTests
             Name = "forbidden", // Custom validation error
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
 
         var exception = await Should.ThrowAsync<ValidationException>(async () =>
         {
@@ -252,7 +252,7 @@ public class ValidationTests
             });
         });
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
 
         var exception = await Should.ThrowAsync<ValidationException>(async () =>
         {

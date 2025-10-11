@@ -73,7 +73,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -107,7 +107,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -141,7 +141,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -210,7 +210,7 @@ public class OutputFormatStabilityTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(specialConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -251,7 +251,7 @@ public class OutputFormatStabilityTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(emptyConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -285,7 +285,7 @@ public class OutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var actualBytes = _fileWriter.ReadAllBytes(testFileName);

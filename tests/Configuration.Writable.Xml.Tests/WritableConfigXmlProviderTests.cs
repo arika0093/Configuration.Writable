@@ -47,7 +47,7 @@ public class WritableConfigXmlProviderTests
             Items = ["xml1", "xml2", "xml3"],
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(settings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -79,7 +79,7 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(originalSettings);
 
         _instance.Initialize(options =>
@@ -118,7 +118,7 @@ public class WritableConfigXmlProviderTests
             Items = ["persist1", "persist2"],
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(originalSettings);
 
         _instance.Initialize(options =>
@@ -150,7 +150,7 @@ public class WritableConfigXmlProviderTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(settings =>
         {
             settings.Name = "async_xml_test";
@@ -185,7 +185,7 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -226,7 +226,7 @@ public class WritableConfigXmlProviderTests
             IsEnabled = false,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();
@@ -267,7 +267,7 @@ public class WritableConfigXmlProviderTests
             IsEnabled = true,
         };
 
-        var option = _instance.GetOption();
+        var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
         _fileWriter.FileExists(testFileName).ShouldBeTrue();

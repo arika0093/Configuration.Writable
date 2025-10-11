@@ -69,7 +69,7 @@ public class YamlOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -100,7 +100,7 @@ public class YamlOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -135,7 +135,7 @@ public class YamlOutputFormatStabilityTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(specialConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -171,7 +171,7 @@ public class YamlOutputFormatStabilityTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(emptyConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -207,7 +207,7 @@ public class YamlOutputFormatStabilityTests
             options.UseInMemoryFileWriter(_fileWriter);
         });
 
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(numericConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);
@@ -238,7 +238,7 @@ public class YamlOutputFormatStabilityTests
         });
 
         var testConfig = new TestConfiguration();
-        var option = instance.GetOption();
+        var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
         var actualOutput = _fileWriter.ReadAllText(testFileName);

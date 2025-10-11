@@ -38,7 +38,7 @@ dotnet pack --no-build
 
 ### Key Components
 
-**WritableConfig**: Static entry point for non-DI scenarios. Provides `Initialize<T>()` and `GetOption<T>()` methods.
+**WritableConfig**: Static entry point for non-DI scenarios. Provides `Initialize<T>()` and `GetOptions<T>()` methods.
 
 **IWritableOptions<T>**: Main interface extending IOptionsMonitor<T> with save capabilities. Used in DI scenarios.
 

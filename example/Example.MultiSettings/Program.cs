@@ -12,8 +12,8 @@ WritableConfig.Initialize<UserSecretSetting>(opt =>
 });
 
 // and get each setting
-var userOptions = WritableConfig.GetOption<UserSetting>();
-var secretOptions = WritableConfig.GetOption<UserSecretSetting>();
+var userOptions = WritableConfig.GetOptions<UserSetting>();
+var secretOptions = WritableConfig.GetOptions<UserSecretSetting>();
 
 // get value
 var user = userOptions.CurrentValue;

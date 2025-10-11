@@ -42,7 +42,7 @@ WritableConfig.Initialize<SampleSetting>();
 
 // -------------
 // get the writable config instance with the specified setting class
-var option = WritableConfig.GetOption<SampleSetting>();
+var options = WritableConfig.GetOptions<SampleSetting>();
 
 // get the UserSetting instance
 var sampleSetting = option.CurrentValue;
@@ -362,7 +362,7 @@ builder.AddWritableOptions<UserSetting>(opt => {
     // opt.UseDataAnnotationsValidation = false;
 });
 
-var option = WritableConfig.GetOption<UserSetting>();
+var options = WritableConfig.GetOptions<UserSetting>();
 try {
     await option.SaveAsync(setting => {
         setting.Name = "ab"; // too short
@@ -443,8 +443,8 @@ builder
     });
 
 // and get/save each setting
-var userOptions = WritableConfig.GetOption<UserSetting>();
-var secretOptions = WritableConfig.GetOption<UserSecretSetting>();
+var userOptions = WritableConfig.GetOptions<UserSetting>();
+var secretOptions = WritableConfig.GetOptions<UserSecretSetting>();
 // ...
 
 // ---
@@ -481,7 +481,7 @@ var instance = new WritableConfigSimpleInstance<UserSetting>();
 instance.Initialize(opt => {
     opt.FilePath = sampleFilePath;
 });
-var option = instance.GetOption();
+var option = instance.GetOptions();
 
 // and use options in your test
 var yourService = new YourService(options);
