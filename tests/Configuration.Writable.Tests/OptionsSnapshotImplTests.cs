@@ -132,7 +132,7 @@ public class OptionsSnapshotImplTests
     }
 
     [Fact]
-    public void Snapshot_WithMultipleInstances_ShouldSnapshotAllInstances()
+    public async Task Snapshot_WithMultipleInstances_ShouldSnapshotAllInstances()
     {
         // Arrange
         var fileWriter = new InMemoryFileWriter();
@@ -146,8 +146,8 @@ public class OptionsSnapshotImplTests
 
         var data1 = configOptions1.Provider.GetSaveContents(settings1, configOptions1);
         var data2 = configOptions2.Provider.GetSaveContents(settings2, configOptions2);
-        fileWriter.SaveToFileAsync(configOptions1.ConfigFilePath, data1).Wait();
-        fileWriter.SaveToFileAsync(configOptions2.ConfigFilePath, data2).Wait();
+        await fileWriter.SaveToFileAsync(configOptions1.ConfigFilePath, data1);
+        await fileWriter.SaveToFileAsync(configOptions2.ConfigFilePath, data2);
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(
             new[] { configOptions1, configOptions2 }

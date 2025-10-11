@@ -81,14 +81,6 @@ namespace Configuration.Writable
         protected static object CreateNestedSection(string sectionName, object value) { }
         protected static string[] GetSplitedSections(string sectionName) { }
     }
-    public class WritableOptionsSimpleInstance<T>
-        where T :  class
-    {
-        public WritableOptionsSimpleInstance() { }
-        public Configuration.Writable.IWritableOptions<T> GetOptions() { }
-        public void Initialize() { }
-        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
-    }
     public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
         where T :  class
     {
@@ -129,6 +121,14 @@ namespace Configuration.Writable
     {
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
             where T :  class { }
+    }
+    public class WritableOptionsSimpleInstance<T>
+        where T :  class
+    {
+        public WritableOptionsSimpleInstance() { }
+        public Configuration.Writable.IWritableOptions<T> GetOptions() { }
+        public void Initialize() { }
+        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
     }
 }
 namespace Configuration.Writable.Testing

@@ -363,7 +363,7 @@ public class OptionsMonitorImplTests
     }
 
     [Fact]
-    public void MultipleInstances_ShouldWorkIndependently()
+    public async Task MultipleInstances_ShouldWorkIndependently()
     {
         // Arrange
         var fileWriter = new InMemoryFileWriter();
@@ -377,8 +377,8 @@ public class OptionsMonitorImplTests
 
         var data1 = configOptions1.Provider.GetSaveContents(settings1, configOptions1);
         var data2 = configOptions2.Provider.GetSaveContents(settings2, configOptions2);
-        fileWriter.SaveToFileAsync(configOptions1.ConfigFilePath, data1).Wait();
-        fileWriter.SaveToFileAsync(configOptions2.ConfigFilePath, data2).Wait();
+        await fileWriter.SaveToFileAsync(configOptions1.ConfigFilePath, data1);
+        await fileWriter.SaveToFileAsync(configOptions2.ConfigFilePath, data2);
 
         var monitor = new OptionsMonitorImpl<TestSettings>(
             new[] { configOptions1, configOptions2 }
