@@ -109,15 +109,15 @@ internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
             }
         }
 
-        // Update the monitor's cache first
-        _optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
-
         options.Logger?.LogDebug("Saving configuration to {FilePath}", options.ConfigFilePath);
 
         // Save to file
         await options
             .Provider.SaveAsync(newConfig, options, cancellationToken)
             .ConfigureAwait(false);
+
+        // Update the monitor's cache first
+        _optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
         options.Logger?.LogInformation("Configuration saved successfully to {FileName}", fileName);

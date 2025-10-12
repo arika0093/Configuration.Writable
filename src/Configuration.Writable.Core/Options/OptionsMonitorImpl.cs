@@ -210,9 +210,6 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             args.ChangeType
         );
 
-        // Clear cache to force reload on next Get
-        _cache.Remove(instanceName);
-
         // Reload and notify listeners with retry logic for file access conflicts
         try
         {
@@ -221,8 +218,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
         catch (IOException)
         {
-            // If we still can't load after retries, silently ignore
-            // The cache has already been cleared, so next Get() will try again
+            // Clear cache because next Get() will try to reload
+            _cache.Remove(instanceName);
         }
     }
 
