@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
@@ -54,23 +55,15 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener)
     {
-        _semaphore.Wait();
-        try
+        foreach (var instanceName in GetInstanceNames())
         {
-            foreach (var instanceName in _optionsMap.Keys)
+            if (!_listeners.TryGetValue(instanceName, out var value))
             {
-                if (!_listeners.ContainsKey(instanceName))
-                {
-                    _listeners[instanceName] = [];
-                }
-                _listeners[instanceName].Add(listener);
+                value = [];
+                _listeners[instanceName] = value;
             }
+            value.Add(listener);
         }
-        finally
-        {
-            _semaphore.Release();
-        }
-
         return new ChangeTrackerDisposable(this, listener);
     }
 
@@ -183,10 +176,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 EnableRaisingEvents = true,
             };
 
-            watcher.Changed += (sender, args) => OnFileChanged(options.InstanceName);
-            watcher.Created += (sender, args) => OnFileChanged(options.InstanceName);
-            watcher.Deleted += (sender, args) => OnFileChanged(options.InstanceName);
-            watcher.Renamed += (sender, args) => OnFileChanged(options.InstanceName);
+            watcher.Changed += (sender, args) => OnFileChanged(options.InstanceName, args);
+            watcher.Created += (sender, args) => OnFileChanged(options.InstanceName, args);
+            watcher.Deleted += (sender, args) => OnFileChanged(options.InstanceName, args);
+            watcher.Renamed += (sender, args) => OnFileChanged(options.InstanceName, args);
 
             _watchers[options.InstanceName] = watcher;
         }
@@ -198,8 +191,25 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Called when the configuration file changes
-    private void OnFileChanged(string instanceName)
+    private void OnFileChanged(string instanceName, FileSystemEventArgs args)
     {
+        // show log
+        var options = _optionsMap[instanceName];
+
+        if (options.ConfigFilePath != args.FullPath)
+        {
+            // Ignore changes to other files in the same directory
+            // e.g. temporary file (foobar.json~ABCDEF.TMP)
+            return;
+        }
+
+        var fileName = Path.GetFileName(options.ConfigFilePath);
+        options.Logger?.LogInformation(
+            "Configuration file change detected: {FileName} ({ChangeType})",
+            fileName,
+            args.ChangeType
+        );
+
         // Clear cache to force reload on next Get
         _cache.Remove(instanceName);
 

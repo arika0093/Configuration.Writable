@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
@@ -110,10 +112,15 @@ internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
         // Update the monitor's cache first
         _optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
 
+        options.Logger?.LogDebug("Saving configuration to {FilePath}", options.ConfigFilePath);
+
         // Save to file
         await options
             .Provider.SaveAsync(newConfig, options, cancellationToken)
             .ConfigureAwait(false);
+
+        var fileName = Path.GetFileName(options.ConfigFilePath);
+        options.Logger?.LogInformation("Configuration saved successfully to {FileName}", fileName);
     }
 
     /// <summary>
