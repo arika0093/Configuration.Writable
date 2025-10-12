@@ -54,7 +54,7 @@ public class InstanceNameIntegrationTests
         secondSetting.Age.ShouldBe(20);
 
         // Save different values to each instance
-        await config.SaveAsync(
+        await config.SaveWithNameAsync(
             "First",
             setting =>
             {
@@ -63,7 +63,7 @@ public class InstanceNameIntegrationTests
             }
         );
 
-        await config.SaveAsync(
+        await config.SaveWithNameAsync(
             "Second",
             setting =>
             {
@@ -121,7 +121,7 @@ public class InstanceNameIntegrationTests
         var host = builder.Build();
         var config = host.Services.GetRequiredService<IWritableOptions<UserSetting>>();
 
-        await config.SaveAsync(
+        await config.SaveWithNameAsync(
             "First",
             setting =>
             {
@@ -129,7 +129,7 @@ public class InstanceNameIntegrationTests
             }
         );
 
-        await config.SaveAsync(
+        await config.SaveWithNameAsync(
             "Second",
             setting =>
             {

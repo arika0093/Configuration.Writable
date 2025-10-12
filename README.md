@@ -1,12 +1,12 @@
 # Configuration.Writable
 [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/arika0093/Configuration.Writable?style=flat-square)
 
-A lightweight library that extends `Microsoft.Extensions.Configuration`(`MS.E.C`) to easily write settings with type safety.
+A lightweight library that extends `Microsoft.Extensions.Options`(`MS.E.O`) to easily write settings with type safety.
 
 ## Features
 * Read and write user settings with type safety.
 * [Built-in](#filewriter): Atomic file writing, automatic retry, and backup creation.
-* Extends `Microsoft.Extensions.Configuration` and integrates seamlessly with `IHostApplicationBuilder`.
+* Extends `Microsoft.Extensions.Options` interfaces, so it works seamlessly with existing code using `IOptions<T>`, `IOptionsMonitor<T>`, etc.
 * Simple API that can be easily used in applications both [with](#with-di) and [without](#without-di) DI.
 * Supports various file formats (Json, Xml, Yaml, Encrypted, etc...) via [providers](#provider).
 
@@ -57,16 +57,12 @@ await option.SaveAsync(setting =>
 ```
 
 ### With DI
-If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), integrate with `IHostApplicationBuilder` or `IServiceCollection`.
-First, call `builder.Services.AddWritableOptions` to register the settings.
+If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), register `IReadOnlyOptions<T>` and `IWritableOptions<T>` in the DI container.
+First, call `AddWritableOptions<T>` to register the settings class.
 
 ```csharp
 // Program.cs
 builder.Services.AddWritableOptions<UserSetting>();
-
-// If you're not using IHostApplicationBuilder, do the following:
-var configuration = new ConfigurationManager();
-services.AddWritableOptions<UserSetting>(configuration);
 ```
 
 Then, inject `IReadOnlyOptions<T>` or `IWritableOptions<T>` to read and write settings.
@@ -338,10 +334,10 @@ public class MyService(IWritableOptions<UserSetting> option)
         var firstSetting = option.Get("First");
         var secondSetting = option.Get("Second");
         // and you must specify instance name when saving
-        await option.SaveAsync("First", setting => {
+        await option.SaveWithNameAsync("First", setting => {
             setting.Name = "first name";
         });
-        await option.SaveAsync("Second", setting => {
+        await option.SaveWithNameAsync("Second", setting => {
             setting.Name = "second name";
         });
     }
@@ -477,11 +473,11 @@ yourService.DoSomething();
 Assert.Equal("expected name", settingValue.Name);
 ```
 
-If you want to perform tests that actually involve writing to the file system, use `WritableConfigSimpleInstance`.
+If you want to perform tests that actually involve writing to the file system, use `WritableOptionsSimpleInstance`.
 
 ```csharp
 var sampleFilePath = Path.GetTempFileName();
-var instance = new WritableConfigSimpleInstance<UserSetting>();
+var instance = new WritableOptionsSimpleInstance<UserSetting>();
 instance.Initialize(opt => {
     opt.FilePath = sampleFilePath;
 });

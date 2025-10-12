@@ -41,18 +41,22 @@ internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
     public WritableConfigurationOptions<T> GetConfigurationOptions(string name) => GetOptions(name);
 
     /// <inheritdoc />
-    public Task SaveAsync(
+    public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
+        SaveCoreAsync(newConfig, GetOptions(MEOptions.DefaultName), cancellationToken);
+
+    /// <inheritdoc />
+    public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
+        SaveWithNameAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
+
+    /// <inheritdoc />
+    public Task SaveWithNameAsync(
         string name,
         T newConfig,
         CancellationToken cancellationToken = default
     ) => SaveCoreAsync(newConfig, GetOptions(name), cancellationToken);
 
     /// <inheritdoc />
-    public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveCoreAsync(newConfig, GetOptions(MEOptions.DefaultName), cancellationToken);
-
-    /// <inheritdoc />
-    public Task SaveAsync(
+    public Task SaveWithNameAsync(
         string name,
         Action<T> configUpdater,
         CancellationToken cancellationToken = default
@@ -62,10 +66,6 @@ internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
         configUpdater(current);
         return SaveCoreAsync(current, GetOptions(name), cancellationToken);
     }
-
-    /// <inheritdoc />
-    public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
-        SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
     public T CurrentValue => _optionMonitorInstance.CurrentValue;

@@ -67,21 +67,25 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
 
     /// <inheritdoc/>
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveAsync(DefaultName, newConfig, cancellationToken);
+        SaveWithNameAsync(DefaultName, newConfig, cancellationToken);
 
     /// <inheritdoc/>
-    public Task SaveAsync(string name, T newConfig, CancellationToken cancellationToken = default)
+    public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
+        SaveWithNameAsync(DefaultName, configUpdater, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task SaveWithNameAsync(
+        string name,
+        T newConfig,
+        CancellationToken cancellationToken = default
+    )
     {
         NamedValues[name] = newConfig;
         return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
-    public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
-        SaveAsync(DefaultName, configUpdater, cancellationToken);
-
-    /// <inheritdoc/>
-    public Task SaveAsync(
+    public Task SaveWithNameAsync(
         string name,
         Action<T> configUpdater,
         CancellationToken cancellationToken = default
