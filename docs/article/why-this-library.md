@@ -1,42 +1,73 @@
 ## Why This Library?
-There are many ways to handle user settings in C# applications. However, each has some drawbacks, and no de facto standard exists.
+There are many ways to handle user settings in C# applications, but each has drawbacks and there is no de facto standard.
 
 ### Using `app.config` (`Settings.settings`)
-This is an old-fashioned approach that yields many search results. When you start using it, you'll likely encounter the following issues:
+This is a traditional approach and widely documented. However, you may encounter these issues:
 
-* You need to manually write XML-based configuration files (or use Visual Studio's cumbersome GUI)
-* It lacks type safety and is unsuitable for complex settings
-* Files may be included in distributions without careful consideration, risking settings reset during updates
+* Manual editing of XML-based configuration files (or using Visual Studio's cumbersome GUI)
+* Lack of type safety and unsuitability for complex settings
+* Risk of settings being reset during updates if files are included in distributions without care
 
 ### Reading and Writing Configuration Files Yourself
-When considering type safety, the first approach that comes to mind is creating and reading/writing your own configuration files.  
-This method isn't bad, but the drawback is that there are too many things to consider.
+For type safety, you might consider creating and managing your own configuration files.  
+While this method works, it comes with many considerations:
 
-* You need to write configuration management code yourself
-* You need to implement many features like backup creation, update handling
-* Integrating multiple configuration sources requires extra effort
-* You need to implement configuration change reflection yourself
+* You must implement configuration management code yourself
+* Features like backup creation and update handling require manual implementation
+* Integrating multiple configuration sources takes extra effort
+* You need to handle configuration change reflection yourself
 
-### Using (Any Configuration Library)
-Since there's so much boilerplate code, there must be some configuration library available.  
-Indeed, just [searching for `Config` on NuGet](https://www.nuget.org/packages?q=config) yields many libraries.  
-I examined the major ones among these, but couldn't adopt them for the following reasons:
+### Using a Configuration Library
+Given the boilerplate involved, you might look for a configuration library.  
+A [NuGet search for `Config`](https://www.nuget.org/packages?q=config) yields many options.  
+I reviewed several major libraries but found them unsuitable for these reasons:
 
 * [DotNetConfig](https://github.com/dotnetconfig/dotnet-config)
-  * The file format uses a proprietary format (`.netconfig`)
-  * It appears to be primarily designed for `dotnet tools`
+  * Uses a proprietary file format (`.netconfig`)
+  * Primarily designed for `dotnet tools`
 * [Config.Net](https://github.com/aloneguid/config)
-  * It supports various providers but uses a [unique storage format](https://github.com/aloneguid/config#flatline-syntax)
+  * Supports various providers but uses a [unique storage format](https://github.com/aloneguid/config#flatline-syntax)
   * Collection writing is [not supported](https://github.com/aloneguid/config#json) in the JSON provider
 
-### Using `Microsoft.Extensions.Configuration`
-`Microsoft.Extensions.Configuration` (`MS.E.C`) can be said to be the most standardized configuration management method in modern times.  
-It provides many features such as multi-file integration, support for various formats including environment variables, and configuration change reflection, and integrates seamlessly with `IHostApplicationBuilder`.  
-However, since it's primarily designed for application settings, it's insufficient for handling user settings. The major problem is that configuration writing is not supported.  
-Another issue is that, being based on DI (Dependency Injection), it can be somewhat cumbersome to use in certain types of applications.
-For example, applications like `WinForms`, `WPF`, or `Console Apps` that want to use configuration files are less likely to utilize DI.
+### Extending `Microsoft.Extensions.Configuration`
+`Microsoft.Extensions.Configuration` (`MS.E.C`) is the most standardized configuration management method today.  
+It offers features like multi-file integration, support for various formats (including environment variables), configuration change reflection, and seamless integration with `IHostApplicationBuilder`.  
+However, it's mainly designed for application settings and lacks support for writing user settings.
 
-### `Configuration.Writable`
-The preamble has gotten long, but it's time for promotion!  
-This library extends `MS.E.C` to make writing user settings easy.  The name of this library is `Configuration.Writable` because it adds the "writable" feature.
-It's also designed to be easily usable in applications that don't use DI.  
+Since saving configuration isn't supported, extending `MS.E.C` seems natural.  
+Automatic file updates can be handled with `IOptionsMonitor`, so adding save functionality appears sufficient.  
+I began developing the library with this in mind (and found a few similar libraries).  
+However, I encountered several issues:
+
+* `MS.E.C` is specialized for loading configuration at startup, making it hard to add or remove files later
+* With multiple configuration files, you can only access the merged result—not individual files for reference or saving
+* It relies on DI, which is cumbersome for applications that don't use DI
+  * Holding an internal `ServiceProvider` can help, but it's unintuitive and adds dependencies
+* Provider construction is awkward
+  * Reading uses `MS.E.C` providers, but writing requires custom implementations, which is not intuitive
+  * Extension and testing become difficult
+
+Solving these problems would require major changes to `MS.E.C`, diminishing its benefits.
+
+### Extending `Microsoft.Extensions.Options`
+Instead of extending `MS.E.C`, I chose to extend various options in `Microsoft.Extensions.Options` (`MS.E.O`).  
+This is the basis of this library, `Configuration.Writable`.  
+Originally, it was developed as an extension of `MS.E.C`, hence the name, but in reality, it extends `MS.E.O`.
+
+Although I call it an "extension," I actually reimplemented the interfaces from scratch to solve issues like integration with settings saving and other problems.  
+At this point, using `MS.E.O` is not strictly necessary, but:
+
+* Following the .NET standard Options pattern makes it easy for .NET developers to understand (especially the read-only parts)
+* You can use it just like `MS.E.C` (e.g., injecting `IOptionsMonitor<T>` via DI)
+
+For these reasons, I based it on `MS.E.O` (in practice, only the interface parts are used).
+
+As a result, this library provides configuration management similar to `MS.E.C`, with save functionality and minimal dependencies.  
+It only depends on:
+
+* `Microsoft.Extensions.Options` (for the Options pattern)
+* `Microsoft.Extensions.Logging.Abstractions` (for logging)
+
+Since it doesn't require DI like `MS.E.C`, it's easy to use in applications that don't use DI.
+
+Give it a try!
