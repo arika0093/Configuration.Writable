@@ -217,7 +217,15 @@ public class CommonFileWriter : IFileWriter, IDisposable
         {
             return null;
         }
-        return File.OpenRead(normalizedPath);
+        // Use FileShare.ReadWrite to allow concurrent access from FileSystemWatcher
+        return new FileStream(
+            normalizedPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite,
+            bufferSize: 4096,
+            useAsync: false
+        );
     }
 
     /// <inheritdoc />

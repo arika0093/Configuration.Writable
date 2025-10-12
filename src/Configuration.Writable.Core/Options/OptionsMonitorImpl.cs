@@ -203,9 +203,36 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         // Clear cache to force reload on next Get
         _cache.Remove(instanceName);
 
-        // Reload and notify listeners
-        var newValue = LoadConfiguration(instanceName);
-        NotifyListeners(instanceName, newValue);
+        // Reload and notify listeners with retry logic for file access conflicts
+        try
+        {
+            var newValue = LoadConfigurationWithRetry(instanceName);
+            NotifyListeners(instanceName, newValue);
+        }
+        catch (IOException)
+        {
+            // If we still can't load after retries, silently ignore
+            // The cache has already been cleared, so next Get() will try again
+        }
+    }
+
+    // Loads configuration with retry logic for file access conflicts
+    private T LoadConfigurationWithRetry(string instanceName, int maxRetries = 3)
+    {
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                return LoadConfiguration(instanceName);
+            }
+            catch (IOException) when (i < maxRetries - 1)
+            {
+                // Wait a bit before retrying (exponential backoff)
+                Thread.Sleep(50 * (i + 1));
+            }
+        }
+        // Final attempt without catching
+        return LoadConfiguration(instanceName);
     }
 
     // Notifies all registered listeners of a configuration change
