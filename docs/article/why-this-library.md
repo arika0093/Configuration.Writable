@@ -54,7 +54,7 @@ Instead of extending MS.E.C, I chose to extend various options in `Microsoft.Ext
 That is the basis of this library (Configuration.Writable).
 Although we call it an "extension," we decided to rebuild the interface from the ground up to solve issues such as integration with setting persistence.
 
-As a result, this library provides configuration management similar to MS.E.C, with save functionality and minimal dependencies.  
+As a result, this library provides configuration management similar to MS.E.C, with save functionality and small dependencies.  
 It only depends on the following packages:
 
 * `Microsoft.Extensions.Options` (for the Options pattern)
