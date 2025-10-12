@@ -55,12 +55,10 @@ That is the basis of this library (Configuration.Writable).
 Originally, it was developed as an extension of MS.E.C, hence the name, but in reality, it extends MS.E.O.
 
 Although we call it an "extension," we actually rebuilt the interface from scratch to solve problems like integration with setting persistence and other issues.
-Because of this, there is less need to depend on MS.E.O anymore, but:
+Because of this, there is less need to depend on MS.E.O, but we still use it for the following reasons:
 
 - Following the standard .NET Options pattern makes it easier for .NET developers to understand (especially the read-only parts)
 - It can be used similarly to MS.E.C (for example, by injecting `IOptionsMonitor<T>` through DI)
-
-For these reasons, it is based on MS.E.O (though in reality, we only use the interface portion).
 
 As a result, this library provides configuration management similar to MS.E.C, with save functionality and minimal dependencies.  
 It only depends on the following packages:
