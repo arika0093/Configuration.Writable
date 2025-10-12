@@ -106,12 +106,12 @@ public record WritableConfigurationOptionsBuilder<T>
 
     /// <summary>
     /// Gets or sets the default root element name used for configuration sections.
-    /// Defaults to "UserSettings".
+    /// Defaults to "" (empty string).
     /// </summary>
-    public string DefaultSectionRootName { get; set; } = "UserSettings";
+    public string DefaultSectionRootName { get; set; } = "";
 
     /// <summary>
-    /// Gets the default configuration section name. Defaults to "UserSettings:{TypeName}[-{InstanceName}]".
+    /// Gets the default configuration section name. Defaults to "{TypeName}[-{InstanceName}]".
     /// </summary>
     /// <remarks>
     /// If you want override the section name, set <see cref="SectionName"/> property. <br/>
@@ -121,7 +121,9 @@ public record WritableConfigurationOptionsBuilder<T>
     {
         get
         {
-            var section = $"{DefaultSectionRootName}:{typeof(T).Name}";
+            var section = string.IsNullOrEmpty(DefaultSectionRootName)
+                ? typeof(T).Name
+                : $"{DefaultSectionRootName}:{typeof(T).Name}";
             if (!string.IsNullOrWhiteSpace(InstanceName))
             {
                 section += $"-{InstanceName}";

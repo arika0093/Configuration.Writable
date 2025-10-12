@@ -33,7 +33,7 @@ public class WritableConfigurationOptionsBuilderTests
     {
         var options = new WritableConfigurationOptionsBuilder<TestSettings>();
 
-        options.SectionName.ShouldBe("UserSettings:TestSettings");
+        options.SectionName.ShouldBe("TestSettings");
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class WritableConfigurationOptionsBuilderTests
             InstanceName = "Instance1",
         };
 
-        options.SectionName.ShouldBe("UserSettings:TestSettings-Instance1");
+        options.SectionName.ShouldBe("TestSettings-Instance1");
     }
 
     [Fact]
@@ -53,6 +53,17 @@ public class WritableConfigurationOptionsBuilderTests
         var options = new WritableConfigurationOptionsBuilder<TestSettings> { SectionName = "" };
 
         options.SectionName.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void SectionName_WithCustomDefaultSectionRootName_ShouldCombineWithTypeName()
+    {
+        var options = new WritableConfigurationOptionsBuilder<TestSettings>
+        {
+            DefaultSectionRootName = "CustomRoot",
+        };
+
+        options.SectionName.ShouldBe("CustomRoot:TestSettings");
     }
 
     [Fact]
