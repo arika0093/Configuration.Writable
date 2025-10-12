@@ -1,7 +1,7 @@
 # Configuration.Writable
 [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/arika0093/Configuration.Writable?style=flat-square)
 
-A lightweight library that extends `Microsoft.Extensions.Options`(`MS.E.O`) to easily write settings with type safety.
+A lightweight library that allows for easy saving and referencing of settings, with extensive customization options.
 
 ## Features
 * Read and write user settings with type safety.
@@ -45,11 +45,11 @@ WritableConfig.Initialize<SampleSetting>();
 var options = WritableConfig.GetOptions<SampleSetting>();
 
 // get the UserSetting instance
-var sampleSetting = option.CurrentValue;
+var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}");
 
 // and save to storage
-await option.SaveAsync(setting =>
+await options.SaveAsync(setting =>
 {
     setting.Name = "new name";
 });
@@ -70,25 +70,25 @@ Then, inject `IReadOnlyOptions<T>` or `IWritableOptions<T>` to read and write se
 ```csharp
 // read config in your class
 // you can also use IOptions<T>, IOptionsMonitor<T> or IOptionsSnapshot<T>
-public class ConfigReadService(IReadOnlyOptions<UserSetting> option)
+public class ConfigReadService(IReadOnlyOptions<UserSetting> options)
 {
     public void Print()
     {
         // get the UserSetting instance
-        var sampleSetting = option.CurrentValue;
+        var sampleSetting = options.CurrentValue;
         Console.WriteLine($">> Name: {sampleSetting.Name}");
     }
 }
 
 // read and write config in your class
-public class ConfigReadWriteService(IWritableOptions<UserSetting> option)
+public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
 {
     public async Task UpdateAsync()
     {
         // get the UserSetting instance
-        var sampleSetting = option.CurrentValue;
+        var sampleSetting = options.CurrentValue;
         // and save to storage
-        await option.SaveAsync(setting =>
+        await options.SaveAsync(setting =>
         {
             setting.Name = "new name";
         });
@@ -254,11 +254,11 @@ public class MyService(UserSetting setting)
 }
 
 // and you can also use IReadOnlyOptions<T> as usual
-public class MyOtherService(IReadOnlyOptions<UserSetting> option)
+public class MyOtherService(IReadOnlyOptions<UserSetting> options)
 {
     public void Print()
     {
-        var setting = option.CurrentValue;
+        var setting = options.CurrentValue;
         Console.WriteLine($">> Name: {setting.Name}");
     }
 }
@@ -335,18 +335,18 @@ builder.Services.AddWritableOptions<UserSetting>(opt => {
 });
 
 // and get each setting from DI
-public class MyService(IWritableOptions<UserSetting> option)
+public class MyService(IWritableOptions<UserSetting> options)
 {
     public void GetAndSave()
     {
         // cannot use .CurrentValue if multiple settings of the same type are registered
-        var firstSetting = option.Get("First");
-        var secondSetting = option.Get("Second");
+        var firstSetting = options.Get("First");
+        var secondSetting = options.Get("Second");
         // and you must specify instance name when saving
-        await option.SaveWithNameAsync("First", setting => {
+        await options.SaveWithNameAsync("First", setting => {
             setting.Name = "first name";
         });
-        await option.SaveWithNameAsync("Second", setting => {
+        await options.SaveWithNameAsync("Second", setting => {
             setting.Name = "second name";
         });
     }
@@ -371,7 +371,7 @@ builder.Services.AddWritableOptions<UserSetting>(opt => {
 
 var options = WritableConfig.GetOptions<UserSetting>();
 try {
-    await option.SaveAsync(setting => {
+    await options.SaveAsync(setting => {
         setting.Name = "ab"; // too short
         setting.Age = 200;  // out of range
     });

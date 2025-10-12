@@ -52,21 +52,15 @@ Solving these problems would require major changes to MS.E.C, diminishing its be
 ### Extending `Microsoft.Extensions.Options`
 Instead of extending MS.E.C, I chose to extend various options in `Microsoft.Extensions.Options` (MS.E.O).  
 That is the basis of this library (Configuration.Writable).
-Originally, it was developed as an extension of MS.E.C, hence the name, but in reality, it extends MS.E.O.
-
-Although we call it an "extension," we actually rebuilt the interface from scratch to solve problems like integration with setting persistence and other issues.
-Because of this, there is less need to depend on MS.E.O, but we still use it for the following reasons:
-
-- Following the standard .NET Options pattern makes it easier for .NET developers to understand (especially the read-only parts)
-- It can be used similarly to MS.E.C (for example, by injecting `IOptionsMonitor<T>` through DI)
+Although we call it an "extension," we decided to rebuild the interface from the ground up to solve issues such as integration with setting persistence.
 
 As a result, this library provides configuration management similar to MS.E.C, with save functionality and minimal dependencies.  
 It only depends on the following packages:
 
 * `Microsoft.Extensions.Options` (for the Options pattern)
+  * `Microsoft.Extensions.Primitives` (dependency of MS.E.O)
 * `Microsoft.Extensions.Logging.Abstractions` (for logging)
 * `Microsoft.Extensions.DependencyInjection.Abstractions` (for DI integration)
-* `Microsoft.Extensions.Primitives` (dependency of MS.E.O)
 
 Since it doesn't require DI like MS.E.C, it's easy to use in applications that don't use DI.
 
