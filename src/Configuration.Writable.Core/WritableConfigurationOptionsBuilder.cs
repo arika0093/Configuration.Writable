@@ -94,7 +94,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Get or sets the name of the configuration section. <br/>
     /// You can use ":" or "__" to specify nested sections, e.g. "Parent:Child". <br/>
     /// If empty that means the root of the configuration file. <br/>
-    /// If null, the default section name will be used.
+    /// If null, the default section name will be used (empty string).
     /// </summary>
     [AllowNull]
     public string SectionName
@@ -105,30 +105,16 @@ public record WritableConfigurationOptionsBuilder<T>
     private string? _sectionName = null;
 
     /// <summary>
-    /// Gets or sets the default root element name used for configuration sections.
-    /// Defaults to "" (empty string).
-    /// </summary>
-    public string DefaultSectionRootName { get; set; } = "";
-
-    /// <summary>
-    /// Gets the default configuration section name. Defaults to "{TypeName}[-{InstanceName}]".
+    /// Gets the default configuration section name. Defaults to "" (empty string).
     /// </summary>
     /// <remarks>
-    /// If you want override the section name, set <see cref="SectionName"/> property. <br/>
-    /// Or you want override only the root part, set <see cref="DefaultSectionRootName"/> property.
+    /// If you want to use a custom section name, set <see cref="SectionName"/> property.
     /// </remarks>
     public string DefaultSectionName
     {
         get
         {
-            var section = string.IsNullOrEmpty(DefaultSectionRootName)
-                ? typeof(T).Name
-                : $"{DefaultSectionRootName}:{typeof(T).Name}";
-            if (!string.IsNullOrWhiteSpace(InstanceName))
-            {
-                section += $"-{InstanceName}";
-            }
-            return section;
+            return "";
         }
     }
 

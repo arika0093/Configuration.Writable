@@ -87,7 +87,6 @@ namespace Configuration.Writable
         public WritableConfigurationOptionsBuilder() { }
         public string ConfigFilePath { get; }
         public string DefaultSectionName { get; }
-        public string DefaultSectionRootName { get; set; }
         public string? FilePath { get; set; }
         public System.IO.Stream? FileReadStream { get; set; }
         public Configuration.Writable.FileWriter.IFileWriter? FileWriter { get; set; }

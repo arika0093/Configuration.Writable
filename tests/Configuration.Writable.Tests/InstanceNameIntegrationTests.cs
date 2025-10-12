@@ -97,7 +97,7 @@ public class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public async Task MultipleInstanceNames_ShouldUseDifferentSectionNames()
+    public async Task MultipleInstanceNames_ShouldSaveToSeparateFiles()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();
@@ -137,13 +137,13 @@ public class InstanceNameIntegrationTests
             }
         );
 
-        // Verify section names in the saved files
+        // Verify content in the saved files (both use root level by default)
         var firstFileContent = _fileWriter.ReadAllText(firstFileName);
         var secondFileContent = _fileWriter.ReadAllText(secondFileName);
 
-        // Should use "UserSetting-First" and "UserSetting-Second" as section names
-        firstFileContent.ShouldContain("UserSetting-First");
-        secondFileContent.ShouldContain("UserSetting-Second");
+        // Both should contain the settings at root level
+        firstFileContent.ShouldContain("first setting");
+        secondFileContent.ShouldContain("second setting");
 
         host.Dispose();
     }

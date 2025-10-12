@@ -98,26 +98,18 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
 
 ## Configuration Structure
 When saving settings, they are written to a configuration file in a structured format.
-By default, settings are stored in this structure:
+By default, settings are stored directly at the root level:
 
 ```jsonc
 {
-  // root level section: the type name of the setting class (e.g. "UserSetting")
-  // If InstanceName is specified, it becomes "TypeName-InstanceName"
-  "UserSetting": {
-    // properties of UserSetting
-    "Name": "custom name",
-    "Age": 30
-  }
+  // properties of UserSetting are stored directly at the root level
+  "Name": "custom name",
+  "Age": 30
 }
 ```
 
-The reasons for this structure are as follows:
-
-* The type name is automatically used as the root section, eliminating the need for manual configuration in most cases.
-* When using InstanceName, multiple configurations of the same type can be managed separately.
-
-Of course, you can customize this structure as needed. see [SectionName](#sectionname).
+This simple structure eliminates the need for manual configuration in most cases.
+Of course, you can customize this structure as needed by using [SectionName](#sectionname).
 
 ## Customization
 ### Configuration Method
@@ -286,8 +278,8 @@ info: Configuration.Writable[0]
 ```
 
 ### SectionName
-By default, the section path is automatically determined as `{TypeName}(-{InstanceName})`.
-To customize the entire section path, use `opt.SectionName`.
+By default, settings are saved directly at the root level of the configuration file (SectionName is empty).
+To organize settings under a specific section, use `opt.SectionName`.
 
 ```jsonc
 {
@@ -321,13 +313,11 @@ If you want to manage multiple settings of the same type, you must specify diffe
 builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "firstsettings.json";
     opt.InstanceName = "First";
-    // save section will be "UserSetting-First"
 });
 // second setting
 builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "secondsettings.json";
     opt.InstanceName = "Second";
-    // save section will be "UserSetting-Second"
 });
 
 // and get each setting from DI
