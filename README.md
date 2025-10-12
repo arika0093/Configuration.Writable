@@ -280,6 +280,15 @@ opt.Logger = LoggerFactory
 // no setup required (uses the logger from DI)
 ```
 
+When the output level is set to Information, mainly the following two logs are output.
+
+```log
+info: Configuration.Writable[0]
+      Configuration file change detected: mysettings.json (Renamed)
+info: Configuration.Writable[0]
+      Configuration saved successfully to mysettings.json
+```
+
 ### SectionName
 By default, the section path is automatically determined as `UserSettings:{TypeName}(-{InstanceName})`.  
 To customize the entire section path, use `opt.SectionName`.
