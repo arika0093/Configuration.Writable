@@ -496,7 +496,7 @@ Assert.Contains("expected name", json);
 ### IReadOnlyOptions<T>
 An interface for reading the settings of the registered type `T`.  
 It automatically reflects the latest settings when the underlying configuration is updated.  
-This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from MS.E.C.
+This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from MS.E.O.
 
 ```csharp
 public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class
