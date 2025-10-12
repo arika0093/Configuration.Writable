@@ -3,7 +3,7 @@
 {
 	"name": "C# (.NET)",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/dotnet:1-9.0-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:1-10.0-preview",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -12,18 +12,8 @@
 				"csharpier.csharpier-vscode"
 			]
 		}
-	}
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [5000, 5001],
-	// "portsAttributes": {
-	//    "5001": {
-	//      "protocol": "https"
-	//    }
-	// }
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "dotnet restore",
+	},
+	"postCreateCommand": "dotnet clean"
 	// Configure tool-specific properties.
 	// "customizations": {},
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
