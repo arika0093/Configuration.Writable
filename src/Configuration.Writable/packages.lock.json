@@ -2,17 +2,6 @@
   "version": 1,
   "dependencies": {
     ".NETStandard,Version=v2.0": {
-      "Microsoft.Extensions.DependencyInjection": {
-        "type": "Direct",
-        "requested": "[9.*, )",
-        "resolved": "9.0.9",
-        "contentHash": "zQV2WOSP+3z1EuK91ULxfGgo2Y75bTRnmJHp08+w/YXAyekZutX/qCd88/HOMNh35MDW9mJJJxPpMPS+1Rww8A==",
-        "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "9.0.9",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.9",
-          "System.Threading.Tasks.Extensions": "4.5.4"
-        }
-      },
       "Nerdbank.GitVersioning": {
         "type": "Direct",
         "requested": "[3.*, )",
@@ -184,15 +173,6 @@
       }
     },
     "net10.0": {
-      "Microsoft.Extensions.DependencyInjection": {
-        "type": "Direct",
-        "requested": "[9.*, )",
-        "resolved": "9.0.9",
-        "contentHash": "zQV2WOSP+3z1EuK91ULxfGgo2Y75bTRnmJHp08+w/YXAyekZutX/qCd88/HOMNh35MDW9mJJJxPpMPS+1Rww8A==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.9"
-        }
-      },
       "Nerdbank.GitVersioning": {
         "type": "Direct",
         "requested": "[3.*, )",
@@ -247,15 +227,6 @@
       }
     },
     "net8.0": {
-      "Microsoft.Extensions.DependencyInjection": {
-        "type": "Direct",
-        "requested": "[9.*, )",
-        "resolved": "9.0.9",
-        "contentHash": "zQV2WOSP+3z1EuK91ULxfGgo2Y75bTRnmJHp08+w/YXAyekZutX/qCd88/HOMNh35MDW9mJJJxPpMPS+1Rww8A==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.9"
-        }
-      },
       "Nerdbank.GitVersioning": {
         "type": "Direct",
         "requested": "[3.*, )",
@@ -316,15 +287,6 @@
       }
     },
     "net9.0": {
-      "Microsoft.Extensions.DependencyInjection": {
-        "type": "Direct",
-        "requested": "[9.*, )",
-        "resolved": "9.0.9",
-        "contentHash": "zQV2WOSP+3z1EuK91ULxfGgo2Y75bTRnmJHp08+w/YXAyekZutX/qCd88/HOMNh35MDW9mJJJxPpMPS+1Rww8A==",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.9"
-        }
-      },
       "Nerdbank.GitVersioning": {
         "type": "Direct",
         "requested": "[3.*, )",
