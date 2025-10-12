@@ -4,6 +4,8 @@ namespace Example.WorkerService;
 
 public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
 {
+    private bool IsRepeat = true;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Delay(1000, stoppingToken);
@@ -27,14 +29,16 @@ public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
                 stoppingToken
             );
 
-            // get updated config instance
-            var updatedSampleSetting = options.CurrentValue;
-            Console.WriteLine(
-                $">> Name: {updatedSampleSetting.Name}, LastUpdatedAt: {updatedSampleSetting.LastUpdatedAt}"
-            );
-
-            // finish
-            Environment.Exit(0);
+            if (!IsRepeat)
+            {
+                // get updated config instance
+                var updatedSampleSetting = options.CurrentValue;
+                Console.WriteLine(
+                    $">> Name: {updatedSampleSetting.Name}, LastUpdatedAt: {updatedSampleSetting.LastUpdatedAt}"
+                );
+                // finish
+                Environment.Exit(0);
+            }
         }
     }
 }
