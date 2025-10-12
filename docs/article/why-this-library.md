@@ -30,44 +30,46 @@ I reviewed several major libraries but found them unsuitable for these reasons:
   * Collection writing is [not supported](https://github.com/aloneguid/config#json) in the JSON provider
 
 ### Extending `Microsoft.Extensions.Configuration`
-`Microsoft.Extensions.Configuration` (`MS.E.C`) is the most standardized configuration management method today.  
+`Microsoft.Extensions.Configuration` (MS.E.C) is the most standardized configuration management method today.  
 It offers features like multi-file integration, support for various formats (including environment variables), configuration change reflection, and seamless integration with `IHostApplicationBuilder`.  
 However, it's mainly designed for application settings and lacks support for writing user settings.
 
-Since saving configuration isn't supported, extending `MS.E.C` seems natural.  
+Since saving configuration isn't supported, extending MS.E.C seems natural.  
 Automatic file updates can be handled with `IOptionsMonitor`, so adding save functionality appears sufficient.  
 I began developing the library with this in mind (and found a few similar libraries).  
 However, I encountered several issues:
 
-* `MS.E.C` is specialized for loading configuration at startup, making it hard to add or remove files later
+* MS.E.C is specialized for loading configuration at startup, making it hard to add or remove files later
 * With multiple configuration files, you can only access the merged result—not individual files for reference or saving
 * It relies on DI, which is cumbersome for applications that don't use DI
   * Holding an internal `ServiceProvider` can help, but it's unintuitive and adds dependencies
 * Provider construction is awkward
-  * Reading uses `MS.E.C` providers, but writing requires custom implementations, which is not intuitive
+  * Reading uses MS.E.C providers, but writing requires custom implementations, which is not intuitive
   * Extension and testing become difficult
 
-Solving these problems would require major changes to `MS.E.C`, diminishing its benefits.
+Solving these problems would require major changes to MS.E.C, diminishing its benefits.
 
 ### Extending `Microsoft.Extensions.Options`
-Instead of extending `MS.E.C`, I chose to extend various options in `Microsoft.Extensions.Options` (`MS.E.O`).  
-This is the basis of this library, `Configuration.Writable`.  
-Originally, it was developed as an extension of `MS.E.C`, hence the name, but in reality, it extends `MS.E.O`.
+Instead of extending MS.E.C, I chose to extend various options in `Microsoft.Extensions.Options` (MS.E.O).  
+That is the basis of this library (Configuration.Writable).
+Originally, it was developed as an extension of MS.E.C, hence the name, but in reality, it extends MS.E.O.
 
-Although I call it an "extension," I actually reimplemented the interfaces from scratch to solve issues like integration with settings saving and other problems.  
-At this point, using `MS.E.O` is not strictly necessary, but:
+Although we call it an "extension," we actually rebuilt the interface from scratch to solve problems like integration with setting persistence and other issues.
+Because of this, there is less need to depend on MS.E.O anymore, but:
 
-* Following the .NET standard Options pattern makes it easy for .NET developers to understand (especially the read-only parts)
-* You can use it just like `MS.E.C` (e.g., injecting `IOptionsMonitor<T>` via DI)
+- Following the standard .NET Options pattern makes it easier for .NET developers to understand (especially the read-only parts)
+- It can be used similarly to MS.E.C (for example, by injecting `IOptionsMonitor<T>` through DI)
 
-For these reasons, I based it on `MS.E.O` (in practice, only the interface parts are used).
+For these reasons, it is based on MS.E.O (though in reality, we only use the interface portion).
 
-As a result, this library provides configuration management similar to `MS.E.C`, with save functionality and minimal dependencies.  
-It only depends on:
+As a result, this library provides configuration management similar to MS.E.C, with save functionality and minimal dependencies.  
+It only depends on the following packages:
 
 * `Microsoft.Extensions.Options` (for the Options pattern)
 * `Microsoft.Extensions.Logging.Abstractions` (for logging)
+* `Microsoft.Extensions.DependencyInjection.Abstractions` (for DI integration)
+* `Microsoft.Extensions.Primitives` (dependency of MS.E.O)
 
-Since it doesn't require DI like `MS.E.C`, it's easy to use in applications that don't use DI.
+Since it doesn't require DI like MS.E.C, it's easy to use in applications that don't use DI.
 
 Give it a try!
