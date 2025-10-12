@@ -1,9 +1,9 @@
 ﻿<Project>
   <PropertyGroup>
     <TargetFrameworks Condition=" '$(OS)' == 'Windows_NT' "
-      >net6.0;net8.0;net9.0;net48</TargetFrameworks
+      >net6.0;net8.0;net10.0;net48</TargetFrameworks
     >
-    <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">net6.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">net6.0;net8.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
