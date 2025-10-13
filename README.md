@@ -500,7 +500,7 @@ public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class
 The additional features compared to `IOptionsMonitor<T>` are as follows:
 
 * The `GetConfigurationOptions` method to retrieve configuration options.
-* In environments where file change detection is not possible (for example, on network shares or in Docker environments where [change detection is not supported by default](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#ioptionsmonitor)), you can always get the latest settings. This is achieved by using the cache maintained when saving via `IWritableOptions<T>`
+* In environments where file change detection is not possible, you can always get the latest settings (internal cached value is updated when `SaveAsync` is called).
 
 ### IWritableOptions<T>
 An interface for reading and writing the settings of the registered type `T`.  
@@ -510,18 +510,10 @@ It provides the same functionality as `IReadOnlyOptions<T>`, with additional sup
 public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
 ```
 
-## Limitations
-this library currently does **not** support the following features.
-
-### Saving Integrated Settings
-MS.E.C provides a feature to integrate multiple configuration sources, but saving settings in this scenario introduces a problem.  
-Since the settings are presented as a merged view, it becomes unclear "which source" should be updated with "which value" when saving.  
-Therefore, this library currently does not support saving integrated (merged) settings.
-
-### Dynamic Addition and Removal of Configuration Files
-For example, in applications like VSCode, in addition to global settings, you can manage settings by dynamically adding or removing files such as `.vscode/settings.json` found in the currently opened folder.
-This library assumes that configuration files are added all at once during application startup, and does not support dynamic addition or removal of configuration files at runtime.
-(Also, related to the first limitation, it becomes unclear which configuration file should be saved to.)
+## ToDo
+* Support version update migration
+* Support dynamic addition/removal of configuration sources
+* Support multiple configurations merging and save each partially
 
 ## License
 This project is licensed under the Apache-2.0 License.
