@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
-  <TestConfiguration>
-    <StringValue>Test with &lt;tags&gt; &amp; "quotes"</StringValue>
-    <IntValue>42</IntValue>
-    <DoubleValue>3.14159</DoubleValue>
-    <BoolValue>true</BoolValue>
-    <ArrayValue>
-      <string>item&lt;1&gt;</string>
-      <string>item&amp;2</string>
-      <string>item"3"</string>
-    </ArrayValue>
-    <DateTimeValue>2023-12-25T10:30:45Z</DateTimeValue>
-    <Nested>
-      <Description>Nested description</Description>
-      <Price>99.99</Price>
-      <IsActive>false</IsActive>
-    </Nested>
-  </TestConfiguration>
+  <StringValue>Test with &lt;tags&gt; &amp; "quotes"</StringValue>
+  <IntValue>42</IntValue>
+  <DoubleValue>3.14159</DoubleValue>
+  <BoolValue>true</BoolValue>
+  <ArrayValue>
+    <string>item&lt;1&gt;</string>
+    <string>item&amp;2</string>
+    <string>item"3"</string>
+  </ArrayValue>
+  <DateTimeValue>2023-12-25T10:30:45Z</DateTimeValue>
+  <Nested>
+    <Description>Nested description</Description>
+    <Price>99.99</Price>
+    <IsActive>false</IsActive>
+  </Nested>
 </configuration>
