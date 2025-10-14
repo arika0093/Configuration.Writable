@@ -375,7 +375,7 @@ builder.Services.AddWritableOptions<UserSetting>(opt => {
 internal class UserSetting { /* ... */ }
 
 [OptionsValidator]
-public partial class SampleSettingValidator : IValidateOptions<UserSetting>;
+public partial class UserSettingValidator : IValidateOptions<UserSetting>;
 ```
 
 Alternatively, you can add custom validation using `WithValidatorFunction` or `WithValidator`.
