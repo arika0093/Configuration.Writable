@@ -155,8 +155,24 @@ internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
             .Provider.SaveAsync(newConfig, operations, options, cancellationToken)
             .ConfigureAwait(false);
 
-        // Update the monitor's cache first
-        _optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
+        // If operations were performed (e.g., key deletion), reload from file to get accurate state
+        // Otherwise use the in-memory config for better performance
+        T configToCache;
+        if (operations.HasOperations)
+        {
+            options.Logger?.LogDebug(
+                "Reloading configuration from {FilePath} after operations",
+                options.ConfigFilePath
+            );
+            configToCache = options.Provider.LoadConfiguration(options);
+        }
+        else
+        {
+            configToCache = newConfig;
+        }
+
+        // Update the monitor's cache
+        _optionMonitorInstance.UpdateCache(options.InstanceName, configToCache);
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
         options.Logger?.LogInformation("Configuration saved successfully to {FileName}", fileName);

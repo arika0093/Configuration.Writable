@@ -160,7 +160,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
     /// <param name="node">The JSON node to modify.</param>
     /// <param name="keyPath">The property path to delete (e.g., "Parent:Child").</param>
     /// <param name="options">The configuration options.</param>
-    private static void DeleteKeyFromNode<T>(
+    private void DeleteKeyFromNode<T>(
         JsonObject node,
         string keyPath,
         WritableConfigurationOptions<T> options
@@ -177,7 +177,9 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         JsonObject? current = node;
         for (int i = 0; i < parts.Length - 1; i++)
         {
-            if (current.TryGetPropertyValue(parts[i], out var value) && value is JsonObject obj)
+            // Apply naming policy if present
+            var partName = ApplyNamingPolicy(parts[i]);
+            if (current.TryGetPropertyValue(partName, out var value) && value is JsonObject obj)
             {
                 current = obj;
             }
@@ -193,7 +195,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         }
 
         // Delete the final key
-        var finalKey = parts[^1];
+        var finalKey = ApplyNamingPolicy(parts[^1]);
         if (current.Remove(finalKey))
         {
             options.Logger?.LogDebug("Deleted key {KeyPath} from configuration", keyPath);
@@ -202,5 +204,15 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         {
             options.Logger?.LogDebug("Key {KeyPath} not found for deletion, skipping", keyPath);
         }
+    }
+
+    /// <summary>
+    /// Applies the JSON naming policy to a property name.
+    /// </summary>
+    /// <param name="name">The property name to convert.</param>
+    /// <returns>The converted property name.</returns>
+    private string ApplyNamingPolicy(string name)
+    {
+        return JsonSerializerOptions.PropertyNamingPolicy?.ConvertName(name) ?? name;
     }
 }

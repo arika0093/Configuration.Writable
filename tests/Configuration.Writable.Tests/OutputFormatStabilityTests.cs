@@ -481,4 +481,61 @@ public class OutputFormatStabilityTests
         actualOutput.ShouldContain("nested");
         actualOutput.ShouldContain("price");
     }
+
+    [Fact]
+    public async Task JsonProvider_DeleteKey_ShouldUpdateCacheCorrectly()
+    {
+        const string testFileName = "delete_cache_test.json";
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigJsonProvider
+            {
+                JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                },
+            };
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var option = instance.GetOptions();
+
+        // First, save a config with all properties
+        await option.SaveAsync(config =>
+        {
+            config.StringValue = "InitialValue";
+            config.IntValue = 100;
+            config.BoolValue = true;
+        });
+
+        // Verify initial state in cache
+        var beforeDelete = option.CurrentValue;
+        beforeDelete.StringValue.ShouldBe("InitialValue");
+        beforeDelete.IntValue.ShouldBe(100);
+        beforeDelete.BoolValue.ShouldBeTrue();
+
+        // Now delete a key and update another
+        await option.SaveAsync((config, op) =>
+        {
+            config.StringValue = "UpdatedValue";
+            op.DeleteKey(c => c.BoolValue);
+        });
+
+        // Verify cache is updated correctly after deletion
+        var afterDelete = option.CurrentValue;
+        afterDelete.StringValue.ShouldBe("UpdatedValue");
+        afterDelete.IntValue.ShouldBe(100); // Unchanged
+        // BoolValue should be the class default (true) since key was deleted
+        afterDelete.BoolValue.ShouldBeTrue();
+
+        // Verify file doesn't contain the deleted key
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+        fileContent.ShouldNotContain("boolValue");
+        fileContent.ShouldContain("UpdatedValue");
+        fileContent.ShouldContain("100");
+    }
 }
