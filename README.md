@@ -411,6 +411,27 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
+## Advanced Usage
+### Direct Property Manipulation
+You can directly manipulate configuration properties at the key level using `IOptionOperator<T>`. This is useful for operations like deleting specific keys from the configuration file.
+
+```csharp
+await options.SaveAsync((setting, op) =>
+{
+    // Update settings as usual
+    setting.Name = "new name";
+    // Delete specific keys from the configuration file
+    op.DeleteKey(s => s.SomeProperty);
+    op.DeleteKey(s => s.Parent.Child);
+});
+```
+
+This pattern allows you to:
+- Delete keys without affecting other properties in the configuration file
+- Perform key-level operations that go beyond simple value updates
+- Maintain more control over the configuration file structure
+
+
 ## Testing
 If you simply want to obtain `IReadOnlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 
@@ -463,7 +484,7 @@ The additional features compared to `IOptionsMonitor<T>` are as follows:
 * In environments where file change detection is not possible, you can always get the latest settings (internal cached value is updated when `SaveAsync` is called).
 
 ### IWritableOptions<T>
-An interface for reading and writing the settings of the registered type `T`.  
+An interface for reading and writing the settings of the registered type `T`.
 It provides the same functionality as `IReadOnlyOptions<T>`, with additional support for saving settings.
 
 ```csharp
@@ -471,7 +492,6 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
 ```
 
 ## ToDo
-* Add a pattern to directly manipulate properties when saving (such as deletion)
 * Support the ability to write multiple configuration classes to a single file
 * Support version update migration
 * Support dynamic addition/removal of configuration sources
