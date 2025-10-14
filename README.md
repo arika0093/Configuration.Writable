@@ -471,6 +471,7 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
 ```
 
 ## ToDo
+* Add a pattern to directly manipulate properties when saving (such as deletion)
 * Support the ability to write multiple configuration classes to a single file
 * Support version update migration
 * Support dynamic addition/removal of configuration sources
