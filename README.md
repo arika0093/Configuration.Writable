@@ -96,21 +96,6 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
 }
 ```
 
-## Configuration Structure
-When saving settings, they are written to a configuration file in a structured format.
-By default, settings are stored directly at the root level:
-
-```jsonc
-{
-  // properties of UserSetting are stored directly at the root level
-  "Name": "custom name",
-  "Age": 30
-}
-```
-
-This simple structure eliminates the need for manual configuration in most cases.
-Of course, you can customize this structure as needed by using [SectionName](#sectionname).
-
 ## Customization
 ### Configuration Method
 You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
@@ -278,7 +263,16 @@ info: Configuration.Writable[0]
 ```
 
 ### SectionName
-By default, settings are saved directly at the root level of the configuration file (SectionName is empty).
+When saving settings, they are written to a configuration file in a structured format. By default, settings are stored directly at the root level:
+
+```jsonc
+{
+  // properties of UserSetting are stored directly at the root level
+  "Name": "custom name",
+  "Age": 30
+}
+```
+
 To organize settings under a specific section, use `opt.SectionName`.
 
 ```jsonc
@@ -293,15 +287,6 @@ To organize settings under a specific section, use `opt.SectionName`.
       }
     }
   }
-}
-```
-
-```jsonc
-{
-  // opt.SectionName = "" (empty string)
-  // properties of UserSetting directly at the root level (not recommended)
-  "Name": "custom name",
-  "Age": 30
 }
 ```
 
@@ -410,47 +395,6 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
-## Tips
-### Default Values
-Due to the specifications of MS.E.C, properties that do not exist in the configuration file will use their default values.  
-If a new property is added to the settings class during an update, that property will not exist in the configuration file, so the default value will be used.
-
-```csharp
-// if the settings file contains only {"Name": "custom name"}
-var setting = options.CurrentValue;
-// setting.Name is "custom name"
-// setting.Age is 20 (the default value)
-```
-
-### Secret Values
-A good way to include user passwords and the like in settings is to split the class and save one part encrypted.
-
-```csharp
-// register multiple settings in DI
-builder
-    .AddWritableOptions<UserSetting>(opt => {
-        opt.FilePath = "usersettings";
-    })
-    .AddWritableOptions<UserSecretSetting>(opt => {
-        opt.FilePath = "my-secret-folder/secrets";
-        // dotnet add package Configuration.Writable.Encrypt
-        opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
-    });
-
-// and get/save each setting
-var userOptions = WritableConfig.GetOptions<UserSetting>();
-var secretOptions = WritableConfig.GetOptions<UserSecretSetting>();
-// ...
-
-// ---
-// setting classes
-public class UserSetting(string Name, int Age);  // non-secret
-public class UserSecretSetting(string Password); // secret
-```
-
-> [!WARNING]
-> Do not store values that must not be disclosed to others (e.g., database passwords). This feature is solely intended to prevent others from viewing values entered by the user.
-
 ## Testing
 If you simply want to obtain `IReadOnlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 
@@ -511,6 +455,7 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
 ```
 
 ## ToDo
+* Support the ability to write multiple configuration classes to a single file
 * Support version update migration
 * Support dynamic addition/removal of configuration sources
 * Support multiple configurations merging and save each partially
