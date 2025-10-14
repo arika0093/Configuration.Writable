@@ -41,25 +41,17 @@ public interface IWritableConfigProvider
         where T : class;
 
     /// <summary>
-    /// Retrieves the serialized byte representation of the specified configuration.
-    /// </summary>
-    /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
-    /// <param name="config">The configuration object to be serialized.</param>
-    /// <param name="options">The options that control how the configuration is serialized.</param>
-    /// <returns>A read-only memory segment containing the serialized byte representation of the configuration.</returns>
-    ReadOnlyMemory<byte> GetSaveContents<T>(T config, WritableConfigurationOptions<T> options)
-        where T : class;
-
-    /// <summary>
-    /// Asynchronously saves the specified configuration object to a file using the provided options.
+    /// Asynchronously saves the specified configuration object to a file with additional operations (like key deletion).
     /// </summary>
     /// <typeparam name="T">The type of the configuration object to save. Must be a reference type.</typeparam>
     /// <param name="config">The configuration object to be saved.</param>
+    /// <param name="operations">The operations to perform on the configuration (e.g., key deletion).</param>
     /// <param name="options">The options that control how and where the configuration is saved, including the target file path.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the save operation.</param>
     /// <returns>A task that represents the asynchronous save operation.</returns>
     Task SaveAsync<T>(
         T config,
+        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )

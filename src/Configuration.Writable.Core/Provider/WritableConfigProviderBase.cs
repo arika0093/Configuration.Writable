@@ -28,25 +28,13 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
         where T : class;
 
     /// <inheritdoc />
-    public abstract ReadOnlyMemory<byte> GetSaveContents<T>(
+    public abstract Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options
-    )
-        where T : class;
-
-    /// <inheritdoc />
-    public virtual async Task SaveAsync<T>(
-        T config,
+        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class
-    {
-        var contents = GetSaveContents(config, options);
-        await FileWriter
-            .SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken, options.Logger)
-            .ConfigureAwait(false);
-    }
+        where T : class;
 
     /// <summary>
     /// Creates a nested dictionary structure from a section name that supports ':' and '__' as separators.

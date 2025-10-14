@@ -1,12 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -92,25 +95,58 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
     }
 
     /// <inheritdoc />
-    public override ReadOnlyMemory<byte> GetSaveContents<T>(
+    public override async Task SaveAsync<T>(
         T config,
+        OptionOperations<T> operations,
+        WritableConfigurationOptions<T> options,
+        CancellationToken cancellationToken = default
+    )
+        where T : class
+    {
+        var contents = GetSaveContentsCore(config, operations, options);
+        await FileWriter
+            .SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken, options.Logger)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Core method to get save contents with optional operations.
+    /// </summary>
+    private ReadOnlyMemory<byte> GetSaveContentsCore<T>(
+        T config,
+        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options
     )
         where T : class
     {
         var sectionName = options.SectionName;
-        // Split section name by ':' or '__' and create nested XML structure
         var parts = GetSplitedSections(sectionName);
 
-        // first serialize to <AnyName>...</AnyName>
+        // Serialize the configuration to XML
         var serializer = new XmlSerializer(typeof(T));
         using var sw = new StringWriter();
         serializer.Serialize(sw, config);
         var xmlDocument = new XmlDocument();
         xmlDocument.LoadXml(sw.ToString());
 
+        // Get the root element containing the serialized data
+        var configElement = xmlDocument.DocumentElement;
+        if (configElement == null)
+        {
+            throw new InvalidOperationException("Failed to serialize configuration to XML");
+        }
+
+        // Apply deletion operations
+        if (operations.HasOperations)
+        {
+            foreach (var keyToDelete in operations.KeysToDelete)
+            {
+                DeleteKeyFromXml(configElement, keyToDelete, options);
+            }
+        }
+
         // Build nested XML structure
-        var innerXml = xmlDocument.DocumentElement?.InnerXml ?? "";
+        var innerXml = configElement.InnerXml;
 
         // Build the nested structure from innermost to outermost
         for (int i = parts.Length - 1; i >= 0; i--)
@@ -123,5 +159,58 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
             <configuration>{innerXml}</configuration>
             """;
         return Encoding.UTF8.GetBytes(xmlString);
+    }
+
+    /// <summary>
+    /// Deletes a key from the XML element based on the property path.
+    /// </summary>
+    /// <param name="element">The XML element to modify.</param>
+    /// <param name="keyPath">The property path to delete (e.g., "Parent:Child").</param>
+    /// <param name="options">The configuration options.</param>
+    private void DeleteKeyFromXml<T>(
+        XmlElement element,
+        string keyPath,
+        WritableConfigurationOptions<T> options
+    )
+        where T : class
+    {
+        var parts = keyPath.Split(':');
+        if (parts.Length == 0)
+        {
+            return;
+        }
+
+        // Navigate to the parent element
+        XmlElement? current = element;
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            var child = current.SelectSingleNode(parts[i]) as XmlElement;
+            if (child != null)
+            {
+                current = child;
+            }
+            else
+            {
+                // Path doesn't exist, nothing to delete
+                options.Logger?.LogDebug(
+                    "Key path {KeyPath} not found for deletion, skipping",
+                    keyPath
+                );
+                return;
+            }
+        }
+
+        // Delete the final element
+        var finalKey = parts[^1];
+        var targetElement = current.SelectSingleNode(finalKey) as XmlElement;
+        if (targetElement != null)
+        {
+            current.RemoveChild(targetElement);
+            options.Logger?.LogDebug("Deleted key {KeyPath} from configuration", keyPath);
+        }
+        else
+        {
+            options.Logger?.LogDebug("Key {KeyPath} not found for deletion, skipping", keyPath);
+        }
     }
 }

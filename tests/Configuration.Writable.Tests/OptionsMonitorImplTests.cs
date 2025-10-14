@@ -106,8 +106,7 @@ public class OptionsMonitorImplTests
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
-        var data = configOptions.Provider.GetSaveContents(testSettings, configOptions);
-        await fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data);
+        await configOptions.Provider.SaveAsync(testSettings, new OptionOperations<TestSettings>(), configOptions);
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
 
@@ -307,8 +306,7 @@ public class OptionsMonitorImplTests
         );
 
         // Preload data
-        var data = configOptions.Provider.GetSaveContents(testSettings, configOptions);
-        await fileWriter.SaveToFileAsync(configOptions.ConfigFilePath, data);
+        await configOptions.Provider.SaveAsync(testSettings, new OptionOperations<TestSettings>(), configOptions);
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
 
@@ -375,10 +373,8 @@ public class OptionsMonitorImplTests
         var settings1 = new TestSettings { Name = "first", Value = 111 };
         var settings2 = new TestSettings { Name = "second", Value = 222 };
 
-        var data1 = configOptions1.Provider.GetSaveContents(settings1, configOptions1);
-        var data2 = configOptions2.Provider.GetSaveContents(settings2, configOptions2);
-        await fileWriter.SaveToFileAsync(configOptions1.ConfigFilePath, data1);
-        await fileWriter.SaveToFileAsync(configOptions2.ConfigFilePath, data2);
+        await configOptions1.Provider.SaveAsync(settings1, new OptionOperations<TestSettings>(), configOptions1);
+        await configOptions2.Provider.SaveAsync(settings2, new OptionOperations<TestSettings>(), configOptions2);
 
         var monitor = new OptionsMonitorImpl<TestSettings>(
             new[] { configOptions1, configOptions2 }

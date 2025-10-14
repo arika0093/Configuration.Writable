@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
@@ -85,8 +87,26 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
     }
 
     /// <inheritdoc />
-    public override ReadOnlyMemory<byte> GetSaveContents<T>(
+    public override async Task SaveAsync<T>(
         T config,
+        OptionOperations<T> operations,
+        WritableConfigurationOptions<T> options,
+        CancellationToken cancellationToken = default
+    )
+        where T : class
+    {
+        var contents = GetSaveContentsCore(config, operations, options);
+        await FileWriter
+            .SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken, options.Logger)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Core method to get save contents with optional operations.
+    /// </summary>
+    private ReadOnlyMemory<byte> GetSaveContentsCore<T>(
+        T config,
+        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options
     )
         where T : class
@@ -97,23 +117,32 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
             typeof(T).Name
         );
 
-        var sectionName = options.SectionName;
-        var serializerOptions = JsonSerializerOptions;
+        // Serialize the new configuration
+        var serializeNode = JsonSerializer.SerializeToNode<T>(config, JsonSerializerOptions);
+        var configNode = serializeNode as JsonObject ?? new JsonObject();
 
-        // generate saved json object
-        var serializeNode = JsonSerializer.SerializeToNode<T>(config, serializerOptions);
+        // Apply deletion operations
+        if (operations.HasOperations)
+        {
+            foreach (var keyToDelete in operations.KeysToDelete)
+            {
+                DeleteKeyFromNode(configNode, keyToDelete, options);
+            }
+        }
 
         options.Logger?.Log(
             LogLevel.Trace,
             "Creating nested section structure for section: {SectionName}",
-            sectionName
+            options.SectionName
         );
-        // Use the new nested section creation method
-        var nestedSection = CreateNestedSection(sectionName, serializeNode ?? new JsonObject());
-        var sNode = JsonSerializer.SerializeToNode(nestedSection, serializerOptions);
+
+        // Create nested section structure if needed
+        var nestedSection = CreateNestedSection(options.SectionName, configNode);
+        var sNode = JsonSerializer.SerializeToNode(nestedSection, JsonSerializerOptions);
         JsonObject root = sNode as JsonObject ?? [];
-        // convert to string
-        var jsonString = root?.ToJsonString(serializerOptions) ?? "{}";
+
+        // Convert to bytes
+        var jsonString = root?.ToJsonString(JsonSerializerOptions) ?? "{}";
         var bytes = Encoding.GetBytes(jsonString);
 
         options.Logger?.Log(
@@ -121,6 +150,57 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
             "JSON serialization completed successfully, size: {Size} bytes",
             bytes.Length
         );
+
         return bytes;
+    }
+
+    /// <summary>
+    /// Deletes a key from the JSON node based on the property path.
+    /// </summary>
+    /// <param name="node">The JSON node to modify.</param>
+    /// <param name="keyPath">The property path to delete (e.g., "Parent:Child").</param>
+    /// <param name="options">The configuration options.</param>
+    private void DeleteKeyFromNode<T>(
+        JsonObject node,
+        string keyPath,
+        WritableConfigurationOptions<T> options
+    )
+        where T : class
+    {
+        var parts = keyPath.Split(':');
+        if (parts.Length == 0)
+        {
+            return;
+        }
+
+        // Navigate to the parent node
+        JsonObject? current = node;
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            if (current.TryGetPropertyValue(parts[i], out var value) && value is JsonObject obj)
+            {
+                current = obj;
+            }
+            else
+            {
+                // Path doesn't exist, nothing to delete
+                options.Logger?.LogDebug(
+                    "Key path {KeyPath} not found for deletion, skipping",
+                    keyPath
+                );
+                return;
+            }
+        }
+
+        // Delete the final key
+        var finalKey = parts[^1];
+        if (current.Remove(finalKey))
+        {
+            options.Logger?.LogDebug("Deleted key {KeyPath} from configuration", keyPath);
+        }
+        else
+        {
+            options.Logger?.LogDebug("Key {KeyPath} not found for deletion, skipping", keyPath);
+        }
     }
 }

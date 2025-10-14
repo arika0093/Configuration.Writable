@@ -74,6 +74,12 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
         SaveWithNameAsync(DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc/>
+    public Task SaveAsync(
+        Action<T, IOptionOperator<T>> configUpdaterWithOperator,
+        CancellationToken cancellationToken = default
+    ) => SaveWithNameAsync(DefaultName, configUpdaterWithOperator, cancellationToken);
+
+    /// <inheritdoc/>
     public Task SaveWithNameAsync(
         string name,
         T newConfig,
@@ -93,6 +99,21 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
     {
         var current = Get(name);
         configUpdater(current);
+        NamedValues[name] = current;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task SaveWithNameAsync(
+        string name,
+        Action<T, IOptionOperator<T>> configUpdaterWithOperator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var current = Get(name);
+        var operations = new OptionOperations<T>();
+        configUpdaterWithOperator(current, operations);
+        // Note: In stub, we don't actually delete keys, just update the value
         NamedValues[name] = current;
         return Task.CompletedTask;
     }

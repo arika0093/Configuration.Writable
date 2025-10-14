@@ -1,6 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
 
@@ -122,28 +125,82 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
     }
 
     /// <inheritdoc />
-    public override ReadOnlyMemory<byte> GetSaveContents<T>(
+    public override async Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options
+        OptionOperations<T> operations,
+        WritableConfigurationOptions<T> options,
+        CancellationToken cancellationToken = default
     )
         where T : class
     {
-        // get json contents from provider
-        var jsonBytes = JsonProvider.GetSaveContents(config, options);
+        options.Logger?.LogDebug(
+            "Saving encrypted configuration with operations to {FilePath}",
+            options.ConfigFilePath
+        );
 
-        // encrypt it
-        using var aes = Aes.Create();
-        var encryptor = aes.CreateEncryptor(Key, aes.IV);
-
-        using var ms = new MemoryStream();
-        // prepend IV to the stream
-        ms.Write(aes.IV, 0, aes.IV.Length);
-        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+        // Use a memory stream to simulate JsonProvider saving
+        // We need to temporarily redirect JsonProvider to save to memory
+        var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var tempOptions = new WritableConfigurationOptions<T>
         {
-            using var bw = new BinaryWriter(cs);
-            // write json bytes
-            bw.Write(jsonBytes.ToArray());
+            ConfigFilePath = tempFilePath,
+            SectionName = options.SectionName,
+            Logger = options.Logger,
+            Provider = JsonProvider,
+            InstanceName = options.InstanceName
+        };
+
+        try
+        {
+            // Use JsonProvider to serialize with operations to temp file
+            await JsonProvider.SaveAsync(config, operations, tempOptions, cancellationToken);
+
+            // Read the JSON content that was written to temp file
+            byte[] jsonBytes;
+#if NETSTANDARD2_0
+            jsonBytes = File.ReadAllBytes(tempOptions.ConfigFilePath);
+#else
+            jsonBytes = await File.ReadAllBytesAsync(tempOptions.ConfigFilePath, cancellationToken);
+#endif
+
+            // Encrypt it
+            using var aes = Aes.Create();
+            var encryptor = aes.CreateEncryptor(Key, aes.IV);
+
+            using var encryptedMs = new MemoryStream();
+            // Prepend IV to the stream
+#if NETSTANDARD2_0
+            encryptedMs.Write(aes.IV, 0, aes.IV.Length);
+#else
+            await encryptedMs.WriteAsync(aes.IV, 0, aes.IV.Length, cancellationToken);
+#endif
+            using (var cs = new CryptoStream(encryptedMs, encryptor, CryptoStreamMode.Write))
+            {
+                using var bw = new BinaryWriter(cs);
+                bw.Write(jsonBytes);
+            }
+
+            var encryptedBytes = encryptedMs.ToArray();
+
+            // Write encrypted bytes to file
+            await FileWriter
+                .SaveToFileAsync(options.ConfigFilePath, encryptedBytes, cancellationToken, options.Logger)
+                .ConfigureAwait(false);
         }
-        return new ReadOnlyMemory<byte>(ms.ToArray());
+        finally
+        {
+            // Delete temp file
+            try
+            {
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
+            catch
+            {
+                /* ignore */
+            }
+        }
     }
 }
