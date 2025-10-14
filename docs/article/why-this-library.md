@@ -58,9 +58,9 @@ As a result, this library provides configuration management similar to MS.E.C, w
 It only depends on the following packages:
 
 * `Microsoft.Extensions.Options` (for the Options pattern)
-  * `Microsoft.Extensions.Primitives` (dependency of MS.E.O)
+  * `Microsoft.Extensions.Primitives` (dependency of MS.E.Options)
 * `Microsoft.Extensions.Logging.Abstractions` (for logging)
-* `Microsoft.Extensions.DependencyInjection.Abstractions` (for DI integration)
+  * `Microsoft.Extensions.DependencyInjection.Abstractions` (dependency of MS.E.Logging)
 
 Since it doesn't require DI like MS.E.C, it's easy to use in applications that don't use DI.
 
