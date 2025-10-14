@@ -83,7 +83,11 @@ public class OptionsSnapshotImplTests
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
-        await configOptions.Provider.SaveAsync(testSettings, new OptionOperations<TestSettings>(), configOptions);
+        await configOptions.Provider.SaveAsync(
+            testSettings,
+            new OptionOperations<TestSettings>(),
+            configOptions
+        );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
@@ -143,8 +147,16 @@ public class OptionsSnapshotImplTests
         var settings1 = new TestSettings { Name = "first", Value = 111 };
         var settings2 = new TestSettings { Name = "second", Value = 222 };
 
-        await configOptions1.Provider.SaveAsync(settings1, new OptionOperations<TestSettings>(), configOptions1);
-        await configOptions2.Provider.SaveAsync(settings2, new OptionOperations<TestSettings>(), configOptions2);
+        await configOptions1.Provider.SaveAsync(
+            settings1,
+            new OptionOperations<TestSettings>(),
+            configOptions1
+        );
+        await configOptions2.Provider.SaveAsync(
+            settings2,
+            new OptionOperations<TestSettings>(),
+            configOptions2
+        );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(
             new[] { configOptions1, configOptions2 }
@@ -256,7 +268,11 @@ public class OptionsSnapshotImplTests
 
         // Initial data
         var initialSettings = new TestSettings { Name = "initial", Value = 100 };
-        await configOptions.Provider.SaveAsync(initialSettings, new OptionOperations<TestSettings>(), configOptions);
+        await configOptions.Provider.SaveAsync(
+            initialSettings,
+            new OptionOperations<TestSettings>(),
+            configOptions
+        );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
 

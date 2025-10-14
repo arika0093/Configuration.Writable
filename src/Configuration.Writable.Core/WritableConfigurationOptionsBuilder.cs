@@ -112,10 +112,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// </remarks>
     public string DefaultSectionName
     {
-        get
-        {
-            return "";
-        }
+        get { return ""; }
     }
 
     /// <summary>

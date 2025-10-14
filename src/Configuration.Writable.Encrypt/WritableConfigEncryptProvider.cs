@@ -147,7 +147,7 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
             SectionName = options.SectionName,
             Logger = options.Logger,
             Provider = JsonProvider,
-            InstanceName = options.InstanceName
+            InstanceName = options.InstanceName,
         };
 
         try
@@ -184,7 +184,12 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
 
             // Write encrypted bytes to file
             await FileWriter
-                .SaveToFileAsync(options.ConfigFilePath, encryptedBytes, cancellationToken, options.Logger)
+                .SaveToFileAsync(
+                    options.ConfigFilePath,
+                    encryptedBytes,
+                    cancellationToken,
+                    options.Logger
+                )
                 .ConfigureAwait(false);
         }
         finally

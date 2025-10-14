@@ -20,7 +20,10 @@ public class RealisticUsageScenarioTests : IDisposable
     public RealisticUsageScenarioTests()
     {
         // Create a unique temporary directory for each test run
-        _testDirectory = Path.Combine(Path.GetTempPath(), $"WritableConfigTests_{Guid.NewGuid():N}");
+        _testDirectory = Path.Combine(
+            Path.GetTempPath(),
+            $"WritableConfigTests_{Guid.NewGuid():N}"
+        );
         Directory.CreateDirectory(_testDirectory);
     }
 

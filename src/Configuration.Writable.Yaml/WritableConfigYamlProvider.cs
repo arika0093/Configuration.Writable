@@ -173,7 +173,8 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         // Serialize config to dictionary
         var configYaml = serializer.Serialize(config);
         var deserializer = Deserializer;
-        var configDict = deserializer.Deserialize<Dictionary<string, object>>(configYaml)
+        var configDict =
+            deserializer.Deserialize<Dictionary<string, object>>(configYaml)
             ?? new Dictionary<string, object>();
 
         // Apply deletion operations
@@ -278,27 +279,23 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
             }
             else
             {
-                options.Logger?.LogDebug(
-                    "Key {KeyPath} not found for deletion, skipping",
-                    keyPath
-                );
+                options.Logger?.LogDebug("Key {KeyPath} not found for deletion, skipping", keyPath);
             }
         }
         else if (current is Dictionary<object, object> finalObjectDict)
         {
             var key = finalObjectDict
                 .Keys.OfType<string>()
-                .FirstOrDefault(k => string.Equals(k, finalKey, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(k =>
+                    string.Equals(k, finalKey, StringComparison.OrdinalIgnoreCase)
+                );
             if (key != null && finalObjectDict.Remove(key))
             {
                 options.Logger?.LogDebug("Deleted key {KeyPath} from configuration", keyPath);
             }
             else
             {
-                options.Logger?.LogDebug(
-                    "Key {KeyPath} not found for deletion, skipping",
-                    keyPath
-                );
+                options.Logger?.LogDebug("Key {KeyPath} not found for deletion, skipping", keyPath);
             }
         }
         else
