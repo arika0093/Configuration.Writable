@@ -160,7 +160,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
     /// <param name="node">The JSON node to modify.</param>
     /// <param name="keyPath">The property path to delete (e.g., "Parent:Child").</param>
     /// <param name="options">The configuration options.</param>
-    private void DeleteKeyFromNode<T>(
+    private static void DeleteKeyFromNode<T>(
         JsonObject node,
         string keyPath,
         WritableConfigurationOptions<T> options

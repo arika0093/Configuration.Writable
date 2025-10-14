@@ -198,7 +198,7 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
     /// <param name="dict">The dictionary to modify.</param>
     /// <param name="keyPath">The property path to delete (e.g., "Parent:Child").</param>
     /// <param name="options">The configuration options.</param>
-    private void DeleteKeyFromDict<T>(
+    private static void DeleteKeyFromDict<T>(
         Dictionary<string, object> dict,
         string keyPath,
         WritableConfigurationOptions<T> options

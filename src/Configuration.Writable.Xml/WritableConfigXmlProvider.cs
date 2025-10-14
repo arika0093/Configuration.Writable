@@ -112,7 +112,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
     /// <summary>
     /// Core method to get save contents with optional operations.
     /// </summary>
-    private ReadOnlyMemory<byte> GetSaveContentsCore<T>(
+    private static ReadOnlyMemory<byte> GetSaveContentsCore<T>(
         T config,
         OptionOperations<T> operations,
         WritableConfigurationOptions<T> options
@@ -167,7 +167,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
     /// <param name="element">The XML element to modify.</param>
     /// <param name="keyPath">The property path to delete (e.g., "Parent:Child").</param>
     /// <param name="options">The configuration options.</param>
-    private void DeleteKeyFromXml<T>(
+    private static void DeleteKeyFromXml<T>(
         XmlElement element,
         string keyPath,
         WritableConfigurationOptions<T> options

@@ -170,9 +170,9 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
             using var encryptedMs = new MemoryStream();
             // Prepend IV to the stream
 #if NETSTANDARD2_0
-            encryptedMs.Write(aes.IV, 0, aes.IV.Length);
+            await encryptedMs.WriteAsync(aes.IV, 0, aes.IV.Length);
 #else
-            await encryptedMs.WriteAsync(aes.IV, 0, aes.IV.Length, cancellationToken);
+            await encryptedMs.WriteAsync(aes.IV.AsMemory(0, aes.IV.Length), cancellationToken);
 #endif
             using (var cs = new CryptoStream(encryptedMs, encryptor, CryptoStreamMode.Write))
             {
