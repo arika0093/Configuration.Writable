@@ -8,11 +8,11 @@ namespace Configuration.Writable
         public override string FileExtension { get; }
         public Configuration.Writable.WritableConfigJsonProvider JsonProvider { get; init; }
         public byte[] Key { get; }
-        public override System.ReadOnlyMemory<byte> GetSaveContents<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class { }
         public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class { }
         public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class { }
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class { }
     }
 }
