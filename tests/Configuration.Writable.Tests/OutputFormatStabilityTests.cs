@@ -305,4 +305,180 @@ public class OutputFormatStabilityTests
             "Byte array should roundtrip through UTF-8 correctly"
         );
     }
+
+    [Fact]
+    public async Task JsonProvider_DeleteKey_SimpleProperty_ShouldRemoveFromFile()
+    {
+        const string testFileName = "delete_simple_test.json";
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigJsonProvider
+            {
+                JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                },
+            };
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var testConfig = new TestConfiguration();
+        var option = instance.GetOptions();
+
+        // Save with DeleteKey operation
+        await option.SaveAsync((config, op) =>
+        {
+            op.DeleteKey(c => c.StringValue);
+            op.DeleteKey(c => c.BoolValue);
+        });
+
+        var actualOutput = _fileWriter.ReadAllText(testFileName);
+
+        // Verify deleted keys are not present
+        actualOutput.ShouldNotContain("stringValue");
+        actualOutput.ShouldNotContain("StringValue");
+        actualOutput.ShouldNotContain("boolValue");
+        actualOutput.ShouldNotContain("BoolValue");
+
+        // Verify other keys are still present
+        actualOutput.ShouldContain("intValue");
+        actualOutput.ShouldContain("42");
+        actualOutput.ShouldContain("nested");
+    }
+
+    [Fact]
+    public async Task JsonProvider_DeleteKey_NestedProperty_ShouldRemoveFromFile()
+    {
+        const string testFileName = "delete_nested_test.json";
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigJsonProvider
+            {
+                JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                },
+            };
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var testConfig = new TestConfiguration();
+        var option = instance.GetOptions();
+
+        // Save with DeleteKey operation for nested property
+        await option.SaveAsync((config, op) =>
+        {
+            op.DeleteKey(c => c.Nested.Description);
+        });
+
+        var actualOutput = _fileWriter.ReadAllText(testFileName);
+
+        // Verify nested deleted key is not present
+        actualOutput.ShouldNotContain("description");
+        actualOutput.ShouldNotContain("Nested description");
+
+        // Verify other nested properties are still present
+        actualOutput.ShouldContain("nested");
+        actualOutput.ShouldContain("price");
+        actualOutput.ShouldContain("99.99");
+
+        // Verify root properties are still present
+        actualOutput.ShouldContain("stringValue");
+        actualOutput.ShouldContain("intValue");
+    }
+
+    [Fact]
+    public async Task JsonProvider_DeleteKey_NonExistentProperty_ShouldNotError()
+    {
+        const string testFileName = "delete_nonexistent_test.json";
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigJsonProvider
+            {
+                JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                },
+            };
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var testConfig = new TestConfiguration();
+        var option = instance.GetOptions();
+
+        // First save with a deletion
+        await option.SaveAsync((config, op) =>
+        {
+            op.DeleteKey(c => c.StringValue);
+        });
+
+        // Save again trying to delete the already deleted key - should not error
+        await option.SaveAsync((config, op) =>
+        {
+            op.DeleteKey(c => c.StringValue);
+        });
+
+        var actualOutput = _fileWriter.ReadAllText(testFileName);
+
+        // Verify the key is still not present
+        actualOutput.ShouldNotContain("stringValue");
+
+        // Verify file is still valid
+        actualOutput.ShouldContain("intValue");
+    }
+
+    [Fact]
+    public async Task JsonProvider_DeleteKey_CombinedWithUpdate_ShouldWork()
+    {
+        const string testFileName = "delete_combined_test.json";
+        var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigJsonProvider
+            {
+                JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                },
+            };
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var testConfig = new TestConfiguration();
+        var option = instance.GetOptions();
+
+        // Save with both update and deletion
+        await option.SaveAsync((config, op) =>
+        {
+            config.StringValue = "Updated Value";
+            config.IntValue = 999;
+            op.DeleteKey(c => c.BoolValue);
+            op.DeleteKey(c => c.Nested.IsActive);
+        });
+
+        var actualOutput = _fileWriter.ReadAllText(testFileName);
+
+        // Verify updates are present
+        actualOutput.ShouldContain("Updated Value");
+        actualOutput.ShouldContain("999");
+
+        // Verify deletions are not present
+        actualOutput.ShouldNotContain("boolValue");
+        actualOutput.ShouldNotContain("isActive");
+
+        // Verify other properties are still present
+        actualOutput.ShouldContain("nested");
+        actualOutput.ShouldContain("price");
+    }
 }

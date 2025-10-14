@@ -223,4 +223,150 @@ public class WritableConfigEncryptProviderTests
         loadedSettings.Value.ShouldBe(666);
         loadedSettings.SecretKey.ShouldBe("asyncsecret");
     }
+
+    [Fact]
+    public async Task DeleteKey_SimpleProperty_ShouldRemoveFromEncryptedFile()
+    {
+        var testFileName = Path.GetRandomFileName();
+        var encryptionKey = "deleteencryptionkey123456789";
+        var provider = new WritableConfigEncryptProvider(encryptionKey);
+        provider.FileWriter = _fileWriter;
+
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = provider;
+        });
+
+        var option = _instance.GetOptions();
+
+        // Save with DeleteKey operation
+        await option.SaveAsync((settings, op) =>
+        {
+            settings.Name = "encrypt_delete_test";
+            settings.Value = 123;
+            op.DeleteKey(s => s.IsEnabled);
+            op.DeleteKey(s => s.SecretKey);
+        });
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        // Verify data is encrypted
+        var fileBytes = _fileWriter.ReadAllBytes(testFileName);
+        var fileText = Encoding.UTF8.GetString(fileBytes);
+        fileText.ShouldNotContain("encrypt_delete_test");
+        fileText.ShouldNotContain("123");
+
+        // Reload and verify deletion worked
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = provider;
+        });
+
+        option = _instance.GetOptions();
+        var loadedSettings = option.CurrentValue;
+
+        // Verify updated values are present
+        loadedSettings.Name.ShouldBe("encrypt_delete_test");
+        loadedSettings.Value.ShouldBe(123);
+
+        // Note: When keys are deleted from JSON, they are not present in the file.
+        // When deserialized, C# class properties will use their default initializers
+        // So IsEnabled will be true (from the class default), not false (default(bool))
+        // This is expected behavior - the key is absent from the file, and the class defaults apply
+        loadedSettings.IsEnabled.ShouldBe(true); // Class default value
+        loadedSettings.SecretKey.ShouldBe("secret123"); // Class default value
+    }
+
+    [Fact]
+    public async Task DeleteKey_NonExistentProperty_ShouldNotError()
+    {
+        var testFileName = Path.GetRandomFileName();
+        var encryptionKey = "deleteencryptionkey123456789";
+        var provider = new WritableConfigEncryptProvider(encryptionKey);
+        provider.FileWriter = _fileWriter;
+
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = provider;
+        });
+
+        var option = _instance.GetOptions();
+
+        // First save with a deletion
+        await option.SaveAsync((settings, op) =>
+        {
+            settings.Name = "encrypt_test";
+            op.DeleteKey(s => s.IsEnabled);
+        });
+
+        // Save again trying to delete the already deleted key - should not error
+        await option.SaveAsync((settings, op) =>
+        {
+            op.DeleteKey(s => s.IsEnabled);
+        });
+
+        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+
+        // Reload and verify file is still valid
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = provider;
+        });
+
+        option = _instance.GetOptions();
+        var loadedSettings = option.CurrentValue;
+
+        loadedSettings.Name.ShouldBe("encrypt_test");
+    }
+
+    [Fact]
+    public async Task DeleteKey_CombinedWithUpdate_ShouldWork()
+    {
+        var testFileName = Path.GetRandomFileName();
+        var encryptionKey = "combinedencryptionkey12345678";
+        var provider = new WritableConfigEncryptProvider(encryptionKey);
+        provider.FileWriter = _fileWriter;
+
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = provider;
+        });
+
+        var option = _instance.GetOptions();
+
+        // Save with both update and deletion
+        await option.SaveAsync((settings, op) =>
+        {
+            settings.Name = "updated_encrypt";
+            settings.Value = 999;
+            settings.SecretKey = "newsecret";
+            op.DeleteKey(s => s.IsEnabled);
+        });
+
+        // Reload and verify
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = provider;
+        });
+
+        option = _instance.GetOptions();
+        var loadedSettings = option.CurrentValue;
+
+        // Verify updates are present
+        loadedSettings.Name.ShouldBe("updated_encrypt");
+        loadedSettings.Value.ShouldBe(999);
+        loadedSettings.SecretKey.ShouldBe("newsecret");
+
+        // Verify deletion worked (key is absent, so class default applies)
+        loadedSettings.IsEnabled.ShouldBe(true); // Class default value
+    }
 }

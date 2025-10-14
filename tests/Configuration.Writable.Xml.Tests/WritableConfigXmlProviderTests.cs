@@ -289,4 +289,147 @@ public class WritableConfigXmlProviderTests
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
+
+    [Fact]
+    public async Task DeleteKey_SimpleProperty_ShouldRemoveFromXmlFile()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigXmlProvider();
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var option = _instance.GetOptions();
+
+        // Save with DeleteKey operation
+        await option.SaveAsync((settings, op) =>
+        {
+            settings.Name = "xml_test";
+            settings.Value = 100;
+            op.DeleteKey(s => s.IsEnabled);
+        });
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+
+        // Verify deleted keys are not present
+        fileContent.ShouldNotContain("<IsEnabled>");
+        fileContent.ShouldNotContain("</IsEnabled>");
+
+        // Verify other keys are still present
+        fileContent.ShouldContain("<Name>xml_test</Name>");
+        fileContent.ShouldContain("<Value>100</Value>");
+    }
+
+    [Fact]
+    public async Task DeleteKey_MultipleProperties_ShouldRemoveFromXmlFile()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigXmlProvider();
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var option = _instance.GetOptions();
+
+        // Save with multiple DeleteKey operations
+        await option.SaveAsync((settings, op) =>
+        {
+            settings.Name = "xml_multi_delete";
+            op.DeleteKey(s => s.Value);
+            op.DeleteKey(s => s.IsEnabled);
+            op.DeleteKey(s => s.Items);
+        });
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+
+        // Verify deleted keys are not present
+        fileContent.ShouldNotContain("<Value>");
+        fileContent.ShouldNotContain("<IsEnabled>");
+        fileContent.ShouldNotContain("<Items>");
+
+        // Verify remaining key is still present
+        fileContent.ShouldContain("<Name>xml_multi_delete</Name>");
+    }
+
+    [Fact]
+    public async Task DeleteKey_NonExistentProperty_ShouldNotError()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigXmlProvider();
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var option = _instance.GetOptions();
+
+        // First save with a deletion
+        await option.SaveAsync((settings, op) =>
+        {
+            settings.Name = "xml_test";
+            op.DeleteKey(s => s.IsEnabled);
+        });
+
+        // Save again trying to delete the already deleted key - should not error
+        await option.SaveAsync((settings, op) =>
+        {
+            op.DeleteKey(s => s.IsEnabled);
+        });
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+
+        // Verify the key is still not present
+        fileContent.ShouldNotContain("<IsEnabled>");
+
+        // Verify file is still valid
+        fileContent.ShouldContain("<Name>");
+    }
+
+    [Fact]
+    public async Task DeleteKey_CombinedWithUpdate_ShouldWork()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        var _instance = new WritableOptionsSimpleInstance<TestSettings>();
+        _instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.Provider = new WritableConfigXmlProvider();
+            options.UseInMemoryFileWriter(_fileWriter);
+        });
+
+        var option = _instance.GetOptions();
+
+        // Save with both update and deletion
+        await option.SaveAsync((settings, op) =>
+        {
+            settings.Name = "updated_xml";
+            settings.Value = 999;
+            settings.Items = ["updated1", "updated2"];
+            op.DeleteKey(s => s.IsEnabled);
+        });
+
+        var fileContent = _fileWriter.ReadAllText(testFileName);
+
+        // Verify updates are present
+        fileContent.ShouldContain("<Name>updated_xml</Name>");
+        fileContent.ShouldContain("<Value>999</Value>");
+
+        // Verify deletion is not present
+        fileContent.ShouldNotContain("<IsEnabled>");
+
+        // Verify other properties are still present
+        fileContent.ShouldContain("<Items>");
+    }
 }
