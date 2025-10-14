@@ -362,6 +362,22 @@ internal class UserSetting
 }
 ```
 
+To use source generators for DataAnnotations, use the following pattern.
+
+```csharp
+builder.Services.AddWritableOptions<UserSetting>(opt => {
+    // disable attributes-based validation
+    opt.UseDataAnnotationsValidation = false;
+    // enable source-generator-based validation
+    opt.WithValidator<UserSettingValidator>();
+});
+
+internal class UserSetting { /* ... */ }
+
+[OptionsValidator]
+public partial class SampleSettingValidator : IValidateOptions<UserSetting>;
+```
+
 Alternatively, you can add custom validation using `WithValidatorFunction` or `WithValidator`.
 
 ```csharp
