@@ -496,6 +496,7 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
 * Support version update migration
 * Support dynamic addition/removal of configuration sources
 * Support multiple configurations merging and save each partially
+* Support NativeAOT and trimming.
 
 ## License
 This project is licensed under the Apache-2.0 License.
