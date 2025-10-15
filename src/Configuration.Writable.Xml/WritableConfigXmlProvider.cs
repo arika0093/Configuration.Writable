@@ -27,13 +27,13 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         var stream = FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         using (stream)
@@ -50,7 +50,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
 
         if (root == null)
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         // Navigate to the section if specified
@@ -70,7 +70,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
                 else
                 {
                     // Section not found, return default instance
-                    return Activator.CreateInstance<T>();
+                    return new T();
                 }
             }
 
@@ -80,7 +80,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
                 typeof(T),
                 new XmlRootAttribute(current.Name.LocalName)
             );
-            return (serializer.Deserialize(reader) as T) ?? Activator.CreateInstance<T>();
+            return (serializer.Deserialize(reader) as T) ?? new T();
         }
 
         // Deserialize from root
@@ -89,7 +89,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
             typeof(T),
             new XmlRootAttribute(root.Name.LocalName)
         );
-        return (rootSerializer.Deserialize(rootReader) as T) ?? Activator.CreateInstance<T>();
+        return (rootSerializer.Deserialize(rootReader) as T) ?? new T();
     }
 
     /// <inheritdoc />

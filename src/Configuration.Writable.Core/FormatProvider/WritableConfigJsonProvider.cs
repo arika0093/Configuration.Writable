@@ -35,13 +35,13 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         var stream = FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         using (stream)
@@ -72,16 +72,15 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
                 else
                 {
                     // Section not found, return default instance
-                    return Activator.CreateInstance<T>();
+                    return new T();
                 }
             }
 
             return JsonSerializer.Deserialize<T>(current.GetRawText(), JsonSerializerOptions)
-                ?? Activator.CreateInstance<T>();
+                ?? new T();
         }
 
-        return JsonSerializer.Deserialize<T>(root.GetRawText(), JsonSerializerOptions)
-            ?? Activator.CreateInstance<T>();
+        return JsonSerializer.Deserialize<T>(root.GetRawText(), JsonSerializerOptions) ?? new T();
     }
 
     /// <inheritdoc />

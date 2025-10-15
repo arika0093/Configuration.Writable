@@ -42,13 +42,13 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         var stream = FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         using (stream)
@@ -65,7 +65,7 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
 
         if (string.IsNullOrWhiteSpace(yamlContent))
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         // Deserialize the YAML to a dictionary first
@@ -74,7 +74,7 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
 
         if (yamlObject == null)
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         // Navigate to the section if specified
@@ -101,7 +101,7 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
                     else
                     {
                         // Section not found, return default instance
-                        return Activator.CreateInstance<T>();
+                        return new T();
                     }
                 }
                 else if (current is Dictionary<object, object> objectKeyDict)
@@ -119,25 +119,25 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
                     else
                     {
                         // Section not found, return default instance
-                        return Activator.CreateInstance<T>();
+                        return new T();
                     }
                 }
                 else
                 {
                     // Current is not a dictionary, return default instance
-                    return Activator.CreateInstance<T>();
+                    return new T();
                 }
             }
 
             // Serialize and deserialize to convert to T
             var serializer = Serializer;
             var serialized = serializer.Serialize(current);
-            return deserializer.Deserialize<T>(serialized) ?? Activator.CreateInstance<T>();
+            return deserializer.Deserialize<T>(serialized) ?? new T();
         }
 
         // Deserialize from root
         var rootSerialized = Serializer.Serialize(yamlObject);
-        return deserializer.Deserialize<T>(rootSerialized) ?? Activator.CreateInstance<T>();
+        return deserializer.Deserialize<T>(rootSerialized) ?? new T();
     }
 
     /// <inheritdoc />

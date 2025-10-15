@@ -74,13 +74,13 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         var stream = FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
-            return Activator.CreateInstance<T>();
+            return new T();
         }
 
         using (stream)
@@ -118,7 +118,7 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
         catch
         {
             // If decryption fails, return default instance
-            return Activator.CreateInstance<T>();
+            return new T();
         }
     }
 
