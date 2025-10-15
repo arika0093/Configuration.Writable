@@ -10,7 +10,7 @@ namespace Configuration.Writable.Testing;
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class WritableOptionsStub<T> : IWritableOptions<T>
-    where T : class
+    where T : class, new()
 {
     private const string DefaultName = "";
 
@@ -131,7 +131,7 @@ public static class WritableOptionsStub
     /// <param name="value">The initial value to be used for the default name.</param>
     /// <returns>A new instance of <see cref="WritableOptionsStub{T}"/>.</returns>
     public static WritableOptionsStub<T> Create<T>(T value)
-        where T : class => new(value);
+        where T : class, new() => new(value);
 
     /// <summary>
     /// Creates a new instance of <see cref="WritableOptionsStub{T}"/> with the specified named values.
@@ -140,5 +140,5 @@ public static class WritableOptionsStub
     /// <param name="namedValues">A dictionary containing named configuration values.</param>
     /// <returns>A new instance of <see cref="WritableOptionsStub{T}"/>.</returns>
     public static WritableOptionsStub<T> Create<T>(Dictionary<string, T> namedValues)
-        where T : class => new(namedValues);
+        where T : class, new() => new(namedValues);
 }

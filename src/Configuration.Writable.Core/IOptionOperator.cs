@@ -8,7 +8,7 @@ namespace Configuration.Writable;
 /// </summary>
 /// <typeparam name="T">The type of the options class.</typeparam>
 public interface IOptionOperator<T>
-    where T : class
+    where T : class, new()
 {
     /// <summary>
     /// Marks the specified property key for deletion in the configuration file.

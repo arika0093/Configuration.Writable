@@ -9,7 +9,7 @@ namespace Configuration.Writable.Options;
 /// application's lifetime.
 /// </summary>
 internal class OptionsSnapshotImpl<T> : IOptionsSnapshot<T>
-    where T : class
+    where T : class, new()
 {
     private readonly Dictionary<string, T> _snapshotValues = [];
 

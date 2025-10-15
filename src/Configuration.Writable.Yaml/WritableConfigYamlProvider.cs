@@ -38,7 +38,6 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
-        where T : class
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -60,7 +59,6 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
-        where T : class
     {
         using var reader = new StreamReader(stream, Encoding);
         var yamlContent = reader.ReadToEnd();
@@ -149,7 +147,6 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class
     {
         var contents = GetSaveContentsCore(config, operations, options);
         await FileProvider
@@ -165,7 +162,7 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         OptionOperations<T> operations,
         WritableConfigurationOptions<T> options
     )
-        where T : class
+        where T : class, new()
     {
         var sectionName = options.SectionName;
         var serializer = Serializer;
@@ -203,7 +200,7 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         string keyPath,
         WritableConfigurationOptions<T> options
     )
-        where T : class
+        where T : class, new()
     {
         var parts = keyPath.Split(':');
         if (parts.Length == 0)

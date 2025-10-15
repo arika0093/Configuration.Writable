@@ -12,7 +12,7 @@ public static class InMemoryFileProviderExtensions
         this WritableConfigurationOptionsBuilder<T> builder,
         InMemoryFileProvider inMemoryFileProvider
     )
-        where T : class
+        where T : class, new()
     {
         builder.FileProvider = inMemoryFileProvider;
         builder.Provider.FileProvider = inMemoryFileProvider;

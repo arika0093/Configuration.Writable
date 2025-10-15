@@ -475,7 +475,7 @@ It automatically reflects the latest settings when the underlying configuration 
 This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from MS.E.O.
 
 ```csharp
-public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class
+public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class, new()
 ```
 
 The additional features compared to `IOptionsMonitor<T>` are as follows:
@@ -488,7 +488,7 @@ An interface for reading and writing the settings of the registered type `T`.
 It provides the same functionality as `IReadOnlyOptions<T>`, with additional support for saving settings.
 
 ```csharp
-public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class
+public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class, new()
 ```
 
 ## ToDo

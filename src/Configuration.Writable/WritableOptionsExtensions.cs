@@ -20,7 +20,7 @@ public static class WritableOptionsExtensions
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
     public static IServiceCollection AddWritableOptions<T>(this IServiceCollection services)
-        where T : class
+        where T : class, new()
     {
         return services.AddWritableOptions<T>(_ => { });
     }
@@ -37,7 +37,7 @@ public static class WritableOptionsExtensions
         this IServiceCollection services,
         Action<WritableConfigurationOptionsBuilder<T>> configureOptions
     )
-        where T : class
+        where T : class, new()
     {
         // build options
         var confBuilder = new WritableConfigurationOptionsBuilder<T>();
@@ -56,7 +56,7 @@ public static class WritableOptionsExtensions
         this IServiceCollection services,
         WritableConfigurationOptionsBuilder<T> confBuilder
     )
-        where T : class
+        where T : class, new()
     {
         var FileProvider = confBuilder.FileProvider;
         var options = confBuilder.BuildOptions();

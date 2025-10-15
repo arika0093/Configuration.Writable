@@ -7,7 +7,7 @@ namespace Configuration.Writable;
 /// Provides methods to initialize and retrieve writable configuration instances for a specified options type.
 /// </summary>
 public class WritableOptionsSimpleInstance<T>
-    where T : class
+    where T : class, new()
 {
     private WritableConfigurationOptions<T>? _options = null;
 

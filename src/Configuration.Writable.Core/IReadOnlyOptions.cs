@@ -6,7 +6,7 @@ namespace Configuration.Writable;
 /// Represents a read-only configuration options interface for accessing and monitoring options of type <typeparamref name="T"/>.
 /// </summary>
 public interface IReadOnlyOptions<T> : IOptionsMonitor<T>
-    where T : class
+    where T : class, new()
 {
     /// <summary>
     /// Retrieves the configuration settings object for the default configuration section.

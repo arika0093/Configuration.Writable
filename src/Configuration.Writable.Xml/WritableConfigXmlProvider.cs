@@ -23,7 +23,6 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
-        where T : class
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -45,7 +44,6 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
-        where T : class
     {
         var xmlDoc = XDocument.Load(stream);
         var root = xmlDoc.Root;
@@ -101,7 +99,6 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class
     {
         var contents = GetSaveContentsCore(config, operations, options);
         await FileProvider
@@ -117,7 +114,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
         OptionOperations<T> operations,
         WritableConfigurationOptions<T> options
     )
-        where T : class
+        where T : class, new()
     {
         var sectionName = options.SectionName;
         var parts = GetSplitedSections(sectionName);
@@ -172,7 +169,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
         string keyPath,
         WritableConfigurationOptions<T> options
     )
-        where T : class
+        where T : class, new()
     {
         var parts = keyPath.Split(':');
         if (parts.Length == 0)

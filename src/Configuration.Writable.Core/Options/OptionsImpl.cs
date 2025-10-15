@@ -10,7 +10,7 @@ namespace Configuration.Writable.Options;
 /// Provides the configuration values at the time the application was started.
 /// </summary>
 internal class OptionsImpl<T>(OptionsMonitorImpl<T> optionsMonitor) : IOptions<T>
-    where T : class
+    where T : class, new()
 {
     public T Value => optionsMonitor.GetDefaultValue(MEOptions.DefaultName);
 }

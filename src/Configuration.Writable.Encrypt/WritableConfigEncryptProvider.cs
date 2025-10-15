@@ -70,7 +70,6 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
-        where T : class
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -92,7 +91,6 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
-        where T : class
     {
         try
         {
@@ -131,7 +129,6 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class
     {
         options.Logger?.LogDebug(
             "Saving encrypted configuration with operations to {FilePath}",

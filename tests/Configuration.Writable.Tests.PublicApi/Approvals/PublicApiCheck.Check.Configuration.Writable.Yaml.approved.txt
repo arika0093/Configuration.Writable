@@ -9,10 +9,10 @@ namespace Configuration.Writable
         public override string FileExtension { get; }
         public YamlDotNet.Serialization.ISerializer Serializer { get; init; }
         public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class { }
+            where T :  class, new () { }
         public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class { }
+            where T :  class, new () { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class { }
+            where T :  class, new () { }
     }
 }

@@ -10,7 +10,7 @@ namespace Configuration.Writable;
 /// </summary>
 /// <typeparam name="T">The type of the options class.</typeparam>
 public sealed class OptionOperations<T> : IOptionOperator<T>
-    where T : class
+    where T : class, new()
 {
     private readonly List<string> _keysToDelete = [];
 

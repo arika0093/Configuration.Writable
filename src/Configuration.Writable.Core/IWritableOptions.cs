@@ -9,7 +9,7 @@ namespace Configuration.Writable;
 /// </summary>
 /// <typeparam name="T">The type of the options class.</typeparam>
 public interface IWritableOptions<T> : IReadOnlyOptions<T>
-    where T : class
+    where T : class, new()
 {
     /// <summary>
     /// Asynchronously saves the specified configuration.

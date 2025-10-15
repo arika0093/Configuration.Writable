@@ -17,7 +17,7 @@ namespace Configuration.Writable;
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
 public record WritableConfigurationOptionsBuilder<T>
-    where T : class
+    where T : class, new()
 {
     private const string DefaultFileName = "usersettings";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];

@@ -13,7 +13,7 @@ public static class WritableConfig
 
     // Cache the service provider to avoid multiple builds
     private static WritableOptionsSimpleInstance<T> GetInternalInstance<T>()
-        where T : class
+        where T : class, new()
     {
         var type = typeof(T);
         if (_instances.TryGetValue(type, out var rst))
@@ -32,7 +32,7 @@ public static class WritableConfig
     /// Initializes writable configuration with default settings.
     /// </summary>
     public static void Initialize<T>()
-        where T : class => Initialize<T>(_ => { });
+        where T : class, new() => Initialize<T>(_ => { });
 
     /// <summary>
     /// Initializes writable configuration with custom options.
@@ -41,11 +41,11 @@ public static class WritableConfig
     public static void Initialize<T>(
         Action<WritableConfigurationOptionsBuilder<T>> configurationOptions
     )
-        where T : class => GetInternalInstance<T>().Initialize(configurationOptions);
+        where T : class, new() => GetInternalInstance<T>().Initialize(configurationOptions);
 
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
     public static IWritableOptions<T> GetOptions<T>()
-        where T : class => GetInternalInstance<T>().GetOptions();
+        where T : class, new() => GetInternalInstance<T>().GetOptions();
 }

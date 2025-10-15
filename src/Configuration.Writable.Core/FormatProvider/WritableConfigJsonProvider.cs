@@ -31,7 +31,6 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
-        where T : class
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -53,7 +52,6 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
 
     /// <inheritdoc />
     public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
-        where T : class
     {
         var jsonDocument = JsonDocument.Parse(stream);
         var root = jsonDocument.RootElement;
@@ -93,7 +91,6 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class
     {
         var contents = GetSaveContentsCore(config, operations, options);
         await FileProvider
@@ -109,7 +106,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         OptionOperations<T> operations,
         WritableConfigurationOptions<T> options
     )
-        where T : class
+        where T : class, new()
     {
         options.Logger?.Log(
             LogLevel.Trace,
@@ -165,7 +162,7 @@ public class WritableConfigJsonProvider : WritableConfigProviderBase
         string keyPath,
         WritableConfigurationOptions<T> options
     )
-        where T : class
+        where T : class, new()
     {
         var parts = keyPath.Split(':');
         if (parts.Length == 0)

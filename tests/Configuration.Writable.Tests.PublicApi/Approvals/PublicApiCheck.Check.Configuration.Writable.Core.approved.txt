@@ -26,12 +26,12 @@ namespace Configuration.Writable.FileProvider
 namespace Configuration.Writable
 {
     public interface IOptionOperator<T>
-        where T :  class
+        where T :  class, new ()
     {
         void DeleteKey(System.Linq.Expressions.Expression<System.Func<T, object?>> selector);
     }
     public interface IReadOnlyOptions<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
-        where T :  class
+        where T :  class, new ()
     {
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name);
@@ -41,14 +41,14 @@ namespace Configuration.Writable
         string FileExtension { get; }
         Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
         T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class;
+            where T :  class, new ();
         T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class;
+            where T :  class, new ();
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class;
+            where T :  class, new ();
     }
     public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
-        where T :  class
+        where T :  class, new ()
     {
         System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(System.Action<T, Configuration.Writable.IOptionOperator<T>> configUpdaterWithOperator, System.Threading.CancellationToken cancellationToken = default);
@@ -58,7 +58,7 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveWithNameAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
     }
     public sealed class OptionOperations<T> : Configuration.Writable.IOptionOperator<T>
-        where T :  class
+        where T :  class, new ()
     {
         public OptionOperations() { }
         public bool HasOperations { get; }
@@ -72,11 +72,11 @@ namespace Configuration.Writable
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
         public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class { }
+            where T :  class, new () { }
         public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class { }
+            where T :  class, new () { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class { }
+            where T :  class, new () { }
     }
     public abstract class WritableConfigProviderBase : Configuration.Writable.IWritableConfigProvider
     {
@@ -84,16 +84,16 @@ namespace Configuration.Writable
         public abstract string FileExtension { get; }
         public virtual Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
         public abstract T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class;
+            where T :  class, new ();
         public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class;
+            where T :  class, new ();
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class;
+            where T :  class, new ();
         protected static object CreateNestedSection(string sectionName, object value) { }
         protected static string[] GetSplitedSections(string sectionName) { }
     }
     public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
-        where T :  class
+        where T :  class, new ()
     {
         public WritableConfigurationOptionsBuilder() { }
         public string ConfigFilePath { get; }
@@ -117,7 +117,7 @@ namespace Configuration.Writable
         public void WithValidatorFunction(System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult> validator) { }
     }
     public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>
-        where T :  class
+        where T :  class, new ()
     {
         public WritableConfigurationOptions() { }
         public required string ConfigFilePath { get; init; }
@@ -130,10 +130,10 @@ namespace Configuration.Writable
     public static class WritableOptionsCoreExtensions
     {
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
-            where T :  class { }
+            where T :  class, new () { }
     }
     public class WritableOptionsSimpleInstance<T>
-        where T :  class
+        where T :  class, new ()
     {
         public WritableOptionsSimpleInstance() { }
         public Configuration.Writable.IWritableOptions<T> GetOptions() { }
@@ -146,12 +146,12 @@ namespace Configuration.Writable.Testing
     public static class WritableOptionsStub
     {
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(System.Collections.Generic.Dictionary<string, T> namedValues)
-            where T :  class { }
+            where T :  class, new () { }
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(T value)
-            where T :  class { }
+            where T :  class, new () { }
     }
     public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
-        where T :  class
+        where T :  class, new ()
     {
         public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }
         public WritableOptionsStub(T value) { }

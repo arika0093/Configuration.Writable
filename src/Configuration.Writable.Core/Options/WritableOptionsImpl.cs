@@ -15,7 +15,7 @@ namespace Configuration.Writable;
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
 internal sealed class WritableOptionsImpl<T> : IWritableOptions<T>, IDisposable
-    where T : class
+    where T : class, new()
 {
     private readonly OptionsMonitorImpl<T> _optionMonitorInstance;
     private readonly IEnumerable<WritableConfigurationOptions<T>> _options;

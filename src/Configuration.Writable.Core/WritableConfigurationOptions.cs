@@ -13,7 +13,7 @@ namespace Configuration.Writable;
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
 public record WritableConfigurationOptions<T>
-    where T : class
+    where T : class, new()
 {
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>

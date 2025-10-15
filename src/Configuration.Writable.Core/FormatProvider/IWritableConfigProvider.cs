@@ -28,7 +28,7 @@ public interface IWritableConfigProvider
     /// <param name="options">The options that control how the configuration is loaded.</param>
     /// <returns>The deserialized configuration object.</returns>
     T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
-        where T : class;
+        where T : class, new();
 
     /// <summary>
     /// Loads configuration from a stream and deserializes it to the specified type.
@@ -38,7 +38,7 @@ public interface IWritableConfigProvider
     /// <param name="options">The options that control how the configuration is loaded.</param>
     /// <returns>The deserialized configuration object.</returns>
     T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
-        where T : class;
+        where T : class, new();
 
     /// <summary>
     /// Asynchronously saves the specified configuration object to a file with additional operations (like key deletion).
@@ -55,5 +55,5 @@ public interface IWritableConfigProvider
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class;
+        where T : class, new();
 }

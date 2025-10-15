@@ -16,7 +16,7 @@ public static class WritableOptionsCoreExtensions
     /// <param name="services">The <see cref="IServiceCollection"/> to which the writable options services will be added.</param>
     /// <returns>The <see cref="IServiceCollection"/> instance with the writable options services registered.</returns>
     public static IServiceCollection AddWritableOptionsCore<T>(this IServiceCollection services)
-        where T : class
+        where T : class, new()
     {
         // add WritableOptionsMonitor<T> (custom implementation)
         services.AddSingleton<OptionsMonitorImpl<T>>();

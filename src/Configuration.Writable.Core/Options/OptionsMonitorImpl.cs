@@ -14,7 +14,7 @@ namespace Configuration.Writable;
 /// </summary>
 /// <typeparam name="T">The type of options being monitored.</typeparam>
 internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
-    where T : class
+    where T : class, new()
 {
     private readonly Dictionary<string, T> _cache = [];
     private readonly Dictionary<string, T> _defaultValue = [];

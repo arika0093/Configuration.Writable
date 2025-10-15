@@ -21,11 +21,11 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
 
     /// <inheritdoc />
     public abstract T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
-        where T : class;
+        where T : class, new();
 
     /// <inheritdoc />
     public abstract T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
-        where T : class;
+        where T : class, new();
 
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(
@@ -34,7 +34,7 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class;
+        where T : class, new();
 
     /// <summary>
     /// Creates a nested dictionary structure from a section name that supports ':' and '__' as separators.
