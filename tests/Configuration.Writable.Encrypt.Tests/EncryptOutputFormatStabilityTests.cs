@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 using Configuration.Writable.Tests;
 
@@ -22,9 +22,9 @@ public class EncryptOutputFormatStabilityTests
     private const string ReferenceFilesPath = "ReferenceFiles";
 
     /// <summary>
-    /// Create a new InMemoryFileWriter for each test to ensure test isolation
+    /// Create a new InMemoryFileProvider for each test to ensure test isolation
     /// </summary>
-    private static InMemoryFileWriter CreateFileWriter() => new();
+    private static InMemoryFileProvider CreateFileProvider() => new();
 
     /// <summary>
     /// Helper method to decrypt encrypted content and return the JSON
@@ -95,7 +95,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_test.enc";
         const string encryptionKey = "TestKey1234567890123456789012"; // 32 chars
-        var fileWriter = CreateFileWriter();
+        var FileProvider = CreateFileProvider();
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
@@ -104,7 +104,7 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.UseInMemoryFileWriter(fileWriter);
+            options.UseInMemoryFileProvider(FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -112,8 +112,8 @@ public class EncryptOutputFormatStabilityTests
         await option.SaveAsync(testConfig);
 
         // For encrypted files, we verify structure rather than exact content due to IV randomness
-        fileWriter.FileExists(testFileName).ShouldBeTrue();
-        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
+        FileProvider.FileExists(testFileName).ShouldBeTrue();
+        var encryptedBytes = FileProvider.ReadAllBytes(testFileName);
 
         // Verify the file has the expected structure:
         // - Should start with IV (16 bytes for AES)
@@ -138,7 +138,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_section_test.enc";
         const string encryptionKey = "SectionKey12345678901234567890"; // 32 chars
-        var fileWriter = CreateFileWriter();
+        var FileProvider = CreateFileProvider();
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
@@ -148,14 +148,14 @@ public class EncryptOutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
             options.SectionName = "ApplicationSettings:Database";
-            options.UseInMemoryFileWriter(fileWriter);
+            options.UseInMemoryFileProvider(FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
+        var encryptedBytes = FileProvider.ReadAllBytes(testFileName);
         encryptedBytes.Length.ShouldBeGreaterThan(16);
 
         // Decrypt and compare with reference JSON
@@ -174,7 +174,7 @@ public class EncryptOutputFormatStabilityTests
     public async Task EncryptProvider_KeyLength_ShouldBeStable()
     {
         // Test with different key lengths to ensure stability
-        var fileWriter = CreateFileWriter();
+        var FileProvider = CreateFileProvider();
         var keyLengths = new[] { 16, 24, 32 };
 
         foreach (var keyLength in keyLengths)
@@ -191,14 +191,14 @@ public class EncryptOutputFormatStabilityTests
             {
                 options.FilePath = testFileName;
                 options.Provider = encryptProvider;
-                options.UseInMemoryFileWriter(fileWriter);
+                options.UseInMemoryFileProvider(FileProvider);
             });
 
             var testConfig = new TestConfiguration();
             var option = instance.GetOptions();
             await option.SaveAsync(testConfig);
 
-            var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
+            var encryptedBytes = FileProvider.ReadAllBytes(testFileName);
             encryptedBytes.Length.ShouldBeGreaterThan(
                 16,
                 $"Key length {keyLength} should produce valid encrypted output"
@@ -229,7 +229,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_large_test.enc";
         const string encryptionKey = "LargeDataKey1234567890123456789"; // 32 chars
-        var fileWriter = CreateFileWriter();
+        var FileProvider = CreateFileProvider();
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var largeConfig = new TestConfiguration
@@ -244,13 +244,13 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.UseInMemoryFileWriter(fileWriter);
+            options.UseInMemoryFileProvider(FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(largeConfig);
 
-        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
+        var encryptedBytes = FileProvider.ReadAllBytes(testFileName);
         encryptedBytes.Length.ShouldBeGreaterThan(
             1000,
             "Large data should produce correspondingly large encrypted output"
@@ -286,7 +286,7 @@ public class EncryptOutputFormatStabilityTests
     {
         const string testFileName = "stability_special_chars_test.enc";
         const string encryptionKey = "SpecialKey1234567890123456789012"; // 32 chars
-        var fileWriter = CreateFileWriter();
+        var FileProvider = CreateFileProvider();
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
         var specialConfig = new TestConfiguration
@@ -301,13 +301,13 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.UseInMemoryFileWriter(fileWriter);
+            options.UseInMemoryFileProvider(FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(specialConfig);
 
-        var encryptedBytes = fileWriter.ReadAllBytes(testFileName);
+        var encryptedBytes = FileProvider.ReadAllBytes(testFileName);
 
         // Decrypt and compare with reference JSON
         var decryptedJson = DecryptContent(encryptedBytes, encryptionKey);
@@ -331,11 +331,11 @@ public class EncryptOutputFormatStabilityTests
         const string testFileName = "load_preencrypted_test.enc";
         const string encryptionKey = "BackwardCompatKey1234567890123"; // 32 chars
         const string referenceEncryptedFile = "backward_compat_basic.enc";
-        var fileWriter = CreateFileWriter();
+        var FileProvider = CreateFileProvider();
 
-        // Load the pre-encrypted reference file and copy to InMemoryFileWriter
+        // Load the pre-encrypted reference file and copy to InMemoryFileProvider
         var encryptedBytes = LoadReferenceBinaryFile(referenceEncryptedFile);
-        await fileWriter.SaveToFileAsync(testFileName, encryptedBytes);
+        await FileProvider.SaveToFileAsync(testFileName, encryptedBytes);
 
         // Initialize the provider to read the pre-encrypted file
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
@@ -345,7 +345,7 @@ public class EncryptOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = encryptProvider;
-            options.UseInMemoryFileWriter(fileWriter);
+            options.UseInMemoryFileProvider(FileProvider);
         });
 
         // Load the configuration through the provider

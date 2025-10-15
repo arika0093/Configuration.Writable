@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Tests;
@@ -18,7 +18,7 @@ namespace Configuration.Writable.Tests;
 /// </summary>
 public class OutputFormatStabilityTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
 
     /// <summary>
@@ -69,14 +69,14 @@ public class OutputFormatStabilityTests
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("json_basic.json");
 
         // Compare JSON semantically (ignoring whitespace and property order)
@@ -103,14 +103,14 @@ public class OutputFormatStabilityTests
                 },
             };
             options.SectionName = "ApplicationSettings:Database";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("json_section.json");
 
         // Compare JSON semantically (ignoring whitespace and property order)
@@ -137,14 +137,14 @@ public class OutputFormatStabilityTests
                     WriteIndented = false, // Compact format
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("json_compact.json");
 
         // Compare JSON semantically (ignoring whitespace and property order)
@@ -156,10 +156,10 @@ public class OutputFormatStabilityTests
     }
 
     [Fact]
-    public async Task CommonFileWriter_OutputBytes_ShouldBeExact()
+    public async Task CommonFileProvider_OutputBytes_ShouldBeExact()
     {
         using var tempFile = new TemporaryFile();
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
 
         var testContent = """
             {
@@ -175,13 +175,13 @@ public class OutputFormatStabilityTests
         var savedBytes = File.ReadAllBytes(tempFile.FilePath);
         savedBytes.ShouldBe(
             contentBytes,
-            "CommonFileWriter should save exact byte content without modification"
+            "CommonFileProvider should save exact byte content without modification"
         );
 
         var savedText = File.ReadAllText(tempFile.FilePath, Encoding.UTF8);
         savedText.ShouldBe(
             testContent,
-            "CommonFileWriter should preserve exact text content including formatting"
+            "CommonFileProvider should preserve exact text content including formatting"
         );
     }
 
@@ -207,13 +207,13 @@ public class OutputFormatStabilityTests
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(specialConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
 
         // Verify proper JSON escaping (JSON uses Unicode escapes for some characters)
         actualOutput.ShouldContain("Test with");
@@ -248,13 +248,13 @@ public class OutputFormatStabilityTests
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(emptyConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
 
         // Verify empty values are properly serialized
         actualOutput.ShouldContain("\"\""); // Empty string value
@@ -281,15 +281,15 @@ public class OutputFormatStabilityTests
                     WriteIndented = false,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualBytes = _fileWriter.ReadAllBytes(testFileName);
-        var actualText = _fileWriter.ReadAllText(testFileName);
+        var actualBytes = _FileProvider.ReadAllBytes(testFileName);
+        var actualText = _FileProvider.ReadAllText(testFileName);
 
         // Verify byte count is consistent
         var expectedByteCount = Encoding.UTF8.GetByteCount(actualText);
@@ -322,20 +322,22 @@ public class OutputFormatStabilityTests
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
 
         // Save with DeleteKey operation
-        await option.SaveAsync((config, op) =>
-        {
-            op.DeleteKey(c => c.StringValue);
-            op.DeleteKey(c => c.BoolValue);
-        });
+        await option.SaveAsync(
+            (config, op) =>
+            {
+                op.DeleteKey(c => c.StringValue);
+                op.DeleteKey(c => c.BoolValue);
+            }
+        );
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
 
         // Verify deleted keys are not present
         actualOutput.ShouldNotContain("stringValue");
@@ -365,19 +367,21 @@ public class OutputFormatStabilityTests
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
 
         // Save with DeleteKey operation for nested property
-        await option.SaveAsync((config, op) =>
-        {
-            op.DeleteKey(c => c.Nested.Description);
-        });
+        await option.SaveAsync(
+            (config, op) =>
+            {
+                op.DeleteKey(c => c.Nested.Description);
+            }
+        );
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
 
         // Verify nested deleted key is not present
         actualOutput.ShouldNotContain("description");
@@ -409,25 +413,29 @@ public class OutputFormatStabilityTests
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
 
         // First save with a deletion
-        await option.SaveAsync((config, op) =>
-        {
-            op.DeleteKey(c => c.StringValue);
-        });
+        await option.SaveAsync(
+            (config, op) =>
+            {
+                op.DeleteKey(c => c.StringValue);
+            }
+        );
 
         // Save again trying to delete the already deleted key - should not error
-        await option.SaveAsync((config, op) =>
-        {
-            op.DeleteKey(c => c.StringValue);
-        });
+        await option.SaveAsync(
+            (config, op) =>
+            {
+                op.DeleteKey(c => c.StringValue);
+            }
+        );
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
 
         // Verify the key is still not present
         actualOutput.ShouldNotContain("stringValue");
@@ -452,22 +460,24 @@ public class OutputFormatStabilityTests
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
 
         // Save with both update and deletion
-        await option.SaveAsync((config, op) =>
-        {
-            config.StringValue = "Updated Value";
-            config.IntValue = 999;
-            op.DeleteKey(c => c.BoolValue);
-            op.DeleteKey(c => c.Nested.IsActive);
-        });
+        await option.SaveAsync(
+            (config, op) =>
+            {
+                config.StringValue = "Updated Value";
+                config.IntValue = 999;
+                op.DeleteKey(c => c.BoolValue);
+                op.DeleteKey(c => c.Nested.IsActive);
+            }
+        );
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
 
         // Verify updates are present
         actualOutput.ShouldContain("Updated Value");
@@ -499,7 +509,7 @@ public class OutputFormatStabilityTests
                     PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
                 },
             };
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -519,11 +529,13 @@ public class OutputFormatStabilityTests
         beforeDelete.BoolValue.ShouldBeTrue();
 
         // Now delete a key and update another
-        await option.SaveAsync((config, op) =>
-        {
-            config.StringValue = "UpdatedValue";
-            op.DeleteKey(c => c.BoolValue);
-        });
+        await option.SaveAsync(
+            (config, op) =>
+            {
+                config.StringValue = "UpdatedValue";
+                op.DeleteKey(c => c.BoolValue);
+            }
+        );
 
         // Verify cache is updated correctly after deletion
         var afterDelete = option.CurrentValue;
@@ -533,7 +545,7 @@ public class OutputFormatStabilityTests
         afterDelete.BoolValue.ShouldBeTrue();
 
         // Verify file doesn't contain the deleted key
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldNotContain("boolValue");
         fileContent.ShouldContain("UpdatedValue");
         fileContent.ShouldContain("100");

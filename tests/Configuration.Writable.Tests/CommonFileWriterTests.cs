@@ -3,12 +3,12 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Tests;
 
-public class CommonFileWriterTests
+public class CommonFileProviderTests
 {
     private static Task<byte[]> ReadAllBytesCompat(string path)
     {
@@ -32,7 +32,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_ShouldCreateFileWithContent()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
         var content = Encoding.UTF8.GetBytes("Hello, World!");
 
         await writer.SaveToFileAsync(testFile.FilePath, content, CancellationToken.None);
@@ -47,7 +47,7 @@ public class CommonFileWriterTests
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         using var testFile = new TemporaryFile(testDir, "test.txt");
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
         var content = Encoding.UTF8.GetBytes("Test content");
 
         Directory.Exists(testDir).ShouldBeFalse();
@@ -62,7 +62,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_ShouldReplaceExistingFile()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
         var originalContent = Encoding.UTF8.GetBytes("Original content");
         var newContent = Encoding.UTF8.GetBytes("New content");
 
@@ -81,7 +81,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_WithBackup_ShouldCreateBackupFile()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter { BackupMaxCount = 3 };
+        var writer = new CommonFileProvider { BackupMaxCount = 3 };
         var originalContent = Encoding.UTF8.GetBytes("Original content");
         var newContent = Encoding.UTF8.GetBytes("New content");
 
@@ -107,7 +107,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_WithBackupMaxCount_ShouldLimitBackupFiles()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter { BackupMaxCount = 2 };
+        var writer = new CommonFileProvider { BackupMaxCount = 2 };
 
         // Create multiple versions to exceed backup limit
         for (int i = 0; i < 5; i++)
@@ -130,7 +130,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_WithZeroBackupCount_ShouldNotCreateBackups()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter { BackupMaxCount = 0 };
+        var writer = new CommonFileProvider { BackupMaxCount = 0 };
         var originalContent = Encoding.UTF8.GetBytes("Original content");
         var newContent = Encoding.UTF8.GetBytes("New content");
 
@@ -148,7 +148,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_ConcurrentWrites_ShouldBeThreadSafe()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
         var tasks = new Task[10];
         for (int i = 0; i < tasks.Length; i++)
         {
@@ -168,7 +168,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
         var content = Encoding.UTF8.GetBytes("Test content");
 
         using var cts = new CancellationTokenSource();
@@ -190,7 +190,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_WithEmptyContent_ShouldCreateEmptyFile()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
         var emptyContent = ReadOnlyMemory<byte>.Empty;
 
         await writer.SaveToFileAsync(testFile.FilePath, emptyContent, CancellationToken.None);
@@ -204,7 +204,7 @@ public class CommonFileWriterTests
     public async Task SaveToFileAsync_WithLargeContent_ShouldHandleLargeFiles()
     {
         using var testFile = new TemporaryFile();
-        var writer = new CommonFileWriter();
+        var writer = new CommonFileProvider();
 
         // Create 1MB of content
         var largeContent = new byte[1024 * 1024];

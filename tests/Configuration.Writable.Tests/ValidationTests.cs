@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
 
 public class ValidationTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
 
     [Fact]
     public async Task SaveAsync_WithValidationFunction_ShouldThrowWhenValidationFails()
@@ -21,7 +21,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
@@ -44,7 +44,7 @@ public class ValidationTests
         });
 
         exception.Failures.ShouldContain("MaxConnections must be positive");
-        _fileWriter.FileExists(testFileName).ShouldBeFalse();
+        _FileProvider.FileExists(testFileName).ShouldBeFalse();
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
@@ -74,7 +74,7 @@ public class ValidationTests
         var option = _instance.GetOptions();
         await option.SaveAsync(validSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
         var loadedSettings = option.CurrentValue;
         loadedSettings.MaxConnections.ShouldBe(10);
     }
@@ -88,7 +88,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
@@ -126,7 +126,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.WithValidator(new ValidatableSettingsValidator());
         });
 
@@ -151,7 +151,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.UseDataAnnotationsValidation = true;
         });
 
@@ -180,7 +180,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.UseDataAnnotationsValidation = true;
         });
 
@@ -194,7 +194,7 @@ public class ValidationTests
         var option = _instance.GetOptions();
         await option.SaveAsync(validSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
         var loadedSettings = option.CurrentValue;
         loadedSettings.MaxConnections.ShouldBe(50);
     }
@@ -208,7 +208,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.UseDataAnnotationsValidation = true;
             options.WithValidatorFunction(settings =>
             {
@@ -245,7 +245,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)

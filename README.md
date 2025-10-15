@@ -5,7 +5,7 @@ A lightweight library that allows for easy saving and referencing of settings, w
 
 ## Features
 * Read and write user settings with type safety.
-* [Built-in](#filewriter): Atomic file writing, automatic retry, and backup creation.
+* [Built-in](#FileProvider): Atomic file writing, automatic retry, and backup creation.
 * Extends `Microsoft.Extensions.Options` interfaces, so it works seamlessly with existing code using `IOptions<T>`, `IOptionsMonitor<T>`, etc.
 * Simple API that can be easily used in applications both [with](#with-di) and [without](#without-di) DI.
 * Supports various file formats (Json, Xml, Yaml, Encrypted, etc...) via [providers](#provider).
@@ -182,20 +182,20 @@ opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 > To reduce dependencies and allow users to choose only the features they need, providers are offered as separate packages.
 > That said, the JSON provider is built into the main package because since many users are likely to use the JSON format.
 
-### FileWriter
-Default FileWriter (`CommonFileWriter`) supports the following features:
+### FileProvider
+Default FileProvider (`CommonFileProvider`) supports the following features:
 
 * Automatically retry when file access fails (default is max 3 times, wait 100ms each)
 * Create backup files rotated by timestamp (default is disabled)
 * Atomic file writing (write to a temporary file first, then rename it)
 * Thread-safe: uses internal semaphore to ensure safe concurrent access
 
-If you want to change the way files are written, create a class that implements `IFileWriter` and specify it in `opt.FileWriter`.
+If you want to change the way files are written, create a class that implements `IFileProvider` and specify it in `opt.FileProvider`.
 
 ```csharp
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 
-opt.FileWriter = new CommonFileWriter() {
+opt.FileProvider = new CommonFileProvider() {
     // retry up to 5 times when file access fails
     MaxRetryCount = 5,
     // wait 100ms, 200ms, 300ms, ... before each retry

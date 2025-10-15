@@ -24,8 +24,8 @@ WritableConfig.Initialize<SampleSetting>(opt =>
         JsonSerializerOptions = { WriteIndented = true },
     };
 
-    // if you want to keep backup files, use CommonFileWriter with BackupMaxCount > 0
-    // opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
+    // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
+    // opt.FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
 
     // if you want to use logging, set Logger
     // required NuGet package: Microsoft.Extensions.Logging.Console

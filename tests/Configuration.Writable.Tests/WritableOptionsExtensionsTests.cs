@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -9,7 +9,7 @@ namespace Configuration.Writable.Tests;
 
 public class WritableOptionsExtensionsTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
 
     public class TestSettings
     {
@@ -39,7 +39,7 @@ public class WritableOptionsExtensionsTests
         services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFilePath;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
@@ -72,7 +72,7 @@ public class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFilePath;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var host = builder.Build();
@@ -91,7 +91,7 @@ public class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var host = builder.Build();
@@ -106,7 +106,7 @@ public class WritableOptionsExtensionsTests
 
         await writableOptions.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         var currentValue = writableOptions.CurrentValue;
         currentValue.Name.ShouldBe("host_test");
@@ -123,7 +123,7 @@ public class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var host = builder.Build();
@@ -135,7 +135,7 @@ public class WritableOptionsExtensionsTests
             settings.Value = 600;
         });
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         var currentValue = writableOptions.CurrentValue;
         currentValue.Name.ShouldBe("action_host_test");

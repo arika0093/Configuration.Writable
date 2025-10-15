@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -29,9 +29,9 @@ public record WritableConfigurationOptionsBuilder<T>
     public IWritableConfigProvider Provider { get; set; } = new WritableConfigJsonProvider();
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IFileWriter"/> used to handle the file writing operations override from provider's default.
+    /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.
     /// </summary>
-    public IFileWriter? FileWriter { get; set; } = null;
+    public IFileProvider? FileProvider { get; set; } = null;
 
     /// <summary>
     /// Gets or sets the stream used to read the file content override from provider's default.

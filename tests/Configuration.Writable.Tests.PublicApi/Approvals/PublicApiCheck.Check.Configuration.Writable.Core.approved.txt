@@ -1,9 +1,9 @@
 ﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
-namespace Configuration.Writable.FileWriter
+namespace Configuration.Writable.FileProvider
 {
-    public class CommonFileWriter : Configuration.Writable.FileWriter.IFileWriter, System.IDisposable
+    public class CommonFileProvider : Configuration.Writable.FileProvider.IFileProvider, System.IDisposable
     {
-        public CommonFileWriter() { }
+        public CommonFileProvider() { }
         public virtual int BackupMaxCount { get; set; }
         public virtual int MaxRetryCount { get; set; }
         public virtual System.Func<int, int> RetryDelay { get; set; }
@@ -16,7 +16,7 @@ namespace Configuration.Writable.FileWriter
         public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken = default, Microsoft.Extensions.Logging.ILogger? logger = null) { }
         protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
     }
-    public interface IFileWriter
+    public interface IFileProvider
     {
         bool FileExists(string path);
         System.IO.Stream? GetFileStream(string path);
@@ -39,7 +39,7 @@ namespace Configuration.Writable
     public interface IWritableConfigProvider
     {
         string FileExtension { get; }
-        Configuration.Writable.FileWriter.IFileWriter FileWriter { get; set; }
+        Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
         T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class;
         T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
@@ -82,7 +82,7 @@ namespace Configuration.Writable
     {
         protected WritableConfigProviderBase() { }
         public abstract string FileExtension { get; }
-        public virtual Configuration.Writable.FileWriter.IFileWriter FileWriter { get; set; }
+        public virtual Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
         public abstract T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class;
         public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
@@ -99,8 +99,8 @@ namespace Configuration.Writable
         public string ConfigFilePath { get; }
         public string DefaultSectionName { get; }
         public string? FilePath { get; set; }
+        public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
         public System.IO.Stream? FileReadStream { get; set; }
-        public Configuration.Writable.FileWriter.IFileWriter? FileWriter { get; set; }
         public string InstanceName { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public Configuration.Writable.IWritableConfigProvider Provider { get; set; }

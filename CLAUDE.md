@@ -38,7 +38,7 @@ The solution is organized into multiple packages:
   - `OptionsMonitorImpl<T>`: Custom implementation of IOptionsMonitor
   - `WritableOptionsImpl<T>`: Main writable options implementation
   - Provider system for file format handling
-  - FileWriter system for atomic file operations
+  - FileProvider system for atomic file operations
 
 - **Configuration.Writable**: Main package with convenience APIs
   - `WritableConfig`: Static entry point for non-DI scenarios
@@ -61,9 +61,9 @@ Each provider package is separate to minimize dependencies and allow users to in
 - Providers implement `LoadConfiguration<T>`, `GetSaveContents<T>`, and `SaveAsync<T>`
 - Built-in JSON provider uses System.Text.Json
 
-**FileWriter System** (`src/Configuration.Writable.Core/FileWriter/`)
-- `IFileWriter`: Interface for file I/O operations
-- `CommonFileWriter`: Default implementation with:
+**FileProvider System** (`src/Configuration.Writable.Core/FileProvider/`)
+- `IFileProvider`: Interface for file I/O operations
+- `CommonFileProvider`: Default implementation with:
   - Automatic retry on file access failures (default: 3 retries, 100ms delay)
   - Atomic file writing (write to temp file, then rename)
   - Backup file rotation by timestamp (optional, disabled by default)

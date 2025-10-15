@@ -129,7 +129,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         _semaphore.Wait();
         try
         {
-            // Use the provider to load configuration (provider will check file existence via its FileWriter)
+            // Use the provider to load configuration (provider will check file existence via its FileProvider)
             var value = options.Provider.LoadConfiguration<T>(options);
             _cache[instanceName] = value;
             return value;

@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable.FileWriter;
+namespace Configuration.Writable.FileProvider;
 
 /// <summary>
 /// Provides functionality to write data to a file, ensuring thread safety and data integrity.
 /// </summary>
-public class CommonFileWriter : IFileWriter, IDisposable
+public class CommonFileProvider : IFileProvider, IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -236,7 +236,7 @@ public class CommonFileWriter : IFileWriter, IDisposable
     }
 
     /// <summary>
-    /// Disposes the resources used by the <see cref="CommonFileWriter"/> instance.
+    /// Disposes the resources used by the <see cref="CommonFileProvider"/> instance.
     /// </summary>
     protected virtual void Dispose(bool disposing) => _semaphore.Dispose();
 }

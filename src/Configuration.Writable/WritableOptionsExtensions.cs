@@ -58,13 +58,13 @@ public static class WritableOptionsExtensions
     )
         where T : class
     {
-        var fileWriter = confBuilder.FileWriter;
+        var FileProvider = confBuilder.FileProvider;
         var options = confBuilder.BuildOptions();
 
-        // set FileWriter
-        if (fileWriter != null)
+        // set FileProvider
+        if (FileProvider != null)
         {
-            options.Provider.FileWriter = fileWriter;
+            options.Provider.FileProvider = FileProvider;
         }
 
         // add T instance

@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
@@ -16,7 +16,7 @@ public class OptionsSnapshotImplTests
     private WritableConfigurationOptions<TestSettings> CreateConfigOptions(
         string fileName,
         string instanceName,
-        InMemoryFileWriter fileWriter
+        InMemoryFileProvider FileProvider
     )
     {
         var builder = new WritableConfigurationOptionsBuilder<TestSettings>
@@ -24,7 +24,7 @@ public class OptionsSnapshotImplTests
             FilePath = fileName,
             InstanceName = instanceName,
         };
-        builder.UseInMemoryFileWriter(fileWriter);
+        builder.UseInMemoryFileProvider(FileProvider);
         return builder.BuildOptions();
     }
 
@@ -32,11 +32,11 @@ public class OptionsSnapshotImplTests
     public void Value_ShouldReturnSnapshotValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -55,11 +55,11 @@ public class OptionsSnapshotImplTests
     public void Get_WithDefaultName_ShouldReturnSnapshotValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -78,8 +78,8 @@ public class OptionsSnapshotImplTests
     public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
-        var configOptions = CreateConfigOptions("test.json", "custom", fileWriter);
+        var FileProvider = new InMemoryFileProvider();
+        var configOptions = CreateConfigOptions("test.json", "custom", FileProvider);
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
@@ -104,11 +104,11 @@ public class OptionsSnapshotImplTests
     public void Snapshot_ShouldNotReflectChangesAfterCreation()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -138,10 +138,10 @@ public class OptionsSnapshotImplTests
     public async Task Snapshot_WithMultipleInstances_ShouldSnapshotAllInstances()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
 
-        var configOptions1 = CreateConfigOptions("test1.json", "instance1", fileWriter);
-        var configOptions2 = CreateConfigOptions("test2.json", "instance2", fileWriter);
+        var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
+        var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
         // Preload different data for each instance
         var settings1 = new TestSettings { Name = "first", Value = 111 };
@@ -178,11 +178,11 @@ public class OptionsSnapshotImplTests
     public void Snapshot_MultipleCalls_ShouldReturnSameInstance()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -200,11 +200,11 @@ public class OptionsSnapshotImplTests
     public void Snapshot_AfterMonitorUpdate_NewSnapshotShouldStillHaveDefaultValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -244,11 +244,11 @@ public class OptionsSnapshotImplTests
     public void Get_WithNull_ShouldThrow()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -262,9 +262,9 @@ public class OptionsSnapshotImplTests
     public async Task Snapshot_ShouldCaptureAllInstancesAtCreationTime()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
 
-        var configOptions = CreateConfigOptions("test.json", "instance1", fileWriter);
+        var configOptions = CreateConfigOptions("test.json", "instance1", FileProvider);
 
         // Initial data
         var initialSettings = new TestSettings { Name = "initial", Value = 100 };

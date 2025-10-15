@@ -6,13 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable.FileWriter;
+namespace Configuration.Writable.FileProvider;
 
 /// <summary>
-/// Provides an in-memory implementation of the <see cref="IFileWriter"/> interface for managing files and directories without
+/// Provides an in-memory implementation of the <see cref="IFileProvider"/> interface for managing files and directories without
 /// persistent storage. for testing purposes.
 /// </summary>
-public class InMemoryFileWriter : IFileWriter
+public class InMemoryFileProvider : IFileProvider
 {
     private readonly ConcurrentDictionary<string, byte[]> _files = new();
 

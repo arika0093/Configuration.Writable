@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -9,7 +9,7 @@ namespace Configuration.Writable.Tests;
 
 public class InstanceNameIntegrationTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
 
     public class UserSetting
     {
@@ -30,7 +30,7 @@ public class InstanceNameIntegrationTests
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
-            opt.UseInMemoryFileWriter(_fileWriter);
+            opt.UseInMemoryFileProvider(_FileProvider);
         });
 
         // second setting
@@ -38,7 +38,7 @@ public class InstanceNameIntegrationTests
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
-            opt.UseInMemoryFileWriter(_fileWriter);
+            opt.UseInMemoryFileProvider(_FileProvider);
         });
 
         var host = builder.Build();
@@ -82,11 +82,11 @@ public class InstanceNameIntegrationTests
         secondSetting.Age.ShouldBe(30);
 
         // Verify that the files are saved separately
-        _fileWriter.FileExists(firstFileName).ShouldBeTrue();
-        _fileWriter.FileExists(secondFileName).ShouldBeTrue();
+        _FileProvider.FileExists(firstFileName).ShouldBeTrue();
+        _FileProvider.FileExists(secondFileName).ShouldBeTrue();
 
-        var firstFileContent = _fileWriter.ReadAllText(firstFileName);
-        var secondFileContent = _fileWriter.ReadAllText(secondFileName);
+        var firstFileContent = _FileProvider.ReadAllText(firstFileName);
+        var secondFileContent = _FileProvider.ReadAllText(secondFileName);
 
         firstFileContent.ShouldContain("first name");
         firstFileContent.ShouldContain("25");
@@ -108,14 +108,14 @@ public class InstanceNameIntegrationTests
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
-            opt.UseInMemoryFileWriter(_fileWriter);
+            opt.UseInMemoryFileProvider(_FileProvider);
         });
 
         builder.Services.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
-            opt.UseInMemoryFileWriter(_fileWriter);
+            opt.UseInMemoryFileProvider(_FileProvider);
         });
 
         var host = builder.Build();
@@ -138,8 +138,8 @@ public class InstanceNameIntegrationTests
         );
 
         // Verify content in the saved files (both use root level by default)
-        var firstFileContent = _fileWriter.ReadAllText(firstFileName);
-        var secondFileContent = _fileWriter.ReadAllText(secondFileName);
+        var firstFileContent = _FileProvider.ReadAllText(firstFileName);
+        var secondFileContent = _FileProvider.ReadAllText(secondFileName);
 
         // Both should contain the settings at root level
         firstFileContent.ShouldContain("first setting");
@@ -160,14 +160,14 @@ public class InstanceNameIntegrationTests
         {
             opt.FilePath = firstFileName;
             opt.InstanceName = "First";
-            opt.UseInMemoryFileWriter(_fileWriter);
+            opt.UseInMemoryFileProvider(_FileProvider);
         });
 
         builder.Services.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = secondFileName;
             opt.InstanceName = "Second";
-            opt.UseInMemoryFileWriter(_fileWriter);
+            opt.UseInMemoryFileProvider(_FileProvider);
         });
 
         var host = builder.Build();
@@ -191,7 +191,7 @@ public class InstanceNameIntegrationTests
         builder.Services.AddWritableOptions<UserSetting>(opt =>
         {
             opt.FilePath = fileName;
-            opt.UseInMemoryFileWriter(_fileWriter);
+            opt.UseInMemoryFileProvider(_FileProvider);
         });
 
         var host = builder.Build();

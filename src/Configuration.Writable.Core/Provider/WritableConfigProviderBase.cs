@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable;
@@ -17,7 +17,7 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
     public abstract string FileExtension { get; }
 
     /// <inheritdoc />
-    public virtual IFileWriter FileWriter { get; set; } = new CommonFileWriter();
+    public virtual IFileProvider FileProvider { get; set; } = new CommonFileProvider();
 
     /// <inheritdoc />
     public abstract T LoadConfiguration<T>(WritableConfigurationOptions<T> options)

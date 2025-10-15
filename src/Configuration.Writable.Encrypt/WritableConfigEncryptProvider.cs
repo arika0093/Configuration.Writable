@@ -73,12 +73,12 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
         where T : class
     {
         var filePath = options.ConfigFilePath;
-        if (!FileWriter.FileExists(filePath))
+        if (!FileProvider.FileExists(filePath))
         {
             return Activator.CreateInstance<T>();
         }
 
-        var stream = FileWriter.GetFileStream(filePath);
+        var stream = FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
             return Activator.CreateInstance<T>();
@@ -183,7 +183,7 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
             var encryptedBytes = encryptedMs.ToArray();
 
             // Write encrypted bytes to file
-            await FileWriter
+            await FileProvider
                 .SaveToFileAsync(
                     options.ConfigFilePath,
                     encryptedBytes,

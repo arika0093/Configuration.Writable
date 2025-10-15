@@ -3,14 +3,14 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Encrypt.Tests;
 
 public class WritableConfigEncryptProviderTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
 
     public class TestSettings
     {
@@ -77,7 +77,7 @@ public class WritableConfigEncryptProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var settings = new TestSettings
@@ -91,9 +91,9 @@ public class WritableConfigEncryptProviderTests
         var option = _instance.GetOptions();
         await option.SaveAsync(settings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileBytes = _fileWriter.ReadAllBytes(testFileName);
+        var fileBytes = _FileProvider.ReadAllBytes(testFileName);
         fileBytes.Length.ShouldBeGreaterThan(0);
 
         var fileText = Encoding.UTF8.GetString(fileBytes);
@@ -108,7 +108,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
         var provider = new WritableConfigEncryptProvider(encryptionKey);
-        provider.FileWriter = _fileWriter;
+        provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
@@ -129,8 +129,8 @@ public class WritableConfigEncryptProviderTests
         await option.SaveAsync(originalSettings);
 
         // Debug: Verify file was created and has content
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
-        var fileBytes = _fileWriter.ReadAllBytes(testFileName);
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
+        var fileBytes = _FileProvider.ReadAllBytes(testFileName);
         fileBytes.Length.ShouldBeGreaterThan(16); // Should have at least IV (16 bytes) + some encrypted content
 
         // Re-initialize with the same provider to simulate reloading
@@ -156,7 +156,7 @@ public class WritableConfigEncryptProviderTests
         var encryptionKey2 = "differentkey12345678901234567";
 
         var provider1 = new WritableConfigEncryptProvider(encryptionKey1);
-        provider1.FileWriter = _fileWriter;
+        provider1.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
@@ -177,7 +177,7 @@ public class WritableConfigEncryptProviderTests
 
         // When loading with a different key, it should fail to decrypt and return default values
         var provider2 = new WritableConfigEncryptProvider(encryptionKey2);
-        provider2.FileWriter = _fileWriter;
+        provider2.FileProvider = _FileProvider;
 
         _instance.Initialize(options =>
         {
@@ -205,7 +205,7 @@ public class WritableConfigEncryptProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigEncryptProvider(encryptionKey);
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = _instance.GetOptions();
@@ -216,7 +216,7 @@ public class WritableConfigEncryptProviderTests
             settings.SecretKey = "asyncsecret";
         });
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("async_encrypt_test");
@@ -230,7 +230,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "deleteencryptionkey123456789";
         var provider = new WritableConfigEncryptProvider(encryptionKey);
-        provider.FileWriter = _fileWriter;
+        provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
@@ -242,18 +242,20 @@ public class WritableConfigEncryptProviderTests
         var option = _instance.GetOptions();
 
         // Save with DeleteKey operation
-        await option.SaveAsync((settings, op) =>
-        {
-            settings.Name = "encrypt_delete_test";
-            settings.Value = 123;
-            op.DeleteKey(s => s.IsEnabled);
-            op.DeleteKey(s => s.SecretKey);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                settings.Name = "encrypt_delete_test";
+                settings.Value = 123;
+                op.DeleteKey(s => s.IsEnabled);
+                op.DeleteKey(s => s.SecretKey);
+            }
+        );
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         // Verify data is encrypted
-        var fileBytes = _fileWriter.ReadAllBytes(testFileName);
+        var fileBytes = _FileProvider.ReadAllBytes(testFileName);
         var fileText = Encoding.UTF8.GetString(fileBytes);
         fileText.ShouldNotContain("encrypt_delete_test");
         fileText.ShouldNotContain("123");
@@ -286,7 +288,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "deleteencryptionkey123456789";
         var provider = new WritableConfigEncryptProvider(encryptionKey);
-        provider.FileWriter = _fileWriter;
+        provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
@@ -298,19 +300,23 @@ public class WritableConfigEncryptProviderTests
         var option = _instance.GetOptions();
 
         // First save with a deletion
-        await option.SaveAsync((settings, op) =>
-        {
-            settings.Name = "encrypt_test";
-            op.DeleteKey(s => s.IsEnabled);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                settings.Name = "encrypt_test";
+                op.DeleteKey(s => s.IsEnabled);
+            }
+        );
 
         // Save again trying to delete the already deleted key - should not error
-        await option.SaveAsync((settings, op) =>
-        {
-            op.DeleteKey(s => s.IsEnabled);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                op.DeleteKey(s => s.IsEnabled);
+            }
+        );
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         // Reload and verify file is still valid
         _instance.Initialize(options =>
@@ -331,7 +337,7 @@ public class WritableConfigEncryptProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "combinedencryptionkey12345678";
         var provider = new WritableConfigEncryptProvider(encryptionKey);
-        provider.FileWriter = _fileWriter;
+        provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
@@ -343,13 +349,15 @@ public class WritableConfigEncryptProviderTests
         var option = _instance.GetOptions();
 
         // Save with both update and deletion
-        await option.SaveAsync((settings, op) =>
-        {
-            settings.Name = "updated_encrypt";
-            settings.Value = 999;
-            settings.SecretKey = "newsecret";
-            op.DeleteKey(s => s.IsEnabled);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                settings.Name = "updated_encrypt";
+                settings.Value = 999;
+                settings.SecretKey = "newsecret";
+                op.DeleteKey(s => s.IsEnabled);
+            }
+        );
 
         // Reload and verify
         _instance.Initialize(options =>

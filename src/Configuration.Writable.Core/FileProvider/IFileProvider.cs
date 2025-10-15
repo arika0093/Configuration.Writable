@@ -4,12 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable.FileWriter;
+namespace Configuration.Writable.FileProvider;
 
 /// <summary>
 /// Defines a provider for writing data to files.
 /// </summary>
-public interface IFileWriter
+public interface IFileProvider
 {
     /// <summary>
     /// Asynchronously saves the specified content to a file at the given path.

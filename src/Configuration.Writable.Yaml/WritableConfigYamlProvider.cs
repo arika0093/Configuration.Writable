@@ -41,12 +41,12 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         where T : class
     {
         var filePath = options.ConfigFilePath;
-        if (!FileWriter.FileExists(filePath))
+        if (!FileProvider.FileExists(filePath))
         {
             return Activator.CreateInstance<T>();
         }
 
-        var stream = FileWriter.GetFileStream(filePath);
+        var stream = FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
             return Activator.CreateInstance<T>();
@@ -152,7 +152,7 @@ public class WritableConfigYamlProvider : WritableConfigProviderBase
         where T : class
     {
         var contents = GetSaveContentsCore(config, operations, options);
-        await FileWriter
+        await FileProvider
             .SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken, options.Logger)
             .ConfigureAwait(false);
     }

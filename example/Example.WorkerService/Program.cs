@@ -1,5 +1,5 @@
 using Configuration.Writable;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Example.WorkerService;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -21,8 +21,8 @@ builder.Services.AddWritableOptions<SampleSetting>(opt =>
         JsonSerializerOptions = { WriteIndented = true },
     };
 
-    // if you want to keep backup files, use CommonFileWriter with BackupMaxCount > 0
-    // opt.FileWriter = new CommonFileWriter() { BackupMaxCount = 5 };
+    // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
+    // opt.FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
 
     // if you want to use logging, set Logger
     // required NuGet package: Microsoft.Extensions.Logging.Console

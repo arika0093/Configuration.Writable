@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
@@ -19,7 +19,7 @@ public class OptionsMonitorImplTests
     private WritableConfigurationOptions<TestSettings> CreateConfigOptions(
         string fileName,
         string instanceName,
-        InMemoryFileWriter fileWriter
+        InMemoryFileProvider FileProvider
     )
     {
         var builder = new WritableConfigurationOptionsBuilder<TestSettings>
@@ -27,7 +27,7 @@ public class OptionsMonitorImplTests
             FilePath = fileName,
             InstanceName = instanceName,
         };
-        builder.UseInMemoryFileWriter(fileWriter);
+        builder.UseInMemoryFileProvider(FileProvider);
         return builder.BuildOptions();
     }
 
@@ -35,11 +35,11 @@ public class OptionsMonitorImplTests
     public void CurrentValue_ShouldReturnDefaultValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -57,11 +57,11 @@ public class OptionsMonitorImplTests
     public void Get_WithDefaultName_ShouldReturnCurrentValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -79,11 +79,11 @@ public class OptionsMonitorImplTests
     public void Get_WithNull_ShouldReturnDefaultValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -101,8 +101,8 @@ public class OptionsMonitorImplTests
     public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
-        var configOptions = CreateConfigOptions("test.json", "custom", fileWriter);
+        var FileProvider = new InMemoryFileProvider();
+        var configOptions = CreateConfigOptions("test.json", "custom", FileProvider);
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
@@ -126,11 +126,11 @@ public class OptionsMonitorImplTests
     public void Get_WithInvalidName_ShouldThrow()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -143,11 +143,11 @@ public class OptionsMonitorImplTests
     public void Get_MultipleCalls_ShouldReturnCachedValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -164,11 +164,11 @@ public class OptionsMonitorImplTests
     public void OnChange_ShouldRegisterListener()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -202,11 +202,11 @@ public class OptionsMonitorImplTests
     public void OnChange_DisposingListener_ShouldUnregister()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -227,11 +227,11 @@ public class OptionsMonitorImplTests
     public void UpdateCache_ShouldUpdateValueAndNotifyListeners()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -254,11 +254,11 @@ public class OptionsMonitorImplTests
     public void ClearCache_ShouldRemoveCachedValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -280,9 +280,9 @@ public class OptionsMonitorImplTests
     public void GetInstanceNames_ShouldReturnAllConfiguredNames()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
-        var configOptions1 = CreateConfigOptions("test1.json", "instance1", fileWriter);
-        var configOptions2 = CreateConfigOptions("test2.json", "instance2", fileWriter);
+        var FileProvider = new InMemoryFileProvider();
+        var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
+        var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
         var monitor = new OptionsMonitorImpl<TestSettings>(
             new[] { configOptions1, configOptions2 }
@@ -300,13 +300,13 @@ public class OptionsMonitorImplTests
     public async Task GetDefaultValue_ShouldReturnStoredDefaultValue()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var testSettings = new TestSettings { Name = "preloaded", Value = 555 };
 
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         // Preload data
@@ -332,11 +332,11 @@ public class OptionsMonitorImplTests
     public void GetDefaultValue_WithInvalidName_ShouldThrow()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -349,11 +349,11 @@ public class OptionsMonitorImplTests
     public void Dispose_ShouldCleanupResources()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
-            fileWriter
+            FileProvider
         );
 
         var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
@@ -372,10 +372,10 @@ public class OptionsMonitorImplTests
     public async Task MultipleInstances_ShouldWorkIndependently()
     {
         // Arrange
-        var fileWriter = new InMemoryFileWriter();
+        var FileProvider = new InMemoryFileProvider();
 
-        var configOptions1 = CreateConfigOptions("test1.json", "instance1", fileWriter);
-        var configOptions2 = CreateConfigOptions("test2.json", "instance2", fileWriter);
+        var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
+        var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
         // Preload different data for each instance
         var settings1 = new TestSettings { Name = "first", Value = 111 };

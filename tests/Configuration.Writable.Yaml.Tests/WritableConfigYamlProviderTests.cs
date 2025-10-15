@@ -2,14 +2,14 @@
 using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Yaml.Tests;
 
 public class WritableConfigYamlProviderTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
 
     public class TestSettings
     {
@@ -43,7 +43,7 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var settings = new TestSettings
@@ -58,9 +58,9 @@ public class WritableConfigYamlProviderTests
         var option = _instance.GetOptions();
         await option.SaveAsync(settings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("yaml_test");
         fileContent.ShouldContain("456");
         fileContent.ShouldContain("false");
@@ -73,7 +73,7 @@ public class WritableConfigYamlProviderTests
     {
         var testFileName = Path.GetRandomFileName();
         var provider = new WritableConfigYamlProvider();
-        provider.FileWriter = _fileWriter;
+        provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
@@ -121,7 +121,7 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = _instance.GetOptions();
@@ -132,7 +132,7 @@ public class WritableConfigYamlProviderTests
             settings.Nested.Description = "async_nested";
         });
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("async_yaml_test");
@@ -151,7 +151,7 @@ public class WritableConfigYamlProviderTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.SectionName = "App:Settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -164,9 +164,9 @@ public class WritableConfigYamlProviderTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("app:");
         fileContent.ShouldContain("settings:");
         fileContent.ShouldContain("yaml_nested_test");
@@ -190,7 +190,7 @@ public class WritableConfigYamlProviderTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.SectionName = "Database__Connection";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -203,9 +203,9 @@ public class WritableConfigYamlProviderTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("database:");
         fileContent.ShouldContain("connection:");
         fileContent.ShouldContain("yaml_db_test");
@@ -229,7 +229,7 @@ public class WritableConfigYamlProviderTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.SectionName = "App:Database:Connection:Settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -242,9 +242,9 @@ public class WritableConfigYamlProviderTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("app:");
         fileContent.ShouldContain("database:");
         fileContent.ShouldContain("connection:");
@@ -268,21 +268,23 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = _instance.GetOptions();
 
         // Save with DeleteKey operation
-        await option.SaveAsync((settings, op) =>
-        {
-            settings.Name = "yaml_test";
-            settings.Value = 100;
-            op.DeleteKey(s => s.IsEnabled);
-            op.DeleteKey(s => s.Items);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                settings.Name = "yaml_test";
+                settings.Value = 100;
+                op.DeleteKey(s => s.IsEnabled);
+                op.DeleteKey(s => s.Items);
+            }
+        );
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
 
         // Verify deleted keys are not present
         fileContent.ShouldNotContain("isEnabled");
@@ -306,19 +308,21 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = _instance.GetOptions();
 
         // Save with DeleteKey operation for nested property
-        await option.SaveAsync((settings, op) =>
-        {
-            settings.Name = "yaml_nested_test";
-            op.DeleteKey(s => s.Nested.Description);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                settings.Name = "yaml_nested_test";
+                op.DeleteKey(s => s.Nested.Description);
+            }
+        );
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
 
         // Verify nested deleted key is not present
         fileContent.ShouldNotContain("description");
@@ -343,25 +347,29 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = _instance.GetOptions();
 
         // First save with a deletion
-        await option.SaveAsync((settings, op) =>
-        {
-            settings.Name = "yaml_test";
-            op.DeleteKey(s => s.IsEnabled);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                settings.Name = "yaml_test";
+                op.DeleteKey(s => s.IsEnabled);
+            }
+        );
 
         // Save again trying to delete the already deleted key - should not error
-        await option.SaveAsync((settings, op) =>
-        {
-            op.DeleteKey(s => s.IsEnabled);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                op.DeleteKey(s => s.IsEnabled);
+            }
+        );
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
 
         // Verify the key is still not present
         fileContent.ShouldNotContain("isEnabled");
@@ -380,22 +388,24 @@ public class WritableConfigYamlProviderTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = _instance.GetOptions();
 
         // Save with both update and deletion
-        await option.SaveAsync((settings, op) =>
-        {
-            settings.Name = "updated_yaml";
-            settings.Value = 999;
-            settings.Items = ["updated1", "updated2"];
-            op.DeleteKey(s => s.IsEnabled);
-            op.DeleteKey(s => s.Nested.Description);
-        });
+        await option.SaveAsync(
+            (settings, op) =>
+            {
+                settings.Name = "updated_yaml";
+                settings.Value = 999;
+                settings.Items = ["updated1", "updated2"];
+                op.DeleteKey(s => s.IsEnabled);
+                op.DeleteKey(s => s.Nested.Description);
+            }
+        );
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
 
         // Verify updates are present
         fileContent.ShouldContain("updated_yaml");

@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,7 +11,7 @@ namespace Configuration.Writable.Tests;
 
 public class WritableConfigTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
 
     [Fact]
     public void Initialize_ShouldCreateConfiguration()
@@ -56,7 +56,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -69,7 +69,7 @@ public class WritableConfigTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("updated");
@@ -86,7 +86,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -99,7 +99,7 @@ public class WritableConfigTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("async_updated");
@@ -116,7 +116,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = _instance.GetOptions();
@@ -126,7 +126,7 @@ public class WritableConfigTests
             settings.Value = 300;
         });
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
         var loadedSettings = option.CurrentValue;
         loadedSettings.Name.ShouldBe("action_updated");
@@ -155,7 +155,7 @@ public class WritableConfigTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -168,9 +168,9 @@ public class WritableConfigTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("\"App\"");
         fileContent.ShouldContain("\"Settings\"");
         fileContent.ShouldContain("\"nested_test\"");
@@ -193,7 +193,7 @@ public class WritableConfigTests
         {
             options.FilePath = testFileName;
             options.SectionName = "Database__Connection";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -206,9 +206,9 @@ public class WritableConfigTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("\"Database\"");
         fileContent.ShouldContain("\"Connection\"");
         fileContent.ShouldContain("\"db_test\"");
@@ -231,7 +231,7 @@ public class WritableConfigTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Database:Connection:Settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -244,9 +244,9 @@ public class WritableConfigTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("\"App\"");
         fileContent.ShouldContain("\"Database\"");
         fileContent.ShouldContain("\"Connection\"");
@@ -270,7 +270,7 @@ public class WritableConfigTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Config__Settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -283,9 +283,9 @@ public class WritableConfigTests
         var option = _instance.GetOptions();
         await option.SaveAsync(newSettings);
 
-        _fileWriter.FileExists(testFileName).ShouldBeTrue();
+        _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
-        var fileContent = _fileWriter.ReadAllText(testFileName);
+        var fileContent = _FileProvider.ReadAllText(testFileName);
         fileContent.ShouldContain("\"App\"");
         fileContent.ShouldContain("\"Config\"");
         fileContent.ShouldContain("\"Settings\"");
@@ -307,7 +307,7 @@ public class WritableConfigTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -331,7 +331,7 @@ public class WritableConfigTests
             option.SaveAsync(newSettings).Wait();
 #pragma warning restore xUnit1031 // Do not use blocking task operations in test method
 
-            _fileWriter.FileExists(testFileName).ShouldBeTrue();
+            _FileProvider.FileExists(testFileName).ShouldBeTrue();
 
             var loadedSettings = option.CurrentValue;
             loadedSettings.Name.ShouldBe("synccontext_test");

@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Configuration.Writable;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Xml.Tests;
@@ -15,7 +15,7 @@ namespace Configuration.Writable.Xml.Tests;
 /// </summary>
 public class XmlOutputFormatStabilityTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
 
     /// <summary>
@@ -65,14 +65,14 @@ public class XmlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("xml_basic.xml");
 
         // Compare normalized XML (to handle potential whitespace differences)
@@ -96,14 +96,14 @@ public class XmlOutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
             options.SectionName = "App:Database";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("xml_section.xml");
 
         // Compare normalized XML
@@ -132,13 +132,13 @@ public class XmlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(specialConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("xml_special_chars.xml");
 
         // Compare normalized XML
@@ -168,13 +168,13 @@ public class XmlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(emptyConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("xml_empty.xml");
 
         // Compare normalized XML
@@ -204,13 +204,13 @@ public class XmlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(numericConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("xml_numeric.xml");
 
         // Compare normalized XML
@@ -234,14 +234,14 @@ public class XmlOutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
             options.SectionName = "App:Database:Connection:Settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("xml_multi_section.xml");
 
         // Compare normalized XML
@@ -265,14 +265,14 @@ public class XmlOutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigXmlProvider();
             options.SectionName = ""; // Empty section name
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("xml_no_section.xml");
 
         // Compare normalized XML

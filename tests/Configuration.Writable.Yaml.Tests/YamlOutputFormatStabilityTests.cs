@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileWriter;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Yaml.Tests;
@@ -14,7 +14,7 @@ namespace Configuration.Writable.Yaml.Tests;
 /// </summary>
 public class YamlOutputFormatStabilityTests
 {
-    private readonly InMemoryFileWriter _fileWriter = new();
+    private readonly InMemoryFileProvider _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
 
     /// <summary>
@@ -65,14 +65,14 @@ public class YamlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("yaml_basic.yaml");
 
         // Compare normalized YAML (normalize line endings only)
@@ -96,14 +96,14 @@ public class YamlOutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.SectionName = "app:settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("yaml_section.yaml");
 
         // Compare normalized YAML
@@ -132,13 +132,13 @@ public class YamlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(specialConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("yaml_special_chars.yaml");
 
         // Compare normalized YAML
@@ -168,13 +168,13 @@ public class YamlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(emptyConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("yaml_empty.yaml");
 
         // Compare normalized YAML
@@ -204,13 +204,13 @@ public class YamlOutputFormatStabilityTests
         {
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var option = instance.GetOptions();
         await option.SaveAsync(numericConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("yaml_numeric.yaml");
 
         // Compare normalized YAML
@@ -234,14 +234,14 @@ public class YamlOutputFormatStabilityTests
             options.FilePath = testFileName;
             options.Provider = new WritableConfigYamlProvider();
             options.SectionName = "app:database:connection:settings";
-            options.UseInMemoryFileWriter(_fileWriter);
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
         var option = instance.GetOptions();
         await option.SaveAsync(testConfig);
 
-        var actualOutput = _fileWriter.ReadAllText(testFileName);
+        var actualOutput = _FileProvider.ReadAllText(testFileName);
         var expectedOutput = LoadReferenceFile("yaml_multi_section.yaml");
 
         // Compare normalized YAML
