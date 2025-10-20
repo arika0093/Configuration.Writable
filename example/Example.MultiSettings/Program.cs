@@ -9,16 +9,14 @@ WritableConfig.Initialize<UserSetting>(opt =>
 {
     opt.FilePath = "usersettings";
     // use common file provider with zip file
-    opt.Provider.FileProvider = zipFileProvider;
+    opt.FileProvider = zipFileProvider;
 });
 WritableConfig.Initialize<UserSecretSetting>(opt =>
 {
     opt.FilePath = "secrets";
+    opt.FileProvider = zipFileProvider;
     // dotnet add package Configuration.Writable.Encrypt
-    opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password")
-    {
-        FileProvider = zipFileProvider,
-    };
+    opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
 });
 
 // and get each setting
