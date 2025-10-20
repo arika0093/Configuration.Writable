@@ -21,7 +21,14 @@ internal class ConfigurationOptionsRegistryImpl<T>(
     public event Action<string> OnRemoved = delegate { };
 
     /// <inheritdoc />
-    public WritableConfigurationOptions<T> Get(string instanceName) => _optionsMap[instanceName];
+    public WritableConfigurationOptions<T> Get(string instanceName)
+    {
+        if (_optionsMap.TryGetValue(instanceName, out var opt))
+        {
+            return opt;
+        }
+        throw new KeyNotFoundException($"No configuration registered for instance: {instanceName}");
+    }
 
     /// <inheritdoc />
     public IEnumerable<string> GetInstanceNames() => _optionsMap.Keys;
@@ -37,6 +44,7 @@ internal class ConfigurationOptionsRegistryImpl<T>(
 #else
         if (_optionsMap.ContainsKey(option.InstanceName))
         {
+            // already exists
             return false;
         }
         _optionsMap[option.InstanceName] = option;
