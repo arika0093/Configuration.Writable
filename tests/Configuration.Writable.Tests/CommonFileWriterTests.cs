@@ -116,8 +116,8 @@ public class CommonFileProviderTests
             var content = Encoding.UTF8.GetBytes($"Content version {i}");
             await writer.SaveToFileAsync(testFile.FilePath, content);
 
-            // Add small delay to ensure different timestamps
-            await Task.Delay(5);
+            // Add small delay to ensure different timestamps and avoid error
+            await Task.Delay(200);
         }
 
         // Check that backup files are limited (may be slightly more due to timing)
