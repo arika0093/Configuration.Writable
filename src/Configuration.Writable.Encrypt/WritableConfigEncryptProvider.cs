@@ -101,7 +101,12 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
             var iv = br.ReadBytes(16);
 
             // Read the rest as encrypted data
-            var encryptedData = br.ReadBytes((int)(stream.Length - 16));
+            byte[] encryptedData;
+            using (var ms1 = new MemoryStream())
+            {
+                br.BaseStream.CopyTo(ms1);
+                encryptedData = ms1.ToArray();
+            }
 
             // Decrypt
             using var aes = Aes.Create();
@@ -115,9 +120,13 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
             // Use JsonProvider to deserialize the decrypted content
             return JsonProvider.LoadConfiguration<T>(cs, options);
         }
-        catch
+        catch (Exception ex)
         {
             // If decryption fails, return default instance
+            options.Logger?.LogWarning(
+                ex,
+                "Failed to decrypt configuration, returning default instance."
+            );
             return new T();
         }
     }
