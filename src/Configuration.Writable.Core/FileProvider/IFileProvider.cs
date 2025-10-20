@@ -12,20 +12,6 @@ namespace Configuration.Writable.FileProvider;
 public interface IFileProvider
 {
     /// <summary>
-    /// Asynchronously saves the specified content to a file at the given path.
-    /// </summary>
-    /// <param name="path">The full file path where the content will be saved.</param>
-    /// <param name="content">The content to write to the file.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <param name="logger">An optional logger for logging operations and errors.</param>
-    Task SaveToFileAsync(
-        string path,
-        ReadOnlyMemory<byte> content,
-        CancellationToken cancellationToken = default,
-        ILogger? logger = null
-    );
-
-    /// <summary>
     /// Determines whether a file exists at the specified path.
     /// </summary>
     /// <param name="path">The path of the file to check. Can be either an absolute or relative path.</param>
@@ -38,4 +24,18 @@ public interface IFileProvider
     /// <param name="path">The path of the file to retrieve. Can be relative or absolute.</param>
     /// <returns>A stream containing the file contents, or null if the file does not exist.</returns>
     Stream? GetFileStream(string path);
+
+    /// <summary>
+    /// Asynchronously saves the specified content to a file at the given path.
+    /// </summary>
+    /// <param name="path">The full file path where the content will be saved.</param>
+    /// <param name="content">The content to write to the file.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <param name="logger">An optional logger for logging operations and errors.</param>
+    Task SaveToFileAsync(
+        string path,
+        ReadOnlyMemory<byte> content,
+        ILogger? logger = null,
+        CancellationToken cancellationToken = default
+    );
 }

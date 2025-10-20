@@ -170,7 +170,7 @@ public class OutputFormatStabilityTests
             """;
 
         var contentBytes = Encoding.UTF8.GetBytes(testContent);
-        await writer.SaveToFileAsync(tempFile.FilePath, contentBytes, CancellationToken.None);
+        await writer.SaveToFileAsync(tempFile.FilePath, contentBytes);
 
         var savedBytes = File.ReadAllBytes(tempFile.FilePath);
         savedBytes.ShouldBe(

@@ -35,7 +35,7 @@ public class CommonFileProviderTests
         var writer = new CommonFileProvider();
         var content = Encoding.UTF8.GetBytes("Hello, World!");
 
-        await writer.SaveToFileAsync(testFile.FilePath, content, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, content);
 
         File.Exists(testFile.FilePath).ShouldBeTrue();
         var savedContent = await ReadAllBytesCompat(testFile.FilePath);
@@ -52,7 +52,7 @@ public class CommonFileProviderTests
 
         Directory.Exists(testDir).ShouldBeFalse();
 
-        await writer.SaveToFileAsync(testFile.FilePath, content, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, content);
 
         Directory.Exists(testDir).ShouldBeTrue();
         File.Exists(testFile.FilePath).ShouldBeTrue();
@@ -67,12 +67,12 @@ public class CommonFileProviderTests
         var newContent = Encoding.UTF8.GetBytes("New content");
 
         // Create original file
-        await writer.SaveToFileAsync(testFile.FilePath, originalContent, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, originalContent);
         var firstSave = await ReadAllBytesCompat(testFile.FilePath);
         firstSave.ShouldBe(originalContent);
 
         // Replace with new content
-        await writer.SaveToFileAsync(testFile.FilePath, newContent, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, newContent);
         var secondSave = await ReadAllBytesCompat(testFile.FilePath);
         secondSave.ShouldBe(newContent);
     }
@@ -89,10 +89,10 @@ public class CommonFileProviderTests
         var backupPattern = $"{testFile.FileName.Split('.')[0]}_*.bak";
 
         // Create original file
-        await writer.SaveToFileAsync(testFile.FilePath, originalContent, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, originalContent);
 
         // Update file (should create backup)
-        await writer.SaveToFileAsync(testFile.FilePath, newContent, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, newContent);
 
         // Check that at least one backup file was created
         var backupFiles = Directory.GetFiles(directory, backupPattern);
@@ -113,7 +113,7 @@ public class CommonFileProviderTests
         for (int i = 0; i < 5; i++)
         {
             var content = Encoding.UTF8.GetBytes($"Content version {i}");
-            await writer.SaveToFileAsync(testFile.FilePath, content, CancellationToken.None);
+            await writer.SaveToFileAsync(testFile.FilePath, content);
 
             // Add small delay to ensure different timestamps
             await Task.Delay(50);
@@ -135,8 +135,8 @@ public class CommonFileProviderTests
         var newContent = Encoding.UTF8.GetBytes("New content");
 
         // Create and update file
-        await writer.SaveToFileAsync(testFile.FilePath, originalContent, CancellationToken.None);
-        await writer.SaveToFileAsync(testFile.FilePath, newContent, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, originalContent);
+        await writer.SaveToFileAsync(testFile.FilePath, newContent);
 
         // Check that no backup files were created
         var directory = Path.GetDirectoryName(testFile.FilePath)!;
@@ -153,7 +153,7 @@ public class CommonFileProviderTests
         for (int i = 0; i < tasks.Length; i++)
         {
             var content = Encoding.UTF8.GetBytes($"Content {i}");
-            tasks[i] = writer.SaveToFileAsync(testFile.FilePath, content, CancellationToken.None);
+            tasks[i] = writer.SaveToFileAsync(testFile.FilePath, content);
         }
 
         await Task.WhenAll(tasks);
@@ -176,7 +176,7 @@ public class CommonFileProviderTests
 
         try
         {
-            await writer.SaveToFileAsync(testFile.FilePath, content, cts.Token);
+            await writer.SaveToFileAsync(testFile.FilePath, content, cancellationToken: cts.Token);
             // If we reach here, cancellation was not respected
             throw new Exception("Operation was not cancelled as expected.");
         }
@@ -193,7 +193,7 @@ public class CommonFileProviderTests
         var writer = new CommonFileProvider();
         var emptyContent = ReadOnlyMemory<byte>.Empty;
 
-        await writer.SaveToFileAsync(testFile.FilePath, emptyContent, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, emptyContent);
 
         File.Exists(testFile.FilePath).ShouldBeTrue();
         var fileInfo = new FileInfo(testFile.FilePath);
@@ -210,7 +210,7 @@ public class CommonFileProviderTests
         var largeContent = new byte[1024 * 1024];
         new Random().NextBytes(largeContent);
 
-        await writer.SaveToFileAsync(testFile.FilePath, largeContent, CancellationToken.None);
+        await writer.SaveToFileAsync(testFile.FilePath, largeContent);
 
         File.Exists(testFile.FilePath).ShouldBeTrue();
         var savedContent = await ReadAllBytesCompat(testFile.FilePath);

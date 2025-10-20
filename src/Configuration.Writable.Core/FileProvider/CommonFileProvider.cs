@@ -36,8 +36,8 @@ public class CommonFileProvider : IFileProvider, IDisposable
     public virtual async Task SaveToFileAsync(
         string path,
         ReadOnlyMemory<byte> content,
-        CancellationToken cancellationToken = default,
-        ILogger? logger = null
+        ILogger? logger = null,
+        CancellationToken cancellationToken = default
     )
     {
         int retryCount = 0;

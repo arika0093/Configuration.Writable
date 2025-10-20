@@ -184,8 +184,8 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
                 .SaveToFileAsync(
                     options.ConfigFilePath,
                     encryptedBytes,
-                    cancellationToken,
-                    options.Logger
+                    options.Logger,
+                    cancellationToken
                 )
                 .ConfigureAwait(false);
         }

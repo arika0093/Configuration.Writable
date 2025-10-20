@@ -102,7 +102,7 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
     {
         var contents = GetSaveContentsCore(config, operations, options);
         await FileProvider
-            .SaveToFileAsync(options.ConfigFilePath, contents, cancellationToken, options.Logger)
+            .SaveToFileAsync(options.ConfigFilePath, contents, options.Logger, cancellationToken)
             .ConfigureAwait(false);
     }
 
