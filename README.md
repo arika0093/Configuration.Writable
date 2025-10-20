@@ -6,8 +6,9 @@ A lightweight library that allows for easy saving and referencing of settings, w
 ## Features
 * Read and write user settings with type safety.
 * [Built-in](#FileProvider): Atomic file writing, automatic retry, and backup creation.
-* Extends `Microsoft.Extensions.Options` interfaces, so it works seamlessly with existing code using `IOptions<T>`, `IOptionsMonitor<T>`, etc.
+* Automatic detection of external changes to configuration files and reflection of the latest settings.
 * Simple API that can be easily used in applications both [with](#with-di) and [without](#without-di) DI.
+* Extends `Microsoft.Extensions.Options` interfaces, so it works seamlessly with existing code using `IOptions<T>`, `IOptionsMonitor<T>`, etc.
 * Supports various file formats (Json, Xml, Yaml, Encrypted, etc...) via [providers](#provider).
 
 [See more...](./docs/article/why-this-library.md)
@@ -412,6 +413,26 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
 ## Advanced Usage
+### Multiple Settings in a Single File
+Using `ZipFileProvider`, you can save multiple settings classes in a single configuration file.
+for example, to save `Foo`(foo.json) and `Bar`(bar.json) in `configurations.zip`:
+
+```csharp
+var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" };
+
+// initialize each setting with the same file provider
+builder.Services.AddWritableOptions<Foo>(opt =>
+{
+    opt.FilePath = "foo";
+    opt.FileProvider = zipFileProvider;
+});
+builder.Services.AddWritableOptions<Bar>(opt =>
+{
+    opt.FilePath = "bar";
+    opt.FileProvider = zipFileProvider;
+});
+```
+
 ### Direct Property Manipulation
 You can directly manipulate configuration properties at the key level using `IOptionOperator<T>`. This is useful for operations like deleting specific keys from the configuration file.
 
@@ -492,11 +513,9 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class, new(
 ```
 
 ## ToDo
-* Support the ability to write multiple configuration classes to a single file
 * Support version update migration
 * Support dynamic addition/removal of configuration sources
 * Support multiple configurations merging and save each partially
-* Support NativeAOT and trimming.
 
 ## License
 This project is licensed under the Apache-2.0 License.
