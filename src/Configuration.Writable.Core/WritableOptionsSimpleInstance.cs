@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Configuration.Writable.Options;
 
 namespace Configuration.Writable;
 
@@ -39,8 +40,9 @@ public class WritableOptionsSimpleInstance<T>
             );
         }
         var options = new List<WritableConfigurationOptions<T>> { _options };
-        var optionsMonitor = new OptionsMonitorImpl<T>(options);
-        var writableOptions = new WritableOptionsImpl<T>(optionsMonitor, options);
+        var optionsRegistry = new ConfigurationOptionsRegistryImpl<T>(options);
+        var optionsMonitor = new OptionsMonitorImpl<T>(optionsRegistry);
+        var writableOptions = new WritableOptionsImpl<T>(optionsMonitor, optionsRegistry);
         return writableOptions;
     }
 }

@@ -16,24 +16,25 @@ namespace Configuration.Writable;
 internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     where T : class, new()
 {
+    private readonly IConfigurationOptionsRegistry<T> _optionsRegistry;
+
     private readonly Dictionary<string, T> _cache = [];
     private readonly Dictionary<string, T> _defaultValue = [];
     private readonly Dictionary<string, List<Action<T, string?>>> _listeners = [];
     private readonly Dictionary<string, FileSystemWatcher?> _watchers = [];
-    private readonly Dictionary<string, WritableConfigurationOptions<T>> _optionsMap;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public OptionsMonitorImpl(IEnumerable<WritableConfigurationOptions<T>> options)
+    public OptionsMonitorImpl(IConfigurationOptionsRegistry<T> optionsRegistry)
     {
-        _optionsMap = options.ToDictionary(o => o.InstanceName, o => o);
+        _optionsRegistry = optionsRegistry;
+        // subscribe to options added/removed events
+        _optionsRegistry.OnAdded += OnOptionsAdded;
+        _optionsRegistry.OnRemoved += OnOptionsRemoved;
 
         // Initialize cache and file watchers
-        foreach (var opt in _optionsMap.Values)
+        foreach (var instName in optionsRegistry.GetInstanceNames())
         {
-            var defaultValue = LoadConfiguration(opt.InstanceName);
-            // Store the default value for IOptions
-            _defaultValue[opt.InstanceName] = defaultValue;
-            SetupFileWatcher(opt);
+            InitializeOptions(instName);
         }
     }
 
@@ -83,7 +84,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// Gets all instance names for which options are configured. <br/>
     /// For use by <see cref="IOptionsSnapshot{TOptions}"/> implementation.
     /// </summary>
-    internal IEnumerable<string> GetInstanceNames() => _optionsMap.Keys;
+    internal IEnumerable<string> GetInstanceNames() => _optionsRegistry.GetInstanceNames();
 
     /// <summary>
     /// Retrieves the default value associated with the specified instance name. <br/>
@@ -116,16 +117,38 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         _cache.Remove(instanceName);
     }
 
+    // Called when new options are added to the registry.
+    private void OnOptionsAdded(WritableConfigurationOptions<T> options) =>
+        InitializeOptions(options.InstanceName);
+
+    // Called when options are removed from the registry.
+    private void OnOptionsRemoved(string instanceName)
+    {
+        _cache.Remove(instanceName);
+        _defaultValue.Remove(instanceName);
+        if (_watchers.TryGetValue(instanceName, out var watcher))
+        {
+            watcher?.Dispose();
+            _watchers.Remove(instanceName);
+        }
+        _listeners.Remove(instanceName);
+    }
+
+    // Initializes options for a given instance name.
+    private void InitializeOptions(string instanceName)
+    {
+        var opt = _optionsRegistry.Get(instanceName);
+        // Store the default value for IOptions
+        var defaultValue = LoadConfiguration(instanceName);
+        _defaultValue[instanceName] = defaultValue;
+        // Setup file watcher
+        SetupFileWatcher(opt);
+    }
+
     // Loads configuration from the provider and updates the cache.
     private T LoadConfiguration(string instanceName)
     {
-        if (!_optionsMap.TryGetValue(instanceName, out var options))
-        {
-            throw new InvalidOperationException(
-                $"No WritableConfigurationOptions<{typeof(T).Name}> found for instance: {instanceName}"
-            );
-        }
-
+        var options = _optionsRegistry.Get(instanceName);
         _semaphore.Wait();
         try
         {
@@ -194,8 +217,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private void OnFileChanged(string instanceName, FileSystemEventArgs args)
     {
         // show log
-        var options = _optionsMap[instanceName];
-
+        var options = _optionsRegistry.Get(instanceName);
         if (options.ConfigFilePath != args.FullPath)
         {
             // Ignore changes to other files in the same directory
