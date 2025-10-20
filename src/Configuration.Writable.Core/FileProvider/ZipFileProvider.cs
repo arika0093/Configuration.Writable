@@ -57,6 +57,26 @@ public class ZipFileProvider : IFileProvider, IDisposable
         try
         {
             var zipPath = GetZipFilePath(path);
+
+            // Ensure the directory exists
+            var directory = Path.GetDirectoryName(zipPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Create the zip file if it doesn't exist
+            if (!File.Exists(zipPath))
+            {
+#if NET10_0_OR_GREATER
+                using var createZip = await ZipFile
+                    .OpenAsync(zipPath, ZipArchiveMode.Create, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+#else
+                using var createZip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+#endif
+            }
+
 #if NET10_0_OR_GREATER
             using var zip = await ZipFile
                 .OpenAsync(zipPath, ZipArchiveMode.Update, cancellationToken: cancellationToken)

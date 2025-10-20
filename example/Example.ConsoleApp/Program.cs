@@ -1,4 +1,5 @@
 ﻿using Configuration.Writable;
+using Configuration.Writable.FileProvider;
 using Example.ConsoleApp;
 using Microsoft.Extensions.Logging;
 
@@ -21,11 +22,10 @@ WritableConfig.Initialize<SampleSetting>(opt =>
     // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IWritableConfigProvider
     opt.Provider = new WritableConfigJsonProvider()
     {
+        // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
+        // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
         JsonSerializerOptions = { WriteIndented = true },
     };
-
-    // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
-    // opt.FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
 
     // if you want to use logging, set Logger
     // required NuGet package: Microsoft.Extensions.Logging.Console

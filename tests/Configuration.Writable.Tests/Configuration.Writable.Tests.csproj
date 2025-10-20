@@ -6,6 +6,7 @@
     <None Include="ReferenceFiles\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.IO.Compression" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.*" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
