@@ -15,7 +15,5 @@ public static class InMemoryFileProviderExtensions
         where T : class, new()
     {
         builder.FileProvider = inMemoryFileProvider;
-        builder.Provider.FileProvider = inMemoryFileProvider;
-        builder.FileReadStream = inMemoryFileProvider.GetFileStream(builder.ConfigFilePath);
     }
 }

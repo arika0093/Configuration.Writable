@@ -34,11 +34,6 @@ public record WritableConfigurationOptionsBuilder<T>
     public IFileProvider? FileProvider { get; set; } = null;
 
     /// <summary>
-    /// Gets or sets the stream used to read the file content override from provider's default.
-    /// </summary>
-    public Stream? FileReadStream { get; set; } = null;
-
-    /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
     /// Extension is determined by the Provider so it can be omitted.
@@ -196,6 +191,11 @@ public record WritableConfigurationOptionsBuilder<T>
     public WritableConfigurationOptions<T> BuildOptions()
     {
         var validator = BuildValidator();
+        // override provider's file provider if set
+        if (FileProvider != null)
+        {
+            Provider.FileProvider = FileProvider;
+        }
 
         return new WritableConfigurationOptions<T>
         {
