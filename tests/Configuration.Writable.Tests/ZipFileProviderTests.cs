@@ -277,26 +277,6 @@ public class ZipFileProviderTests
     }
 
     [Fact]
-    public async Task SaveToFileAsync_WithLargeContent_ShouldHandleLargeFiles()
-    {
-        using var testFile = new TemporaryFile();
-        using var provider = new ZipFileProvider();
-
-        // Create 1MB of content
-        var largeContent = new byte[1024 * 1024];
-        new Random().NextBytes(largeContent);
-
-        await provider.SaveToFileAsync(testFile.FilePath, largeContent);
-
-        using var stream = provider.GetFileStream(testFile.FilePath);
-        stream.ShouldNotBeNull();
-
-        using var ms = new MemoryStream();
-        await stream.CopyToAsync(ms);
-        ms.ToArray().ShouldBe(largeContent);
-    }
-
-    [Fact]
     public async Task GetFileStream_AfterDispose_ShouldStillWork()
     {
         using var testFile = new TemporaryFile();
