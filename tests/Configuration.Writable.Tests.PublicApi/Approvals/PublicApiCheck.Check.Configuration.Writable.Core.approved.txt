@@ -36,6 +36,17 @@ namespace Configuration.Writable.FileProvider
 }
 namespace Configuration.Writable
 {
+    public interface IConfigurationOptionsRegistry<T>
+        where T :  class, new ()
+    {
+        event System.Action<Configuration.Writable.WritableConfigurationOptions<T>> OnAdded;
+        event System.Action<string> OnRemoved;
+        void Clear();
+        Configuration.Writable.WritableConfigurationOptions<T> Get(string instanceName);
+        System.Collections.Generic.IEnumerable<string> GetInstanceNames();
+        bool TryAdd(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configure);
+        bool TryRemove(string instanceName);
+    }
     public interface IOptionOperator<T>
         where T :  class, new ()
     {

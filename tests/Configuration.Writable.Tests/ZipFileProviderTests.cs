@@ -73,7 +73,10 @@ public class ZipFileProviderTests
     public async Task SaveToFileAsync_WithMultipleFiles_ShouldCreateMultipleEntries()
     {
         using var testFile1 = new TemporaryFile();
-        using var testFile2 = new TemporaryFile(Path.GetDirectoryName(testFile1.FilePath)!, "file2.json");
+        using var testFile2 = new TemporaryFile(
+            Path.GetDirectoryName(testFile1.FilePath)!,
+            "file2.json"
+        );
         using var provider = new ZipFileProvider();
 
         var content1 = Encoding.UTF8.GetBytes("Content 1");
@@ -244,7 +247,11 @@ public class ZipFileProviderTests
 
         try
         {
-            await provider.SaveToFileAsync(testFile.FilePath, content, cancellationToken: cts.Token);
+            await provider.SaveToFileAsync(
+                testFile.FilePath,
+                content,
+                cancellationToken: cts.Token
+            );
             throw new Exception("Operation was not cancelled as expected.");
         }
         catch (OperationCanceledException)
@@ -325,7 +332,9 @@ public class ZipFileProviderTests
         using var zip = ZipFile.OpenRead(zipPath);
 
         // Should only have one entry for the file
-        var entries = zip.Entries.Where(e => e.Name == Path.GetFileName(testFile.FilePath)).ToList();
+        var entries = zip
+            .Entries.Where(e => e.Name == Path.GetFileName(testFile.FilePath))
+            .ToList();
         entries.Count.ShouldBe(1);
 
         using var stream = entries[0].Open();

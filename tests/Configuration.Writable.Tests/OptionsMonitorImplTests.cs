@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Options;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
@@ -42,7 +43,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var value = monitor.CurrentValue;
@@ -64,7 +66,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var value = monitor.Get(Microsoft.Extensions.Options.Options.DefaultName);
@@ -86,7 +89,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var value = monitor.Get(null);
@@ -112,7 +116,8 @@ public class OptionsMonitorImplTests
             configOptions
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var value = monitor.Get("custom");
@@ -133,7 +138,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
         Should.Throw<InvalidOperationException>(() => monitor.Get("nonexistent"));
@@ -150,7 +156,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var value1 = monitor.Get(Microsoft.Extensions.Options.Options.DefaultName);
@@ -171,7 +178,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
         TestSettings? changedValue = null;
         string? changedName = null;
@@ -209,7 +217,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
         var disposable = monitor.OnChange((value, name) => changeCount++);
@@ -234,7 +243,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var notified = false;
 
         monitor.OnChange((value, name) => notified = true);
@@ -261,7 +271,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Get value to cache it
         var initialValue = monitor.CurrentValue;
@@ -284,9 +295,10 @@ public class OptionsMonitorImplTests
         var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
         var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(
-            new[] { configOptions1, configOptions2 }
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>(
+            [configOptions1, configOptions2]
         );
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var names = monitor.GetInstanceNames();
@@ -316,7 +328,8 @@ public class OptionsMonitorImplTests
             configOptions
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var defaultValue = monitor.GetDefaultValue(
@@ -339,7 +352,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
         Should.Throw<InvalidOperationException>(() => monitor.GetDefaultValue("nonexistent"));
@@ -356,7 +370,8 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
         monitor.OnChange((value, name) => changeCount++);
@@ -392,9 +407,10 @@ public class OptionsMonitorImplTests
             configOptions2
         );
 
-        var monitor = new OptionsMonitorImpl<TestSettings>(
-            new[] { configOptions1, configOptions2 }
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>(
+            [configOptions1, configOptions2]
         );
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
         var value1 = monitor.Get("instance1");

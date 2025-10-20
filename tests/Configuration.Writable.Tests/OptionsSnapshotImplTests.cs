@@ -39,7 +39,8 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
         // Act
@@ -62,7 +63,8 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
         // Act
@@ -89,7 +91,8 @@ public class OptionsSnapshotImplTests
             configOptions
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
         // Act
@@ -111,7 +114,8 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
         // Get initial value
@@ -158,9 +162,10 @@ public class OptionsSnapshotImplTests
             configOptions2
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(
-            new[] { configOptions1, configOptions2 }
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>(
+            [configOptions1, configOptions2]
         );
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
         // Act
@@ -185,7 +190,8 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
         // Act
@@ -207,7 +213,8 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create first snapshot
         var snapshot1 = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
@@ -251,7 +258,8 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
         // Act & Assert
@@ -274,7 +282,8 @@ public class OptionsSnapshotImplTests
             configOptions
         );
 
-        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(new[] { configOptions });
+        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create snapshot with initial data
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
