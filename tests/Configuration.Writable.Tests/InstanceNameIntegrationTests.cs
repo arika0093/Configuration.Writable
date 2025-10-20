@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
@@ -174,7 +175,7 @@ public class InstanceNameIntegrationTests
         var config = host.Services.GetRequiredService<IWritableOptions<UserSetting>>();
 
         // SaveAsync without instance name should throw when multiple instances are registered
-        await Should.ThrowAsync<InvalidOperationException>(async () =>
+        await Should.ThrowAsync<KeyNotFoundException>(async () =>
             await config.SaveAsync(setting => setting.Name = "test")
         );
 

@@ -142,7 +142,7 @@ public class OptionsMonitorImplTests
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
-        Should.Throw<InvalidOperationException>(() => monitor.Get("nonexistent"));
+        Should.Throw<KeyNotFoundException>(() => monitor.Get("nonexistent"));
     }
 
     [Fact]
