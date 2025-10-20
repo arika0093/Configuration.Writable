@@ -278,7 +278,7 @@ public class ValidationTests
     [Fact]
     public void ValidateOptionsResult_Failure_ShouldCreateFailedResult()
     {
-        var result = ValidateOptionsResult.Fail(new[] { "Error 1", "Error 2" });
+        var result = ValidateOptionsResult.Fail(["Error 1", "Error 2"]);
         result.Failed.ShouldBeTrue();
         result.Succeeded.ShouldBeFalse();
         result.Failures.Count().ShouldBe(2);

@@ -106,7 +106,7 @@ public class WritableConfigYamlProviderTests
         loadedSettings.Name.ShouldBe("yaml_persistence_test");
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
-        loadedSettings.Items.ShouldBe(new[] { "yaml_persist1", "yaml_persist2" });
+        loadedSettings.Items.ShouldBe(["yaml_persist1", "yaml_persist2"]);
         loadedSettings.Nested.Description.ShouldBe("nested_persist");
         loadedSettings.Nested.Price.ShouldBe(123.45);
     }
