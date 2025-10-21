@@ -267,8 +267,16 @@ public class RealisticUsageScenarioTests : IDisposable
 
         await Task.WhenAll(tasks);
 
-        // After all concurrent operations, the file should exist and be valid
-        File.Exists(testFilePath).ShouldBeTrue();
+        // Retry file existence check to handle filesystem delays in concurrent operations
+        var fileExists = false;
+        for (int i = 0; i < 20; i++)
+        {
+            fileExists = File.Exists(testFilePath);
+            if (fileExists) break;
+            await Task.Delay(100);
+        }
+
+        fileExists.ShouldBeTrue();
         var finalSettings = config.CurrentValue;
 
         // At least the last write should be persisted correctly

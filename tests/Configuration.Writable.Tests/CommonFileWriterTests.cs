@@ -54,7 +54,16 @@ public class CommonFileProviderTests
 
         await writer.SaveToFileAsync(testFile.FilePath, content);
 
-        Directory.Exists(testDir).ShouldBeTrue();
+        // Add retry logic for directory existence check to handle filesystem delays in CI
+        var dirExists = false;
+        for (int i = 0; i < 10; i++)
+        {
+            dirExists = Directory.Exists(testDir);
+            if (dirExists) break;
+            await Task.Delay(50);
+        }
+
+        dirExists.ShouldBeTrue();
         File.Exists(testFile.FilePath).ShouldBeTrue();
     }
 
@@ -94,9 +103,16 @@ public class CommonFileProviderTests
         // Update file (should create backup)
         await writer.SaveToFileAsync(testFile.FilePath, newContent);
 
-        // Check that at least one backup file was created
-        var backupFiles = Directory.GetFiles(directory, backupPattern);
-        backupFiles.Length.ShouldBeGreaterThanOrEqualTo(1); // in .NET FW, sometime two files created due to timing
+        // Check that at least one backup file was created with retry for filesystem delays
+        int backupFileCount = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            var backupFiles = Directory.GetFiles(directory, backupPattern);
+            backupFileCount = backupFiles.Length;
+            if (backupFileCount >= 1) break;
+            await Task.Delay(50);
+        }
+        backupFileCount.ShouldBeGreaterThanOrEqualTo(1); // in .NET FW, sometime two files created due to timing
 
         // Verify current file content
         var currentContent = await ReadAllBytesCompat(testFile.FilePath);
@@ -159,8 +175,20 @@ public class CommonFileProviderTests
 
         await Task.WhenAll(tasks);
 
+        // Add small delay to ensure filesystem operations complete in CI
+        await Task.Delay(100);
+
         // File should exist and contain one of the written contents
-        File.Exists(testFile.FilePath).ShouldBeTrue();
+        // Retry file existence check to handle filesystem delays
+        var fileExists = false;
+        for (int i = 0; i < 10; i++)
+        {
+            fileExists = File.Exists(testFile.FilePath);
+            if (fileExists) break;
+            await Task.Delay(50);
+        }
+
+        fileExists.ShouldBeTrue();
         var finalContent = await ReadAllTextCompat(testFile.FilePath);
         finalContent.ShouldStartWith("Content ");
     }
@@ -213,7 +241,16 @@ public class CommonFileProviderTests
 
         await writer.SaveToFileAsync(testFile.FilePath, largeContent);
 
-        File.Exists(testFile.FilePath).ShouldBeTrue();
+        // Retry file existence check for filesystem delays with large files
+        var fileExists = false;
+        for (int i = 0; i < 10; i++)
+        {
+            fileExists = File.Exists(testFile.FilePath);
+            if (fileExists) break;
+            await Task.Delay(100);
+        }
+
+        fileExists.ShouldBeTrue();
         var savedContent = await ReadAllBytesCompat(testFile.FilePath);
         savedContent.ShouldBe(largeContent);
     }

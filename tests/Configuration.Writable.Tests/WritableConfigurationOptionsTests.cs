@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace Configuration.Writable.Tests;
 
@@ -87,10 +88,34 @@ public class WritableConfigurationOptionsBuilderTests
             var actualPath = options.ConfigFilePath;
             actualPath.ShouldBe(expectedPath);
 
-            Directory.SetCurrentDirectory(Path.GetTempPath());
+            // Use a deterministic temp directory to avoid CI environment issues
+            var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                Directory.SetCurrentDirectory(tempDir);
 
-            var actualPathAfterCdChange = options.ConfigFilePath;
-            actualPathAfterCdChange.ShouldBe(expectedPath);
+                // Add small delay to ensure directory change is reflected in CI
+                Thread.Sleep(50);
+
+                var actualPathAfterCdChange = options.ConfigFilePath;
+                actualPathAfterCdChange.ShouldBe(expectedPath);
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(originalCurrentDirectory);
+                if (Directory.Exists(tempDir))
+                {
+                    try
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                    }
+                }
+            }
         }
         finally
         {
