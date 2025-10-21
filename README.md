@@ -413,6 +413,46 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
 ## Advanced Usage
+### Dynamic Add/Remove Options
+You can dynamically add or remove writable options at runtime using `IConfigurationOptionsRegistry`.
+for example, in addition to common application settings, it is useful when you want to have individual settings for each document opened by the user.
+
+```csharp
+// use IConfigurationOptionsRegistry from DI
+public class DynamicOptionsService(IConfigurationOptionsRegistry<UserSetting> registry)
+{
+    public void AddNewOptions(string instanceName, string filePath)
+    {
+        registry.TryAdd(opt => {
+            opt.InstanceName = instanceName;
+            opt.FilePath = filePath;
+        });
+    }
+
+    public void RemoveOptions(string instanceName)
+    {
+        registry.TryRemove(instanceName);
+    }
+}
+
+// and you can access IOptionsMonitor<T> or IWritableOptions<T> as usual
+public class MyService(IWritableOptions<UserSetting> options)
+{
+    public void UseOptions()
+    {
+        var commonSetting = options.Get("Common");
+        var documentSetting = options.Get("UserDocument1");
+        var name = documentSetting.Name ?? commonSetting.Name ?? "default";
+        Console.WriteLine($">> Name: {name}");
+
+        // and save to specific instance
+        await options.SaveWithNameAsync("UserDocument1", setting => {
+            setting.Name = "document specific name";
+        }
+    }
+}
+```
+
 ### Multiple Settings in a Single File
 Using `ZipFileProvider`, you can save multiple settings classes in a single configuration file.
 for example, to save `Foo`(foo.json) and `Bar`(bar.json) in `configurations.zip`:
@@ -514,8 +554,7 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class, new(
 
 ## ToDo
 * Support version update migration
-* Support dynamic addition/removal of configuration sources
-* Support multiple configurations merging and save each partially
+* Support multiple configurations merging
 
 ## License
 This project is licensed under the Apache-2.0 License.
