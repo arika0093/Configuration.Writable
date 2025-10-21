@@ -153,85 +153,32 @@ public class CommonFileProvider : IFileProvider, IDisposable
             return;
         }
         // delete older backup files
-        var baseFileName = Path.GetFileNameWithoutExtension(path);
-        var backupFilesOrderByTimestamp = Directory
+        var backupFilesOrderByCreated = Directory
             .GetFiles(Path.GetDirectoryName(path)!, "*.bak")
-            .Where(f => Path.GetFileNameWithoutExtension(f).StartsWith(baseFileName + "_"))
-            .Select(f => new
-            {
-                FilePath = f,
-                Timestamp = ExtractTimestampFromBackupFilename(f, baseFileName),
-            })
-            .Where(f => f.Timestamp.HasValue)
-            .OrderBy(f => f.Timestamp!.Value)
+            .Select(f => new FileInfo(f))
+            .Where(f => f.Name.StartsWith(Path.GetFileNameWithoutExtension(path)))
+            .OrderBy(f => f.CreationTimeUtc)
             .ToList();
 
         logger?.LogTrace(
             "Found {BackupFileCount} backup files for {FilePath}",
-            backupFilesOrderByTimestamp.Count,
+            backupFilesOrderByCreated.Count,
             path
         );
-        if (backupFilesOrderByTimestamp.Count >= BackupMaxCount)
+        if (backupFilesOrderByCreated.Count >= BackupMaxCount)
         {
-            // delete oldest files to make room for the new backup
-            var deleteCount = backupFilesOrderByTimestamp.Count - (BackupMaxCount - 1);
-            var filesToDelete = backupFilesOrderByTimestamp
-                .Take(deleteCount)
-                .Select(f => f.FilePath);
-            foreach (var filePath in filesToDelete)
+            // delete oldest files
+            var deleteCount = backupFilesOrderByCreated.Count - BackupMaxCount + 1;
+            foreach (var file in backupFilesOrderByCreated.Take(deleteCount))
             {
-                logger?.LogDebug("Deleting old backup file: {BackupFilePath}", filePath);
-                File.Delete(filePath);
+                logger?.LogDebug("Deleting old backup file: {BackupFilePath}", file.FullName);
+                file.Delete();
             }
         }
         // create backup file
         var backupFilePath = GetTemporaryFilePath(path) + ".bak";
         logger?.LogDebug("Creating backup file for: {FilePath}", backupFilePath);
         File.Copy(path, backupFilePath);
-    }
-
-    /// <summary>
-    /// Extracts the timestamp from a backup filename.
-    /// </summary>
-    /// <param name="backupFilePath">The full path to the backup file.</param>
-    /// <param name="baseFileName">The base file name without extension.</param>
-    /// <returns>The timestamp in ticks if successfully extracted; otherwise, null.</returns>
-    private static long? ExtractTimestampFromBackupFilename(
-        string backupFilePath,
-        string baseFileName
-    )
-    {
-        try
-        {
-            // Backup file format: {baseFileName}_{timestamp}{originalExtension}.bak
-            // Example: abc123_638123456789.sample.bak
-            // Path.GetFileNameWithoutExtension removes .bak -> abc123_638123456789.sample
-            var fileNameWithoutBakExt = Path.GetFileNameWithoutExtension(backupFilePath);
-
-            // Check if it starts with baseFileName + "_"
-            var prefix = baseFileName + "_";
-            if (!fileNameWithoutBakExt.StartsWith(prefix))
-            {
-                return null;
-            }
-
-            // Extract the part after prefix: "638123456789.sample"
-            var remainder = fileNameWithoutBakExt.Substring(prefix.Length);
-
-            // Find the first dot or end of string to extract timestamp
-            var dotIndex = remainder.IndexOf('.');
-            var timestampStr = dotIndex >= 0 ? remainder.Substring(0, dotIndex) : remainder;
-
-            if (long.TryParse(timestampStr, out var timestamp))
-            {
-                return timestamp;
-            }
-        }
-        catch
-        {
-            // Ignore parse errors
-        }
-        return null;
     }
 
     /// <summary>

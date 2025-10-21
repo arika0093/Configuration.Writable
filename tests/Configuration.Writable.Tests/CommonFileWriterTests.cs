@@ -106,38 +106,25 @@ public class CommonFileProviderTests
     [Fact]
     public async Task SaveToFileAsync_WithBackupMaxCount_ShouldLimitBackupFiles()
     {
-        // Use a unique subdirectory to isolate test files
-        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(testDir);
-        try
+        var directoryPath = Path.GetTempPath();
+        using var testFile = new TemporaryFile(directoryPath, $"{Guid.NewGuid():N}.sample");
+        var writer = new CommonFileProvider { BackupMaxCount = 2 };
+
+        // Create multiple versions to exceed backup limit
+        for (int i = 0; i < 10; i++)
         {
-            using var testFile = new TemporaryFile(testDir, $"{Guid.NewGuid():N}.sample");
-            var writer = new CommonFileProvider { BackupMaxCount = 2 };
+            var content = Encoding.UTF8.GetBytes($"Content version {i}");
+            await writer.SaveToFileAsync(testFile.FilePath, content);
 
-            // Create multiple versions to exceed backup limit
-            for (int i = 0; i < 10; i++)
-            {
-                var content = Encoding.UTF8.GetBytes($"Content version {i}");
-                await writer.SaveToFileAsync(testFile.FilePath, content);
-
-                // Add small delay to ensure different timestamps and avoid error
-                await Task.Delay(200);
-            }
-
-            // Check that backup files are limited (may be slightly more due to timing)
-            var directory = Path.GetDirectoryName(testFile.FilePath)!;
-            var backupPattern = $"*.bak";
-            var backupFiles = Directory.GetFiles(directory, backupPattern);
-            backupFiles.Length.ShouldBe(2);
+            // Add small delay to ensure different timestamps and avoid error
+            await Task.Delay(200);
         }
-        finally
-        {
-            // Clean up test directory
-            if (Directory.Exists(testDir))
-            {
-                Directory.Delete(testDir, true);
-            }
-        }
+
+        // Check that backup files are limited (may be slightly more due to timing)
+        var directory = Path.GetDirectoryName(testFile.FilePath)!;
+        var backupPattern = $"{testFile.FileName.Split('.')[0]}_*.bak";
+        var backupFiles = Directory.GetFiles(directory, backupPattern);
+        backupFiles.Length.ShouldBe(2);
     }
 
     [Fact]
