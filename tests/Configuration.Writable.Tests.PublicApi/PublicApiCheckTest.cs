@@ -31,6 +31,7 @@ public static class PublicApiCheck
     }
 }
 
+[Collection("PublicApiCheck")]
 public class PublicApiCheckTest
 {
     [Fact]
