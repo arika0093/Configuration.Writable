@@ -23,7 +23,7 @@ namespace Configuration.Writable;
 /// <param name="registryInstance">The configuration options registry instance.</param>
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
-    IConfigurationOptionsRegistry<T> registryInstance
+    IOptionsConfigRegistry<T> registryInstance
 ) : IWritableOptions<T>, IDisposable
     where T : class, new()
 {

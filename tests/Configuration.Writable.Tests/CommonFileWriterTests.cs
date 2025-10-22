@@ -59,7 +59,8 @@ public class CommonFileProviderTests
         for (int i = 0; i < 10; i++)
         {
             dirExists = Directory.Exists(testDir);
-            if (dirExists) break;
+            if (dirExists)
+                break;
             await Task.Delay(50);
         }
 
@@ -109,7 +110,8 @@ public class CommonFileProviderTests
         {
             var backupFiles = Directory.GetFiles(directory, backupPattern);
             backupFileCount = backupFiles.Length;
-            if (backupFileCount >= 1) break;
+            if (backupFileCount >= 1)
+                break;
             await Task.Delay(50);
         }
         backupFileCount.ShouldBeGreaterThanOrEqualTo(1); // in .NET FW, sometime two files created due to timing
@@ -184,7 +186,8 @@ public class CommonFileProviderTests
         for (int i = 0; i < 10; i++)
         {
             fileExists = File.Exists(testFile.FilePath);
-            if (fileExists) break;
+            if (fileExists)
+                break;
             await Task.Delay(50);
         }
 
@@ -246,7 +249,8 @@ public class CommonFileProviderTests
         for (int i = 0; i < 10; i++)
         {
             fileExists = File.Exists(testFile.FilePath);
-            if (fileExists) break;
+            if (fileExists)
+                break;
             await Task.Delay(100);
         }
 

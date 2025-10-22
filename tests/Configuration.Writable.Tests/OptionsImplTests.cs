@@ -26,7 +26,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -52,7 +52,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -77,7 +77,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -107,7 +107,7 @@ public class OptionsImplTests
             configOptions
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 

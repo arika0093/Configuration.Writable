@@ -39,7 +39,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -63,7 +63,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -91,7 +91,7 @@ public class OptionsSnapshotImplTests
             configOptions
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -114,7 +114,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -162,7 +162,7 @@ public class OptionsSnapshotImplTests
             configOptions2
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>(
+        var registry = new OptionsConfigRegistryImpl<TestSettings>(
             [configOptions1, configOptions2]
         );
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -190,7 +190,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -213,7 +213,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create first snapshot
@@ -258,7 +258,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -282,7 +282,7 @@ public class OptionsSnapshotImplTests
             configOptions
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create snapshot with initial data

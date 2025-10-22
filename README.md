@@ -414,12 +414,12 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 
 ## Advanced Usage
 ### Dynamic Add/Remove Options
-You can dynamically add or remove writable options at runtime using `IConfigurationOptionsRegistry`.
+You can dynamically add or remove writable options at runtime using `IOptionsConfigRegistry`.
 for example, in addition to common application settings, it is useful when you want to have individual settings for each document opened by the user.
 
 ```csharp
-// use IConfigurationOptionsRegistry from DI
-public class DynamicOptionsService(IConfigurationOptionsRegistry<UserSetting> registry)
+// use IOptionsConfigRegistry from DI
+public class DynamicOptionsService(IOptionsConfigRegistry<UserSetting> registry)
 {
     public void AddNewOptions(string instanceName, string filePath)
     {

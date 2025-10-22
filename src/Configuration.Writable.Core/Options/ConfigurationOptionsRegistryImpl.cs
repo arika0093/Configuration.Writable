@@ -5,9 +5,8 @@ using System.Text;
 
 namespace Configuration.Writable.Options;
 
-internal class ConfigurationOptionsRegistryImpl<T>(
-    IEnumerable<WritableConfigurationOptions<T>> options
-) : IConfigurationOptionsRegistry<T>
+internal class OptionsConfigRegistryImpl<T>(IEnumerable<WritableConfigurationOptions<T>> options)
+    : IOptionsConfigRegistry<T>
     where T : class, new()
 {
     // Map of instance names to their corresponding writable configuration options

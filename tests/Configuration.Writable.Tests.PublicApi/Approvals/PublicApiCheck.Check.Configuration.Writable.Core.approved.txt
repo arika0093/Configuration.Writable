@@ -36,7 +36,7 @@ namespace Configuration.Writable.FileProvider
 }
 namespace Configuration.Writable
 {
-    public interface IConfigurationOptionsRegistry<T>
+    public interface IOptionsConfigRegistry<T>
         where T :  class, new ()
     {
         event System.Action<Configuration.Writable.WritableConfigurationOptions<T>> OnAdded;

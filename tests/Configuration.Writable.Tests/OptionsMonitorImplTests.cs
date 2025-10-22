@@ -43,7 +43,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -66,7 +66,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -89,7 +89,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -116,7 +116,7 @@ public class OptionsMonitorImplTests
             configOptions
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -138,7 +138,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
@@ -156,7 +156,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -178,7 +178,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
         TestSettings? changedValue = null;
@@ -217,7 +217,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
@@ -243,7 +243,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var notified = false;
 
@@ -271,7 +271,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Get value to cache it
@@ -295,7 +295,7 @@ public class OptionsMonitorImplTests
         var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
         var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>(
+        var registry = new OptionsConfigRegistryImpl<TestSettings>(
             [configOptions1, configOptions2]
         );
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -328,7 +328,7 @@ public class OptionsMonitorImplTests
             configOptions
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -352,7 +352,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
@@ -370,7 +370,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>([configOptions]);
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
@@ -407,7 +407,7 @@ public class OptionsMonitorImplTests
             configOptions2
         );
 
-        var registry = new ConfigurationOptionsRegistryImpl<TestSettings>(
+        var registry = new OptionsConfigRegistryImpl<TestSettings>(
             [configOptions1, configOptions2]
         );
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);

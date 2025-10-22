@@ -272,7 +272,8 @@ public class RealisticUsageScenarioTests : IDisposable
         for (int i = 0; i < 20; i++)
         {
             fileExists = File.Exists(testFilePath);
-            if (fileExists) break;
+            if (fileExists)
+                break;
             await Task.Delay(100);
         }
 
