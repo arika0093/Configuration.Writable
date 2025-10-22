@@ -473,26 +473,6 @@ builder.Services.AddWritableOptions<Bar>(opt =>
 });
 ```
 
-### Direct Property Manipulation
-You can directly manipulate configuration properties at the key level using `IOptionOperator<T>`. This is useful for operations like deleting specific keys from the configuration file.
-
-```csharp
-await options.SaveAsync((setting, op) =>
-{
-    // Update settings as usual
-    setting.Name = "new name";
-    // Delete specific keys from the configuration file
-    op.DeleteKey(s => s.SomeProperty);
-    op.DeleteKey(s => s.Parent.Child);
-});
-```
-
-This pattern allows you to:
-- Delete keys without affecting other properties in the configuration file
-- Perform key-level operations that go beyond simple value updates
-- Maintain more control over the configuration file structure
-
-
 ## Testing
 If you simply want to obtain `IReadOnlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 

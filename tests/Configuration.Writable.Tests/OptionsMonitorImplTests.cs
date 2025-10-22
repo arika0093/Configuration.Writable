@@ -110,11 +110,7 @@ public class OptionsMonitorImplTests
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
-        await configOptions.Provider.SaveAsync(
-            testSettings,
-            new OptionOperations<TestSettings>(),
-            configOptions
-        );
+        await configOptions.Provider.SaveAsync(testSettings, configOptions);
 
         var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -322,11 +318,7 @@ public class OptionsMonitorImplTests
         );
 
         // Preload data
-        await configOptions.Provider.SaveAsync(
-            testSettings,
-            new OptionOperations<TestSettings>(),
-            configOptions
-        );
+        await configOptions.Provider.SaveAsync(testSettings, configOptions);
 
         var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -396,16 +388,8 @@ public class OptionsMonitorImplTests
         var settings1 = new TestSettings { Name = "first", Value = 111 };
         var settings2 = new TestSettings { Name = "second", Value = 222 };
 
-        await configOptions1.Provider.SaveAsync(
-            settings1,
-            new OptionOperations<TestSettings>(),
-            configOptions1
-        );
-        await configOptions2.Provider.SaveAsync(
-            settings2,
-            new OptionOperations<TestSettings>(),
-            configOptions2
-        );
+        await configOptions1.Provider.SaveAsync(settings1, configOptions1);
+        await configOptions2.Provider.SaveAsync(settings2, configOptions2);
 
         var registry = new OptionsConfigRegistryImpl<TestSettings>(
             [configOptions1, configOptions2]

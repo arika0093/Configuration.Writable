@@ -30,7 +30,6 @@ public abstract class WritableConfigProviderBase : IWritableConfigProvider
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(
         T config,
-        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )

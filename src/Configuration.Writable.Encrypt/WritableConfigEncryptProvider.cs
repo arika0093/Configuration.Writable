@@ -134,13 +134,12 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
     {
         options.Logger?.LogDebug(
-            "Saving encrypted configuration with operations to {FilePath}",
+            "Saving encrypted configuration to {FilePath}",
             options.ConfigFilePath
         );
 
@@ -158,8 +157,8 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
 
         try
         {
-            // Use JsonProvider to serialize with operations to temp file
-            await JsonProvider.SaveAsync(config, operations, tempOptions, cancellationToken);
+            // Use JsonProvider to serialize to temp file
+            await JsonProvider.SaveAsync(config, tempOptions, cancellationToken);
 
             // Read the JSON content that was written to temp file
             byte[] jsonBytes;

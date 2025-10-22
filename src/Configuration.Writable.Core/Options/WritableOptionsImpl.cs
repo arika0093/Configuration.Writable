@@ -43,12 +43,6 @@ internal sealed class WritableOptionsImpl<T>(
         SaveWithNameAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
-    public Task SaveAsync(
-        Action<T, IOptionOperator<T>> configUpdaterWithOperator,
-        CancellationToken cancellationToken = default
-    ) => SaveWithNameAsync(MEOptions.DefaultName, configUpdaterWithOperator, cancellationToken);
-
-    /// <inheritdoc />
     public Task SaveWithNameAsync(
         string name,
         T newConfig,
@@ -65,19 +59,6 @@ internal sealed class WritableOptionsImpl<T>(
         var current = DeepCopy(Get(name));
         configUpdater(current);
         return SaveCoreAsync(current, GetOptions(name), cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public Task SaveWithNameAsync(
-        string name,
-        Action<T, IOptionOperator<T>> configUpdaterWithOperator,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var current = DeepCopy(Get(name));
-        var operations = new OptionOperations<T>();
-        configUpdaterWithOperator(current, operations);
-        return SaveCoreAsync(current, operations, GetOptions(name), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -106,26 +87,6 @@ internal sealed class WritableOptionsImpl<T>(
         CancellationToken cancellationToken = default
     )
     {
-        // Operations with no effect
-        await SaveCoreAsync(newConfig, new OptionOperations<T>(), options, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously saves the specified configuration with operations.
-    /// </summary>
-    /// <param name="newConfig">The new configuration to save.</param>
-    /// <param name="operations">The operations to perform on the configuration.</param>
-    /// <param name="options">The writable configuration options associated with the configuration to be saved.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">Thrown when validation fails.</exception>
-    private async Task SaveCoreAsync(
-        T newConfig,
-        OptionOperations<T> operations,
-        WritableConfigurationOptions<T> options,
-        CancellationToken cancellationToken = default
-    )
-    {
         // Validate configuration if a validator is provided
         if (options.Validator != null)
         {
@@ -142,29 +103,13 @@ internal sealed class WritableOptionsImpl<T>(
 
         options.Logger?.LogDebug("Saving configuration to {FilePath}", options.ConfigFilePath);
 
-        // Save to file with operations
+        // Save to file
         await options
-            .Provider.SaveAsync(newConfig, operations, options, cancellationToken)
+            .Provider.SaveAsync(newConfig, options, cancellationToken)
             .ConfigureAwait(false);
 
-        // If operations were performed (e.g., key deletion), reload from file to get accurate state
-        // Otherwise use the in-memory config for better performance
-        T configToCache;
-        if (operations.HasOperations)
-        {
-            options.Logger?.LogDebug(
-                "Reloading configuration from {FilePath} after operations",
-                options.ConfigFilePath
-            );
-            configToCache = options.Provider.LoadConfiguration(options);
-        }
-        else
-        {
-            configToCache = newConfig;
-        }
-
-        // Update the monitor's cache
-        optionMonitorInstance.UpdateCache(options.InstanceName, configToCache);
+        // Update the monitor's cache with the new config
+        optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
         options.Logger?.LogInformation("Configuration saved successfully to {FileName}", fileName);

@@ -95,23 +95,21 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options,
         CancellationToken cancellationToken = default
     )
     {
-        var contents = GetSaveContentsCore(config, operations, options);
+        var contents = GetSaveContents(config, options);
         await FileProvider
             .SaveToFileAsync(options.ConfigFilePath, contents, options.Logger, cancellationToken)
             .ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Core method to get save contents with optional operations.
+    /// Gets the save contents for the configuration.
     /// </summary>
-    private static ReadOnlyMemory<byte> GetSaveContentsCore<T>(
+    private static ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        OptionOperations<T> operations,
         WritableConfigurationOptions<T> options
     )
         where T : class, new()
@@ -133,15 +131,6 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
             throw new InvalidOperationException("Failed to serialize configuration to XML");
         }
 
-        // Apply deletion operations
-        if (operations.HasOperations)
-        {
-            foreach (var keyToDelete in operations.KeysToDelete)
-            {
-                DeleteKeyFromXml(configElement, keyToDelete, options);
-            }
-        }
-
         // Build nested XML structure
         var innerXml = configElement.InnerXml;
 
@@ -156,58 +145,5 @@ public class WritableConfigXmlProvider : WritableConfigProviderBase
             <configuration>{innerXml}</configuration>
             """;
         return Encoding.UTF8.GetBytes(xmlString);
-    }
-
-    /// <summary>
-    /// Deletes a key from the XML element based on the property path.
-    /// </summary>
-    /// <param name="element">The XML element to modify.</param>
-    /// <param name="keyPath">The property path to delete (e.g., "Parent:Child").</param>
-    /// <param name="options">The configuration options.</param>
-    private static void DeleteKeyFromXml<T>(
-        XmlElement element,
-        string keyPath,
-        WritableConfigurationOptions<T> options
-    )
-        where T : class, new()
-    {
-        var parts = keyPath.Split(':');
-        if (parts.Length == 0)
-        {
-            return;
-        }
-
-        // Navigate to the parent element
-        XmlElement? current = element;
-        for (int i = 0; i < parts.Length - 1; i++)
-        {
-            var child = current.SelectSingleNode(parts[i]) as XmlElement;
-            if (child != null)
-            {
-                current = child;
-            }
-            else
-            {
-                // Path doesn't exist, nothing to delete
-                options.Logger?.LogDebug(
-                    "Key path {KeyPath} not found for deletion, skipping",
-                    keyPath
-                );
-                return;
-            }
-        }
-
-        // Delete the final element
-        var finalKey = parts[^1];
-        var targetElement = current.SelectSingleNode(finalKey) as XmlElement;
-        if (targetElement != null)
-        {
-            current.RemoveChild(targetElement);
-            options.Logger?.LogDebug("Deleted key {KeyPath} from configuration", keyPath);
-        }
-        else
-        {
-            options.Logger?.LogDebug("Key {KeyPath} not found for deletion, skipping", keyPath);
-        }
     }
 }

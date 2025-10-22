@@ -101,11 +101,7 @@ public class OptionsImplTests
         var configOptions = builder.BuildOptions();
 
         // Preload data using the provider
-        await configOptions.Provider.SaveAsync(
-            testSettings,
-            new OptionOperations<TestSettings>(),
-            configOptions
-        );
+        await configOptions.Provider.SaveAsync(testSettings, configOptions);
 
         var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);

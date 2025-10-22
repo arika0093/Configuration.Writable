@@ -47,11 +47,6 @@ namespace Configuration.Writable
         bool TryAdd(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configure);
         bool TryRemove(string instanceName);
     }
-    public interface IOptionOperator<T>
-        where T :  class, new ()
-    {
-        void DeleteKey(System.Linq.Expressions.Expression<System.Func<T, object?>> selector);
-    }
     public interface IReadOnlyOptions<T> : Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class, new ()
     {
@@ -66,26 +61,16 @@ namespace Configuration.Writable
             where T :  class, new ();
         T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class, new ();
-        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
     public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class, new ()
     {
         System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
-        System.Threading.Tasks.Task SaveAsync(System.Action<T, Configuration.Writable.IOptionOperator<T>> configUpdaterWithOperator, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveWithNameAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
-        System.Threading.Tasks.Task SaveWithNameAsync(string name, System.Action<T, Configuration.Writable.IOptionOperator<T>> configUpdaterWithOperator, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveWithNameAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
-    }
-    public sealed class OptionOperations<T> : Configuration.Writable.IOptionOperator<T>
-        where T :  class, new ()
-    {
-        public OptionOperations() { }
-        public bool HasOperations { get; }
-        public System.Collections.Generic.IReadOnlyList<string> KeysToDelete { get; }
-        public void DeleteKey(System.Linq.Expressions.Expression<System.Func<T, object?>> selector) { }
     }
     public class WritableConfigJsonProvider : Configuration.Writable.WritableConfigProviderBase
     {
@@ -97,7 +82,7 @@ namespace Configuration.Writable
             where T :  class, new () { }
         public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class, new () { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
     public abstract class WritableConfigProviderBase : Configuration.Writable.IWritableConfigProvider
@@ -109,7 +94,7 @@ namespace Configuration.Writable
             where T :  class, new ();
         public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class, new ();
-        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.OptionOperations<T> operations, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
         protected static object CreateNestedSection(string sectionName, object value) { }
         protected static string[] GetSplitedSections(string sectionName) { }
@@ -182,10 +167,8 @@ namespace Configuration.Writable.Testing
         public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name) { }
         public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
         public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task SaveAsync(System.Action<T, Configuration.Writable.IOptionOperator<T>> configUpdaterWithOperator, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveWithNameAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task SaveWithNameAsync(string name, System.Action<T, Configuration.Writable.IOptionOperator<T>> configUpdaterWithOperator, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveWithNameAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
     }
 }
