@@ -37,37 +37,5 @@ jobs:
       - name: Build
         run: dotnet build --no-restore
 
-      - name: Run tests .NET 6
-        run: dotnet test --no-build --verbosity normal -f net6.0
-
-      - name: Run tests .NET 8
-        run: dotnet test --no-build --verbosity normal -f net8.0
-
-      - name: Run tests .NET 10
-        run: dotnet test --no-build --verbosity normal -f net10.0
-
-  # Test for .NET Framework 4.8
-  test-netfw:
-    runs-on: windows-latest
-    needs: test
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 10.x
-          cache: true
-          cache-dependency-path: '**/packages.lock.json'
-
-      - name: Restore dependencies
-        run: dotnet restore --locked-mode
-
-      - name: Build
-        run: dotnet build --no-restore
-
-      - name: Run tests
-        run: dotnet test --no-build --verbosity normal -f net48
+      - name: Run tests .NET
+        run: dotnet test --no-build --verbosity normal
