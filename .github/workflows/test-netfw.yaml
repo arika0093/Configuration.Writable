@@ -1,0 +1,27 @@
+name: .NET Build and Test (.NET Framework)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**.csproj'
+      - '**.cs'
+      - '**.yaml'
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Restore dependencies
+        run: dotnet restore --locked-mode
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal -f net4.8
