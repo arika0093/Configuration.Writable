@@ -162,10 +162,10 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
 
             // Read the JSON content that was written to temp file
             byte[] jsonBytes;
-#if NETSTANDARD2_0
-            jsonBytes = File.ReadAllBytes(tempOptions.ConfigFilePath);
-#else
+#if NET
             jsonBytes = await File.ReadAllBytesAsync(tempOptions.ConfigFilePath, cancellationToken);
+#else
+            jsonBytes = File.ReadAllBytes(tempOptions.ConfigFilePath);
 #endif
 
             // Encrypt it
@@ -174,10 +174,10 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
 
             using var encryptedMs = new MemoryStream();
             // Prepend IV to the stream
-#if NETSTANDARD2_0
-            await encryptedMs.WriteAsync(aes.IV, 0, aes.IV.Length);
-#else
+#if NET
             await encryptedMs.WriteAsync(aes.IV.AsMemory(0, aes.IV.Length), cancellationToken);
+#else
+            await encryptedMs.WriteAsync(aes.IV, 0, aes.IV.Length);
 #endif
             using (var cs = new CryptoStream(encryptedMs, encryptor, CryptoStreamMode.Write))
             {

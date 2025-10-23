@@ -14,6 +14,10 @@ internal static class UserConfigurationPath
     /// </summary>
     public static string GetUserConfigRootDirectory()
     {
+#if NETFRAMEWORK
+        // in .NET Framework, windows only
+        return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+#else
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             // Windows: %APPDATA%
@@ -45,5 +49,6 @@ internal static class UserConfigurationPath
                 ".config"
             );
         }
+#endif
     }
 }
