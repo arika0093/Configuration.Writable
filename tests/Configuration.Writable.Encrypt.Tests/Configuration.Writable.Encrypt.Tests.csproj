@@ -7,4 +7,9 @@
   <ItemGroup>
     <None Include="ReferenceFiles\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.IO.Compression" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.*" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
 </Project>
