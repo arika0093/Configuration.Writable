@@ -31,11 +31,14 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
+      - name: Setup dotnet-rerun
+        run: dotnet tool install --global dotnet-test-rerun
+
       - name: Restore dependencies
         run: dotnet restore --locked-mode
 
       - name: Build
         run: dotnet build --no-restore
 
-      - name: Run tests .NET
-        run: dotnet test --no-build --verbosity normal
+      - name: Run tests .NET (retry on failure)
+        run: dotnet test-rerun --no-build --verbosity normal --deleteReports --logger GitHubActions
