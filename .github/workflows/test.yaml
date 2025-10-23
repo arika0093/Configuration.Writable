@@ -13,7 +13,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -31,6 +31,7 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
+      # https://github.com/joaoopereira/dotnet-test-rerun
       - name: Setup dotnet-rerun
         run: dotnet tool install --global dotnet-test-rerun
 
@@ -41,4 +42,4 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests .NET (retry on failure)
-        run: test-rerun --no-build --verbosity normal --deleteReports --logger GitHubActions
+        run: test-rerun --no-build --verbosity normal --deleteReports --logger trx --logger GitHubActions
