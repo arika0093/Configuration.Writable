@@ -168,6 +168,11 @@
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
       },
+      "System.ValueTuple": {
+        "type": "Transitive",
+        "resolved": "4.6.1",
+        "contentHash": "+RJT4qaekpZ7DDLhf+LTjq+E48jieKiY9ulJ+BoxKmZblIJfIJT8Ufcaa/clQqnYvWs8jugfGSMu8ylS0caG0w=="
+      },
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
@@ -175,7 +180,7 @@
           "Microsoft.Extensions.Options": "[9.*, )",
           "System.ComponentModel.Annotations": "[5.*, )",
           "System.Text.Json": "[9.*, )",
-          "System.ValueTuple": "[5.*, )"
+          "System.ValueTuple": "[4.*, )"
         }
       }
     },
