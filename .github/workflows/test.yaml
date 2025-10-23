@@ -21,6 +21,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      # https://github.com/actions/setup-dotnet/issues/260
+      - name: Set Windows Environment Variables
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        shell: pwsh
+        run: |
+          echo "DOTNET_INSTALL_DIR=D:\dotnet" >> $ENV:GITHUB_ENV
+          echo "NUGET_PACKAGES=D:\nuget\packages" >> $ENV:GITHUB_ENV
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -43,3 +51,24 @@ jobs:
 
       - name: Run tests .NET (retry on failure)
         run: test-rerun --no-build --verbosity normal --deleteReports --logger trx --logger GitHubActions
+
+    runs-on: windows-latest
+    env:
+      DOTNET_INSTALL_DIR: D:\dotnet
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            10.x
+            8.x
+            6.x
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      #
