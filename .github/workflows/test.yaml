@@ -51,24 +51,3 @@ jobs:
 
       - name: Run tests .NET (retry on failure)
         run: test-rerun --no-build --verbosity normal --deleteReports --logger trx --logger GitHubActions
-
-    runs-on: windows-latest
-    env:
-      DOTNET_INSTALL_DIR: D:\dotnet
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            10.x
-            8.x
-            6.x
-          cache: true
-          cache-dependency-path: '**/packages.lock.json'
-
-      #
