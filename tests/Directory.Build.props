@@ -19,7 +19,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="PublicApiGenerator" Version="11.4.6" />
-    <PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
+    <PackageReference Include="GitHubActionsTestLogger" Version="3.0.1" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
