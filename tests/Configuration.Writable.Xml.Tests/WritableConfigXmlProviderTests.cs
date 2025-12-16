@@ -289,5 +289,4 @@ public class WritableConfigXmlProviderTests
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
-
 }

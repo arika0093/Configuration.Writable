@@ -257,5 +257,4 @@ public class WritableConfigYamlProviderTests
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
-
 }

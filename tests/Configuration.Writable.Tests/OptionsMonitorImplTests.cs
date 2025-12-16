@@ -291,9 +291,10 @@ public class OptionsMonitorImplTests
         var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
         var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>(
-            [configOptions1, configOptions2]
-        );
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+            configOptions1,
+            configOptions2,
+        ]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -391,9 +392,10 @@ public class OptionsMonitorImplTests
         await configOptions1.Provider.SaveAsync(settings1, configOptions1);
         await configOptions2.Provider.SaveAsync(settings2, configOptions2);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>(
-            [configOptions1, configOptions2]
-        );
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+            configOptions1,
+            configOptions2,
+        ]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act

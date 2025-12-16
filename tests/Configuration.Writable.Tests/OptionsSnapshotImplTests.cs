@@ -150,9 +150,10 @@ public class OptionsSnapshotImplTests
         await configOptions1.Provider.SaveAsync(settings1, configOptions1);
         await configOptions2.Provider.SaveAsync(settings2, configOptions2);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>(
-            [configOptions1, configOptions2]
-        );
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+            configOptions1,
+            configOptions2,
+        ]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 

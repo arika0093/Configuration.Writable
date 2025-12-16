@@ -305,5 +305,4 @@ public class OutputFormatStabilityTests
             "Byte array should roundtrip through UTF-8 correctly"
         );
     }
-
 }

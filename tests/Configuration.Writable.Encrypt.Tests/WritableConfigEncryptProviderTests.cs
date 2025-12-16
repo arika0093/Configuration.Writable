@@ -223,5 +223,4 @@ public class WritableConfigEncryptProviderTests
         loadedSettings.Value.ShouldBe(666);
         loadedSettings.SecretKey.ShouldBe("asyncsecret");
     }
-
 }
