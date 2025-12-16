@@ -1,24 +1,27 @@
-﻿name: .NET Build and Test
+﻿name: .NET Build and Test (More Platforms)
 
 on:
   workflow_dispatch:
   push:
-    branches-ignore:
-      - release/*
-      - release-pr/*
-    paths:
-      - '**.csproj'
-      - '**.cs'
-      - '**./Directories.Build.props'
-      - '.github/workflows/test.yaml'
-
-env:
-  DOTNET_VERSION: '10.0.x'
+    branches:
+      - 'release-pr/*'
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
+      - name: Set Target Frameworks (Unix)
+        run: echo 'TFMS=net10.0;net8.0;net6.0' >> $GITHUB_ENV
+        if: matrix.os != 'windows-latest'
+      
+      - name: Set Target Frameworks (Windows, including .NET Framework)
+        shell: pwsh
+        run: echo 'TFMS=net10.0;net8.0;net6.0;net48' >> $env:GITHUB_ENV
+        if: matrix.os == 'windows-latest'
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -27,7 +30,10 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            10.0.x
+            8.0.x
+            6.0.x
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
