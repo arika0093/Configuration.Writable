@@ -152,8 +152,6 @@ namespace Configuration.Writable
     {
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
             where T :  class, new () { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string instanceName)
-            where T :  class, new () { }
     }
     public class WritableOptionsSimpleInstance<T>
         where T :  class, new ()
