@@ -19,7 +19,7 @@ namespace Configuration.Writable;
 public record WritableConfigurationOptionsBuilder<T>
     where T : class, new()
 {
-    private const string DefaultSectionName = "default";
+    private const string DefaultSectionName = "";
     private const string DefaultFileName = "usersettings";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
 
