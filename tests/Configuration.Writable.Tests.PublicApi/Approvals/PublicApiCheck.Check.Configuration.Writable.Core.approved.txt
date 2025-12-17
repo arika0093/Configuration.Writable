@@ -171,7 +171,7 @@ namespace Configuration.Writable.Testing
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(T value)
             where T :  class, new () { }
     }
-    public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableOptions<T>
+    public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptions<T>
         where T :  class, new ()
     {
         public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }
