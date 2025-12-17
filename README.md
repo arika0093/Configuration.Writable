@@ -298,27 +298,30 @@ If you want to manage multiple settings of the same type, you must specify diffe
 // first setting
 builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "firstsettings.json";
-    opt.InstanceName = "First";
+    opt.InstanceName = "First"; // here
 });
 // second setting
 builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "secondsettings.json";
-    opt.InstanceName = "Second";
+    opt.InstanceName = "Second"; // here
 });
+```
+
+And use `IReadOnlyNamedOptions` and `IWritableNamedOptions` to access them.
+
+```csharp
 
 // and get each setting from DI
-public class MyService(IWritableOptions<UserSetting> options)
+public class MyService(IWritableNamedOptions<UserSetting> options)
 {
     public void GetAndSave()
     {
-        // cannot use .CurrentValue if multiple settings of the same type are registered
         var firstSetting = options.Get("First");
         var secondSetting = options.Get("Second");
-        // and you must specify instance name when saving
-        await options.SaveWithNameAsync("First", setting => {
+        await options.SaveAsync("First", setting => {
             setting.Name = "first name";
         });
-        await options.SaveWithNameAsync("Second", setting => {
+        await options.SaveAsync("Second", setting => {
             setting.Name = "second name";
         });
     }
@@ -446,7 +449,7 @@ public class MyService(IWritableOptions<UserSetting> options)
         Console.WriteLine($">> Name: {name}");
 
         // and save to specific instance
-        await options.SaveWithNameAsync("UserDocument1", setting => {
+        await options.SaveAsync("UserDocument1", setting => {
             setting.Name = "document specific name";
         }
     }
@@ -510,31 +513,32 @@ Assert.Contains("expected name", json);
 ```
 
 ## Interfaces
-### IReadOnlyOptions<T>
-An interface for reading the settings of the registered type `T`.  
-It automatically reflects the latest settings when the underlying configuration is updated.  
-This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from MS.E.O.
+Here, we describe the main interfaces provided by this library.
 
-```csharp
-public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class, new()
-```
+### IOptions<T>
+Provides the value at application startup.  
+Even if the configuration file is updated later, accessing through this interface will not reflect the changes.  
+This is exactly the same as MS.E.O.'s [`IOptions<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptions-1).
 
-The additional features compared to `IOptionsMonitor<T>` are as follows:
+### IOptionsMonitor<T>
+Provides the latest value at the current time.  
+When the configuration file is updated, the latest value is automatically reflected.  
+This is exactly the same as MS.E.O.'s [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
 
-* The `GetConfigurationOptions` method to retrieve configuration options.
-* In environments where file change detection is not possible, you can always get the latest settings (internal cached value is updated when `SaveAsync` is called).
+### IReadOnlyOptions<T> / IReadOnlyNamedOptions<T>
+Provides the latest value at the current time.  
+When the configuration file is updated, the latest value is automatically reflected.  
+These are very similar to the above `IOptionsMonitor<T>`, but differ in the following ways:
 
-### IWritableOptions<T>
-An interface for reading and writing the settings of the registered type `T`.
-It provides the same functionality as `IReadOnlyOptions<T>`, with additional support for saving settings.
+* You can retrieve configuration options (such as file save location) via the `GetConfigurationOptions` method.
+* The interfaces are split into two, depending on whether named access is supported:
+    * `IReadOnlyOptions<T>`: Does not support named access, only accessible via `.CurrentValue`.
+    * `IReadOnlyNamedOptions<T>`: Supports named access only via `.Get(name)`.
 
-```csharp
-public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class, new()
-```
+### IWritableOptions<T> / IWritableNamedOptions<T>  
+In addition to the features of `IReadOnly(Named)Options<T>`, these support saving settings.
+Other than the addition of the `SaveAsync` method, they are the same as the above `IReadOnly(Named)Options<T>`.
 
-## ToDo
-* Support version update migration
-* Support multiple configurations merging
 
 ## License
 This project is licensed under the Apache-2.0 License.
