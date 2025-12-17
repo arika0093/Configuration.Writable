@@ -1,17 +1,19 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System;
+using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
 
 /// <summary>
 /// Represents a read-only configuration options interface for accessing and monitoring options of type <typeparamref name="T"/>.
+/// This inter
 /// </summary>
-public interface IReadOnlyOptions<T> : IOptionsMonitor<T>
-    where T : class, new()
+public interface IReadOnlyNamedOptions<T> : IReadOnlyOptionsCore<T> where T : class, new()
 {
     /// <summary>
-    /// Retrieves the configuration settings object for the default configuration section.
+    /// Returns a configured <typeparamref name="T"/> instance with the given <paramref name="name"/>.
+    /// This methods behaves similarly to the <see cref="IOptionsMonitor{T}.Get(string)"/> method.
     /// </summary>
-    WritableConfigurationOptions<T> GetConfigurationOptions();
+    T Get(string name);
 
     /// <summary>
     /// Retrieves the configuration settings object for the specified configuration section name.

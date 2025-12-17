@@ -36,7 +36,13 @@ public static class WritableOptionsCoreExtensions
         services.AddSingleton<IReadOnlyOptions<T>>(p =>
             p.GetRequiredService<WritableOptionsImpl<T>>()
         );
+        services.AddSingleton<IReadOnlyNamedOptions<T>>(p =>
+            p.GetRequiredService<WritableOptionsImpl<T>>()
+        );
         services.AddSingleton<IWritableOptions<T>>(p =>
+            p.GetRequiredService<WritableOptionsImpl<T>>()
+        );
+        services.AddSingleton<IWritableNamedOptions<T>>(p =>
             p.GetRequiredService<WritableOptionsImpl<T>>()
         );
         return services;
