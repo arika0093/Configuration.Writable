@@ -1,11 +1,13 @@
 using System;
+using System.ComponentModel;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
 
 /// <summary>
-/// Represents a read-only configuration options interface core 
+/// Represents a read-only configuration options interface. this interface is primarily intended for internal use.
 /// </summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
 public interface IReadOnlyOptionsCore<T> where T : class, new()
 {
     /// <summary>
