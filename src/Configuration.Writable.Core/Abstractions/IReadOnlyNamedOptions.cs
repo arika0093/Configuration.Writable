@@ -12,7 +12,7 @@ public interface IReadOnlyNamedOptions<T> : IReadOnlyOptionsCore<T> where T : cl
 {
     /// <summary>
     /// Returns a configured <typeparamref name="T"/> instance with the given <paramref name="name"/>.
-    /// This methods behaves similarly to the <see cref="IOptionsMonitor{T}.Get(string)"/> method.
+    /// This method behaves similarly to the <see cref="IOptionsMonitor{T}.Get(string)"/> method.
     /// </summary>
     T Get(string name);
 

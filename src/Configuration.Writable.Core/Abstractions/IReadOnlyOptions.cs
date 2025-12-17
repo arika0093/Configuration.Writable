@@ -12,7 +12,7 @@ public interface IReadOnlyOptions<T> : IReadOnlyOptionsCore<T> where T : class, 
 {
     /// <summary>
     /// Returns the current <typeparamref name="T"/> instance.
-    /// This methods behaves similarly to the <see cref="IOptionsMonitor{T}.CurrentValue"/> method.
+    /// This method behaves similarly to the <see cref="IOptionsMonitor{T}.CurrentValue"/> method.
     /// </summary>
     T CurrentValue { get; }
 
