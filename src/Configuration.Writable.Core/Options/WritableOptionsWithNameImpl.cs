@@ -14,14 +14,11 @@ namespace Configuration.Writable;
 internal sealed class WritableOptionsWithNameImpl<T>(
     WritableOptionsImpl<T> innerWritableOptionsInstance,
     string instanceName
-) : IWritableOptions<T>, IDisposable
+) : IWritableOptions<T>
     where T : class, new()
 {
     /// <inheritdoc />
     public T CurrentValue => innerWritableOptionsInstance.Get(instanceName);
-
-    /// <inheritdoc />
-    public void Dispose() => innerWritableOptionsInstance.Dispose();
 
     /// <inheritdoc />
     public WritableConfigurationOptions<T> GetConfigurationOptions() =>
@@ -29,7 +26,16 @@ internal sealed class WritableOptionsWithNameImpl<T>(
 
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener) =>
-        innerWritableOptionsInstance.OnChange(listener);
+        innerWritableOptionsInstance.OnChange(
+            (value, name) =>
+            {
+                // Only invoke the listener if the name matches the instance name
+                if (name == instanceName)
+                {
+                    listener(value, name);
+                }
+            }
+        );
 
     /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
