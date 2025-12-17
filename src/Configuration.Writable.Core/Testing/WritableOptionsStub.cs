@@ -58,7 +58,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
             ConfigFilePath = "",
             InstanceName = name,
             SectionName = sectionName,
-            Provider = null!,
+            FormatProvider = null!,
         };
     }
 

@@ -153,7 +153,7 @@ builder.Services.AddWritableOptions<UserSetting>(opt => {
 ```
 
 ### Provider
-If you want to change the format when saving files, specify `opt.Provider`.
+If you want to change the format when saving files, specify `opt.FormatProvider`.
 Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
@@ -165,18 +165,18 @@ Currently, the following providers are available:
 
 ```csharp
 // use Json format with indentation
-opt.Provider = new JsonFormatProvider() {
+opt.FormatProvider = new JsonFormatProvider() {
     JsonSerializerOptions = { WriteIndented = true },
 };
 
 // use Yaml format
 // (you need to install Configuration.Writable.Yaml package)
-opt.Provider = new YamlFormatProvider();
+opt.FormatProvider = new YamlFormatProvider();
 
 // use encrypted format
 // NOTE: Be aware that this is a simple encryption.
 // (you need to install Configuration.Writable.Encrypt package)
-opt.Provider = new EncryptFormatProvider("any-encrypt-password");
+opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 ```
 
 > [!NOTE]

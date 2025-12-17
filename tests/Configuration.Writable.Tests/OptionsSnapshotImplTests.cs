@@ -85,7 +85,7 @@ public class OptionsSnapshotImplTests
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
-        await configOptions.Provider.SaveAsync(testSettings, configOptions);
+        await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
 
         var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -147,8 +147,8 @@ public class OptionsSnapshotImplTests
         var settings1 = new TestSettings { Name = "first", Value = 111 };
         var settings2 = new TestSettings { Name = "second", Value = 222 };
 
-        await configOptions1.Provider.SaveAsync(settings1, configOptions1);
-        await configOptions2.Provider.SaveAsync(settings2, configOptions2);
+        await configOptions1.FormatProvider.SaveAsync(settings1, configOptions1);
+        await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
 
         var registry = new OptionsConfigRegistryImpl<TestSettings>([
             configOptions1,
@@ -265,7 +265,7 @@ public class OptionsSnapshotImplTests
 
         // Initial data
         var initialSettings = new TestSettings { Name = "initial", Value = 100 };
-        await configOptions.Provider.SaveAsync(initialSettings, configOptions);
+        await configOptions.FormatProvider.SaveAsync(initialSettings, configOptions);
 
         var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);

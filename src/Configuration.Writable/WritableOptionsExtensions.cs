@@ -64,7 +64,7 @@ public static class WritableOptionsExtensions
         // set FileProvider
         if (FileProvider != null)
         {
-            options.Provider.FileProvider = FileProvider;
+            options.FormatProvider.FileProvider = FileProvider;
         }
 
         // add T instance

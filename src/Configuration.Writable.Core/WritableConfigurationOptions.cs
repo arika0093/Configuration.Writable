@@ -19,7 +19,7 @@ public record WritableConfigurationOptions<T>
     /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public required IFormatProvider Provider { get; init; }
+    public required IFormatProvider FormatProvider { get; init; }
 
     /// <summary>
     /// Gets the full file path to the configuration file, combining config folder and file name.

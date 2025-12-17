@@ -153,7 +153,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         try
         {
             // Use the provider to load configuration (provider will check file existence via its FileProvider)
-            var value = options.Provider.LoadConfiguration<T>(options);
+            var value = options.FormatProvider.LoadConfiguration<T>(options);
             _cache[instanceName] = value;
             return value;
         }

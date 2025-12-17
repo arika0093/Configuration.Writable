@@ -168,7 +168,7 @@ public record WritableConfigurationOptionsBuilder<T>
 
         return new WritableConfigurationOptions<T>
         {
-            Provider = FormatProvider,
+            FormatProvider = FormatProvider,
             ConfigFilePath = ConfigFilePath,
             InstanceName = InstanceName,
             SectionName = SectionName,

@@ -151,7 +151,7 @@ public class EncryptFormatProvider : FormatProviderBase
             ConfigFilePath = tempFilePath,
             SectionName = options.SectionName,
             Logger = options.Logger,
-            Provider = JsonProvider,
+            FormatProvider = JsonProvider,
             InstanceName = options.InstanceName,
         };
 
