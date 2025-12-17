@@ -464,8 +464,8 @@ public class DynamicOptionsService(IOptionsConfigRegistry<UserSetting> registry)
     }
 }
 
-// and you can access IOptionsMonitor<T> or IWritableOptions<T> as usual
-public class MyService(IWritableOptions<UserSetting> options)
+// and you can access IOptionsNamedMonitor<T> or IWritableNamedOptions<T> as usual
+public class MyService(IWritableNamedOptions<UserSetting> options)
 {
     public void UseOptions()
     {
