@@ -16,7 +16,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Writable configuration implementation for XML files.
 /// </summary>
-public class WritableConfigXmlProvider : WritableConfigProviderBase
+public class XmlFormatProvider : FormatProviderBase
 {
     /// <inheritdoc />
     public override string FileExtension => "xml";

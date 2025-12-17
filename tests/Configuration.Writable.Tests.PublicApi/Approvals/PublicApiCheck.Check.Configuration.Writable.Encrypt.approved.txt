@@ -1,12 +1,12 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
 namespace Configuration.Writable
 {
-    public class WritableConfigEncryptProvider : Configuration.Writable.WritableConfigProviderBase
+    public class EncryptFormatProvider : Configuration.Writable.FormatProviderBase
     {
-        public WritableConfigEncryptProvider(byte[] key) { }
-        public WritableConfigEncryptProvider(string key) { }
+        public EncryptFormatProvider(byte[] key) { }
+        public EncryptFormatProvider(string key) { }
         public override string FileExtension { get; }
-        public Configuration.Writable.WritableConfigJsonProvider JsonProvider { get; init; }
+        public Configuration.Writable.JsonFormatProvider JsonProvider { get; init; }
         public byte[] Key { get; }
         public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
             where T :  class, new () { }

@@ -98,7 +98,7 @@ public class EncryptOutputFormatStabilityTests
         var FileProvider = CreateFileProvider();
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
-        var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
+        var encryptProvider = new EncryptFormatProvider(encryptionKey);
 
         instance.Initialize(options =>
         {
@@ -141,7 +141,7 @@ public class EncryptOutputFormatStabilityTests
         var FileProvider = CreateFileProvider();
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
-        var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
+        var encryptProvider = new EncryptFormatProvider(encryptionKey);
 
         instance.Initialize(options =>
         {
@@ -183,9 +183,7 @@ public class EncryptOutputFormatStabilityTests
             var encryptionKey = new string('A', keyLength);
             var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
 
-            var encryptProvider = new WritableConfigEncryptProvider(
-                Encoding.UTF8.GetBytes(encryptionKey)
-            );
+            var encryptProvider = new EncryptFormatProvider(Encoding.UTF8.GetBytes(encryptionKey));
 
             instance.Initialize(options =>
             {
@@ -238,7 +236,7 @@ public class EncryptOutputFormatStabilityTests
             ArrayValue = Enumerable.Range(0, 100).Select(i => $"item{i}").ToArray(), // Large array
         };
 
-        var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
+        var encryptProvider = new EncryptFormatProvider(encryptionKey);
 
         instance.Initialize(options =>
         {
@@ -295,7 +293,7 @@ public class EncryptOutputFormatStabilityTests
             ArrayValue = ["item1", "item2", "item3"],
         };
 
-        var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
+        var encryptProvider = new EncryptFormatProvider(encryptionKey);
 
         instance.Initialize(options =>
         {
@@ -339,7 +337,7 @@ public class EncryptOutputFormatStabilityTests
 
         // Initialize the provider to read the pre-encrypted file
         var instance = new WritableOptionsSimpleInstance<TestConfiguration>();
-        var encryptProvider = new WritableConfigEncryptProvider(encryptionKey);
+        var encryptProvider = new EncryptFormatProvider(encryptionKey);
 
         instance.Initialize(options =>
         {

@@ -14,7 +14,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Writable configuration implementation for Yaml files.
 /// </summary>
-public class WritableConfigYamlProvider : WritableConfigProviderBase
+public class YamlFormatProvider : FormatProviderBase
 {
     /// <summary>
     /// Gets or sets the serializer used to convert objects to and from a specific format.

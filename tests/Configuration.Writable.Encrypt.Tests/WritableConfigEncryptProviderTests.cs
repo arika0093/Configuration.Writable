@@ -8,7 +8,7 @@ using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Encrypt.Tests;
 
-public class WritableConfigEncryptProviderTests
+public class EncryptFormatProviderTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
@@ -21,17 +21,17 @@ public class WritableConfigEncryptProviderTests
     }
 
     [Fact]
-    public void WritableConfigEncryptProvider_WithStringKey_ShouldInitialize()
+    public void EncryptFormatProvider_WithStringKey_ShouldInitialize()
     {
-        var provider = new WritableConfigEncryptProvider("myencryptionkey123456789");
+        var provider = new EncryptFormatProvider("myencryptionkey123456789");
         provider.ShouldNotBeNull();
         provider.Key.Length.ShouldBe(32);
     }
 
     [Fact]
-    public void WritableConfigEncryptProvider_WithShortKey_ShouldPadKey()
+    public void EncryptFormatProvider_WithShortKey_ShouldPadKey()
     {
-        var provider = new WritableConfigEncryptProvider("short");
+        var provider = new EncryptFormatProvider("short");
         provider.Key.Length.ShouldBe(32);
 
         var keyString = Encoding.UTF8.GetString(provider.Key);
@@ -40,7 +40,7 @@ public class WritableConfigEncryptProviderTests
     }
 
     [Fact]
-    public void WritableConfigEncryptProvider_WithByteKey_ShouldUseKey()
+    public void EncryptFormatProvider_WithByteKey_ShouldUseKey()
     {
         var key = new byte[32];
         for (int i = 0; i < 32; i++)
@@ -48,22 +48,22 @@ public class WritableConfigEncryptProviderTests
             key[i] = (byte)(i % 256);
         }
 
-        var provider = new WritableConfigEncryptProvider(key);
+        var provider = new EncryptFormatProvider(key);
         provider.Key.ShouldBe(key);
     }
 
     [Fact]
-    public void WritableConfigEncryptProvider_WithInvalidKeyLength_ShouldThrow()
+    public void EncryptFormatProvider_WithInvalidKeyLength_ShouldThrow()
     {
-        Should.Throw<ArgumentException>(() => new WritableConfigEncryptProvider(new byte[10]));
-        Should.Throw<ArgumentException>(() => new WritableConfigEncryptProvider(new byte[33]));
+        Should.Throw<ArgumentException>(() => new EncryptFormatProvider(new byte[10]));
+        Should.Throw<ArgumentException>(() => new EncryptFormatProvider(new byte[33]));
     }
 
     [Fact]
-    public void WritableConfigEncryptProvider_WithNullKey_ShouldThrow()
+    public void EncryptFormatProvider_WithNullKey_ShouldThrow()
     {
-        Should.Throw<ArgumentNullException>(() => new WritableConfigEncryptProvider((string)null!));
-        Should.Throw<ArgumentNullException>(() => new WritableConfigEncryptProvider(""));
+        Should.Throw<ArgumentNullException>(() => new EncryptFormatProvider((string)null!));
+        Should.Throw<ArgumentNullException>(() => new EncryptFormatProvider(""));
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class WritableConfigEncryptProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigEncryptProvider(encryptionKey);
+            options.Provider = new EncryptFormatProvider(encryptionKey);
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -107,7 +107,7 @@ public class WritableConfigEncryptProviderTests
     {
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
-        var provider = new WritableConfigEncryptProvider(encryptionKey);
+        var provider = new EncryptFormatProvider(encryptionKey);
         provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
@@ -155,7 +155,7 @@ public class WritableConfigEncryptProviderTests
         var encryptionKey1 = "myencryptionkey123456789012345";
         var encryptionKey2 = "differentkey12345678901234567";
 
-        var provider1 = new WritableConfigEncryptProvider(encryptionKey1);
+        var provider1 = new EncryptFormatProvider(encryptionKey1);
         provider1.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
@@ -176,7 +176,7 @@ public class WritableConfigEncryptProviderTests
         await option.SaveAsync(originalSettings);
 
         // When loading with a different key, it should fail to decrypt and return default values
-        var provider2 = new WritableConfigEncryptProvider(encryptionKey2);
+        var provider2 = new EncryptFormatProvider(encryptionKey2);
         provider2.FileProvider = _FileProvider;
 
         _instance.Initialize(options =>
@@ -204,7 +204,7 @@ public class WritableConfigEncryptProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigEncryptProvider(encryptionKey);
+            options.Provider = new EncryptFormatProvider(encryptionKey);
             options.UseInMemoryFileProvider(_FileProvider);
         });
 

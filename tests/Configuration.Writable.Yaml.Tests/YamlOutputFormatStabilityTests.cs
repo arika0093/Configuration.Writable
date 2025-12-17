@@ -64,7 +64,7 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.Provider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -94,7 +94,7 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.Provider = new YamlFormatProvider();
             options.SectionName = "app:settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -131,7 +131,7 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.Provider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -167,7 +167,7 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.Provider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -203,7 +203,7 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.Provider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -232,7 +232,7 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.Provider = new YamlFormatProvider();
             options.SectionName = "app:database:connection:settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });

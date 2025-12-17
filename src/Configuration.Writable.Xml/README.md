@@ -10,7 +10,7 @@ A library that extends `Configuration.Writable` to support XML format for config
 using Configuration.Writable;
 
 WritableConfig.Initialize<UserSecretSetting>(opt => {
-    opt.Provider = new WritableConfigXmlProvider();
+    opt.Provider = new XmlFormatProvider();
 });
 ```
 
@@ -19,6 +19,6 @@ WritableConfig.Initialize<UserSecretSetting>(opt => {
 ```csharp
 builder = new HostApplicationBuilder(args);
 builder.Services.AddWritableOptions<UserSecretSetting>(opt => {
-    opt.Provider = new WritableConfigXmlProvider();
+    opt.Provider = new XmlFormatProvider();
 });
 ```

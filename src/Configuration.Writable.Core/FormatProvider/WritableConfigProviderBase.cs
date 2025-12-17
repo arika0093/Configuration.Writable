@@ -11,7 +11,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Writable configuration provider base class.
 /// </summary>
-public abstract class WritableConfigProviderBase : IWritableConfigProvider
+public abstract class FormatProviderBase : IFormatProvider
 {
     /// <inheritdoc />
     public abstract string FileExtension { get; }

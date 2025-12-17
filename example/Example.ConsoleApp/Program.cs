@@ -19,8 +19,8 @@ WritableConfig.Initialize<SampleSetting>(opt =>
     //opt.UseStandardSaveLocation("your-app-id");
 
     // customize the provider and file writer
-    // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IWritableConfigProvider
-    opt.Provider = new WritableConfigJsonProvider()
+    // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
+    opt.Provider = new JsonFormatProvider()
     {
         // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
         // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };

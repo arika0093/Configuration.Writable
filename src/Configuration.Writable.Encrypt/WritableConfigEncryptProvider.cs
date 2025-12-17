@@ -10,14 +10,14 @@ namespace Configuration.Writable;
 /// <summary>
 /// Provides functionality for managing writable configuration files with encryption support.
 /// </summary>
-public class WritableConfigEncryptProvider : WritableConfigProviderBase
+public class EncryptFormatProvider : FormatProviderBase
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="WritableConfigEncryptProvider"/> class with the specified
+    /// Initializes a new instance of the <see cref="EncryptFormatProvider"/> class with the specified
     /// encryption key.
     /// </summary>
     /// <param name="key">specified encryption key, less than 32 characters string.</param>
-    public WritableConfigEncryptProvider(string key)
+    public EncryptFormatProvider(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
         {
@@ -31,11 +31,11 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WritableConfigEncryptProvider"/> class with the specified
+    /// Initializes a new instance of the <see cref="EncryptFormatProvider"/> class with the specified
     /// encryption key.
     /// </summary>
     /// <param name="key">The encryption key to be used for securing configuration data.</param>
-    public WritableConfigEncryptProvider(byte[] key)
+    public EncryptFormatProvider(byte[] key)
     {
         Key = key;
     }
@@ -43,7 +43,7 @@ public class WritableConfigEncryptProvider : WritableConfigProviderBase
     /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.
     /// </summary>
-    public WritableConfigJsonProvider JsonProvider { get; init; } = new();
+    public JsonFormatProvider JsonProvider { get; init; } = new();
 
     /// <summary>
     /// Gets the cryptographic key used for encryption or decryption operations.

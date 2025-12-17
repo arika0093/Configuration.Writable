@@ -24,10 +24,10 @@ public record WritableConfigurationOptionsBuilder<T>
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
-    /// Defaults to <see cref="WritableConfigJsonProvider"/> which uses JSON format. <br/>
+    /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
+    /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public IWritableConfigProvider Provider { get; set; } = new WritableConfigJsonProvider();
+    public IFormatProvider Provider { get; set; } = new JsonFormatProvider();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.
@@ -181,7 +181,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
     /// If ConfigFolder is set, the file will be saved in that folder; otherwise, it will be saved in the same folder as the executable.
     /// </summary>
-    private string ConfigFilePath
+    internal string ConfigFilePath
     {
         get
         {
