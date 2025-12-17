@@ -8,7 +8,8 @@ namespace Configuration.Writable;
 /// This interface supports only unnamed access.
 /// </summary>
 /// <typeparam name="T">The type of the options class.</typeparam>
-public interface IReadOnlyOptions<T> : IReadOnlyOptionsCore<T> where T : class, new()
+public interface IReadOnlyOptions<T> : IReadOnlyOptionsCore<T>
+    where T : class, new()
 {
     /// <summary>
     /// Returns the current <typeparamref name="T"/> instance.

@@ -8,7 +8,8 @@ namespace Configuration.Writable;
 /// Represents a read-only configuration options interface. This interface is primarily intended for internal use.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-public interface IReadOnlyOptionsCore<T> where T : class, new()
+public interface IReadOnlyOptionsCore<T>
+    where T : class, new()
 {
     /// <summary>
     /// Registers a listener to be called whenever a named <typeparamref name="T"/> changes.

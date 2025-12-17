@@ -74,11 +74,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
         SaveAsync(DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc/>
-    public Task SaveAsync(
-        string name,
-        T newConfig,
-        CancellationToken cancellationToken = default
-    )
+    public Task SaveAsync(string name, T newConfig, CancellationToken cancellationToken = default)
     {
         NamedValues[name] = newConfig;
         return Task.CompletedTask;
