@@ -13,7 +13,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Writable configuration implementation for JSON files.
 /// </summary>
-public class WritableConfigJsonProvider : WritableConfigProviderBase
+public class JsonFormatProvider : FormatProviderBase
 {
     /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.

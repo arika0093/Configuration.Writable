@@ -45,9 +45,9 @@ The solution is organized into multiple packages:
   - `WritableOptionsExtensions`: DI registration extensions (`AddWritableOptions<T>`)
 
 ### Format Provider Packages
-- **Configuration.Writable.Xml**: XML format support via `WritableConfigXmlProvider`
-- **Configuration.Writable.Yaml**: YAML format support via `WritableConfigYamlProvider`
-- **Configuration.Writable.Encrypt**: AES-256-CBC encrypted JSON via `WritableConfigEncryptProvider`
+- **Configuration.Writable.Xml**: XML format support via `XmlFormatProvider`
+- **Configuration.Writable.Yaml**: YAML format support via `YamlFormatProvider`
+- **Configuration.Writable.Encrypt**: AES-256-CBC encrypted JSON via `EncryptFormatProvider`
 
 Each provider package is separate to minimize dependencies and allow users to install only what they need.
 
@@ -56,8 +56,8 @@ Each provider package is separate to minimize dependencies and allow users to in
 ### Key Components
 
 **Provider System** (`src/Configuration.Writable.Core/Provider/`)
-- `IWritableConfigProvider`: Interface for serialization/deserialization
-- `WritableConfigProviderBase`: Base implementation handling section nesting (supports `:` and `__` separators)
+- `IFormatProvider`: Interface for serialization/deserialization
+- `FormatProviderBase`: Base implementation handling section nesting (supports `:` and `__` separators)
 - Providers implement `LoadConfiguration<T>`, `GetSaveContents<T>`, and `SaveAsync<T>`
 - Built-in JSON provider uses System.Text.Json
 

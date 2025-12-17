@@ -37,16 +37,16 @@ public class PublicApiCheckTest
     public void Main() => PublicApiCheck.Check<WritableOptionsSimpleInstance<Dummy>>();
 
     [Fact]
-    public void Core() => PublicApiCheck.Check<WritableConfigJsonProvider>();
+    public void Core() => PublicApiCheck.Check<JsonFormatProvider>();
 
     [Fact]
-    public void Xml() => PublicApiCheck.Check<WritableConfigXmlProvider>();
+    public void Xml() => PublicApiCheck.Check<XmlFormatProvider>();
 
     [Fact]
-    public void Yaml() => PublicApiCheck.Check<WritableConfigYamlProvider>();
+    public void Yaml() => PublicApiCheck.Check<YamlFormatProvider>();
 
     [Fact]
-    public void Encrypt() => PublicApiCheck.Check<WritableConfigEncryptProvider>();
+    public void Encrypt() => PublicApiCheck.Check<EncryptFormatProvider>();
 }
 
 file class Dummy;

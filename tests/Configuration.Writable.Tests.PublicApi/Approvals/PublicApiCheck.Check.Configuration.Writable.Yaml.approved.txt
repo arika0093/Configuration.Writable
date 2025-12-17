@@ -1,9 +1,9 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
 namespace Configuration.Writable
 {
-    public class WritableConfigYamlProvider : Configuration.Writable.WritableConfigProviderBase
+    public class YamlFormatProvider : Configuration.Writable.FormatProviderBase
     {
-        public WritableConfigYamlProvider() { }
+        public YamlFormatProvider() { }
         public YamlDotNet.Serialization.IDeserializer Deserializer { get; init; }
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }

@@ -61,7 +61,7 @@ public class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigJsonProvider
+            options.FormatProvider = new JsonFormatProvider
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -94,7 +94,7 @@ public class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigJsonProvider
+            options.FormatProvider = new JsonFormatProvider
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
@@ -130,7 +130,7 @@ public class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigJsonProvider
+            options.FormatProvider = new JsonFormatProvider
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
@@ -200,7 +200,7 @@ public class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigJsonProvider
+            options.FormatProvider = new JsonFormatProvider
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
@@ -241,7 +241,7 @@ public class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigJsonProvider
+            options.FormatProvider = new JsonFormatProvider
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
@@ -274,7 +274,7 @@ public class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigJsonProvider
+            options.FormatProvider = new JsonFormatProvider
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {

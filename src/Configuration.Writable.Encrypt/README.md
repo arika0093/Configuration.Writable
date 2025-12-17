@@ -11,7 +11,7 @@ using Configuration.Writable;
 
 WritableConfig.Initialize<UserSecretSetting>(opt => {
     opt.FilePath = "my-secret-folder/secrets";
-    opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
+    opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 });
 ```
 
@@ -21,6 +21,6 @@ WritableConfig.Initialize<UserSecretSetting>(opt => {
 builder = new HostApplicationBuilder(args);
 builder.Services.AddWritableOptions<UserSecretSetting>(opt => {
     opt.FilePath = "my-secret-folder/secrets";
-    opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
+    opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 });
 ```

@@ -105,7 +105,7 @@ internal sealed class WritableOptionsImpl<T>(
 
         // Save to file
         await options
-            .Provider.SaveAsync(newConfig, options, cancellationToken)
+            .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
             .ConfigureAwait(false);
 
         // Update the monitor's cache with the new config

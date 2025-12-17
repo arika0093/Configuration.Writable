@@ -153,30 +153,30 @@ builder.Services.AddWritableOptions<UserSetting>(opt => {
 ```
 
 ### Provider
-If you want to change the format when saving files, specify `opt.Provider`.
+If you want to change the format when saving files, specify `opt.FormatProvider`.
 Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
 |------------------------------|---------------------------|------------------------------|
-| [WritableConfigJsonProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable/Provider/WritableConfigJsonProvider.cs) | save in JSON format.     | Built-in |
-| [WritableConfigXmlProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/WritableConfigXmlProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  |
-| [WritableConfigYamlProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/WritableConfigYamlProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  |
-| [WritableConfigEncryptProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Encrypt/WritableConfigEncryptProvider.cs) | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
+| [JsonFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable/Provider/JsonFormatProvider.cs) | save in JSON format.     | Built-in |
+| [XmlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/XmlFormatProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  |
+| [YamlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/YamlFormatProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  |
+| [EncryptFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Encrypt/EncryptFormatProvider.cs) | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
 
 ```csharp
 // use Json format with indentation
-opt.Provider = new WritableConfigJsonProvider() {
+opt.FormatProvider = new JsonFormatProvider() {
     JsonSerializerOptions = { WriteIndented = true },
 };
 
 // use Yaml format
 // (you need to install Configuration.Writable.Yaml package)
-opt.Provider = new WritableConfigYamlProvider();
+opt.FormatProvider = new YamlFormatProvider();
 
 // use encrypted format
 // NOTE: Be aware that this is a simple encryption.
 // (you need to install Configuration.Writable.Encrypt package)
-opt.Provider = new WritableConfigEncryptProvider("any-encrypt-password");
+opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 ```
 
 > [!NOTE]

@@ -9,6 +9,7 @@ riderModule.iml
 *.csproj.user
 # public api recieved files
 tests/**/*.received.txt
+tests/**/*.approved.txt.bak
 # DocFX generated files
 docs/api/
 docs/_site/

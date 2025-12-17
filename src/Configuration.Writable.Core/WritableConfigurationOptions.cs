@@ -16,10 +16,10 @@ public record WritableConfigurationOptions<T>
     where T : class, new()
 {
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
-    /// Defaults to <see cref="WritableConfigJsonProvider"/> which uses JSON format. <br/>
+    /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
+    /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public required IWritableConfigProvider Provider { get; init; }
+    public required IFormatProvider FormatProvider { get; init; }
 
     /// <summary>
     /// Gets the full file path to the configuration file, combining config folder and file name.

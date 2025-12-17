@@ -19,15 +19,15 @@ namespace Configuration.Writable;
 public record WritableConfigurationOptionsBuilder<T>
     where T : class, new()
 {
-    private const string DefaultSectionName = "default";
+    private const string DefaultSectionName = "";
     private const string DefaultFileName = "usersettings";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableConfigProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
-    /// Defaults to <see cref="WritableConfigJsonProvider"/> which uses JSON format. <br/>
+    /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
+    /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public IWritableConfigProvider Provider { get; set; } = new WritableConfigJsonProvider();
+    public IFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.
@@ -37,7 +37,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
-    /// Extension is determined by the Provider so it can be omitted.
+    /// Extension is determined by the <see cref="IFormatProvider"/> so it can be omitted.
     /// </summary>
     public string? FilePath { get; set; }
 
@@ -163,12 +163,12 @@ public record WritableConfigurationOptionsBuilder<T>
         // override provider's file provider if set
         if (FileProvider != null)
         {
-            Provider.FileProvider = FileProvider;
+            FormatProvider.FileProvider = FileProvider;
         }
 
         return new WritableConfigurationOptions<T>
         {
-            Provider = Provider,
+            FormatProvider = FormatProvider,
             ConfigFilePath = ConfigFilePath,
             InstanceName = InstanceName,
             SectionName = SectionName,
@@ -181,7 +181,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
     /// If ConfigFolder is set, the file will be saved in that folder; otherwise, it will be saved in the same folder as the executable.
     /// </summary>
-    private string ConfigFilePath
+    internal string ConfigFilePath
     {
         get
         {
@@ -288,9 +288,9 @@ public record WritableConfigurationOptionsBuilder<T>
             }
             // if no extension, add default extension
             var fileName = Path.GetFileName(filePath);
-            if (!fileName.Contains(".") && !string.IsNullOrWhiteSpace(Provider.FileExtension))
+            if (!fileName.Contains(".") && !string.IsNullOrWhiteSpace(FormatProvider.FileExtension))
             {
-                filePath += $".{Provider.FileExtension}";
+                filePath += $".{FormatProvider.FileExtension}";
             }
             return filePath;
         }

@@ -7,7 +7,7 @@ using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Xml.Tests;
 
-public class WritableConfigXmlProviderTests
+public class XmlFormatProviderTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
@@ -20,9 +20,9 @@ public class WritableConfigXmlProviderTests
     }
 
     [Fact]
-    public void WritableConfigXmlProvider_ShouldHaveCorrectFileExtension()
+    public void XmlFormatProvider_ShouldHaveCorrectFileExtension()
     {
-        var provider = new WritableConfigXmlProvider();
+        var provider = new XmlFormatProvider();
         provider.FileExtension.ShouldBe("xml");
     }
 
@@ -35,7 +35,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -67,7 +67,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -85,7 +85,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -105,7 +105,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -124,7 +124,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -146,7 +146,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -173,7 +173,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "App:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -214,7 +214,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "Database__Connection";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -255,7 +255,7 @@ public class WritableConfigXmlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });

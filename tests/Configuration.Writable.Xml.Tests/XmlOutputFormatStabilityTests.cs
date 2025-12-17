@@ -64,7 +64,7 @@ public class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -94,7 +94,7 @@ public class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "App:Database";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -131,7 +131,7 @@ public class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -167,7 +167,7 @@ public class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -203,7 +203,7 @@ public class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -232,7 +232,7 @@ public class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -263,7 +263,7 @@ public class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigXmlProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = ""; // Empty section name
             options.UseInMemoryFileProvider(_FileProvider);
         });

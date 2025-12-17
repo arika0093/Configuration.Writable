@@ -9,7 +9,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Defines a provider for managing writable configurations, including serialization and deserialization of configuration objects.
 /// </summary>
-public interface IWritableConfigProvider
+public interface IFormatProvider
 {
     /// <summary>
     /// Gets the file provider used for write operations.

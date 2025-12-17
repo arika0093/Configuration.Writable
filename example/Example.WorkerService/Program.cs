@@ -15,8 +15,8 @@ builder.Services.AddWritableOptions<SampleSetting>(opt =>
     //opt.UseStandardSaveLocation("your-app-id");
 
     // customize the provider and file writer
-    // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IWritableConfigProvider
-    opt.Provider = new WritableConfigJsonProvider()
+    // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
+    opt.FormatProvider = new JsonFormatProvider()
     {
         JsonSerializerOptions = { WriteIndented = true },
     };

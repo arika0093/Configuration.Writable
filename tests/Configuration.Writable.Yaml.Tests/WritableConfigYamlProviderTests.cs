@@ -7,7 +7,7 @@ using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Yaml.Tests;
 
-public class WritableConfigYamlProviderTests
+public class YamlFormatProviderTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
@@ -27,9 +27,9 @@ public class WritableConfigYamlProviderTests
     }
 
     [Fact]
-    public void WritableConfigYamlProvider_ShouldHaveCorrectFileExtension()
+    public void YamlFormatProvider_ShouldHaveCorrectFileExtension()
     {
-        var provider = new WritableConfigYamlProvider();
+        var provider = new YamlFormatProvider();
         provider.FileExtension.ShouldBe("yaml");
     }
 
@@ -42,7 +42,7 @@ public class WritableConfigYamlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -72,14 +72,14 @@ public class WritableConfigYamlProviderTests
     public async Task LoadAndSave_WithYamlProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
-        var provider = new WritableConfigYamlProvider();
+        var provider = new YamlFormatProvider();
         provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider;
+            options.FormatProvider = provider;
         });
 
         var originalSettings = new TestSettings
@@ -98,7 +98,7 @@ public class WritableConfigYamlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider;
+            options.FormatProvider = provider;
         });
 
         option = _instance.GetOptions();
@@ -120,7 +120,7 @@ public class WritableConfigYamlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -149,7 +149,7 @@ public class WritableConfigYamlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.SectionName = "App:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -188,7 +188,7 @@ public class WritableConfigYamlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.SectionName = "Database__Connection";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -227,7 +227,7 @@ public class WritableConfigYamlProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new WritableConfigYamlProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });
