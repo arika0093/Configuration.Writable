@@ -6,6 +6,7 @@ namespace Configuration.Writable;
 
 /// <summary>
 /// Interface for writable options that allows reading and updating configuration values.
+/// This interface supports only unnamed access.
 /// </summary>
 /// <typeparam name="T">The type of the options class.</typeparam>
 public interface IWritableOptions<T> : IReadOnlyOptions<T>
