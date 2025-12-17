@@ -118,8 +118,6 @@ namespace Configuration.Writable
         where T :  class, new ()
     {
         public WritableConfigurationOptionsBuilder() { }
-        public string ConfigFilePath { get; }
-        public string DefaultSectionName { get; }
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
         public string InstanceName { get; set; }

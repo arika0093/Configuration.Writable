@@ -19,6 +19,7 @@ namespace Configuration.Writable;
 public record WritableConfigurationOptionsBuilder<T>
     where T : class, new()
 {
+    private const string DefaultSectionName = "default";
     private const string DefaultFileName = "usersettings";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
 
@@ -65,27 +66,6 @@ public record WritableConfigurationOptionsBuilder<T>
     public ILogger? Logger { get; set; }
 
     /// <summary>
-    /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
-    /// If ConfigFolder is set, the file will be saved in that folder; otherwise, it will be saved in the same folder as the executable.
-    /// </summary>
-    public string ConfigFilePath
-    {
-        get
-        {
-            var filePath = FilePathWithExtension;
-            // if ConfigFolder is not set, use executable directory as default
-            if (string.IsNullOrWhiteSpace(ConfigFolder))
-            {
-                UseExecutableDirectory();
-            }
-            // ConfigFolder is not null
-            var combinedDir = Path.Combine(ConfigFolder!, filePath);
-            var fullPath = Path.GetFullPath(combinedDir);
-            return fullPath;
-        }
-    }
-
-    /// <summary>
     /// Get or sets the name of the configuration section. <br/>
     /// You can use ":" or "__" to specify nested sections, e.g. "Parent:Child". <br/>
     /// If empty that means the root of the configuration file. <br/>
@@ -98,17 +78,6 @@ public record WritableConfigurationOptionsBuilder<T>
         set { _sectionName = value; }
     }
     private string? _sectionName = null;
-
-    /// <summary>
-    /// Gets the default configuration section name. Defaults to "" (empty string).
-    /// </summary>
-    /// <remarks>
-    /// If you want to use a custom section name, set <see cref="SectionName"/> property.
-    /// </remarks>
-    public string DefaultSectionName
-    {
-        get { return ""; }
-    }
 
     /// <summary>
     /// Sets the configuration folder to the standard save location for the specified application.
@@ -206,6 +175,27 @@ public record WritableConfigurationOptionsBuilder<T>
             Logger = Logger,
             Validator = validator,
         };
+    }
+
+    /// <summary>
+    /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
+    /// If ConfigFolder is set, the file will be saved in that folder; otherwise, it will be saved in the same folder as the executable.
+    /// </summary>
+    private string ConfigFilePath
+    {
+        get
+        {
+            var filePath = FilePathWithExtension;
+            // if ConfigFolder is not set, use executable directory as default
+            if (string.IsNullOrWhiteSpace(ConfigFolder))
+            {
+                UseExecutableDirectory();
+            }
+            // ConfigFolder is not null
+            var combinedDir = Path.Combine(ConfigFolder!, filePath);
+            var fullPath = Path.GetFullPath(combinedDir);
+            return fullPath;
+        }
     }
 
     /// <summary>
