@@ -409,6 +409,20 @@ public class MyService(IWritableNamedOptions<UserSetting> options)
         });
     }
 }
+
+// Alternatively, you can also use IWritableOptions<T> with the [FromKeyedService] attribute
+public class MyOtherService(
+    [FromKeyedService("First")] IWritableOptions<UserSetting> firstOptions
+)
+{
+    public async Task GetAndSaveAsync()
+    {
+        var firstSetting = firstOptions.CurrentValue;
+        await firstOptions.SaveAsync(setting => {
+            setting.Name = "first name";
+        });
+    }
+}
 ```
 
 If `RegisterInstanceToContainer` is enabled, you can access it as follows:
