@@ -210,7 +210,7 @@ opt.FileProvider = new CommonFileProvider() {
 If you want to directly reference the settings class, specify `opt.RegisterInstanceToContainer = true`.
 
 > [!NOTE]
-> The dynamic update functionality provided by `IOptionsMonitor<T>` will no longer be available.
+> The dynamic update functionality provided by `IReadOnlyOptions<T>` will no longer be available.
 > Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
 
 ```csharp
