@@ -9,7 +9,7 @@ namespace Configuration.Writable.Testing;
 /// A simple stub implementation of <see cref="IWritableOptions{T}"/> or <see cref="IReadOnlyOptions{T}"/> for testing purposes.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class WritableOptionsStub<T> : IWritableOptions<T>
+public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions<T>
     where T : class, new()
 {
     private const string DefaultName = "";
@@ -67,14 +67,14 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
 
     /// <inheritdoc/>
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveWithNameAsync(DefaultName, newConfig, cancellationToken);
+        SaveAsync(DefaultName, newConfig, cancellationToken);
 
     /// <inheritdoc/>
     public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
-        SaveWithNameAsync(DefaultName, configUpdater, cancellationToken);
+        SaveAsync(DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc/>
-    public Task SaveWithNameAsync(
+    public Task SaveAsync(
         string name,
         T newConfig,
         CancellationToken cancellationToken = default
@@ -85,7 +85,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>
     }
 
     /// <inheritdoc/>
-    public Task SaveWithNameAsync(
+    public Task SaveAsync(
         string name,
         Action<T> configUpdater,
         CancellationToken cancellationToken = default
