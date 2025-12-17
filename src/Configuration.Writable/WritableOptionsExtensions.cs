@@ -83,7 +83,7 @@ public static class WritableOptionsExtensions
                     (provider, _) =>
                     {
                         return provider
-                            .GetRequiredService<IReadOnlyOptions<T>>()
+                            .GetRequiredService<IReadOnlyNamedOptions<T>>()
                             .Get(options.InstanceName);
                     }
                 );

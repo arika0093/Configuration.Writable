@@ -210,7 +210,7 @@ opt.FileProvider = new CommonFileProvider() {
 If you want to directly reference the settings class, specify `opt.RegisterInstanceToContainer = true`.
 
 > [!NOTE]
-> The dynamic update functionality provided by `IOptionsMonitor<T>` will no longer be available.
+> The dynamic update functionality provided by `IReadOnlyOptions<T>` will no longer be available.
 > Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
 
 ```csharp
@@ -290,44 +290,6 @@ To organize settings under a specific section, use `opt.SectionName`.
   }
 }
 ```
-
-### InstanceName
-If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
-
-```csharp
-// first setting
-builder.Services.AddWritableOptions<UserSetting>(opt => {
-    opt.FilePath = "firstsettings.json";
-    opt.InstanceName = "First";
-});
-// second setting
-builder.Services.AddWritableOptions<UserSetting>(opt => {
-    opt.FilePath = "secondsettings.json";
-    opt.InstanceName = "Second";
-});
-
-// and get each setting from DI
-public class MyService(IWritableOptions<UserSetting> options)
-{
-    public void GetAndSave()
-    {
-        // cannot use .CurrentValue if multiple settings of the same type are registered
-        var firstSetting = options.Get("First");
-        var secondSetting = options.Get("Second");
-        // and you must specify instance name when saving
-        await options.SaveWithNameAsync("First", setting => {
-            setting.Name = "first name";
-        });
-        await options.SaveWithNameAsync("Second", setting => {
-            setting.Name = "second name";
-        });
-    }
-}
-```
-
-> [!NOTE]
-> When not using DI (direct use of WritableConfig), managing multiple configurations is intentionally not supported.
-> This is to avoid complicating usage.
 
 ### Validation
 By default, validation using `DataAnnotations` is enabled.
@@ -413,6 +375,59 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
 ## Advanced Usage
+### InstanceName
+If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
+
+```csharp
+// first setting
+builder.Services.AddWritableOptions<UserSetting>(opt => {
+    opt.FilePath = "firstsettings.json";
+    opt.InstanceName = "First"; // here
+});
+// second setting
+builder.Services.AddWritableOptions<UserSetting>(opt => {
+    opt.FilePath = "secondsettings.json";
+    opt.InstanceName = "Second"; // here
+});
+```
+
+And use `IReadOnlyNamedOptions<T>` and `IWritableNamedOptions<T>` to access them.
+
+```csharp
+// use IReadOnlyNamedOptions<T> to read, IWritableNamedOptions<T> to read and write
+public class MyService(IWritableNamedOptions<UserSetting> options)
+{
+    public async Task GetAndSaveAsync()
+    {
+        var firstSetting = options.Get("First");
+        var secondSetting = options.Get("Second");
+        await options.SaveAsync("First", setting => {
+            setting.Name = "first name";
+        });
+        await options.SaveAsync("Second", setting => {
+            setting.Name = "second name";
+        });
+    }
+}
+```
+
+If `RegisterInstanceToContainer` is enabled, you can access it as follows:
+
+```csharp
+public class MyService([FromKeyedService("First")] UserSetting options)
+{
+    public void DirectUseNamedInstance()
+    {
+        // you can use the instance directly
+        Console.WriteLine($">> Name: {options.Name}");
+    }
+}
+```
+
+> [!NOTE]
+> When not using DI (direct use of WritableConfig), managing multiple configurations is intentionally not supported.
+> This is to avoid complicating usage.
+
 ### Dynamic Add/Remove Options
 You can dynamically add or remove writable options at runtime using `IOptionsConfigRegistry`.
 for example, in addition to common application settings, it is useful when you want to have individual settings for each document opened by the user.
@@ -446,7 +461,7 @@ public class MyService(IWritableOptions<UserSetting> options)
         Console.WriteLine($">> Name: {name}");
 
         // and save to specific instance
-        await options.SaveWithNameAsync("UserDocument1", setting => {
+        await options.SaveAsync("UserDocument1", setting => {
             setting.Name = "document specific name";
         }
     }
@@ -510,31 +525,35 @@ Assert.Contains("expected name", json);
 ```
 
 ## Interfaces
-### IReadOnlyOptions<T>
-An interface for reading the settings of the registered type `T`.  
-It automatically reflects the latest settings when the underlying configuration is updated.  
-This interface provides functionality equivalent to [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1) from MS.E.O.
+Here, we describe the main interfaces provided by this library.
 
-```csharp
-public interface IReadOnlyOptions<T> : IOptionsMonitor<T> where T : class, new()
-```
+### `IOptions<T>`
+Provides the value at application startup.
+Even if the configuration file is updated later, accessing through this interface will not reflect the changes.  
+Named access is not supported.  
 
-The additional features compared to `IOptionsMonitor<T>` are as follows:
+This is identical to MS.E.O.'s [`IOptions<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptions-1).
 
-* The `GetConfigurationOptions` method to retrieve configuration options.
-* In environments where file change detection is not possible, you can always get the latest settings (internal cached value is updated when `SaveAsync` is called).
+### `IOptionsMonitor<T>`
+Provides the latest value at the current time.
+When the configuration file is updated, the latest value is automatically reflected.  
+Both named and unnamed access are supported; for unnamed access, use `.CurrentValue`, and for named access, use `.Get(name)`.  
 
-### IWritableOptions<T>
-An interface for reading and writing the settings of the registered type `T`.
-It provides the same functionality as `IReadOnlyOptions<T>`, with additional support for saving settings.
+This is identical to MS.E.O.'s [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
 
-```csharp
-public interface IWritableOptions<T> : IReadOnlyOptions<T> where T : class, new()
-```
+### `IReadOnlyOptions<T>` / `IReadOnlyNamedOptions<T>`
+Provides the latest value at the current time.  
+When the configuration file is updated, the latest value is automatically reflected.  
+These are very similar to the above `IOptionsMonitor<T>`, but differ in the following ways:
 
-## ToDo
-* Support version update migration
-* Support multiple configurations merging
+* You can retrieve configuration options (such as file save location) via the `GetConfigurationOptions` method.
+* The interfaces are split into two, depending on whether named access is supported:
+  * `IReadOnlyOptions<T>`: Does not support named access, only accessible via `.CurrentValue`.
+  * `IReadOnlyNamedOptions<T>`: Supports named access only via `.Get(name)`.
+
+### `IWritableOptions<T>` / `IWritableNamedOptions<T>`  
+In addition to the features of `IReadOnly(Named)Options<T>`, these support saving settings.  
+Other than the addition of the `SaveAsync` method, they are the same as the above `IReadOnly(Named)Options<T>`.
 
 ## License
 This project is licensed under the Apache-2.0 License.

@@ -100,7 +100,7 @@ builder.Services.AddWritableOptions<T>(opt => { /* configure */ });
 ```
 
 **Multiple Instances:**
-When managing multiple configurations of the same type, use different `InstanceName` for each and access via `Get(name)` and `SaveWithNameAsync(name, ...)`.
+When managing multiple configurations of the same type, use different `InstanceName` for each and access via `Get(name)` and `SaveAsync(name, ...)`.
 
 ### File Change Detection
 

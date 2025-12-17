@@ -43,7 +43,7 @@ public class InstanceNameIntegrationTests
         });
 
         var host = builder.Build();
-        var config = host.Services.GetRequiredService<IWritableOptions<UserSetting>>();
+        var config = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
 
         // Verify initial default values for both instances
         var firstSetting = config.Get("First");
@@ -55,7 +55,7 @@ public class InstanceNameIntegrationTests
         secondSetting.Age.ShouldBe(20);
 
         // Save different values to each instance
-        await config.SaveWithNameAsync(
+        await config.SaveAsync(
             "First",
             setting =>
             {
@@ -64,7 +64,7 @@ public class InstanceNameIntegrationTests
             }
         );
 
-        await config.SaveWithNameAsync(
+        await config.SaveAsync(
             "Second",
             setting =>
             {
@@ -120,9 +120,9 @@ public class InstanceNameIntegrationTests
         });
 
         var host = builder.Build();
-        var config = host.Services.GetRequiredService<IWritableOptions<UserSetting>>();
+        var config = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
 
-        await config.SaveWithNameAsync(
+        await config.SaveAsync(
             "First",
             setting =>
             {
@@ -130,7 +130,7 @@ public class InstanceNameIntegrationTests
             }
         );
 
-        await config.SaveWithNameAsync(
+        await config.SaveAsync(
             "Second",
             setting =>
             {
