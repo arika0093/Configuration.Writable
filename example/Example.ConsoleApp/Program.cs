@@ -20,7 +20,7 @@ WritableConfig.Initialize<SampleSetting>(opt =>
 
     // customize the provider and file writer
     // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
-    opt.Provider = new JsonFormatProvider()
+    opt.FormatProvider = new JsonFormatProvider()
     {
         // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
         // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };

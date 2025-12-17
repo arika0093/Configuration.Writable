@@ -35,7 +35,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -67,7 +67,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -85,7 +85,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -105,7 +105,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -124,7 +124,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -146,7 +146,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -173,7 +173,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "App:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -214,7 +214,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "Database__Connection";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -255,7 +255,7 @@ public class XmlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new XmlFormatProvider();
+            options.FormatProvider = new XmlFormatProvider();
             options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });

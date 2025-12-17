@@ -16,7 +16,10 @@ builder.Services.AddWritableOptions<SampleSetting>(opt =>
 
     // customize the provider and file writer
     // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
-    opt.Provider = new JsonFormatProvider() { JsonSerializerOptions = { WriteIndented = true } };
+    opt.FormatProvider = new JsonFormatProvider()
+    {
+        JsonSerializerOptions = { WriteIndented = true },
+    };
 
     // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
     // opt.FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };

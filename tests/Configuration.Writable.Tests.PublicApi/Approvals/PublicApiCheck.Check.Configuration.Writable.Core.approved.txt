@@ -120,9 +120,9 @@ namespace Configuration.Writable
         public WritableConfigurationOptionsBuilder() { }
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
+        public Configuration.Writable.IFormatProvider FormatProvider { get; set; }
         public string InstanceName { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
-        public Configuration.Writable.IFormatProvider Provider { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }

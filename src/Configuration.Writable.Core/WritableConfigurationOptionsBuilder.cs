@@ -27,7 +27,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public IFormatProvider Provider { get; set; } = new JsonFormatProvider();
+    public IFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.
@@ -37,7 +37,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
-    /// Extension is determined by the Provider so it can be omitted.
+    /// Extension is determined by the <see cref="IFormatProvider"/> so it can be omitted.
     /// </summary>
     public string? FilePath { get; set; }
 
@@ -163,12 +163,12 @@ public record WritableConfigurationOptionsBuilder<T>
         // override provider's file provider if set
         if (FileProvider != null)
         {
-            Provider.FileProvider = FileProvider;
+            FormatProvider.FileProvider = FileProvider;
         }
 
         return new WritableConfigurationOptions<T>
         {
-            Provider = Provider,
+            Provider = FormatProvider,
             ConfigFilePath = ConfigFilePath,
             InstanceName = InstanceName,
             SectionName = SectionName,
@@ -288,9 +288,9 @@ public record WritableConfigurationOptionsBuilder<T>
             }
             // if no extension, add default extension
             var fileName = Path.GetFileName(filePath);
-            if (!fileName.Contains(".") && !string.IsNullOrWhiteSpace(Provider.FileExtension))
+            if (!fileName.Contains(".") && !string.IsNullOrWhiteSpace(FormatProvider.FileExtension))
             {
-                filePath += $".{Provider.FileExtension}";
+                filePath += $".{FormatProvider.FileExtension}";
             }
             return filePath;
         }

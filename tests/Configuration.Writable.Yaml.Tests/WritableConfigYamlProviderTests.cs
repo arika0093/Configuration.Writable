@@ -42,7 +42,7 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new YamlFormatProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -79,7 +79,7 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider;
+            options.FormatProvider = provider;
         });
 
         var originalSettings = new TestSettings
@@ -98,7 +98,7 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider;
+            options.FormatProvider = provider;
         });
 
         option = _instance.GetOptions();
@@ -120,7 +120,7 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new YamlFormatProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -149,7 +149,7 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new YamlFormatProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.SectionName = "App:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -188,7 +188,7 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new YamlFormatProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.SectionName = "Database__Connection";
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -227,7 +227,7 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new YamlFormatProvider();
+            options.FormatProvider = new YamlFormatProvider();
             options.SectionName = "App:Database:Connection:Settings";
             options.UseInMemoryFileProvider(_FileProvider);
         });

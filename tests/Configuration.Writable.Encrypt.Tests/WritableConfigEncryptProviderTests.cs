@@ -76,7 +76,7 @@ public class EncryptFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new EncryptFormatProvider(encryptionKey);
+            options.FormatProvider = new EncryptFormatProvider(encryptionKey);
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -114,7 +114,7 @@ public class EncryptFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider;
+            options.FormatProvider = provider;
         });
 
         var originalSettings = new TestSettings
@@ -137,7 +137,7 @@ public class EncryptFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider;
+            options.FormatProvider = provider;
         });
 
         option = _instance.GetOptions();
@@ -162,7 +162,7 @@ public class EncryptFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider1;
+            options.FormatProvider = provider1;
         });
 
         var originalSettings = new TestSettings
@@ -182,7 +182,7 @@ public class EncryptFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = provider2;
+            options.FormatProvider = provider2;
         });
 
         option = _instance.GetOptions();
@@ -204,7 +204,7 @@ public class EncryptFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = new EncryptFormatProvider(encryptionKey);
+            options.FormatProvider = new EncryptFormatProvider(encryptionKey);
             options.UseInMemoryFileProvider(_FileProvider);
         });
 

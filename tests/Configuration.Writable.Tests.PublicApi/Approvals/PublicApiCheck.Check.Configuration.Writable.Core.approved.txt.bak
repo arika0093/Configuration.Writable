@@ -36,6 +36,31 @@ namespace Configuration.Writable.FileProvider
 }
 namespace Configuration.Writable
 {
+    public abstract class FormatProviderBase : Configuration.Writable.IFormatProvider
+    {
+        protected FormatProviderBase() { }
+        public abstract string FileExtension { get; }
+        public virtual Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
+        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class, new ();
+        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class, new ();
+        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new ();
+        protected static object CreateNestedSection(string sectionName, object value) { }
+        protected static string[] GetSplitedSections(string sectionName) { }
+    }
+    public interface IFormatProvider
+    {
+        string FileExtension { get; }
+        Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
+        T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class, new ();
+        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+            where T :  class, new ();
+        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new ();
+    }
     public interface IOptionsConfigRegistry<T>
         where T :  class, new ()
     {
@@ -64,17 +89,6 @@ namespace Configuration.Writable
         T CurrentValue { get; }
         Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
     }
-    public interface IFormatProvider
-    {
-        string FileExtension { get; }
-        Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
-        T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class, new ();
-        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class, new ();
-        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new ();
-    }
     public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
@@ -99,20 +113,6 @@ namespace Configuration.Writable
             where T :  class, new () { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
-    }
-    public abstract class FormatProviderBase : Configuration.Writable.IFormatProvider
-    {
-        protected FormatProviderBase() { }
-        public abstract string FileExtension { get; }
-        public virtual Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
-        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class, new ();
-        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
-            where T :  class, new ();
-        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new ();
-        protected static object CreateNestedSection(string sectionName, object value) { }
-        protected static string[] GetSplitedSections(string sectionName) { }
     }
     public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
         where T :  class, new ()

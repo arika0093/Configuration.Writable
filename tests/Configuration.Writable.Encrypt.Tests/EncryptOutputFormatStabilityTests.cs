@@ -103,7 +103,7 @@ public class EncryptOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = encryptProvider;
+            options.FormatProvider = encryptProvider;
             options.UseInMemoryFileProvider(FileProvider);
         });
 
@@ -146,7 +146,7 @@ public class EncryptOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = encryptProvider;
+            options.FormatProvider = encryptProvider;
             options.SectionName = "ApplicationSettings:Database";
             options.UseInMemoryFileProvider(FileProvider);
         });
@@ -188,7 +188,7 @@ public class EncryptOutputFormatStabilityTests
             instance.Initialize(options =>
             {
                 options.FilePath = testFileName;
-                options.Provider = encryptProvider;
+                options.FormatProvider = encryptProvider;
                 options.UseInMemoryFileProvider(FileProvider);
             });
 
@@ -241,7 +241,7 @@ public class EncryptOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = encryptProvider;
+            options.FormatProvider = encryptProvider;
             options.UseInMemoryFileProvider(FileProvider);
         });
 
@@ -298,7 +298,7 @@ public class EncryptOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = encryptProvider;
+            options.FormatProvider = encryptProvider;
             options.UseInMemoryFileProvider(FileProvider);
         });
 
@@ -342,7 +342,7 @@ public class EncryptOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.Provider = encryptProvider;
+            options.FormatProvider = encryptProvider;
             options.UseInMemoryFileProvider(FileProvider);
         });
 
