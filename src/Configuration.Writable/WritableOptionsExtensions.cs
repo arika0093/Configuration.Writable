@@ -107,7 +107,7 @@ public static class WritableOptionsExtensions
         }
 
         // add options services
-        services.AddWritableOptionsCore<T>();
+        services.AddWritableOptionsCore<T>(options.InstanceName);
         return services;
     }
 }
