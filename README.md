@@ -152,7 +152,7 @@ builder.Services.AddWritableOptions<UserSetting>(opt => {
 });
 ```
 
-### Provider
+### FormatProvider
 If you want to change the format when saving files, specify `opt.FormatProvider`.
 Currently, the following providers are available:
 
@@ -206,7 +206,7 @@ opt.FileProvider = new CommonFileProvider() {
 };
 ```
 
-### Direct Reference Without Option Type
+### RegisterInstanceToContainer
 If you want to directly reference the settings class, specify `opt.RegisterInstanceToContainer = true`.
 
 > [!NOTE]
