@@ -31,8 +31,12 @@ public class KeyedServicesIntegrationTests
         var serviceProvider = services.BuildServiceProvider();
 
         // Should be able to resolve keyed services
-        var writableOptions = serviceProvider.GetKeyedService<IWritableOptions<AppSettings>>("Production");
-        var readonlyOptions = serviceProvider.GetKeyedService<IReadOnlyOptions<AppSettings>>("Production");
+        var writableOptions = serviceProvider.GetKeyedService<IWritableOptions<AppSettings>>(
+            "Production"
+        );
+        var readonlyOptions = serviceProvider.GetKeyedService<IReadOnlyOptions<AppSettings>>(
+            "Production"
+        );
 
         writableOptions.ShouldNotBeNull();
         readonlyOptions.ShouldNotBeNull();
@@ -94,8 +98,12 @@ public class KeyedServicesIntegrationTests
         var serviceProvider = services.BuildServiceProvider();
 
         // Should be able to resolve both keyed services
-        var devOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("Development");
-        var prodOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("Production");
+        var devOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>(
+            "Development"
+        );
+        var prodOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>(
+            "Production"
+        );
 
         devOptions.ShouldNotBeNull();
         prodOptions.ShouldNotBeNull();
@@ -118,7 +126,9 @@ public class KeyedServicesIntegrationTests
         });
 
         var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("TestInstance");
+        var writableOptions = serviceProvider.GetRequiredKeyedService<
+            IWritableOptions<AppSettings>
+        >("TestInstance");
 
         // Save a value
         await writableOptions.SaveAsync(settings =>
@@ -147,13 +157,15 @@ public class KeyedServicesIntegrationTests
         });
 
         var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("SaveTest");
+        var writableOptions = serviceProvider.GetRequiredKeyedService<
+            IWritableOptions<AppSettings>
+        >("SaveTest");
 
         var newSettings = new AppSettings
         {
             ApplicationName = "SavedApp",
             Port = 7000,
-            EnableLogging = false
+            EnableLogging = false,
         };
 
         await writableOptions.SaveAsync(newSettings);
@@ -180,7 +192,9 @@ public class KeyedServicesIntegrationTests
         });
 
         var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("ActionTest");
+        var writableOptions = serviceProvider.GetRequiredKeyedService<
+            IWritableOptions<AppSettings>
+        >("ActionTest");
 
         await writableOptions.SaveAsync(settings =>
         {
@@ -210,8 +224,12 @@ public class KeyedServicesIntegrationTests
 
         var serviceProvider = services.BuildServiceProvider();
 
-        var writableOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("ReadOnlyTest");
-        var readonlyOptions = serviceProvider.GetRequiredKeyedService<IReadOnlyOptions<AppSettings>>("ReadOnlyTest");
+        var writableOptions = serviceProvider.GetRequiredKeyedService<
+            IWritableOptions<AppSettings>
+        >("ReadOnlyTest");
+        var readonlyOptions = serviceProvider.GetRequiredKeyedService<
+            IReadOnlyOptions<AppSettings>
+        >("ReadOnlyTest");
 
         // Save via writable options
         await writableOptions.SaveAsync(settings =>
@@ -248,8 +266,12 @@ public class KeyedServicesIntegrationTests
 
         var serviceProvider = services.BuildServiceProvider();
 
-        var options1 = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("Instance1");
-        var options2 = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("Instance2");
+        var options1 = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>(
+            "Instance1"
+        );
+        var options2 = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>(
+            "Instance2"
+        );
 
         // Save different values to each instance
         await options1.SaveAsync(settings => settings.ApplicationName = "App1");
@@ -274,7 +296,9 @@ public class KeyedServicesIntegrationTests
         });
 
         var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("ConfigTest");
+        var writableOptions = serviceProvider.GetRequiredKeyedService<
+            IWritableOptions<AppSettings>
+        >("ConfigTest");
 
         var configOptions = writableOptions.GetConfigurationOptions();
 
@@ -299,17 +323,24 @@ public class KeyedServicesIntegrationTests
         });
 
         var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredKeyedService<IWritableOptions<AppSettings>>("ChangeTest");
+        var writableOptions = serviceProvider.GetRequiredKeyedService<
+            IWritableOptions<AppSettings>
+        >("ChangeTest");
 
-        using var changeToken = writableOptions.OnChange((settings, name) =>
-        {
-            changeNotified = true;
-            notifiedName = name;
-        });
+        using var changeToken = writableOptions.OnChange(
+            (settings, name) =>
+            {
+                changeNotified = true;
+                notifiedName = name;
+            }
+        );
 
         // Trigger a change through the underlying named options
         var namedOptions = serviceProvider.GetRequiredService<IWritableNamedOptions<AppSettings>>();
-        await namedOptions.SaveAsync("ChangeTest", settings => settings.ApplicationName = "Changed");
+        await namedOptions.SaveAsync(
+            "ChangeTest",
+            settings => settings.ApplicationName = "Changed"
+        );
 
         // Give time for change notification to propagate
         await Task.Delay(100);
@@ -345,7 +376,9 @@ public class KeyedServicesIntegrationTests
         var optionsA = serviceProvider.GetKeyedService<IWritableOptions<AppSettings>>("KeyA");
         var optionsB = serviceProvider.GetKeyedService<IWritableOptions<AppSettings>>("KeyB");
         var optionsC = serviceProvider.GetKeyedService<IWritableOptions<AppSettings>>("KeyC");
-        var optionsNonExistent = serviceProvider.GetKeyedService<IWritableOptions<AppSettings>>("NonExistent");
+        var optionsNonExistent = serviceProvider.GetKeyedService<IWritableOptions<AppSettings>>(
+            "NonExistent"
+        );
 
         optionsA.ShouldNotBeNull();
         optionsB.ShouldNotBeNull();
