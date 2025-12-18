@@ -620,11 +620,12 @@ This is identical to MS.E.O.'s [`IOptions<T>`](https://learn.microsoft.com/en-us
 Provides the latest value at the current time.
 When the configuration file is updated, the latest value is automatically reflected.  
 Both named and unnamed access are supported; for unnamed access, use `.CurrentValue`, and for named access, use `.Get(name)`.  
+Change detection is done by registering a callback with the `OnChange(Action<T, string> listener)` method. Since changes for both unnamed and named instances are detected, you need to identify the target name from the second string argument as needed.
 
 This is identical to MS.E.O.'s [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
 
 ### `IReadOnlyOptions<T>` / `IReadOnlyNamedOptions<T>`
-Provides the latest value at the current time.  
+Provides the latest value at the current time.
 When the configuration file is updated, the latest value is automatically reflected.  
 These are very similar to the above `IOptionsMonitor<T>`, but differ in the following ways:
 
@@ -632,6 +633,10 @@ These are very similar to the above `IOptionsMonitor<T>`, but differ in the foll
 * The interfaces are split into two, depending on whether named access is supported:
   * `IReadOnlyOptions<T>`: Does not support named access, only accessible via `.CurrentValue`.
   * `IReadOnlyNamedOptions<T>`: Supports named access only via `.Get(name)`.
+* The method of registering `OnChange` callbacks is different:
+  * `IReadOnlyOptions<T>`: `IDisposable OnChange(Action<T> listener)` method to register a callback for changes to the unnamed instance.
+  * `IReadOnlyNamedOptions<T>`: `IDisposable OnChange(string name, Action<T> listener)` method to register a callback for changes to a specific named instance.
+  * The traditional `OnChange(Action<T, string> listener)` is also available.
 
 ### `IWritableOptions<T>` / `IWritableNamedOptions<T>`  
 In addition to the features of `IReadOnly(Named)Options<T>`, these support saving settings.  
