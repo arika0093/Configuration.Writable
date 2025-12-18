@@ -47,6 +47,13 @@ public record WritableConfigurationOptionsBuilder<T>
     public string InstanceName { get; set; } = Microsoft.Extensions.Options.Options.DefaultName;
 
     /// <summary>
+    /// Gets or sets the throttle duration in milliseconds for change events.
+    /// This helps to prevent excessive event firing during rapid changes. <br/>
+    /// Defaults to 1000 ms.
+    /// </summary>
+    public int OnChangeThrottleMs { get; set; } = 1000;
+
+    /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
     /// Enabling this allows you to obtain the instance directly from the DI container,
     /// which is convenient, but automatic value updates are not provided, so be careful with the lifecycle. <br/>
@@ -172,6 +179,7 @@ public record WritableConfigurationOptionsBuilder<T>
             ConfigFilePath = ConfigFilePath,
             InstanceName = InstanceName,
             SectionName = SectionName,
+            OnChangeThrottleMs = OnChangeThrottleMs,
             Logger = Logger,
             Validator = validator,
         };

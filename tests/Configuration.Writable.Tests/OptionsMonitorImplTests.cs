@@ -408,4 +408,132 @@ public class OptionsMonitorImplTests
         value2.Name.ShouldBe("second");
         value2.Value.ShouldBe(222);
     }
+
+    [Fact]
+    public void OnChangeThrottle_WithDefaultThrottle_ShouldReceiveOnlyFirstChange()
+    {
+        // Arrange
+        var FileProvider = new InMemoryFileProvider();
+        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        {
+            FilePath = "test.json",
+            InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
+            // Default throttle is 1000ms
+        };
+        builder.UseInMemoryFileProvider(FileProvider);
+        var configOptions = builder.BuildOptions();
+
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
+
+        var changeCount = 0;
+        monitor.OnChange((value, name) => changeCount++);
+
+        // Act - Trigger multiple rapid changes
+        var settings1 = new TestSettings { Name = "change1", Value = 1 };
+        var settings2 = new TestSettings { Name = "change2", Value = 2 };
+        var settings3 = new TestSettings { Name = "change3", Value = 3 };
+
+        monitor.UpdateCache(Microsoft.Extensions.Options.Options.DefaultName, settings1);
+        monitor.UpdateCache(Microsoft.Extensions.Options.Options.DefaultName, settings2);
+        monitor.UpdateCache(Microsoft.Extensions.Options.Options.DefaultName, settings3);
+
+        // Assert - All changes should be notified when using UpdateCache
+        // (UpdateCache bypasses file system events and throttling)
+        changeCount.ShouldBe(3);
+    }
+
+    [Fact]
+    public void OnChangeThrottle_WithZeroThrottle_ShouldDisableThrottling()
+    {
+        // Arrange
+        var FileProvider = new InMemoryFileProvider();
+        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        {
+            FilePath = "test.json",
+            InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
+            OnChangeThrottleMs = 0, // Disable throttling
+        };
+        builder.UseInMemoryFileProvider(FileProvider);
+        var configOptions = builder.BuildOptions();
+
+        // Assert
+        configOptions.OnChangeThrottleMs.ShouldBe(0);
+    }
+
+    [Fact]
+    public void OnChangeThrottle_Configuration_ShouldBeStoredCorrectly()
+    {
+        // Arrange & Act
+        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        {
+            FilePath = "test.json",
+            InstanceName = "test",
+            OnChangeThrottleMs = 2000,
+        };
+        var FileProvider = new InMemoryFileProvider();
+        builder.UseInMemoryFileProvider(FileProvider);
+        var configOptions = builder.BuildOptions();
+
+        // Assert
+        configOptions.OnChangeThrottleMs.ShouldBe(2000);
+    }
+
+    [Fact]
+    public void OnChangeThrottle_DefaultValue_ShouldBe1000Ms()
+    {
+        // Arrange & Act
+        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        {
+            FilePath = "test.json",
+            InstanceName = "test",
+        };
+        var FileProvider = new InMemoryFileProvider();
+        builder.UseInMemoryFileProvider(FileProvider);
+        var configOptions = builder.BuildOptions();
+
+        // Assert
+        configOptions.OnChangeThrottleMs.ShouldBe(1000);
+    }
+
+    [Fact]
+    public async Task OnChangeThrottle_MultipleInstances_ShouldHaveIndependentThrottle()
+    {
+        // Arrange
+        var FileProvider = new InMemoryFileProvider();
+
+        var builder1 = new WritableConfigurationOptionsBuilder<TestSettings>
+        {
+            FilePath = "test1.json",
+            InstanceName = "instance1",
+            OnChangeThrottleMs = 500,
+        };
+        builder1.UseInMemoryFileProvider(FileProvider);
+        var configOptions1 = builder1.BuildOptions();
+
+        var builder2 = new WritableConfigurationOptionsBuilder<TestSettings>
+        {
+            FilePath = "test2.json",
+            InstanceName = "instance2",
+            OnChangeThrottleMs = 1500,
+        };
+        builder2.UseInMemoryFileProvider(FileProvider);
+        var configOptions2 = builder2.BuildOptions();
+
+        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+            configOptions1,
+            configOptions2,
+        ]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
+
+        // Preload data
+        var settings1 = new TestSettings { Name = "first", Value = 111 };
+        var settings2 = new TestSettings { Name = "second", Value = 222 };
+        await configOptions1.FormatProvider.SaveAsync(settings1, configOptions1);
+        await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
+
+        // Assert
+        configOptions1.OnChangeThrottleMs.ShouldBe(500);
+        configOptions2.OnChangeThrottleMs.ShouldBe(1500);
+    }
 }

@@ -22,6 +22,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly Dictionary<string, T> _defaultValue = [];
     private readonly Dictionary<string, List<Action<T, string?>>> _listeners = [];
     private readonly Dictionary<string, FileSystemWatcher?> _watchers = [];
+    private readonly Dictionary<string, Timer?> _throttleTimers = [];
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public OptionsMonitorImpl(IOptionsConfigRegistry<T> optionsRegistry)
@@ -71,13 +72,11 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        foreach (var watcher in _watchers.Values)
+        // remove all options
+        foreach (var instanceName in _optionsRegistry.GetInstanceNames())
         {
-            watcher?.Dispose();
+            OnOptionsRemoved(instanceName);
         }
-        _watchers.Clear();
-        _listeners.Clear();
-        _cache.Clear();
     }
 
     /// <summary>
@@ -126,12 +125,17 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         _cache.Remove(instanceName);
         _defaultValue.Remove(instanceName);
+        _listeners.Remove(instanceName);
         if (_watchers.TryGetValue(instanceName, out var watcher))
         {
             watcher?.Dispose();
             _watchers.Remove(instanceName);
         }
-        _listeners.Remove(instanceName);
+        if (_throttleTimers.TryGetValue(instanceName, out var timer))
+        {
+            timer?.Dispose();
+            _throttleTimers.Remove(instanceName);
+        }
     }
 
     // Initializes options for a given instance name.
@@ -226,6 +230,19 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
+
+        // if enabled throttle, check current status
+        if(options.OnChangeThrottleMs > 0 && CheckThrottleTimerIsActive(instanceName))
+        {
+            // Still in throttle period, ignore this change
+            options.Logger?.LogDebug(
+                "Configuration file change detected but ignored due to throttle: {FileName} ({ChangeType})",
+                fileName,
+                args.ChangeType
+            );
+            return;
+        }
+
         options.Logger?.LogInformation(
             "Configuration file change detected: {FileName} ({ChangeType})",
             fileName,
@@ -243,6 +260,33 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             // Clear cache because next Get() will try to reload
             _cache.Remove(instanceName);
         }
+    }
+
+    // Checks if the throttle timer is active for the given instance name
+    private bool CheckThrottleTimerIsActive(string instanceName)
+    {
+        var throttleMs = _optionsRegistry.Get(instanceName).OnChangeThrottleMs;
+        if (_throttleTimers.TryGetValue(instanceName, out var timer))
+        {
+            if (timer != null)
+            {
+                // Timer is active, so we are in throttle period
+                // Reset the timer to start the countdown again
+                timer.Change(throttleMs, Timeout.Infinite);
+                return true;
+            }
+        }
+        // Set a timer that will disable itself after the specified time has elapsed
+        var newTimer = new Timer(_ =>
+        {
+            if (_throttleTimers.TryGetValue(instanceName, out var t))
+            {
+                t?.Dispose();
+                _throttleTimers[instanceName] = null;
+            }
+        }, null, throttleMs, Timeout.Infinite);
+        _throttleTimers[instanceName] = newTimer;
+        return false;
     }
 
     // Loads configuration with retry logic for file access conflicts
