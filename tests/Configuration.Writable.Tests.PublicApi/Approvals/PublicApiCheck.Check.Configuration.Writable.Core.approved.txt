@@ -100,17 +100,6 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
-    public interface IWritableOptionConfigRegistory<T>
-        where T :  class, new ()
-    {
-        event System.Action<Configuration.Writable.WritableOptionsConfiguration<T>> OnAdded;
-        event System.Action<string> OnRemoved;
-        void Clear();
-        Configuration.Writable.WritableOptionsConfiguration<T> Get(string instanceName);
-        System.Collections.Generic.IEnumerable<string> GetInstanceNames();
-        bool TryAdd(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
-        bool TryRemove(string instanceName);
-    }
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
@@ -133,6 +122,17 @@ namespace Configuration.Writable
     {
         System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IWritableOptionConfigRegistory<T>
+        where T :  class, new ()
+    {
+        event System.Action<Configuration.Writable.WritableOptionsConfiguration<T>> OnAdded;
+        event System.Action<string> OnRemoved;
+        void Clear();
+        Configuration.Writable.WritableOptionsConfiguration<T> Get(string instanceName);
+        System.Collections.Generic.IEnumerable<string> GetInstanceNames();
+        bool TryAdd(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
+        bool TryRemove(string instanceName);
     }
     public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>
         where T :  class, new ()
