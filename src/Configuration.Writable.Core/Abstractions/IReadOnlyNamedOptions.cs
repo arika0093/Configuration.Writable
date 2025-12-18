@@ -26,7 +26,7 @@ public interface IReadOnlyNamedOptions<T> : IReadOnlyOptionsCore<T>
     /// <summary>
     /// Registers a listener to be called whenever a named <typeparamref name="T"/> changes. <br/>
     /// This method behaves similarly to the <see cref="IOptionsMonitor{T}.OnChange"/> method, <br/>
-    /// but is only called for equally instanceName.
+    /// but is only called for the matching instanceName.
     /// </summary>
     /// <param name="name">The name of the options instance to listen for changes.</param>
     /// <param name="listener">The action to be invoked when <typeparamref name="T"/> has changed.</param>
