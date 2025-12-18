@@ -13,12 +13,13 @@ public interface ILocationBuilder
     /// Add a relative file path for the save location.
     /// </summary>
     /// <param name="path">The relative file path.</param>
-    ILocationBuilder AddFilePath(string path);
+    /// <param name="priority">The priority of this path. Higher priority paths are evaluated first.</param>
+    ILocationBuilder AddFilePath(string path, int priority = 0);
 
     /// <summary>
     /// Gets the list of configured paths from various location providers. for internal use only.
     /// </summary>
-    IEnumerable<string> SaveLocationPaths { get; }
+    IEnumerable<LocationPathInfo> SaveLocationPaths { get; }
 }
 
 /// <summary>
@@ -64,3 +65,10 @@ public interface ILocationBuilderWithDirectory : ILocationBuilder
     /// <param name="enabled">If false, this location provider will be skipped.</param>
     ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder, bool enabled = true);
 }
+
+/// <summary>
+/// Information about a location path and its priority.
+/// </summary>
+/// <param name="Path">The file path.</param>
+/// <param name="Priority">The priority of the path.</param>
+public record LocationPathInfo(string Path, int Priority);

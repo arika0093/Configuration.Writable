@@ -43,30 +43,36 @@ internal class SaveLocationManager
         }
 
         // Decide the write destination based on the following priorities
-        // 1. Target file already exists and able to open with write access
-        // 2. Target directory already exists and able to create file
-        // 3. Registration order (ascending)
-        var targetPath =
-            LocationBuilders
-                .SelectMany(p => p.SaveLocationPaths)
-                .Where(p => !string.IsNullOrEmpty(p))
-                .Select(
-                    (p, i) =>
-                        new
-                        {
-                            Path = p,
-                            Index = i,
-                            CanWriteFile = CheckCanOpenFileWithWriteAccess(p),
-                            CanWriteDir = CheckIsWritableToDirectory(p),
-                        }
-                )
-                .OrderByDescending(p => p.CanWriteFile)
-                .ThenByDescending(p => p.CanWriteDir)
-                .ThenBy(p => p.Index)
-                .FirstOrDefault()
-            ?? throw new InvalidOperationException(
+        // 1. Explicit priority (descending)
+        // 2. Target file already exists and able to open with write access
+        // 3. Target directory already exists and able to create file
+        // 4. Registration order (ascending)
+        var targetPath = LocationBuilders
+            .SelectMany(p => p.SaveLocationPaths)
+            .Where(p => !string.IsNullOrEmpty(p.Path))
+            .Select(
+                (p, i) =>
+                    new
+                    {
+                        p.Path,
+                        p.Priority,
+                        Index = i,
+                        CanWriteFile = CheckCanOpenFileWithWriteAccess(p.Path),
+                        CanWriteDir = CheckIsWritableToDirectory(p.Path),
+                    }
+            )
+            .OrderByDescending(p => p.Priority)
+            .ThenByDescending(p => p.CanWriteFile)
+            .ThenByDescending(p => p.CanWriteDir)
+            .ThenBy(p => p.Index)
+            .FirstOrDefault();
+
+        if (targetPath == null)
+        {
+            throw new InvalidOperationException(
                 "No valid save location could be determined from the configured location providers."
             );
+        }
 
         // if no file extension, add from format provider
         var fileName = Path.GetFileName(targetPath.Path);
@@ -138,17 +144,17 @@ internal class LocationBuilderInternal : ILocationBuilderWithDirectory
     // intermediate folder before combining with file name
     private string configFolder = "";
 
-    private readonly List<string> targetPaths = [];
+    private readonly List<LocationPathInfo> targetPaths = [];
 
     /// <inheritdoc />
-    public IEnumerable<string> SaveLocationPaths => targetPaths;
+    public IEnumerable<LocationPathInfo> SaveLocationPaths => targetPaths;
 
     /// <inheritdoc />
-    public ILocationBuilder AddFilePath(string path)
+    public ILocationBuilder AddFilePath(string path, int priority = 0)
     {
         var combined = Path.Combine(configFolder, path);
         var absolutePath = Path.GetFullPath(combined);
-        targetPaths.Add(absolutePath);
+        targetPaths.Add(new LocationPathInfo(absolutePath, priority));
         return this;
     }
 

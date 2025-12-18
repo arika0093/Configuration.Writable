@@ -133,20 +133,24 @@ opt.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
 If you want to read/write files from multiple locations, you can call `AddFilePath` multiple times as follows.  
 When multiple locations are specified, the save destination is determined on first access according to the following rules:
 
+1. Explicit priority (descending)
 1. Target file already exists and able to open with write access
-2. Target directory already exists and able to create file
-3. Order of registration (earlier registrations have higher priority)
+1. Target directory already exists and able to create file
+1. Order of registration (earlier registrations have higher priority)
 
 ```csharp
-opt.AddFilePath(@"D:\SpecialFolder\first");
+opt.AddFilePath(@"D:\SpecialFolder\first"); // is not existing folder/file yet
 opt.UseStandardSaveDirectory("MyAppId")
-   .AddFilePath("second");
+   .AddFilePath("second", priority: 10);
 opt.UseExecutableDirectory()
    .AddFilePath("third")
-   .AddFilePath("child/fourth");
+   .AddFilePath("child/fourth"); // is already exist file
 
-// If you run this without any special setup, third.json will likely be created in the executable's directory (matching rule 2).
-// If D:\SpecialFolder already exists, first.json will be created there.
+// In this case, the priorities are as follows:
+// 1: %APPDATA%/MyAppId/second (priority 10)
+// 2: ./child/fourth (target file exists)
+// 3: ./third (target directory exists)
+// 4: D:\SpecialFolder\first (target directory does not exist)
 ```
 
 If you want to toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
