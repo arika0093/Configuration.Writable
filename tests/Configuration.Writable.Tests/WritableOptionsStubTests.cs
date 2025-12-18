@@ -84,24 +84,30 @@ public class WritableOptionsStubTests
         var namedValues = new System.Collections.Generic.Dictionary<string, UserSettings>
         {
             ["default"] = new UserSettings { Name = "DefaultName", Age = 20 },
-            ["custom"] = new UserSettings { Name = "CustomName", Age = 25 }
+            ["custom"] = new UserSettings { Name = "CustomName", Age = 25 },
         };
         var options = WritableOptionsStub.Create(namedValues);
         UserSettings? receivedValue = null;
         var callCount = 0;
 
-        options.OnChange("custom", value =>
-        {
-            receivedValue = value;
-            callCount++;
-        });
+        options.OnChange(
+            "custom",
+            value =>
+            {
+                receivedValue = value;
+                callCount++;
+            }
+        );
 
         // Act - Update custom instance
-        await options.SaveAsync("custom", s =>
-        {
-            s.Name = "UpdatedCustomName";
-            s.Age = 35;
-        });
+        await options.SaveAsync(
+            "custom",
+            s =>
+            {
+                s.Name = "UpdatedCustomName";
+                s.Age = 35;
+            }
+        );
 
         // Assert
         callCount.ShouldBe(1);
@@ -117,22 +123,28 @@ public class WritableOptionsStubTests
         var namedValues = new System.Collections.Generic.Dictionary<string, UserSettings>
         {
             ["default"] = new UserSettings { Name = "DefaultName", Age = 20 },
-            ["custom"] = new UserSettings { Name = "CustomName", Age = 25 }
+            ["custom"] = new UserSettings { Name = "CustomName", Age = 25 },
         };
         var options = WritableOptionsStub.Create(namedValues);
         var callCount = 0;
 
-        options.OnChange("custom", _ =>
-        {
-            callCount++;
-        });
+        options.OnChange(
+            "custom",
+            _ =>
+            {
+                callCount++;
+            }
+        );
 
         // Act - Update default instance
-        await options.SaveAsync("default", s =>
-        {
-            s.Name = "UpdatedDefaultName";
-            s.Age = 30;
-        });
+        await options.SaveAsync(
+            "default",
+            s =>
+            {
+                s.Name = "UpdatedDefaultName";
+                s.Age = 30;
+            }
+        );
 
         // Assert - Should not receive notification for different instance
         callCount.ShouldBe(0);
@@ -145,15 +157,20 @@ public class WritableOptionsStubTests
         var namedValues = new System.Collections.Generic.Dictionary<string, UserSettings>
         {
             ["default"] = new UserSettings { Name = "DefaultName", Age = 20 },
-            ["custom"] = new UserSettings { Name = "CustomName", Age = 25 }
+            ["custom"] = new UserSettings { Name = "CustomName", Age = 25 },
         };
         var options = WritableOptionsStub.Create(namedValues);
-        var receivedNotifications = new System.Collections.Generic.List<(UserSettings value, string? name)>();
+        var receivedNotifications = new System.Collections.Generic.List<(
+            UserSettings value,
+            string? name
+        )>();
 
-        options.OnChange((value, name) =>
-        {
-            receivedNotifications.Add((value, name));
-        });
+        options.OnChange(
+            (value, name) =>
+            {
+                receivedNotifications.Add((value, name));
+            }
+        );
 
         // Act - Update both instances
         await options.SaveAsync("default", s => s.Name = "UpdatedDefaultName");
