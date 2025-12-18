@@ -106,7 +106,6 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     internal void UpdateCache(string instanceName, T value)
     {
         _cache[instanceName] = value;
-        NotifyListeners(instanceName, value);
     }
 
     /// <summary>
