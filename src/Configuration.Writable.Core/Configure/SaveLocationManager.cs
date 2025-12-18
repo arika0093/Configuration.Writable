@@ -71,7 +71,7 @@ internal class SaveLocationManager
         var fileName = Path.GetFileName(targetPath.Path);
         if (!fileName.Contains('.') && !string.IsNullOrWhiteSpace(formatProvider.FileExtension))
         {
-            resultPath = $"{targetPath}.{formatProvider.FileExtension}";
+            resultPath = $"{targetPath.Path}.{formatProvider.FileExtension}";
         }
         else 
         {
@@ -90,7 +90,10 @@ internal class SaveLocationManager
             var directory = Path.GetDirectoryName(path) ?? "";
             var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
             // create and delete a temporary file to test write access
-            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose)) { }
+            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
+            {
+                // No action needed here as the file will be deleted on close
+            }
             return true;
         }
         catch
