@@ -37,7 +37,7 @@ public record WritableConfigurationOptions<T>
     /// If use multiple configuration file for same type T, you must set different SectionName for each.
     /// </summary>
     public required string SectionName { get; init; }
-    
+
     /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
     /// This helps to prevent excessive event firing during rapid changes.

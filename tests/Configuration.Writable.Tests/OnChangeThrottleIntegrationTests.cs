@@ -14,10 +14,7 @@ public class OnChangeThrottleIntegrationTests : IDisposable
 
     public OnChangeThrottleIntegrationTests()
     {
-        _testDirectory = Path.Combine(
-            Path.GetTempPath(),
-            $"ThrottleTests_{Guid.NewGuid():N}"
-        );
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"ThrottleTests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testDirectory);
     }
 
@@ -63,17 +60,23 @@ public class OnChangeThrottleIntegrationTests : IDisposable
         var receivedValues = new System.Collections.Generic.List<TestSettings>();
 
         // Subscribe to change notifications
-        config.OnChange((value, name) =>
-        {
-            Interlocked.Increment(ref changeCount);
-            lock (receivedValues)
+        config.OnChange(
+            (value, name) =>
             {
-                receivedValues.Add(new TestSettings { Name = value.Name, Value = value.Value });
+                Interlocked.Increment(ref changeCount);
+                lock (receivedValues)
+                {
+                    receivedValues.Add(new TestSettings { Name = value.Name, Value = value.Value });
+                }
             }
-        });
+        );
 
         // Save initial value
-        await config.SaveAsync(s => { s.Name = "initial"; s.Value = 0; });
+        await config.SaveAsync(s =>
+        {
+            s.Name = "initial";
+            s.Value = 0;
+        });
         Thread.Sleep(100); // Allow file watcher to initialize
 
         var initialChangeCount = changeCount;
@@ -81,11 +84,9 @@ public class OnChangeThrottleIntegrationTests : IDisposable
         // Act - Rapidly modify the file externally (simulating external editor changes)
         for (int i = 1; i <= 5; i++)
         {
-            var content = System.Text.Json.JsonSerializer.Serialize(new TestSettings
-            {
-                Name = $"change{i}",
-                Value = i
-            });
+            var content = System.Text.Json.JsonSerializer.Serialize(
+                new TestSettings { Name = $"change{i}", Value = i }
+            );
             File.WriteAllText(testFilePath, content);
             Thread.Sleep(50); // Small delay between writes
         }

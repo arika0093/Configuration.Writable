@@ -236,7 +236,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         var fileName = Path.GetFileName(options.ConfigFilePath);
 
         // if enabled throttle, check current status
-        if(options.OnChangeThrottleMs > 0 && HandleThrottle(instanceName, options.OnChangeThrottleMs))
+        if (
+            options.OnChangeThrottleMs > 0
+            && HandleThrottle(instanceName, options.OnChangeThrottleMs)
+        )
         {
             // Still in throttle period, ignore this change
             options.Logger?.LogDebug(
@@ -277,18 +280,23 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 return true;
             }
             // Set a timer that will disable itself after the specified time has elapsed
-            var newTimer = new Timer(_ =>
-            {
-                // Dispose and remove the timer after throttle period
-                lock (_throttleTimersLock)
+            var newTimer = new Timer(
+                _ =>
                 {
-                    if (_throttleTimers.TryGetValue(instanceName, out var t))
+                    // Dispose and remove the timer after throttle period
+                    lock (_throttleTimersLock)
                     {
-                        t?.Dispose();
-                        _throttleTimers.Remove(instanceName);
+                        if (_throttleTimers.TryGetValue(instanceName, out var t))
+                        {
+                            t?.Dispose();
+                            _throttleTimers.Remove(instanceName);
+                        }
                     }
-                }
-            }, null, throttleMs, Timeout.Infinite);
+                },
+                null,
+                throttleMs,
+                Timeout.Infinite
+            );
             _throttleTimers[instanceName] = newTimer;
             return false;
         }
