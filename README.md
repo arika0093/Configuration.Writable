@@ -120,6 +120,8 @@ opt.FilePath = "../myconfig";
 
 // to save to child directory
 opt.FilePath = "config/myconfig";
+// You can also use AddFilePath instead of directly editing FilePath.
+opt.AddFilePath("config/myconfig");
 
 // to save to a common settings directory
 //   in Windows: %APPDATA%/MyAppId
@@ -128,22 +130,22 @@ opt.FilePath = "config/myconfig";
 opt.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
 ```
 
-If you want to read files from multiple locations, you can call `AddFilePath` multiple times as follows.
+If you want to read/write files from multiple locations, you can call `AddFilePath` multiple times as follows.  
+When multiple locations are specified, the save destination is determined on first access according to the following rules:
+
+1. Target file already exists and able to open with write access
+2. Target directory already exists and able to create file
+3. Order of registration (earlier registrations have higher priority)
 
 ```csharp
-// The priority is determined by the following rules:
-// 1. The target folder is writable
-// 2. The target file already exists
-// 3. The target folder already exists
-// 4. Order of registration
-
 opt.AddFilePath(@"D:\SpecialFolder\first");
-opt.UseStandardSaveDirectory("MyAppId").AddFilePath("second");
+opt.UseStandardSaveDirectory("MyAppId")
+   .AddFilePath("second");
 opt.UseExecutableDirectory()
-    .AddFilePath("third")
-    .AddFilePath("child/fourth");
+   .AddFilePath("third")
+   .AddFilePath("child/fourth");
 
-// If you run this without any special setup, third.json will likely be created in the executable's directory (matching rule 3).
+// If you run this without any special setup, third.json will likely be created in the executable's directory (matching rule 2).
 // If D:\SpecialFolder already exists, first.json will be created there.
 ```
 
