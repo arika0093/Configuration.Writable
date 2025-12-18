@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -114,7 +115,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     public Task SaveAsync(string name, T newConfig, CancellationToken cancellationToken = default)
     {
         NamedValues[name] = newConfig;
-        foreach (var listener in ChangeListeners)
+        foreach (var listener in ChangeListeners.ToList())
         {
             listener(newConfig, name);
         }
@@ -131,7 +132,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
         var current = Get(name);
         configUpdater(current);
         NamedValues[name] = current;
-        foreach (var listener in ChangeListeners)
+        foreach (var listener in ChangeListeners.ToList())
         {
             listener(current, name);
         }
