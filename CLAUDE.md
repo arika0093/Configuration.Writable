@@ -41,7 +41,7 @@ The solution is organized into multiple packages:
   - FileProvider system for atomic file operations
 
 - **Configuration.Writable**: Main package with convenience APIs
-  - `WritableConfig`: Static entry point for non-DI scenarios
+  - `WritableOptions`: Static entry point for non-DI scenarios
   - `WritableOptionsExtensions`: DI registration extensions (`AddWritableOptions<T>`)
 
 ### Format Provider Packages

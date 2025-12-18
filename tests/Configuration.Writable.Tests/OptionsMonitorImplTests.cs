@@ -415,7 +415,7 @@ public class OptionsMonitorImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
@@ -424,7 +424,7 @@ public class OptionsMonitorImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         var changeCount = 0;
@@ -449,7 +449,7 @@ public class OptionsMonitorImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
@@ -466,7 +466,7 @@ public class OptionsMonitorImplTests
     public void OnChangeThrottle_Configuration_ShouldBeStoredCorrectly()
     {
         // Arrange & Act
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = "test",
@@ -484,7 +484,7 @@ public class OptionsMonitorImplTests
     public void OnChangeThrottle_DefaultValue_ShouldBe1000Ms()
     {
         // Arrange & Act
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = "test",
@@ -503,7 +503,7 @@ public class OptionsMonitorImplTests
         // Arrange
         var FileProvider = new InMemoryFileProvider();
 
-        var builder1 = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder1 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test1.json",
             InstanceName = "instance1",
@@ -512,7 +512,7 @@ public class OptionsMonitorImplTests
         builder1.UseInMemoryFileProvider(FileProvider);
         var configOptions1 = builder1.BuildOptions();
 
-        var builder2 = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder2 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test2.json",
             InstanceName = "instance2",
@@ -521,7 +521,7 @@ public class OptionsMonitorImplTests
         builder2.UseInMemoryFileProvider(FileProvider);
         var configOptions2 = builder2.BuildOptions();
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
             configOptions1,
             configOptions2,
         ]);

@@ -33,7 +33,7 @@ public class UserSetting
 
 ### Without DI
 If you are not using DI (for example, in WinForms, WPF, console apps, etc.),
-Use `WritableConfig` as the starting point for reading and writing settings.
+Use `WritableOptions` as the starting point for reading and writing settings.
 
 ```csharp
 using Configuration.Writable;
@@ -439,7 +439,7 @@ public class MyService([FromKeyedService("First")] UserSetting options)
 ```
 
 > [!NOTE]
-> When not using DI (direct use of WritableConfig), managing multiple configurations is intentionally not supported.
+> When not using DI (direct use of WritableOptions), managing multiple configurations is intentionally not supported.
 > This is to avoid complicating usage.
 
 ### Dynamic Add/Remove Options

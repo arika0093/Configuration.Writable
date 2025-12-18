@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
-using Configuration.Writable.Testing;
 using PublicApiGenerator;
 
 namespace Configuration.Writable.Tests.PublicApi;
@@ -35,9 +34,6 @@ public static class PublicApiCheck
 public class PublicApiCheckTest
 {
     [Fact]
-    public void Main() => PublicApiCheck.Check<WritableOptionsSimpleInstance<Dummy>>();
-
-    [Fact]
     public void Core() => PublicApiCheck.Check<JsonFormatProvider>();
 
     [Fact]
@@ -49,5 +45,3 @@ public class PublicApiCheckTest
     [Fact]
     public void Encrypt() => PublicApiCheck.Check<EncryptFormatProvider>();
 }
-
-file class Dummy;
