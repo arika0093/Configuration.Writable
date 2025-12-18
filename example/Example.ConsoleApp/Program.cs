@@ -12,11 +12,11 @@ WritableOptions.Initialize<SampleSetting>(opt =>
 {
     // save file location is ../config/mysettings.json
     // extension is determined by the provider (omittable)
-    opt.FilePath = "../config/mysettings";
+    // opt.FilePath = "../config/mysettings";
 
-    // if you want to standard system configration location, use opt.UseStandardSaveLocation("your-app-id");
+    // if you want to standard system configration location, use opt.UseStandardSaveDirectory("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
-    //opt.UseStandardSaveLocation("your-app-id");
+    opt.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
 
     // customize the provider and file writer
     // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider

@@ -1,5 +1,5 @@
 このライブラリを使用する時、現状だとファイル名(相対パス)を指定するときは FilePathプロパティ, 
-特定のフォルダに保存したい場合は `UseStandardSaveLocation()`などを使用してフォルダを指定する構成となっている。
+特定のフォルダに保存したい場合は `UseStandardSaveDirectory()`などを使用してフォルダを指定する構成となっている。
 これを以下のように改修したい。
 
 src/Configuration.Writable.Core/WritableOptionsConfigurationBuilder.csも参照。
@@ -13,13 +13,13 @@ src/Configuration.Writable.Core/WritableOptionsConfigurationBuilder.csも参照�
 // only FilePath
 opt.RelativeFilePath("hoge/fuga");
 
-// UseStandardSaveLocation + FilePath
-opt.UseStandardSaveLocation("myapp")
+// UseStandardSaveDirectory + FilePath
+opt.UseStandardSaveDirectory("myapp")
    .RelativeFilePath("hoge/fuga");
 
-// UseStandardSaveLocation(if production) + RelativeFilePath
+// UseStandardSaveDirectory(if production) + RelativeFilePath
 var isProduction = builder.Environment.IsProduction();
-opt.UseStandardSaveLocation("myapp", enabled: isProduction)
+opt.UseStandardSaveDirectory("myapp", enabled: isProduction)
    .RelativeFilePath("hoge/fuga");
 
 // support multiple locations
@@ -30,7 +30,7 @@ opt.MultipleSaveLocations(lb => {
     // second, use D:/Data/MyApp
     lb.AbsoluteFilePath("D:/Data/MyApp/hoge/fuga");
     // third, use standard location
-    lb.UseStandardSaveLocation("myapp").RelativeFilePath("hoge/fuga");
+    lb.UseStandardSaveDirectory("myapp").RelativeFilePath("hoge/fuga");
     // last, use relative to exe location
     lb.RelativeFilePath("hoge/fuga");
 });

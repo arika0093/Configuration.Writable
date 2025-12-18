@@ -82,7 +82,7 @@ Each provider package is separate to minimize dependencies and allow users to in
 - `WritableOptionsConfiguration<T>`: Record containing all configuration for a specific settings type
   - Includes: Provider, FilePath, InstanceName, SectionName, Logger, Validator
 - `WritableOptionsConfigurationBuilder<T>`: Fluent API for building configuration options
-  - Methods like `UseStandardSaveLocation()`, `WithValidator()`, `UseDataAnnotationsValidation`
+  - Methods like `UseStandardSaveDirectory()`, `WithValidator()`, `UseDataAnnotationsValidation`
 
 ### Usage Patterns
 

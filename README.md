@@ -111,7 +111,7 @@ builder.Services.AddWritableOptions<UserSetting>(opt => { /* ... */ });
 
 ### Save Location
 Default behavior is to save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
-If you want to change the save location, use `opt.FilePath` or `opt.UseStandardSaveLocation("MyAppId")`.
+If you want to change the save location, use `opt.FilePath` or `opt.UseStandardSaveDirectory("MyAppId")`.
 
 For example:
 ```csharp
@@ -125,7 +125,7 @@ opt.FilePath = "config/myconfig";
 //   in Windows: %APPDATA%/MyAppId
 //   in macOS: $XDG_CONFIG_HOME/MyAppId or ~/Library/Application Support/MyAppId
 //   in Linux: $XDG_CONFIG_HOME/MyAppId or ~/.config/MyAppId
-opt.UseStandardSaveLocation("MyAppId");
+opt.UseStandardSaveDirectory("MyAppId");
 ```
 
 If you want to toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
@@ -139,7 +139,7 @@ If you want to toggle between development and production environments, you can u
 WritableOptions.Initialize<UserSetting>(opt => {
     opt.FilePath = "mysettings.json";
 #if RELEASE
-    opt.UseStandardSaveLocation("MyAppId");
+    opt.UseStandardSaveDirectory("MyAppId");
 #endif
 });
 
@@ -147,7 +147,7 @@ WritableOptions.Initialize<UserSetting>(opt => {
 builder.Services.AddWritableOptions<UserSetting>(opt => {
     opt.FilePath = "mysettings.json";
     if (builder.Environment.IsProduction()) {
-        opt.UseStandardSaveLocation("MyAppId");
+        opt.UseStandardSaveDirectory("MyAppId");
     }
 });
 ```
