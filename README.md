@@ -463,12 +463,12 @@ public class MyService([FromKeyedService("First")] UserSetting options)
 > This is to avoid complicating usage.
 
 ### Dynamic Add/Remove Options
-You can dynamically add or remove writable options at runtime using `IWritableOptionConfigRegistory`.
+You can dynamically add or remove writable options at runtime using `IWritableOptionConfigRegistry`.
 for example, in addition to common application settings, it is useful when you want to have individual settings for each document opened by the user.
 
 ```csharp
-// use IWritableOptionConfigRegistory from DI
-public class DynamicOptionsService(IWritableOptionConfigRegistory<UserSetting> registry)
+// use IWritableOptionConfigRegistry from DI
+public class DynamicOptionsService(IWritableOptionConfigRegistry<UserSetting> registry)
 {
     public void AddNewOptions(string instanceName, string filePath)
     {

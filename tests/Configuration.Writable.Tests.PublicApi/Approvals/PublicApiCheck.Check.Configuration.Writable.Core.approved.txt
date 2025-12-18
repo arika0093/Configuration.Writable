@@ -124,7 +124,7 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
     }
-    public interface IWritableOptionConfigRegistory<T>
+    public interface IWritableOptionConfigRegistry<T>
         where T :  class, new ()
     {
         event System.Action<Configuration.Writable.WritableOptionsConfiguration<T>> OnAdded;
