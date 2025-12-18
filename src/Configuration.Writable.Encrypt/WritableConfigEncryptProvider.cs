@@ -153,6 +153,7 @@ public class EncryptFormatProvider : FormatProviderBase
             Logger = options.Logger,
             FormatProvider = JsonProvider,
             InstanceName = options.InstanceName,
+            OnChangeThrottleMs = options.OnChangeThrottleMs,
         };
 
         try
