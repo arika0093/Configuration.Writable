@@ -131,7 +131,7 @@ opt.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
 ```
 
 If you want to read/write files from multiple locations, you can call `AddFilePath` multiple times as follows.  
-When multiple locations are specified, the save destination is determined on first access according to the following rules:
+When multiple locations are specified, the load/save destination is determined on first access according to the following rules:
 
 1. Explicit priority (descending)
 1. Target file already exists and able to open with write access
@@ -143,14 +143,14 @@ opt.AddFilePath(@"D:\SpecialFolder\first"); // is not existing folder/file yet
 opt.UseStandardSaveDirectory("MyAppId")
    .AddFilePath("second", priority: 10);
 opt.UseExecutableDirectory()
-   .AddFilePath("third")
+   .AddFilePath("third") // is already exist directory but not file
    .AddFilePath("child/fourth"); // is already exist file
 
 // In this case, the priorities are as follows:
 // 1: %APPDATA%/MyAppId/second (priority 10)
 // 2: ./child/fourth (target file exists)
 // 3: ./third (target directory exists)
-// 4: D:\SpecialFolder\first (target directory does not exist)
+// 4: D:\SpecialFolder\first (target directory/file does not exist)
 ```
 
 If you want to toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
