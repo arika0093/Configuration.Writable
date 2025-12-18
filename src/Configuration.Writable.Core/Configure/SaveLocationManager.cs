@@ -43,33 +43,36 @@ internal class SaveLocationManager
         }
 
         // Decide the write destination based on the following priorities
-        // 1. Writable directory
-        // 2. Target file already exists
-        // 3. Target directory already exists
+        // 1. Explicit priority (descending)
+        // 2. Target file already exists and able to open with write access
+        // 3. Target directory already exists and able to create file
         // 4. Registration order (ascending)
-        var targetPath =
-            LocationBuilders
-                .SelectMany(p => p.SaveLocationPaths)
-                .Where(p => !string.IsNullOrEmpty(p))
-                .Select(
-                    (p, i) =>
-                        new
-                        {
-                            Path = p,
-                            Index = i,
-                            ExistDirectory = Directory.Exists(Path.GetDirectoryName(p) ?? ""),
-                            ExistFile = File.Exists(p),
-                            CanWrite = CanWriteToDirectory(p),
-                        }
-                )
-                .OrderByDescending(p => p.CanWrite)
-                .ThenByDescending(p => p.ExistFile)
-                .ThenByDescending(p => p.ExistDirectory)
-                .ThenBy(p => p.Index)
-                .FirstOrDefault()
-            ?? throw new InvalidOperationException(
+        var targetPath = LocationBuilders
+            .SelectMany(p => p.SaveLocationPaths)
+            .Where(p => !string.IsNullOrEmpty(p.Path))
+            .Select(
+                (p, i) =>
+                    new
+                    {
+                        p.Path,
+                        p.Priority,
+                        Index = i,
+                        CanWriteFile = CheckCanOpenFileWithWriteAccess(p.Path),
+                        CanWriteDir = CheckIsWritableToDirectory(p.Path),
+                    }
+            )
+            .OrderByDescending(p => p.Priority)
+            .ThenByDescending(p => p.CanWriteFile)
+            .ThenByDescending(p => p.CanWriteDir)
+            .ThenBy(p => p.Index)
+            .FirstOrDefault();
+
+        if (targetPath == null)
+        {
+            throw new InvalidOperationException(
                 "No valid save location could be determined from the configured location providers."
             );
+        }
 
         // if no file extension, add from format provider
         var fileName = Path.GetFileName(targetPath.Path);
@@ -85,13 +88,42 @@ internal class SaveLocationManager
     }
 
     /// <summary>
+    /// Checks if the application can open the specified file with write access.
+    /// </summary>
+    private static bool CheckCanOpenFileWithWriteAccess(string path)
+    {
+        try
+        {
+            if (!File.Exists(path))
+            {
+                // If the file does not exist, we cannot open it with write access
+                return false;
+            }
+
+            using var stream = File.Open(path, FileMode.Open, FileAccess.Write);
+            // If we can open the file with write access, return true
+            return true;
+        }
+        catch
+        {
+            // If an exception occurs, we cannot write to the file
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Checks if the application can write to the specified directory.
     /// </summary>
-    private static bool CanWriteToDirectory(string path)
+    private static bool CheckIsWritableToDirectory(string path)
     {
         try
         {
             var directory = Path.GetDirectoryName(path) ?? "";
+            if (!Directory.Exists(directory))
+            {
+                return false;
+            }
+
             var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
             // create and delete a temporary file to test write access
             using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
@@ -112,17 +144,17 @@ internal class LocationBuilderInternal : ILocationBuilderWithDirectory
     // intermediate folder before combining with file name
     private string configFolder = "";
 
-    private readonly List<string> targetPaths = [];
+    private readonly List<LocationPathInfo> targetPaths = [];
 
     /// <inheritdoc />
-    public IEnumerable<string> SaveLocationPaths => targetPaths;
+    public IEnumerable<LocationPathInfo> SaveLocationPaths => targetPaths;
 
     /// <inheritdoc />
-    public ILocationBuilder AddFilePath(string path)
+    public ILocationBuilder AddFilePath(string path, int priority = 0)
     {
         var combined = Path.Combine(configFolder, path);
         var absolutePath = Path.GetFullPath(combined);
-        targetPaths.Add(absolutePath);
+        targetPaths.Add(new LocationPathInfo(absolutePath, priority));
         return this;
     }
 

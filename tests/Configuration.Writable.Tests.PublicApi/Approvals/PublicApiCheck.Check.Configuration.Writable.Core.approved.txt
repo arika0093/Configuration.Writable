@@ -3,8 +3,8 @@ namespace Configuration.Writable.Configure
 {
     public interface ILocationBuilder
     {
-        System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
-        Configuration.Writable.Configure.ILocationBuilder AddFilePath(string path);
+        System.Collections.Generic.IEnumerable<Configuration.Writable.Configure.LocationPathInfo> SaveLocationPaths { get; }
+        Configuration.Writable.Configure.ILocationBuilder AddFilePath(string path, int priority = 0);
     }
     public interface ILocationBuilderWithDirectory : Configuration.Writable.Configure.ILocationBuilder
     {
@@ -12,6 +12,12 @@ namespace Configuration.Writable.Configure
         Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory(bool enabled = true);
         Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder, bool enabled = true);
         Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true);
+    }
+    public class LocationPathInfo : System.IEquatable<Configuration.Writable.Configure.LocationPathInfo>
+    {
+        public LocationPathInfo(string Path, int Priority) { }
+        public string Path { get; init; }
+        public int Priority { get; init; }
     }
     public class WritableOptionsConfigBuilder<T> : Configuration.Writable.Configure.ILocationBuilder, Configuration.Writable.Configure.ILocationBuilderWithDirectory, System.IEquatable<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>>
         where T :  class, new ()
@@ -24,10 +30,10 @@ namespace Configuration.Writable.Configure
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public int OnChangeThrottleMs { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
-        public System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
+        public System.Collections.Generic.IEnumerable<Configuration.Writable.Configure.LocationPathInfo> SaveLocationPaths { get; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
-        public Configuration.Writable.Configure.ILocationBuilder AddFilePath(string path) { }
+        public Configuration.Writable.Configure.ILocationBuilder AddFilePath(string path, int priority = 0) { }
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions() { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory(bool enabled = true) { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory(bool enabled = true) { }

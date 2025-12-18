@@ -120,6 +120,8 @@ opt.FilePath = "../myconfig";
 
 // to save to child directory
 opt.FilePath = "config/myconfig";
+// You can also use AddFilePath instead of directly editing FilePath.
+opt.AddFilePath("config/myconfig");
 
 // to save to a common settings directory
 //   in Windows: %APPDATA%/MyAppId
@@ -128,23 +130,27 @@ opt.FilePath = "config/myconfig";
 opt.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
 ```
 
-If you want to read files from multiple locations, you can call `AddFilePath` multiple times as follows.
+If you want to read/write files from multiple locations, you can call `AddFilePath` multiple times as follows.  
+When multiple locations are specified, the load/save destination is determined on first access according to the following rules:
+
+1. Explicit priority (descending)
+1. Target file already exists and able to open with write access
+1. Target directory already exists and able to create file
+1. Order of registration (earlier registrations have higher priority)
 
 ```csharp
-// The priority is determined by the following rules:
-// 1. The target folder is writable
-// 2. The target file already exists
-// 3. The target folder already exists
-// 4. Order of registration
-
-opt.AddFilePath(@"D:\SpecialFolder\first");
-opt.UseStandardSaveDirectory("MyAppId").AddFilePath("second");
+opt.AddFilePath(@"D:\SpecialFolder\first"); // is not existing folder/file yet
+opt.UseStandardSaveDirectory("MyAppId")
+   .AddFilePath("second", priority: 10);
 opt.UseExecutableDirectory()
-    .AddFilePath("third")
-    .AddFilePath("child/fourth");
+   .AddFilePath("third") // is already exist directory but not file
+   .AddFilePath("child/fourth"); // is already exist file
 
-// If you run this without any special setup, third.json will likely be created in the executable's directory (matching rule 3).
-// If D:\SpecialFolder already exists, first.json will be created there.
+// In this case, the priorities are as follows:
+// 1: %APPDATA%/MyAppId/second (priority 10)
+// 2: ./child/fourth (target file exists)
+// 3: ./third (target directory exists)
+// 4: D:\SpecialFolder\first (target directory/file does not exist)
 ```
 
 If you want to toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
@@ -156,10 +162,10 @@ If you want to toggle between development and production environments, you can u
 
 // without DI
 WritableOptions.Initialize<UserSetting>(opt => {
-#if RELEASE
-    var isProduction = true;
-#else
+#if DEBUG
     var isProduction = false;
+#else
+    var isProduction = true;
 #endif
     opt.UseStandardSaveDirectory("MyAppId", enabled: isProduction)
         .AddFilePath("mysettings");
