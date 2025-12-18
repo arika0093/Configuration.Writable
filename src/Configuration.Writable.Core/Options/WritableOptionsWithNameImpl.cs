@@ -38,6 +38,10 @@ internal sealed class WritableOptionsWithNameImpl<T>(
         );
 
     /// <inheritdoc />
+    public IDisposable? OnChange(Action<T> listener) =>
+        innerWritableOptionsInstance.OnChange(instanceName, listener);
+
+    /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
         innerWritableOptionsInstance.SaveAsync(instanceName, newConfig, cancellationToken);
 

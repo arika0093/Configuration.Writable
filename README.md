@@ -226,6 +226,48 @@ opt.FileProvider = new CommonFileProvider() {
 };
 ```
 
+### Change Detection
+You can automatically detect changes to the file and use the latest settings.  
+For example:
+
+```csharp
+public class MyService(IWritableOptions<UserSetting> options) : IDisposable
+{
+    public WatchStart()
+    {
+        // register change callback
+        var disposable = options.OnChange(newSetting => {
+            // called when the configuration file is changed externally
+            Console.WriteLine($">> Settings changed: Name={newSetting.Name}, Age={newSetting.Age}");
+        });
+    }
+
+    public async Task UpdateAsync()
+    {
+        // get the UserSetting instance
+        var sampleSetting = options.CurrentValue;
+        // and save to storage
+        await options.SaveAsync(setting =>
+        {
+            setting.Name = "new name";
+        });
+        // this will trigger the OnChange callback
+    }
+
+    public void Dispose() => disposable?.Dispose();
+
+    private IDisposable? disposable;
+}
+```
+
+By default, throttling is enabled to suppress high-frequency file changes. Additional changes within 1 second from change detection are ignored by default.  
+If you want to change the throttle duration, specify `opt.OnChangeThrottleMs`.
+
+```csharp
+opt.OnChangeThrottleMs = 500; // customize to 500ms
+opt.OnChangeThrottleMs = 0;   // disable throttling
+```
+
 ### RegisterInstanceToContainer
 If you want to directly reference the settings class, specify `opt.RegisterInstanceToContainer = true`.
 

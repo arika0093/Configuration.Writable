@@ -14,7 +14,15 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
 {
     private const string DefaultName = "";
 
-    private Dictionary<string, T> NamedValues { get; } = [];
+    /// <summary>
+    /// A dictionary containing named configuration values.
+    /// </summary>
+    public Dictionary<string, T> NamedValues { get; } = [];
+
+    /// <summary>
+    /// A list of change listeners that have been registered.
+    /// </summary>
+    public List<Action<T, string?>> ChangeListeners { get; } = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableOptionsStub{T}"/> class.
@@ -64,7 +72,35 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     }
 
     /// <inheritdoc/>
-    public IDisposable? OnChange(Action<T, string?> listener) => null;
+    public IDisposable? OnChange(Action<T, string?> listener)
+    {
+        ChangeListeners.Add(listener);
+        return null;
+    }
+
+    /// <inheritdoc/>
+    public IDisposable? OnChange(Action<T> listener) =>
+        OnChange(
+            (t, changedName) =>
+            {
+                if (changedName == DefaultName)
+                {
+                    listener(t);
+                }
+            }
+        );
+
+    /// <inheritdoc/>
+    public IDisposable? OnChange(string name, Action<T> listener) =>
+        OnChange(
+            (t, changedName) =>
+            {
+                if (changedName == name)
+                {
+                    listener(t);
+                }
+            }
+        );
 
     /// <inheritdoc/>
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
@@ -91,6 +127,10 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
         var current = Get(name);
         configUpdater(current);
         NamedValues[name] = current;
+        foreach (var listener in ChangeListeners)
+        {
+            listener(current, name);
+        }
         return Task.CompletedTask;
     }
 }
