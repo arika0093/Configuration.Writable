@@ -634,8 +634,8 @@ These are very similar to the above `IOptionsMonitor<T>`, but differ in the foll
   * `IReadOnlyOptions<T>`: Does not support named access, only accessible via `.CurrentValue`.
   * `IReadOnlyNamedOptions<T>`: Supports named access only via `.Get(name)`.
 * The method of registering `OnChange` callbacks is different:
-  * `IReadOnlyOptions<T>`: `IDisposable OnChange(Action<T> listener)` method to register a callback for changes to the unnamed instance.
-  * `IReadOnlyNamedOptions<T>`: `IDisposable OnChange(string name, Action<T> listener)` method to register a callback for changes to a specific named instance.
+  * `IReadOnlyOptions<T>`: `OnChange(Action<T> listener)` method to register a callback for changes to the unnamed instance.
+  * `IReadOnlyNamedOptions<T>`: `OnChange(string name, Action<T> listener)` method to register a callback for changes to a specific named instance.
   * The traditional `OnChange(Action<T, string> listener)` is also available.
 
 ### `IWritableOptions<T>` / `IWritableNamedOptions<T>`  
