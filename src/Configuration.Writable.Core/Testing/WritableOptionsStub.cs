@@ -114,6 +114,10 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     public Task SaveAsync(string name, T newConfig, CancellationToken cancellationToken = default)
     {
         NamedValues[name] = newConfig;
+        foreach (var listener in ChangeListeners)
+        {
+            listener(newConfig, name);
+        }
         return Task.CompletedTask;
     }
 
