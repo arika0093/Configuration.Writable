@@ -3,17 +3,17 @@
     <RootNamespace>Configuration.Writable</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.*" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.*" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
-    <PackageReference Include="System.Text.Json" Version="9.*" />
+    <PackageReference Include="System.Text.Json" Version="10.*" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System.IO.Compression" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
-    <PackageReference Include="System.Text.Json" Version="9.*" />
+    <PackageReference Include="System.Text.Json" Version="10.*" />
   </ItemGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="\" />
