@@ -61,6 +61,18 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
+    public interface ILocationBuilder
+    {
+        System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
+        Configuration.Writable.ILocationBuilder AddFilePath(string path);
+    }
+    public interface ILocationBuilderWithDirectory : Configuration.Writable.ILocationBuilder
+    {
+        Configuration.Writable.ILocationBuilder UseCurrentDirectory(bool enabled = true);
+        Configuration.Writable.ILocationBuilder UseExecutableDirectory(bool enabled = true);
+        Configuration.Writable.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder, bool enabled = true);
+        Configuration.Writable.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true);
+    }
     public interface IOptionsConfigRegistry<T>
         where T :  class, new ()
     {
@@ -114,7 +126,7 @@ namespace Configuration.Writable
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
-    public class WritableConfigurationOptionsBuilder<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
+    public class WritableConfigurationOptionsBuilder<T> : Configuration.Writable.ILocationBuilder, Configuration.Writable.ILocationBuilderWithDirectory, System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
         where T :  class, new ()
     {
         public WritableConfigurationOptionsBuilder() { }
@@ -125,12 +137,15 @@ namespace Configuration.Writable
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public int OnChangeThrottleMs { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
+        public System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
+        public Configuration.Writable.ILocationBuilder AddFilePath(string path) { }
         public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
-        public string UseCurrentDirectory() { }
-        public string UseExecutableDirectory() { }
-        public string UseStandardSaveLocation(string applicationId) { }
+        public Configuration.Writable.ILocationBuilder UseCurrentDirectory(bool enabled = true) { }
+        public Configuration.Writable.ILocationBuilder UseExecutableDirectory(bool enabled = true) { }
+        public Configuration.Writable.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder, bool enabled = true) { }
+        public Configuration.Writable.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
         public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
         public void WithValidator<TValidator>()
             where TValidator : Microsoft.Extensions.Options.IValidateOptions<T>, new () { }
