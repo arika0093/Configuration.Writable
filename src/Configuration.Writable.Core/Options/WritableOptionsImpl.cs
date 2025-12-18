@@ -24,7 +24,7 @@ namespace Configuration.Writable;
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
     IOptionsConfigRegistry<T> registryInstance
-) : IWritableOptions<T>, IWritableNamedOptions<T>, IDisposable
+) : IWritableOptions<T>, IWritableNamedOptions<T>
     where T : class, new()
 {
     /// <inheritdoc />
@@ -70,9 +70,6 @@ internal sealed class WritableOptionsImpl<T>(
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener) =>
         optionMonitorInstance.OnChange(listener);
-
-    /// <inheritdoc />
-    public void Dispose() => optionMonitorInstance?.Dispose();
 
     /// <summary>
     /// Asynchronously saves the specified configuration.
