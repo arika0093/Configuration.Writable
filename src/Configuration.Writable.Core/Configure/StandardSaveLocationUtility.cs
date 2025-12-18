@@ -33,7 +33,7 @@ internal static class StandardSaveLocationUtility
         {
             // macOS: ~/Library/Application Support
             return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 "Library",
                 "Application Support"
             );
@@ -42,7 +42,7 @@ internal static class StandardSaveLocationUtility
         {
             // Linux: ~/.config
             return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 ".config"
             );
         }

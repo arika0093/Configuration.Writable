@@ -47,7 +47,7 @@ public class StandardSaveLocationUtilityTests
 
             var path = StandardSaveLocationUtility.GetConfigDirectory();
             var expectedPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 "Library",
                 "Application Support"
             );
@@ -91,7 +91,7 @@ public class StandardSaveLocationUtilityTests
 
             var path = StandardSaveLocationUtility.GetConfigDirectory();
             var expectedPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 ".config"
             );
 

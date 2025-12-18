@@ -48,6 +48,12 @@ WritableOptions.Initialize<SampleSetting>(opt =>
 // get the config instance
 var options = WritableOptions.GetOptions<SampleSetting>();
 
+// register change listener
+options.OnChange((setting, _) => {
+    Console.WriteLine("## Config changed notification received.");
+    Console.WriteLine($"   New Name: {setting.Name}, LastUpdatedAt: {setting.LastUpdatedAt}");
+});
+
 var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}, LastUpdatedAt: {sampleSetting.LastUpdatedAt}");
 
