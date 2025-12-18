@@ -131,7 +131,7 @@ internal sealed class WritableOptionsImpl<T>(
             .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
             .ConfigureAwait(false);
 
-        // Update the monitor's cache with the new config
+        // Update the monitor's cache (FileSystemWatcher will notify listeners)
         optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
 
         var fileName = Path.GetFileName(options.ConfigFilePath);

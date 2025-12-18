@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
@@ -310,42 +311,61 @@ public class KeyedServicesIntegrationTests
     [Fact]
     public async Task KeyedOptions_OnChange_ShouldReceiveNotifications()
     {
-        var fileName = Path.GetRandomFileName();
-        var changeNotified = false;
-        string? notifiedName = null;
+        var testDirectory = Path.Combine(Path.GetTempPath(), $"KeyedOnChangeTest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(testDirectory);
+        var testFilePath = Path.Combine(testDirectory, "test.json");
 
-        var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>(options =>
+        try
         {
-            options.InstanceName = "ChangeTest";
-            options.FilePath = fileName;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+            var changeNotified = false;
+            string? notifiedName = null;
 
-        var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredKeyedService<
-            IWritableOptions<AppSettings>
-        >("ChangeTest");
-
-        using var changeToken = writableOptions.OnChange(
-            (settings, name) =>
+            var services = new ServiceCollection();
+            services.AddWritableOptions<AppSettings>(options =>
             {
-                changeNotified = true;
-                notifiedName = name;
+                options.InstanceName = "ChangeTest";
+                options.FilePath = testFilePath;
+            });
+
+            var serviceProvider = services.BuildServiceProvider();
+            var writableOptions = serviceProvider.GetRequiredKeyedService<
+                IWritableOptions<AppSettings>
+            >("ChangeTest");
+
+            using var changeToken = writableOptions.OnChange(
+                (settings, name) =>
+                {
+                    changeNotified = true;
+                    notifiedName = name;
+                }
+            );
+
+            // Trigger a change through the underlying named options
+            var namedOptions = serviceProvider.GetRequiredService<IWritableNamedOptions<AppSettings>>();
+            await namedOptions.SaveAsync(
+                "ChangeTest",
+                settings => settings.ApplicationName = "Changed"
+            );
+
+            // Give time for FileSystemWatcher to detect the change
+            await Task.Delay(300);
+
+            changeNotified.ShouldBeTrue();
+        }
+        finally
+        {
+            Thread.Sleep(100);
+            if (Directory.Exists(testDirectory))
+            {
+                try
+                {
+                    Directory.Delete(testDirectory, recursive: true);
+                }
+                catch
+                {
+                }
             }
-        );
-
-        // Trigger a change through the underlying named options
-        var namedOptions = serviceProvider.GetRequiredService<IWritableNamedOptions<AppSettings>>();
-        await namedOptions.SaveAsync(
-            "ChangeTest",
-            settings => settings.ApplicationName = "Changed"
-        );
-
-        // Give time for change notification to propagate
-        await Task.Delay(100);
-
-        changeNotified.ShouldBeTrue();
+        }
     }
 
     [Fact]

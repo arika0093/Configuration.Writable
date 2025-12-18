@@ -102,7 +102,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <summary>
     /// Updates the cached value for the specified instance name.
     /// This is called when SaveAsync is executed.
+    /// Notification is handled by FileSystemWatcher, not by this method.
     /// </summary>
+    /// <param name="instanceName">The name of the instance to update.</param>
+    /// <param name="value">The new value to cache.</param>
     internal void UpdateCache(string instanceName, T value)
     {
         _cache[instanceName] = value;
@@ -161,6 +164,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             // Use the provider to load configuration (provider will check file existence via its FileProvider)
             var value = options.FormatProvider.LoadConfiguration<T>(options);
+            // Don't notify listeners during initial load, only file change events should notify
             _cache[instanceName] = value;
             return value;
         }
