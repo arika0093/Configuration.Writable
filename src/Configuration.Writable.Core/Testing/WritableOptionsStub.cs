@@ -59,6 +59,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
             InstanceName = name,
             SectionName = sectionName,
             FormatProvider = null!,
+            OnChangeThrottleMs = 1000,
         };
     }
 
