@@ -68,6 +68,32 @@ internal sealed class WritableOptionsImpl<T>(
     public T Get(string? name) => optionMonitorInstance.Get(name);
 
     /// <inheritdoc />
+    public IDisposable? OnChange(Action<T> listener) =>
+        optionMonitorInstance.OnChange(
+            (options, instance) =>
+            {
+                // Invoke listener only for the default instance
+                if (instance == MEOptions.DefaultName)
+                {
+                    listener(options);
+                }
+            }
+        );
+
+    /// <inheritdoc />
+    public IDisposable? OnChange(string name, Action<T> listener) =>
+        optionMonitorInstance.OnChange(
+            (options, instance) =>
+            {
+                // Invoke listener only for the specified instance
+                if (instance == name)
+                {
+                    listener(options);
+                }
+            }
+        );
+
+    /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener) =>
         optionMonitorInstance.OnChange(listener);
 
@@ -105,7 +131,7 @@ internal sealed class WritableOptionsImpl<T>(
             .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
             .ConfigureAwait(false);
 
-        // Update the monitor's cache with the new config
+        // Update the monitor's cache (FileSystemWatcher will notify listeners)
         optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
 
         var fileName = Path.GetFileName(options.ConfigFilePath);

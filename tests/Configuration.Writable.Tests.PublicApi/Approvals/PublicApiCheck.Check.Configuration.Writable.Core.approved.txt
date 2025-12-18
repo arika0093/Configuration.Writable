@@ -106,6 +106,7 @@ namespace Configuration.Writable
     {
         T Get(string name);
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
+        System.IDisposable? OnChange(string name, System.Action<T> listener);
     }
     public interface IReadOnlyOptionsCore<T>
         where T :  class, new ()
@@ -117,6 +118,7 @@ namespace Configuration.Writable
     {
         T CurrentValue { get; }
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration();
+        System.IDisposable? OnChange(System.Action<T> listener);
     }
     public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
@@ -196,11 +198,15 @@ namespace Configuration.Writable.Testing
     {
         public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }
         public WritableOptionsStub(T value) { }
+        public System.Collections.Generic.List<System.Action<T, string?>> ChangeListeners { get; }
         public T CurrentValue { get; }
+        public System.Collections.Generic.Dictionary<string, T> NamedValues { get; }
         public T Get(string? name) { }
         public Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration() { }
         public Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name) { }
+        public System.IDisposable? OnChange(System.Action<T> listener) { }
         public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
+        public System.IDisposable? OnChange(string name, System.Action<T> listener) { }
         public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }

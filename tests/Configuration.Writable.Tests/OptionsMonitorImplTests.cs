@@ -195,12 +195,16 @@ public class OptionsMonitorImplTests
         var newSettings = new TestSettings { Name = "changed", Value = 100 };
         monitor.UpdateCache(Microsoft.Extensions.Options.Options.DefaultName, newSettings);
 
-        // Assert
+        // Assert - UpdateCache no longer notifies, only FileSystemWatcher does
         disposable.ShouldNotBeNull();
-        changeCount.ShouldBe(1);
-        changedValue.ShouldNotBeNull();
-        changedValue.Name.ShouldBe("changed");
-        changedName.ShouldBe(Microsoft.Extensions.Options.Options.DefaultName);
+        changeCount.ShouldBe(0);
+        changedValue.ShouldBeNull();
+        changedName.ShouldBeNull();
+
+        // Verify cache is updated
+        var cached = monitor.CurrentValue;
+        cached.Name.ShouldBe("changed");
+        cached.Value.ShouldBe(100);
     }
 
     [Fact]
@@ -230,7 +234,7 @@ public class OptionsMonitorImplTests
     }
 
     [Fact]
-    public void UpdateCache_ShouldUpdateValueAndNotifyListeners()
+    public void UpdateCache_ShouldUpdateCacheWithoutNotifying()
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
@@ -250,8 +254,8 @@ public class OptionsMonitorImplTests
         var newSettings = new TestSettings { Name = "updated", Value = 200 };
         monitor.UpdateCache(Microsoft.Extensions.Options.Options.DefaultName, newSettings);
 
-        // Assert
-        notified.ShouldBeTrue();
+        // Assert - UpdateCache updates cache but does not notify (FileSystemWatcher handles that)
+        notified.ShouldBeFalse();
         var value = monitor.CurrentValue;
         value.Name.ShouldBe("updated");
         value.Value.ShouldBe(200);
@@ -439,9 +443,8 @@ public class OptionsMonitorImplTests
         monitor.UpdateCache(Microsoft.Extensions.Options.Options.DefaultName, settings2);
         monitor.UpdateCache(Microsoft.Extensions.Options.Options.DefaultName, settings3);
 
-        // Assert - All changes should be notified when using UpdateCache
-        // (UpdateCache bypasses file system events and throttling)
-        changeCount.ShouldBe(3);
+        // Assert - UpdateCache no longer notifies (FileSystemWatcher handles notifications)
+        changeCount.ShouldBe(0);
     }
 
     [Fact]
