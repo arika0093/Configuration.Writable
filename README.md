@@ -111,7 +111,7 @@ builder.Services.AddWritableOptions<UserSetting>(opt => { /* ... */ });
 
 ### Save Location
 Default behavior is to save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
-If you want to change the save location, use `opt.FilePath` or `opt.UseStandardSaveDirectory("MyAppId")`.
+If you want to change the save location, use `opt.FilePath` or `opt.UseXxxDirectory().AddFilePath(path)`.
 
 For example:
 ```csharp
@@ -125,7 +125,26 @@ opt.FilePath = "config/myconfig";
 //   in Windows: %APPDATA%/MyAppId
 //   in macOS: $XDG_CONFIG_HOME/MyAppId or ~/Library/Application Support/MyAppId
 //   in Linux: $XDG_CONFIG_HOME/MyAppId or ~/.config/MyAppId
-opt.UseStandardSaveDirectory("MyAppId");
+opt.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
+```
+
+If you want to read files from multiple locations, you can call `AddFilePath` multiple times as follows.
+
+```csharp
+// The priority is determined by the following rules:
+// 1. The target folder is writable
+// 2. The target file already exists
+// 3. The target folder already exists
+// 4. Order of registration
+
+opt.AddFilePath(@"D:\SpecialFolder\first");
+opt.UseStandardSaveDirectory("MyAppId").AddFilePath("second");
+opt.UseExecutableDirectory()
+    .AddFilePath("third")
+    .AddFilePath("child/fourth");
+
+// If you run this without any special setup, third.json will likely be created in the executable's directory (matching rule 3).
+// If D:\SpecialFolder already exists, first.json will be created there.
 ```
 
 If you want to toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
@@ -137,18 +156,19 @@ If you want to toggle between development and production environments, you can u
 
 // without DI
 WritableOptions.Initialize<UserSetting>(opt => {
-    opt.FilePath = "mysettings.json";
 #if RELEASE
-    opt.UseStandardSaveDirectory("MyAppId");
+    var isProduction = true;
+#else
+    var isProduction = false;
 #endif
+    opt.UseStandardSaveDirectory("MyAppId", enabled: isProduction)
+        .AddFilePath("mysettings");
 });
 
 // if using IHostApplicationBuilder
 builder.Services.AddWritableOptions<UserSetting>(opt => {
-    opt.FilePath = "mysettings.json";
-    if (builder.Environment.IsProduction()) {
-        opt.UseStandardSaveDirectory("MyAppId");
-    }
+    opt.UseStandardSaveDirectory("MyAppId", enabled: builder.Environment.IsProduction())
+        .AddFilePath("mysettings");
 });
 ```
 
