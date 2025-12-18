@@ -211,8 +211,12 @@ public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
 
     /// <inheritdoc />
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public IEnumerable<string> SaveLocationPaths =>
+    public IEnumerable<LocationPathInfo> SaveLocationPaths =>
         _saveLocationManager.LocationBuilders.SelectMany(b => b.SaveLocationPaths);
+
+    /// <inheritdoc />
+    public ILocationBuilder AddFilePath(string path, int priority = 0) =>
+        _saveLocationManager.MakeLocationBuilder().AddFilePath(path, priority);
 
     /// <inheritdoc />
     public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) =>
@@ -231,8 +235,4 @@ public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
         Environment.SpecialFolder folder,
         bool enabled = true
     ) => _saveLocationManager.MakeLocationBuilder().UseSpecialFolder(folder, enabled);
-
-    /// <inheritdoc />
-    public ILocationBuilder AddFilePath(string path) =>
-        _saveLocationManager.MakeLocationBuilder().AddFilePath(path);
 }
