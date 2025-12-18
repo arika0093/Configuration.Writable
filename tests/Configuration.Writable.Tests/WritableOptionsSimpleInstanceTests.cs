@@ -390,7 +390,7 @@ public class WritableOptionsSimpleInstanceTests
         finally
         {
             // Cleanup
-            Thread.Sleep(100); // Wait for file handles to be released
+            await Task.Delay(100); // Wait for file handles to be released
             if (Directory.Exists(testDirectory))
             {
                 try
@@ -422,12 +422,17 @@ public class WritableOptionsSimpleInstanceTests
             });
 
             var option = _instance.GetOptions();
-            var receivedNotifications = new System.Collections.Generic.List<(TestSettings value, string? name)>();
+            var receivedNotifications = new System.Collections.Generic.List<(
+                TestSettings value,
+                string? name
+            )>();
 
-            option.OnChange((value, name) =>
-            {
-                receivedNotifications.Add((value, name));
-            });
+            option.OnChange(
+                (value, name) =>
+                {
+                    receivedNotifications.Add((value, name));
+                }
+            );
 
             // Act
             await option.SaveAsync(settings =>
@@ -447,16 +452,14 @@ public class WritableOptionsSimpleInstanceTests
         }
         finally
         {
-            Thread.Sleep(100);
+            await Task.Delay(100);
             if (Directory.Exists(testDirectory))
             {
                 try
                 {
                     Directory.Delete(testDirectory, recursive: true);
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
     }
@@ -503,16 +506,14 @@ public class WritableOptionsSimpleInstanceTests
         }
         finally
         {
-            Thread.Sleep(100);
+            await Task.Delay(100);
             if (Directory.Exists(testDirectory))
             {
                 try
                 {
                     Directory.Delete(testDirectory, recursive: true);
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
     }
@@ -538,12 +539,14 @@ public class WritableOptionsSimpleInstanceTests
 
             option.OnChange(value =>
             {
-                receivedValues.Add(new TestSettings
-                {
-                    Name = value.Name,
-                    Value = value.Value,
-                    IsEnabled = value.IsEnabled
-                });
+                receivedValues.Add(
+                    new TestSettings
+                    {
+                        Name = value.Name,
+                        Value = value.Value,
+                        IsEnabled = value.IsEnabled,
+                    }
+                );
             });
 
             // Act - Save multiple times with sufficient delay between saves
@@ -564,16 +567,14 @@ public class WritableOptionsSimpleInstanceTests
         }
         finally
         {
-            Thread.Sleep(100);
+            await Task.Delay(100);
             if (Directory.Exists(testDirectory))
             {
                 try
                 {
                     Directory.Delete(testDirectory, recursive: true);
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
     }
@@ -615,16 +616,14 @@ public class WritableOptionsSimpleInstanceTests
         }
         finally
         {
-            Thread.Sleep(100);
+            await Task.Delay(100);
             if (Directory.Exists(testDirectory))
             {
                 try
                 {
                     Directory.Delete(testDirectory, recursive: true);
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
     }
@@ -671,16 +670,14 @@ public class WritableOptionsSimpleInstanceTests
         }
         finally
         {
-            Thread.Sleep(100);
+            await Task.Delay(100);
             if (Directory.Exists(testDirectory))
             {
                 try
                 {
                     Directory.Delete(testDirectory, recursive: true);
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
     }

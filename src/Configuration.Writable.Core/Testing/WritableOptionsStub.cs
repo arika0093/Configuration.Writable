@@ -75,7 +75,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     public IDisposable? OnChange(Action<T, string?> listener)
     {
         ChangeListeners.Add(listener);
-        return null;
+        return new DisposableAction(() => ChangeListeners.Remove(listener));
     }
 
     /// <inheritdoc/>
@@ -136,6 +136,12 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
             listener(current, name);
         }
         return Task.CompletedTask;
+    }
+
+    // A simple disposable action implementation
+    private sealed class DisposableAction(Action disposeAction) : IDisposable
+    {
+        public void Dispose() => disposeAction();
     }
 }
 

@@ -233,7 +233,7 @@ For example:
 ```csharp
 public class MyService(IWritableOptions<UserSetting> options) : IDisposable
 {
-    public WatchStart()
+    public void WatchStart()
     {
         // register change callback
         var disposable = options.OnChange(newSetting => {

@@ -311,7 +311,10 @@ public class KeyedServicesIntegrationTests
     [Fact]
     public async Task KeyedOptions_OnChange_ShouldReceiveNotifications()
     {
-        var testDirectory = Path.Combine(Path.GetTempPath(), $"KeyedOnChangeTest_{Guid.NewGuid():N}");
+        var testDirectory = Path.Combine(
+            Path.GetTempPath(),
+            $"KeyedOnChangeTest_{Guid.NewGuid():N}"
+        );
         Directory.CreateDirectory(testDirectory);
         var testFilePath = Path.Combine(testDirectory, "test.json");
 
@@ -341,7 +344,9 @@ public class KeyedServicesIntegrationTests
             );
 
             // Trigger a change through the underlying named options
-            var namedOptions = serviceProvider.GetRequiredService<IWritableNamedOptions<AppSettings>>();
+            var namedOptions = serviceProvider.GetRequiredService<
+                IWritableNamedOptions<AppSettings>
+            >();
             await namedOptions.SaveAsync(
                 "ChangeTest",
                 settings => settings.ApplicationName = "Changed"
@@ -354,16 +359,14 @@ public class KeyedServicesIntegrationTests
         }
         finally
         {
-            Thread.Sleep(100);
+            await Task.Delay(100);
             if (Directory.Exists(testDirectory))
             {
                 try
                 {
                     Directory.Delete(testDirectory, recursive: true);
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
     }

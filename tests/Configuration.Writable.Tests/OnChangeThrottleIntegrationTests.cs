@@ -77,7 +77,7 @@ public class OnChangeThrottleIntegrationTests : IDisposable
             s.Name = "initial";
             s.Value = 0;
         });
-        Thread.Sleep(100); // Allow file watcher to initialize
+        await Task.Delay(100); // Allow file watcher to initialize
 
         var initialChangeCount = changeCount;
 
