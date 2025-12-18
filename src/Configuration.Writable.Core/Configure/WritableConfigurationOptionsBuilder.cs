@@ -1,12 +1,10 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using Configuration.Writable.FileProvider;
-using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -16,12 +14,12 @@ namespace Configuration.Writable;
 /// Options for initializing writable configuration.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public record WritableConfigurationOptionsBuilder<T>
+public record WritableConfigurationOptionsBuilder<T> : ILocationBuilderWithDirectory
     where T : class, new()
 {
     private const string DefaultSectionName = "";
-    private const string DefaultFileName = "usersettings";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
+    private readonly SaveLocationManager _saveLocationManager = new();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
@@ -39,7 +37,18 @@ public record WritableConfigurationOptionsBuilder<T>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
     /// Extension is determined by the <see cref="IFormatProvider"/> so it can be omitted.
     /// </summary>
-    public string? FilePath { get; set; }
+    public string? FilePath
+    {
+        get => _saveLocationManager.Build(FormatProvider);
+        set
+        {
+            _saveLocationManager.LocationBuilders.Clear();
+            if(value != null)
+            {
+                AddFilePath(value);
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
@@ -62,7 +71,8 @@ public record WritableConfigurationOptionsBuilder<T>
     public bool RegisterInstanceToContainer { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets a value indicating whether validation using data annotation attributes is enabled. Defaults to true.
+    /// Gets or sets a value indicating whether validation using data annotation attributes is enabled. Defaults to true. <br/>
+    /// If you want to use Source-Generator based validation or custom validation only, set this to false.
     /// </summary>
     public bool UseDataAnnotationsValidation { get; set; } = true;
 
@@ -75,60 +85,9 @@ public record WritableConfigurationOptionsBuilder<T>
     /// <summary>
     /// Get or sets the name of the configuration section. <br/>
     /// You can use ":" or "__" to specify nested sections, e.g. "Parent:Child". <br/>
-    /// If empty that means the root of the configuration file. <br/>
-    /// If null, the default section name will be used (empty string).
+    /// If empty that means the root of the configuration file.
     /// </summary>
-    [AllowNull]
-    public string SectionName
-    {
-        get { return _sectionName ?? DefaultSectionName; }
-        set { _sectionName = value; }
-    }
-    private string? _sectionName = null;
-
-    /// <summary>
-    /// Sets the configuration folder to the standard save location for the specified application.
-    /// </summary>
-    /// <remarks>
-    /// in Windows: %APPDATA%/<paramref name="applicationId"/> <br/>
-    /// in macOS: ~/Library/Application Support/<paramref name="applicationId"/> <br/>
-    /// in Linux: $XDG_CONFIG_HOME/<paramref name="applicationId"/>
-    /// </remarks>
-    /// <param name="applicationId">The unique identifier of the application. This is used to determine the subdirectory within the user
-    /// configuration root directory.</param>
-    /// <returns>The full path to the configuration file.</returns>
-    public string UseStandardSaveLocation(string applicationId)
-    {
-        var root = UserConfigurationPath.GetUserConfigRootDirectory();
-        ConfigFolder = Path.Combine(root, applicationId);
-        return ConfigFilePath;
-    }
-
-    /// <summary>
-    /// Sets the configuration folder to the directory where the executable is located. (default behavior)
-    /// </summary>
-    /// <remarks>
-    /// This uses <see cref="AppContext.BaseDirectory"/> to determine the executable directory.
-    /// </remarks>
-    /// <returns>The full path to the configuration file.</returns>
-    public string UseExecutableDirectory()
-    {
-        ConfigFolder = AppContext.BaseDirectory;
-        return ConfigFilePath;
-    }
-
-    /// <summary>
-    /// Sets the configuration folder to the current working directory.
-    /// </summary>
-    /// <remarks>
-    /// This uses <see cref="Directory.GetCurrentDirectory()"/> to determine the current directory.
-    /// </remarks>
-    /// <returns>The full path to the configuration file.</returns>
-    public string UseCurrentDirectory()
-    {
-        ConfigFolder = Directory.GetCurrentDirectory();
-        return ConfigFilePath;
-    }
+    public string SectionName { get; set; } = DefaultSectionName;
 
     /// <summary>
     /// Adds a custom validation function to be executed before saving configuration.
@@ -166,6 +125,7 @@ public record WritableConfigurationOptionsBuilder<T>
     /// </summary>
     public WritableConfigurationOptions<T> BuildOptions()
     {
+        var configFilePath = _saveLocationManager.Build(FormatProvider);
         var validator = BuildValidator();
         // override provider's file provider if set
         if (FileProvider != null)
@@ -176,34 +136,13 @@ public record WritableConfigurationOptionsBuilder<T>
         return new WritableConfigurationOptions<T>
         {
             FormatProvider = FormatProvider,
-            ConfigFilePath = ConfigFilePath,
+            ConfigFilePath = configFilePath,
             InstanceName = InstanceName,
             SectionName = SectionName,
             OnChangeThrottleMs = OnChangeThrottleMs,
             Logger = Logger,
             Validator = validator,
         };
-    }
-
-    /// <summary>
-    /// Gets the full file path to the configuration file, combining config folder and file name. <br/>
-    /// If ConfigFolder is set, the file will be saved in that folder; otherwise, it will be saved in the same folder as the executable.
-    /// </summary>
-    internal string ConfigFilePath
-    {
-        get
-        {
-            var filePath = FilePathWithExtension;
-            // if ConfigFolder is not set, use executable directory as default
-            if (string.IsNullOrWhiteSpace(ConfigFolder))
-            {
-                UseExecutableDirectory();
-            }
-            // ConfigFolder is not null
-            var combinedDir = Path.Combine(ConfigFolder!, filePath);
-            var fullPath = Path.GetFullPath(combinedDir);
-            return fullPath;
-        }
     }
 
     /// <summary>
@@ -270,37 +209,28 @@ public record WritableConfigurationOptionsBuilder<T>
         return ValidateOptionsResult.Fail(errors);
     }
 
-    // configuration folder path, if set, appended to the directory of FileName (if any)
-    private string? ConfigFolder { get; set; } = null;
+    /// <inheritdoc />
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public IEnumerable<string> SaveLocationPaths =>
+        _saveLocationManager.LocationBuilders.SelectMany(b => b.SaveLocationPaths);
 
-    // get the file name with extension, if no extension, add default extension from provider
-    private string FilePathWithExtension
-    {
-        get
-        {
-            var filePath = FilePath;
-#if NET
-            if (string.IsNullOrWhiteSpace(filePath))
-#else
-            if (string.IsNullOrWhiteSpace(filePath) || filePath is null)
-#endif
-            {
-                if (InstanceName != Microsoft.Extensions.Options.Options.DefaultName)
-                {
-                    filePath = InstanceName;
-                }
-                else
-                {
-                    filePath = DefaultFileName;
-                }
-            }
-            // if no extension, add default extension
-            var fileName = Path.GetFileName(filePath);
-            if (!fileName.Contains(".") && !string.IsNullOrWhiteSpace(FormatProvider.FileExtension))
-            {
-                filePath += $".{FormatProvider.FileExtension}";
-            }
-            return filePath;
-        }
-    }
+    /// <inheritdoc />
+    public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) =>
+        _saveLocationManager.MakeLocationBuilder().UseStandardSaveDirectory(applicationId, enabled);
+
+    /// <inheritdoc />
+    public ILocationBuilder UseExecutableDirectory(bool enabled = true) =>
+        _saveLocationManager.MakeLocationBuilder().UseExecutableDirectory(enabled);
+
+    /// <inheritdoc />
+    public ILocationBuilder UseCurrentDirectory(bool enabled = true) => 
+        _saveLocationManager.MakeLocationBuilder().UseCurrentDirectory(enabled);
+
+    /// <inheritdoc />
+    public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder, bool enabled = true) =>
+        _saveLocationManager.MakeLocationBuilder().UseSpecialFolder(folder, enabled);
+
+    /// <inheritdoc />
+    public ILocationBuilder AddFilePath(string path) => 
+        _saveLocationManager.MakeLocationBuilder().AddFilePath(path);
 }

@@ -1,16 +1,15 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using Configuration.Writable.Internal;
+using Configuration.Writable.Configure;
 
 namespace Configuration.Writable.Tests;
 
-public class UserConfigurationPathTests
+public class StandardSaveLocationUtilityTests
 {
     [FactOnWindows]
-    public void GetUserConfigRootDirectory_OnWindows_ShouldReturnAppData()
+    public void GetConfigDirectory_OnWindows_ShouldReturnAppData()
     {
-        var path = UserConfigurationPath.GetUserConfigRootDirectory();
+        var path = StandardSaveLocationUtility.GetConfigDirectory();
         var expectedPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
         path.ShouldBe(expectedPath);
@@ -18,7 +17,7 @@ public class UserConfigurationPathTests
     }
 
     [FactOnMacOS]
-    public void GetUserConfigRootDirectory_OnMacOS_WithXDGConfigHome_ShouldReturnXDGPath()
+    public void GetConfigDirectory_OnMacOS_WithXDGConfigHome_ShouldReturnXDGPath()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
         var testXdgPath = "/tmp/test_xdg_config";
@@ -27,7 +26,7 @@ public class UserConfigurationPathTests
         {
             Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", testXdgPath);
 
-            var path = UserConfigurationPath.GetUserConfigRootDirectory();
+            var path = StandardSaveLocationUtility.GetConfigDirectory();
 
             path.ShouldBe(testXdgPath);
         }
@@ -38,7 +37,7 @@ public class UserConfigurationPathTests
     }
 
     [FactOnMacOS]
-    public void GetUserConfigRootDirectory_OnMacOS_WithoutXDGConfigHome_ShouldReturnLibraryApplicationSupport()
+    public void GetConfigDirectory_OnMacOS_WithoutXDGConfigHome_ShouldReturnLibraryApplicationSupport()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
 
@@ -46,7 +45,7 @@ public class UserConfigurationPathTests
         {
             Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", null);
 
-            var path = UserConfigurationPath.GetUserConfigRootDirectory();
+            var path = StandardSaveLocationUtility.GetConfigDirectory();
             var expectedPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 "Library",
@@ -62,7 +61,7 @@ public class UserConfigurationPathTests
     }
 
     [FactOnLinux]
-    public void GetUserConfigRootDirectory_OnLinux_WithXDGConfigHome_ShouldReturnXDGPath()
+    public void GetConfigDirectory_OnLinux_WithXDGConfigHome_ShouldReturnXDGPath()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
         var testXdgPath = "/tmp/test_xdg_config";
@@ -71,7 +70,7 @@ public class UserConfigurationPathTests
         {
             Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", testXdgPath);
 
-            var path = UserConfigurationPath.GetUserConfigRootDirectory();
+            var path = StandardSaveLocationUtility.GetConfigDirectory();
 
             path.ShouldBe(testXdgPath);
         }
@@ -82,7 +81,7 @@ public class UserConfigurationPathTests
     }
 
     [FactOnLinux]
-    public void GetUserConfigRootDirectory_OnLinux_WithoutXDGConfigHome_ShouldReturnDotConfig()
+    public void GetConfigDirectory_OnLinux_WithoutXDGConfigHome_ShouldReturnDotConfig()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
 
@@ -90,7 +89,7 @@ public class UserConfigurationPathTests
         {
             Environment.SetEnvironmentVariable("XDG_CONFIG_HOME", null);
 
-            var path = UserConfigurationPath.GetUserConfigRootDirectory();
+            var path = StandardSaveLocationUtility.GetConfigDirectory();
             var expectedPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 ".config"
@@ -106,10 +105,10 @@ public class UserConfigurationPathTests
     }
 
     [Fact]
-    public void GetUserConfigRootDirectory_ConsistentResults_ShouldReturnSamePathOnMultipleCalls()
+    public void GetConfigDirectory_ConsistentResults_ShouldReturnSamePathOnMultipleCalls()
     {
-        var path1 = UserConfigurationPath.GetUserConfigRootDirectory();
-        var path2 = UserConfigurationPath.GetUserConfigRootDirectory();
+        var path1 = StandardSaveLocationUtility.GetConfigDirectory();
+        var path2 = StandardSaveLocationUtility.GetConfigDirectory();
 
         path1.ShouldBe(path2);
     }

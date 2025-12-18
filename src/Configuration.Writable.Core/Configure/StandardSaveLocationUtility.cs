@@ -2,17 +2,17 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Configuration.Writable.Internal;
+namespace Configuration.Writable.Configure;
 
 /// <summary>
 /// Provides methods to get user-specific configuration file paths.
 /// </summary>
-internal static class UserConfigurationPath
+internal static class StandardSaveLocationUtility
 {
     /// <summary>
     /// Get user config directory path for the current platform.
     /// </summary>
-    public static string GetUserConfigRootDirectory()
+    public static string GetConfigDirectory()
     {
 #if NETFRAMEWORK
         // in .NET Framework, windows only
@@ -23,14 +23,15 @@ internal static class UserConfigurationPath
             // Windows: %APPDATA%
             return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         }
+        // in macOS or Linux: if XDG_CONFIG_HOME is set, use it
         var xdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+        if (!string.IsNullOrEmpty(xdgConfig))
+        {
+            return xdgConfig;
+        }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            // macOS: ~/Library/Application Support or $XDG_CONFIG_HOME
-            if (!string.IsNullOrEmpty(xdgConfig))
-            {
-                return xdgConfig;
-            }
+            // macOS: ~/Library/Application Support
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 "Library",
@@ -39,11 +40,7 @@ internal static class UserConfigurationPath
         }
         else
         {
-            // Linux: XDG_CONFIG_HOME or ~/.config
-            if (!string.IsNullOrEmpty(xdgConfig))
-            {
-                return xdgConfig;
-            }
+            // Linux: ~/.config
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Personal),
                 ".config"

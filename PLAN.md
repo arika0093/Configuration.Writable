@@ -2,7 +2,7 @@
 特定のフォルダに保存したい場合は `UseStandardSaveLocation()`などを使用してフォルダを指定する構成となっている。
 これを以下のように改修したい。
 
-src/Configuration.Writable.Core/WritableConfigurationOptionsBuilder.csも参照して。
+src/Configuration.Writable.Core/WritableConfigurationOptionsBuilder.csも参照。
 
 * メソッドチェーンで繋げられるようにする。
 * 複数の指定を可能にする(その場合、上位のパスが利用可能ならそこを、なければ下位のパスを利用する)
