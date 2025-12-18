@@ -41,7 +41,7 @@ public class WritableOptionsSimpleInstance<T>
             );
         }
         var options = new List<WritableOptionsConfiguration<T>> { _options };
-        var optionsRegistry = new WritableOptionsConfigRegistoryImpl<T>(options);
+        var optionsRegistry = new WritableOptionsConfigRegistryImpl<T>(options);
         var optionsMonitor = new OptionsMonitorImpl<T>(optionsRegistry);
         var writableOptions = new WritableOptionsImpl<T>(optionsMonitor, optionsRegistry);
         return writableOptions;

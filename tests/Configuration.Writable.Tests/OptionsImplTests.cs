@@ -27,7 +27,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -53,7 +53,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -78,7 +78,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -104,7 +104,7 @@ public class OptionsImplTests
         // Preload data using the provider
         await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
 
-        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
