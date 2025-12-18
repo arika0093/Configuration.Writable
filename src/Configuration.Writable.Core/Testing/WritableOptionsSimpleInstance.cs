@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.Testing;
 
 /// <summary>
 /// Provides methods to initialize and retrieve writable configuration instances for a specified options type.
@@ -10,7 +11,7 @@ namespace Configuration.Writable;
 public class WritableOptionsSimpleInstance<T>
     where T : class, new()
 {
-    private WritableConfigurationOptions<T>? _options = null;
+    private WritableOptionsConfiguration<T>? _options = null;
 
     /// <summary>
     /// Initializes writable configuration with default settings.
@@ -21,9 +22,9 @@ public class WritableOptionsSimpleInstance<T>
     /// Initializes writable configuration with custom options.
     /// </summary>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
-    public void Initialize(Action<WritableConfigurationOptionsBuilder<T>> configurationOptions)
+    public void Initialize(Action<WritableOptionsConfigBuilder<T>> configurationOptions)
     {
-        var optionBuilder = new WritableConfigurationOptionsBuilder<T>();
+        var optionBuilder = new WritableOptionsConfigBuilder<T>();
         configurationOptions(optionBuilder);
         _options = optionBuilder.BuildOptions();
     }
@@ -39,8 +40,8 @@ public class WritableOptionsSimpleInstance<T>
                 "WritableOptionsSimpleInstance is not initialized. Call Initialize() before GetOptions()."
             );
         }
-        var options = new List<WritableConfigurationOptions<T>> { _options };
-        var optionsRegistry = new OptionsConfigRegistryImpl<T>(options);
+        var options = new List<WritableOptionsConfiguration<T>> { _options };
+        var optionsRegistry = new WritableOptionsConfigRegistoryImpl<T>(options);
         var optionsMonitor = new OptionsMonitorImpl<T>(optionsRegistry);
         var writableOptions = new WritableOptionsImpl<T>(optionsMonitor, optionsRegistry);
         return writableOptions;

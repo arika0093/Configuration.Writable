@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
@@ -13,13 +14,13 @@ public class OptionsSnapshotImplTests
         public int Value { get; set; } = 42;
     }
 
-    private WritableConfigurationOptions<TestSettings> CreateConfigOptions(
+    private WritableOptionsConfiguration<TestSettings> CreateConfigOptions(
         string fileName,
         string instanceName,
         InMemoryFileProvider FileProvider
     )
     {
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = fileName,
             InstanceName = instanceName,
@@ -39,7 +40,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -63,7 +64,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -87,7 +88,7 @@ public class OptionsSnapshotImplTests
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
         await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -110,7 +111,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -150,7 +151,7 @@ public class OptionsSnapshotImplTests
         await configOptions1.FormatProvider.SaveAsync(settings1, configOptions1);
         await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([
             configOptions1,
             configOptions2,
         ]);
@@ -179,7 +180,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -202,7 +203,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create first snapshot
@@ -247,7 +248,7 @@ public class OptionsSnapshotImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -267,7 +268,7 @@ public class OptionsSnapshotImplTests
         var initialSettings = new TestSettings { Name = "initial", Value = 100 };
         await configOptions.FormatProvider.SaveAsync(initialSettings, configOptions);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create snapshot with initial data

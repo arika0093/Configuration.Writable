@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
 using Microsoft.Extensions.Options;
 
@@ -17,13 +18,13 @@ public class OptionsMonitorImplTests
         public int Value { get; set; } = 42;
     }
 
-    private WritableConfigurationOptions<TestSettings> CreateConfigOptions(
+    private WritableOptionsConfiguration<TestSettings> CreateConfigOptions(
         string fileName,
         string instanceName,
         InMemoryFileProvider FileProvider
     )
     {
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = fileName,
             InstanceName = instanceName,
@@ -43,7 +44,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -66,7 +67,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -89,7 +90,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -112,7 +113,7 @@ public class OptionsMonitorImplTests
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
         await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -134,7 +135,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
@@ -152,7 +153,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -174,7 +175,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
         TestSettings? changedValue = null;
@@ -213,7 +214,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
@@ -239,7 +240,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var notified = false;
 
@@ -267,7 +268,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Get value to cache it
@@ -291,7 +292,7 @@ public class OptionsMonitorImplTests
         var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
         var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([
             configOptions1,
             configOptions2,
         ]);
@@ -321,7 +322,7 @@ public class OptionsMonitorImplTests
         // Preload data
         await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -345,7 +346,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
@@ -363,7 +364,7 @@ public class OptionsMonitorImplTests
             FileProvider
         );
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
@@ -392,7 +393,7 @@ public class OptionsMonitorImplTests
         await configOptions1.FormatProvider.SaveAsync(settings1, configOptions1);
         await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([
             configOptions1,
             configOptions2,
         ]);

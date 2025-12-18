@@ -23,16 +23,16 @@ namespace Configuration.Writable;
 /// <param name="registryInstance">The configuration options registry instance.</param>
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
-    IOptionsConfigRegistry<T> registryInstance
+    IWritableOptionConfigRegistory<T> registryInstance
 ) : IWritableOptions<T>, IWritableNamedOptions<T>
     where T : class, new()
 {
     /// <inheritdoc />
-    public WritableConfigurationOptions<T> GetConfigurationOptions() =>
+    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
         GetOptions(MEOptions.DefaultName);
 
     /// <inheritdoc />
-    public WritableConfigurationOptions<T> GetConfigurationOptions(string name) => GetOptions(name);
+    public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name) => GetOptions(name);
 
     /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
@@ -80,7 +80,7 @@ internal sealed class WritableOptionsImpl<T>(
     /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">Thrown when validation fails.</exception>
     private async Task SaveCoreAsync(
         T newConfig,
-        WritableConfigurationOptions<T> options,
+        WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
     {
@@ -116,10 +116,10 @@ internal sealed class WritableOptionsImpl<T>(
     /// Retrieves a writable configuration option of the specified type and name.
     /// </summary>
     /// <param name="name">The name of the configuration option to retrieve. This value is case-sensitive.</param>
-    /// <returns>The <see cref="WritableConfigurationOptions{T}"/> instance that matches the specified name.</returns>
+    /// <returns>The <see cref="WritableOptionsConfiguration{T}"/> instance that matches the specified name.</returns>
     /// <exception cref="InvalidOperationException">Thrown if multiple configuration options with the specified name are found, or if no configuration option with
     /// the specified name exists.</exception>
-    private WritableConfigurationOptions<T> GetOptions(string name) => registryInstance.Get(name);
+    private WritableOptionsConfiguration<T> GetOptions(string name) => registryInstance.Get(name);
 
     /// <summary>
     /// Creates a deep copy of the specified object using JSON serialization/deserialization.

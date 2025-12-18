@@ -24,5 +24,6 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Shouldly" />
+    <Using Include="Configuration.Writable.Testing" />
   </ItemGroup>
 </Project>

@@ -7,19 +7,19 @@ namespace Configuration.Writable
             where T :  class { }
         public static void Initialize<T>()
             where T :  class { }
-        public static void Initialize<T>(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions)
+        public static void Initialize<T>(System.Action<Configuration.Writable.WritableOptionsConfigurationBuilder<T>> configurationOptions)
             where T :  class { }
     }
     public class WritableOptionsSimpleInstance<T>
         where T :  class
     {
         public WritableOptionsSimpleInstance() { }
-        public void Add(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
-        public void Add(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
+        public void Add(Configuration.Writable.WritableOptionsConfigurationBuilder<T> configurationBuilder) { }
+        public void Add(System.Action<Configuration.Writable.WritableOptionsConfigurationBuilder<T>> configurationOptions) { }
         public Configuration.Writable.IWritableOptions<T> GetOptions() { }
         public void Initialize() { }
-        public void Initialize(Configuration.Writable.WritableConfigurationOptionsBuilder<T> configurationBuilder) { }
-        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
+        public void Initialize(Configuration.Writable.WritableOptionsConfigurationBuilder<T> configurationBuilder) { }
+        public void Initialize(System.Action<Configuration.Writable.WritableOptionsConfigurationBuilder<T>> configurationOptions) { }
     }
     public static class WritableOptionsExtensions
     {
@@ -27,11 +27,11 @@ namespace Configuration.Writable
             where T :  class { }
         public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddWritableOptions<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Configuration.Writable.WritableConfigurationOptionsBuilder<T> confBuilder)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Configuration.Writable.WritableOptionsConfigurationBuilder<T> confBuilder)
             where T :  class { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.WritableOptionsConfigurationBuilder<T>> configureOptions)
             where T :  class { }
-        public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddWritableOptions<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder, System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configureOptions)
+        public static Microsoft.Extensions.Hosting.IHostApplicationBuilder AddWritableOptions<T>(this Microsoft.Extensions.Hosting.IHostApplicationBuilder builder, System.Action<Configuration.Writable.WritableOptionsConfigurationBuilder<T>> configureOptions)
             where T :  class { }
     }
 }

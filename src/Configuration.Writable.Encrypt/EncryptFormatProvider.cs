@@ -69,7 +69,7 @@ public class EncryptFormatProvider : FormatProviderBase
     public override string FileExtension => "";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -90,7 +90,7 @@ public class EncryptFormatProvider : FormatProviderBase
     }
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
     {
         try
         {
@@ -134,7 +134,7 @@ public class EncryptFormatProvider : FormatProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options,
+        WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
     {
@@ -146,7 +146,7 @@ public class EncryptFormatProvider : FormatProviderBase
         // Use a memory stream to simulate JsonProvider saving
         // We need to temporarily redirect JsonProvider to save to memory
         var tempFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        var tempOptions = new WritableConfigurationOptions<T>
+        var tempOptions = new WritableOptionsConfiguration<T>
         {
             ConfigFilePath = tempFilePath,
             SectionName = options.SectionName,

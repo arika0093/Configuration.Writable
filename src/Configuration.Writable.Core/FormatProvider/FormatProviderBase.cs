@@ -20,17 +20,17 @@ public abstract class FormatProviderBase : IFormatProvider
     public virtual IFileProvider FileProvider { get; set; } = new CommonFileProvider();
 
     /// <inheritdoc />
-    public abstract T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+    public abstract T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
         where T : class, new();
 
     /// <inheritdoc />
-    public abstract T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+    public abstract T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
         where T : class, new();
 
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options,
+        WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
         where T : class, new();

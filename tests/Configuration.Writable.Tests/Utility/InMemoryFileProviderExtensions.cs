@@ -1,4 +1,5 @@
-﻿using Configuration.Writable.FileProvider;
+﻿using Configuration.Writable.Configure;
+using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable;
 
@@ -9,7 +10,7 @@ public static class InMemoryFileProviderExtensions
     /// </summary>
     /// <param name="inMemoryFileProvider">The in-memory file writer to use for subsequent file write and read operations.</param>
     public static void UseInMemoryFileProvider<T>(
-        this WritableConfigurationOptionsBuilder<T> builder,
+        this WritableOptionsConfigBuilder<T> builder,
         InMemoryFileProvider inMemoryFileProvider
     )
         where T : class, new()

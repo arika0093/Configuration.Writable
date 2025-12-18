@@ -9,7 +9,7 @@ A library that extends `Configuration.Writable` to support Yaml format for confi
 ```csharp
 using Configuration.Writable;
 
-WritableConfig.Initialize<UserSecretSetting>(opt => {
+WritableOptions.Initialize<UserSecretSetting>(opt => {
     opt.FormatProvider = new YamlFormatProvider();
 });
 ```

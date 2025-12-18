@@ -37,7 +37,7 @@ public class YamlFormatProvider : FormatProviderBase
     public override string FileExtension => "yaml";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -58,7 +58,7 @@ public class YamlFormatProvider : FormatProviderBase
     }
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
     {
         using var reader = new StreamReader(stream, Encoding);
         var yamlContent = reader.ReadToEnd();
@@ -143,7 +143,7 @@ public class YamlFormatProvider : FormatProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options,
+        WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
     {
@@ -158,7 +158,7 @@ public class YamlFormatProvider : FormatProviderBase
     /// </summary>
     private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        WritableConfigurationOptions<T> options
+        WritableOptionsConfiguration<T> options
     )
         where T : class, new()
     {

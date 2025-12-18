@@ -79,17 +79,17 @@ Each provider package is separate to minimize dependencies and allow users to in
 - `OptionsImpl<T>` and `OptionsSnapshotImpl<T>`: Standard options pattern implementations
 
 **Configuration Management**
-- `WritableConfigurationOptions<T>`: Record containing all configuration for a specific settings type
+- `WritableOptionsConfiguration<T>`: Record containing all configuration for a specific settings type
   - Includes: Provider, FilePath, InstanceName, SectionName, Logger, Validator
-- `WritableConfigurationOptionsBuilder<T>`: Fluent API for building configuration options
+- `WritableOptionsConfigurationBuilder<T>`: Fluent API for building configuration options
   - Methods like `UseStandardSaveLocation()`, `WithValidator()`, `UseDataAnnotationsValidation`
 
 ### Usage Patterns
 
 **Without DI:**
 ```csharp
-WritableConfig.Initialize<T>(opt => { /* configure */ });
-var options = WritableConfig.GetOptions<T>();
+WritableOptions.Initialize<T>(opt => { /* configure */ });
+var options = WritableOptions.GetOptions<T>();
 await options.SaveAsync(setting => setting.Prop = value);
 ```
 

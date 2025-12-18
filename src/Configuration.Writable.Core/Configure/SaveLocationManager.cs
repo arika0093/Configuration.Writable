@@ -3,9 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Configuration.Writable.Configure;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.Configure;
 
 /// <summary>
 /// Manages multiple location builders to determine the save location for application settings.

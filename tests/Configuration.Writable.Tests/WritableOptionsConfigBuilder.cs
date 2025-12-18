@@ -1,10 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
+using Configuration.Writable.Configure;
 
 namespace Configuration.Writable.Tests;
 
-public class WritableConfigurationOptionsBuilderTests
+public class WritableOptionsConfigBuilderTests
 {
     public class TestSettings
     {
@@ -14,7 +15,7 @@ public class WritableConfigurationOptionsBuilderTests
     [Fact]
     public void ConfigFilePath_WithDefaultSettings_ShouldUseDefaultFileName()
     {
-        var options = new WritableConfigurationOptionsBuilder<TestSettings>();
+        var options = new WritableOptionsConfigBuilder<TestSettings>();
 
         var path = options.BuildOptions().ConfigFilePath;
         Path.GetFileName(path).ShouldBe("usersettings.json");
@@ -23,7 +24,7 @@ public class WritableConfigurationOptionsBuilderTests
     [Fact]
     public void ConfigFilePath_WithCustomFileName_ShouldUseCustomFileName()
     {
-        var options = new WritableConfigurationOptionsBuilder<TestSettings> { FilePath = "custom" };
+        var options = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "custom" };
 
         var path = options.BuildOptions().ConfigFilePath;
         Path.GetFileName(path).ShouldBe("custom.json");
@@ -32,7 +33,7 @@ public class WritableConfigurationOptionsBuilderTests
     [Fact]
     public void SectionName_WithDefaultSettings_ShouldReturnEmpty()
     {
-        var options = new WritableConfigurationOptionsBuilder<TestSettings>();
+        var options = new WritableOptionsConfigBuilder<TestSettings>();
 
         options.SectionName.ShouldBeEmpty();
     }
@@ -43,7 +44,7 @@ public class WritableConfigurationOptionsBuilderTests
         var originalCurrentDirectory = Directory.GetCurrentDirectory();
         try
         {
-            var options = new WritableConfigurationOptionsBuilder<TestSettings>
+            var options = new WritableOptionsConfigBuilder<TestSettings>
             {
                 FilePath = "config/relative/test",
             };
@@ -92,7 +93,7 @@ public class WritableConfigurationOptionsBuilderTests
     [Fact]
     public void UseExecutableDirectory_ShouldSetConfigFolderToBaseDirectory()
     {
-        var options = new WritableConfigurationOptionsBuilder<TestSettings>();
+        var options = new WritableOptionsConfigBuilder<TestSettings>();
         options.UseExecutableDirectory().AddFilePath("test");
 
         var expectedPath = Path.Combine(AppContext.BaseDirectory, "test.json");
@@ -102,7 +103,7 @@ public class WritableConfigurationOptionsBuilderTests
     [Fact]
     public void UseCurrentDirectory_ShouldSetConfigFolderToBaseDirectory()
     {
-        var options = new WritableConfigurationOptionsBuilder<TestSettings>();
+        var options = new WritableOptionsConfigBuilder<TestSettings>();
         options.UseCurrentDirectory().AddFilePath("usersettings");
 
         var expectedPath = Path.Combine(Directory.GetCurrentDirectory(), "usersettings.json");

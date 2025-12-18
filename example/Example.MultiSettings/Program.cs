@@ -5,13 +5,13 @@ using Configuration.Writable.FileProvider;
 var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" };
 
 // initialize each setting with the same file provider
-WritableConfig.Initialize<UserSetting>(opt =>
+WritableOptions.Initialize<UserSetting>(opt =>
 {
     opt.FilePath = "usersettings";
     // use common file provider with zip file
     opt.FileProvider = zipFileProvider;
 });
-WritableConfig.Initialize<UserSecretSetting>(opt =>
+WritableOptions.Initialize<UserSecretSetting>(opt =>
 {
     opt.FilePath = "secrets";
     opt.FileProvider = zipFileProvider;
@@ -20,8 +20,8 @@ WritableConfig.Initialize<UserSecretSetting>(opt =>
 });
 
 // and get each setting
-var userOptions = WritableConfig.GetOptions<UserSetting>();
-var secretOptions = WritableConfig.GetOptions<UserSecretSetting>();
+var userOptions = WritableOptions.GetOptions<UserSetting>();
+var secretOptions = WritableOptions.GetOptions<UserSecretSetting>();
 
 // get value
 var user = userOptions.CurrentValue;

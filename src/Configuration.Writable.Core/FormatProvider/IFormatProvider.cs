@@ -27,7 +27,7 @@ public interface IFormatProvider
     /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
     /// <param name="options">The options that control how the configuration is loaded.</param>
     /// <returns>The deserialized configuration object.</returns>
-    T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+    T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
         where T : class, new();
 
     /// <summary>
@@ -37,7 +37,7 @@ public interface IFormatProvider
     /// <param name="stream">The stream containing the configuration data.</param>
     /// <param name="options">The options that control how the configuration is loaded.</param>
     /// <returns>The deserialized configuration object.</returns>
-    T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+    T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
         where T : class, new();
 
     /// <summary>
@@ -50,7 +50,7 @@ public interface IFormatProvider
     /// <returns>A task that represents the asynchronous save operation.</returns>
     Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options,
+        WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
         where T : class, new();

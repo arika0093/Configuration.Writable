@@ -39,11 +39,11 @@ Use `WritableConfig` as the starting point for reading and writing settings.
 using Configuration.Writable;
 
 // initialize once (at application startup)
-WritableConfig.Initialize<SampleSetting>();
+WritableOptions.Initialize<SampleSetting>();
 
 // -------------
 // get the writable config instance with the specified setting class
-var options = WritableConfig.GetOptions<SampleSetting>();
+var options = WritableOptions.GetOptions<SampleSetting>();
 
 // get the UserSetting instance
 var sampleSetting = options.CurrentValue;
@@ -103,7 +103,7 @@ You can change various settings as arguments to `Initialize` or `AddWritableOpti
 
 ```csharp
 // Without DI
-WritableConfig.Initialize<SampleSetting>(opt => { /* ... */ });
+WritableOptions.Initialize<SampleSetting>(opt => { /* ... */ });
 
 // With DI
 builder.Services.AddWritableOptions<UserSetting>(opt => { /* ... */ });
@@ -136,7 +136,7 @@ If you want to toggle between development and production environments, you can u
 // - production:  %APPDATA%/MyAppId/mysettings.json (on Windows)
 
 // without DI
-WritableConfig.Initialize<UserSetting>(opt => {
+WritableOptions.Initialize<UserSetting>(opt => {
     opt.FilePath = "mysettings.json";
 #if RELEASE
     opt.UseStandardSaveLocation("MyAppId");
@@ -303,7 +303,7 @@ builder.Services.AddWritableOptions<UserSetting>(opt => {
     // opt.UseDataAnnotationsValidation = false;
 });
 
-var options = WritableConfig.GetOptions<UserSetting>();
+var options = WritableOptions.GetOptions<UserSetting>();
 try {
     await options.SaveAsync(setting => {
         setting.Name = "ab"; // too short
@@ -443,12 +443,12 @@ public class MyService([FromKeyedService("First")] UserSetting options)
 > This is to avoid complicating usage.
 
 ### Dynamic Add/Remove Options
-You can dynamically add or remove writable options at runtime using `IOptionsConfigRegistry`.
+You can dynamically add or remove writable options at runtime using `IWritableOptionConfigRegistory`.
 for example, in addition to common application settings, it is useful when you want to have individual settings for each document opened by the user.
 
 ```csharp
-// use IOptionsConfigRegistry from DI
-public class DynamicOptionsService(IOptionsConfigRegistry<UserSetting> registry)
+// use IWritableOptionConfigRegistory from DI
+public class DynamicOptionsService(IWritableOptionConfigRegistory<UserSetting> registry)
 {
     public void AddNewOptions(string instanceName, string filePath)
     {
@@ -560,7 +560,7 @@ Provides the latest value at the current time.
 When the configuration file is updated, the latest value is automatically reflected.  
 These are very similar to the above `IOptionsMonitor<T>`, but differ in the following ways:
 
-* You can retrieve configuration options (such as file save location) via the `GetConfigurationOptions` method.
+* You can retrieve configuration options (such as file save location) via the `GetOptionsConfiguration` method.
 * The interfaces are split into two, depending on whether named access is supported:
   * `IReadOnlyOptions<T>`: Does not support named access, only accessible via `.CurrentValue`.
   * `IReadOnlyNamedOptions<T>`: Supports named access only via `.Get(name)`.

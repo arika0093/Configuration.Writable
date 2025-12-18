@@ -16,7 +16,7 @@ namespace Configuration.Writable;
 internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     where T : class, new()
 {
-    private readonly IOptionsConfigRegistry<T> _optionsRegistry;
+    private readonly IWritableOptionConfigRegistory<T> _optionsRegistry;
 
     private readonly Dictionary<string, T> _cache = [];
     private readonly Dictionary<string, T> _defaultValue = [];
@@ -26,7 +26,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly object _throttleTimersLock = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public OptionsMonitorImpl(IOptionsConfigRegistry<T> optionsRegistry)
+    public OptionsMonitorImpl(IWritableOptionConfigRegistory<T> optionsRegistry)
     {
         _optionsRegistry = optionsRegistry;
         // subscribe to options added/removed events
@@ -118,7 +118,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Called when new options are added to the registry.
-    private void OnOptionsAdded(WritableConfigurationOptions<T> options) =>
+    private void OnOptionsAdded(WritableOptionsConfiguration<T> options) =>
         InitializeOptions(options.InstanceName);
 
     // Called when options are removed from the registry.
@@ -172,7 +172,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Sets up a FileSystemWatcher to monitor changes to the configuration file.
-    private void SetupFileWatcher(WritableConfigurationOptions<T> options)
+    private void SetupFileWatcher(WritableOptionsConfiguration<T> options)
     {
         var filePath = options.ConfigFilePath;
         var directory = Path.GetDirectoryName(filePath);

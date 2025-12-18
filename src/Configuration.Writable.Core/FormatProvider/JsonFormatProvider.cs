@@ -30,7 +30,7 @@ public class JsonFormatProvider : FormatProviderBase
     public override string FileExtension => "json";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -51,7 +51,7 @@ public class JsonFormatProvider : FormatProviderBase
     }
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
     {
         var jsonDocument = JsonDocument.Parse(stream);
         var root = jsonDocument.RootElement;
@@ -86,7 +86,7 @@ public class JsonFormatProvider : FormatProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options,
+        WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
     {
@@ -101,7 +101,7 @@ public class JsonFormatProvider : FormatProviderBase
     /// </summary>
     private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        WritableConfigurationOptions<T> options
+        WritableOptionsConfiguration<T> options
     )
         where T : class, new()
     {

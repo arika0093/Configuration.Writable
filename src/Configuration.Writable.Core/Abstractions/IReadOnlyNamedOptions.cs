@@ -21,5 +21,5 @@ public interface IReadOnlyNamedOptions<T> : IReadOnlyOptionsCore<T>
     /// Retrieves the configuration settings object for the specified configuration section name.
     /// </summary>
     /// <param name="name">The name of the configuration section to retrieve options for.</param>
-    WritableConfigurationOptions<T> GetConfigurationOptions(string name);
+    WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
 }

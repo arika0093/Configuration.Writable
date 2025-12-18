@@ -2,25 +2,26 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Configuration.Writable.Configure;
 
 namespace Configuration.Writable.Options;
 
-internal class OptionsConfigRegistryImpl<T>(IEnumerable<WritableConfigurationOptions<T>> options)
-    : IOptionsConfigRegistry<T>
+internal class WritableOptionsConfigRegistoryImpl<T>(IEnumerable<WritableOptionsConfiguration<T>> options)
+    : IWritableOptionConfigRegistory<T>
     where T : class, new()
 {
     // Map of instance names to their corresponding writable configuration options
-    private readonly Dictionary<string, WritableConfigurationOptions<T>> _optionsMap =
+    private readonly Dictionary<string, WritableOptionsConfiguration<T>> _optionsMap =
         options.ToDictionary(opt => opt.InstanceName);
 
     /// <inheritdoc />
-    public event Action<WritableConfigurationOptions<T>> OnAdded = delegate { };
+    public event Action<WritableOptionsConfiguration<T>> OnAdded = delegate { };
 
     /// <inheritdoc />
     public event Action<string> OnRemoved = delegate { };
 
     /// <inheritdoc />
-    public WritableConfigurationOptions<T> Get(string instanceName)
+    public WritableOptionsConfiguration<T> Get(string instanceName)
     {
         if (_optionsMap.TryGetValue(instanceName, out var opt))
         {
@@ -33,9 +34,9 @@ internal class OptionsConfigRegistryImpl<T>(IEnumerable<WritableConfigurationOpt
     public IEnumerable<string> GetInstanceNames() => _optionsMap.Keys;
 
     /// <inheritdoc />
-    public bool TryAdd(Action<WritableConfigurationOptionsBuilder<T>> configure)
+    public bool TryAdd(Action<WritableOptionsConfigBuilder<T>> configure)
     {
-        var optionsBuilder = new WritableConfigurationOptionsBuilder<T>();
+        var optionsBuilder = new WritableOptionsConfigBuilder<T>();
         configure(optionsBuilder);
         var option = optionsBuilder.BuildOptions();
 #if NET

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Configuration.Writable.Tests;
 
-public class WritableConfigTests
+public class WritableOptionsSimpleInstanceTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
@@ -140,7 +140,7 @@ public class WritableConfigTests
         _instance.Initialize();
 
         var option = _instance.GetOptions();
-        var path = option.GetConfigurationOptions().ConfigFilePath;
+        var path = option.GetOptionsConfiguration().ConfigFilePath;
         path.ShouldNotBeNullOrEmpty();
         path.ShouldEndWith(".json");
     }

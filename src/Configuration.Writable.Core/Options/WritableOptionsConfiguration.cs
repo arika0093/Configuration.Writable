@@ -12,7 +12,7 @@ namespace Configuration.Writable;
 /// Options for initializing writable configuration.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public record WritableConfigurationOptions<T>
+public record WritableOptionsConfiguration<T>
     where T : class, new()
 {
     /// <summary>

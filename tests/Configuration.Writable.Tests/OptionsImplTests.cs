@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
@@ -18,7 +19,7 @@ public class OptionsImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
@@ -26,7 +27,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -44,7 +45,7 @@ public class OptionsImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
@@ -52,7 +53,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -69,7 +70,7 @@ public class OptionsImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = "custom",
@@ -77,7 +78,7 @@ public class OptionsImplTests
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions();
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 
@@ -92,7 +93,7 @@ public class OptionsImplTests
         var FileProvider = new InMemoryFileProvider();
         var testSettings = new TestSettings { Name = "test", Value = 100 };
 
-        var builder = new WritableConfigurationOptionsBuilder<TestSettings>
+        var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
@@ -103,7 +104,7 @@ public class OptionsImplTests
         // Preload data using the provider
         await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
 
-        var registry = new OptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var options = new OptionsImpl<TestSettings>(optionsMonitor);
 

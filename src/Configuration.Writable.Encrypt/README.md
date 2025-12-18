@@ -9,7 +9,7 @@ A library that extends `Configuration.Writable` to support encryption of configu
 ```csharp
 using Configuration.Writable;
 
-WritableConfig.Initialize<UserSecretSetting>(opt => {
+WritableOptions.Initialize<UserSecretSetting>(opt => {
     opt.FilePath = "my-secret-folder/secrets";
     opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 });

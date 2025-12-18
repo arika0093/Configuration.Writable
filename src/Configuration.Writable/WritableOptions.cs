@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using Configuration.Writable.Configure;
+using Configuration.Writable.Testing;
 
 namespace Configuration.Writable;
 
 /// <summary>
 /// Provides static utilities to initialize, retrieve, and save writable configuration.
 /// </summary>
-public static class WritableConfig
+public static class WritableOptions
 {
     // Store instances for different types to ensure singleton behavior per type
     private static readonly Dictionary<Type, object> _instances = [];
@@ -39,7 +41,7 @@ public static class WritableConfig
     /// </summary>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
     public static void Initialize<T>(
-        Action<WritableConfigurationOptionsBuilder<T>> configurationOptions
+        Action<WritableOptionsConfigBuilder<T>> configurationOptions
     )
         where T : class, new() => GetInternalInstance<T>().Initialize(configurationOptions);
 

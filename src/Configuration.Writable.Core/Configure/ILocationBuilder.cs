@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.Configure;
 
 /// <summary>
 /// Defines methods to configure the save location for application settings.

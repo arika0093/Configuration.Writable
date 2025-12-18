@@ -22,7 +22,7 @@ public class XmlFormatProvider : FormatProviderBase
     public override string FileExtension => "xml";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
     {
         var filePath = options.ConfigFilePath;
         if (!FileProvider.FileExists(filePath))
@@ -43,7 +43,7 @@ public class XmlFormatProvider : FormatProviderBase
     }
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableConfigurationOptions<T> options)
+    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
     {
         var xmlDoc = XDocument.Load(stream);
         var root = xmlDoc.Root;
@@ -95,7 +95,7 @@ public class XmlFormatProvider : FormatProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableConfigurationOptions<T> options,
+        WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
     {
@@ -110,7 +110,7 @@ public class XmlFormatProvider : FormatProviderBase
     /// </summary>
     private static ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        WritableConfigurationOptions<T> options
+        WritableOptionsConfiguration<T> options
     )
         where T : class, new()
     {

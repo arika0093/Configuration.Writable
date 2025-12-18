@@ -20,5 +20,5 @@ public interface IReadOnlyOptions<T> : IReadOnlyOptionsCore<T>
     /// <summary>
     /// Retrieves the configuration settings object for the default configuration section.
     /// </summary>
-    WritableConfigurationOptions<T> GetConfigurationOptions();
+    WritableOptionsConfiguration<T> GetOptionsConfiguration();
 }

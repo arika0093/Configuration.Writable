@@ -41,11 +41,11 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     public T Get(string? name) => NamedValues[name!];
 
     /// <inheritdoc/>
-    public WritableConfigurationOptions<T> GetConfigurationOptions() =>
-        GetConfigurationOptions(DefaultName);
+    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
+        GetOptionsConfiguration(DefaultName);
 
     /// <inheritdoc/>
-    public WritableConfigurationOptions<T> GetConfigurationOptions(string name)
+    public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name)
     {
         // return dummy options
         var sectionName = $"{typeof(T).Name}";

@@ -1,4 +1,43 @@
 ﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
+namespace Configuration.Writable.Configure
+{
+    public interface ILocationBuilder
+    {
+        System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
+        Configuration.Writable.Configure.ILocationBuilder AddFilePath(string path);
+    }
+    public interface ILocationBuilderWithDirectory : Configuration.Writable.Configure.ILocationBuilder
+    {
+        Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory(bool enabled = true);
+        Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory(bool enabled = true);
+        Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder, bool enabled = true);
+        Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true);
+    }
+    public class WritableOptionsConfigBuilder<T> : Configuration.Writable.Configure.ILocationBuilder, Configuration.Writable.Configure.ILocationBuilderWithDirectory, System.IEquatable<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>>
+        where T :  class, new ()
+    {
+        public WritableOptionsConfigBuilder() { }
+        public string? FilePath { get; set; }
+        public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
+        public Configuration.Writable.IFormatProvider FormatProvider { get; set; }
+        public string InstanceName { get; set; }
+        public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
+        public bool RegisterInstanceToContainer { get; set; }
+        public System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
+        public string SectionName { get; set; }
+        public bool UseDataAnnotationsValidation { get; set; }
+        public Configuration.Writable.Configure.ILocationBuilder AddFilePath(string path) { }
+        public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions() { }
+        public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory(bool enabled = true) { }
+        public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory(bool enabled = true) { }
+        public Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder, bool enabled = true) { }
+        public Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
+        public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
+        public void WithValidator<TValidator>()
+            where TValidator : Microsoft.Extensions.Options.IValidateOptions<T>, new () { }
+        public void WithValidatorFunction(System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult> validator) { }
+    }
+}
 namespace Configuration.Writable.FileProvider
 {
     public class CommonFileProvider : Configuration.Writable.FileProvider.IFileProvider, System.IDisposable
@@ -41,11 +80,11 @@ namespace Configuration.Writable
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
         public virtual Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
-        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
-        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
-        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
         protected static object CreateNestedSection(string sectionName, object value) { }
         protected static string[] GetSplitedSections(string sectionName) { }
@@ -54,41 +93,29 @@ namespace Configuration.Writable
     {
         string FileExtension { get; }
         Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
-        T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+        T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
-        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
-        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
-    public interface ILocationBuilder
-    {
-        System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
-        Configuration.Writable.ILocationBuilder AddFilePath(string path);
-    }
-    public interface ILocationBuilderWithDirectory : Configuration.Writable.ILocationBuilder
-    {
-        Configuration.Writable.ILocationBuilder UseCurrentDirectory(bool enabled = true);
-        Configuration.Writable.ILocationBuilder UseExecutableDirectory(bool enabled = true);
-        Configuration.Writable.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder, bool enabled = true);
-        Configuration.Writable.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true);
-    }
-    public interface IOptionsConfigRegistry<T>
+    public interface IWritableOptionConfigRegistory<T>
         where T :  class, new ()
     {
-        event System.Action<Configuration.Writable.WritableConfigurationOptions<T>> OnAdded;
+        event System.Action<Configuration.Writable.WritableOptionsConfiguration<T>> OnAdded;
         event System.Action<string> OnRemoved;
         void Clear();
-        Configuration.Writable.WritableConfigurationOptions<T> Get(string instanceName);
+        Configuration.Writable.WritableOptionsConfiguration<T> Get(string instanceName);
         System.Collections.Generic.IEnumerable<string> GetInstanceNames();
-        bool TryAdd(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configure);
+        bool TryAdd(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
         bool TryRemove(string instanceName);
     }
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
         T Get(string name);
-        Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name);
+        Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
     }
     public interface IReadOnlyOptionsCore<T>
         where T :  class, new ()
@@ -99,7 +126,7 @@ namespace Configuration.Writable
         where T :  class, new ()
     {
         T CurrentValue { get; }
-        Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions();
+        Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration();
     }
     public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
@@ -119,42 +146,17 @@ namespace Configuration.Writable
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+        public override T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
-        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
-    public class WritableConfigurationOptionsBuilder<T> : Configuration.Writable.ILocationBuilder, Configuration.Writable.ILocationBuilderWithDirectory, System.IEquatable<Configuration.Writable.WritableConfigurationOptionsBuilder<T>>
+    public class WritableOptionsConfiguration<T> : System.IEquatable<Configuration.Writable.WritableOptionsConfiguration<T>>
         where T :  class, new ()
     {
-        public WritableConfigurationOptionsBuilder() { }
-        public string? FilePath { get; set; }
-        public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
-        public Configuration.Writable.IFormatProvider FormatProvider { get; set; }
-        public string InstanceName { get; set; }
-        public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
-        public int OnChangeThrottleMs { get; set; }
-        public bool RegisterInstanceToContainer { get; set; }
-        public System.Collections.Generic.IEnumerable<string> SaveLocationPaths { get; }
-        public string SectionName { get; set; }
-        public bool UseDataAnnotationsValidation { get; set; }
-        public Configuration.Writable.ILocationBuilder AddFilePath(string path) { }
-        public Configuration.Writable.WritableConfigurationOptions<T> BuildOptions() { }
-        public Configuration.Writable.ILocationBuilder UseCurrentDirectory(bool enabled = true) { }
-        public Configuration.Writable.ILocationBuilder UseExecutableDirectory(bool enabled = true) { }
-        public Configuration.Writable.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder, bool enabled = true) { }
-        public Configuration.Writable.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
-        public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
-        public void WithValidator<TValidator>()
-            where TValidator : Microsoft.Extensions.Options.IValidateOptions<T>, new () { }
-        public void WithValidatorFunction(System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult> validator) { }
-    }
-    public class WritableConfigurationOptions<T> : System.IEquatable<Configuration.Writable.WritableConfigurationOptions<T>>
-        where T :  class, new ()
-    {
-        public WritableConfigurationOptions() { }
+        public WritableOptionsConfiguration() { }
         public required string ConfigFilePath { get; init; }
         public required Configuration.Writable.IFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
@@ -170,17 +172,17 @@ namespace Configuration.Writable
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string instanceName)
             where T :  class, new () { }
     }
+}
+namespace Configuration.Writable.Testing
+{
     public class WritableOptionsSimpleInstance<T>
         where T :  class, new ()
     {
         public WritableOptionsSimpleInstance() { }
         public Configuration.Writable.IWritableOptions<T> GetOptions() { }
         public void Initialize() { }
-        public void Initialize(System.Action<Configuration.Writable.WritableConfigurationOptionsBuilder<T>> configurationOptions) { }
+        public void Initialize(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configurationOptions) { }
     }
-}
-namespace Configuration.Writable.Testing
-{
     public static class WritableOptionsStub
     {
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(System.Collections.Generic.Dictionary<string, T> namedValues)
@@ -195,8 +197,8 @@ namespace Configuration.Writable.Testing
         public WritableOptionsStub(T value) { }
         public T CurrentValue { get; }
         public T Get(string? name) { }
-        public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions() { }
-        public Configuration.Writable.WritableConfigurationOptions<T> GetConfigurationOptions(string name) { }
+        public Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration() { }
+        public Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name) { }
         public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
         public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }

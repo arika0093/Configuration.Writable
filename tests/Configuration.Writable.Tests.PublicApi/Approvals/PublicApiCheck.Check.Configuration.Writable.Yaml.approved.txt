@@ -8,11 +8,11 @@ namespace Configuration.Writable
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public YamlDotNet.Serialization.ISerializer Serializer { get; init; }
-        public override T LoadConfiguration<T>(Configuration.Writable.WritableConfigurationOptions<T> options)
+        public override T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
-        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableConfigurationOptions<T> options)
+        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableConfigurationOptions<T> options, System.Threading.CancellationToken cancellationToken = default)
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
 }

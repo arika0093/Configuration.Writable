@@ -8,13 +8,13 @@ using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.Configure;
 
 /// <summary>
 /// Options for initializing writable configuration.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public record WritableConfigurationOptionsBuilder<T> : ILocationBuilderWithDirectory
+public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
     where T : class, new()
 {
     private const string DefaultSectionName = "";
@@ -123,7 +123,7 @@ public record WritableConfigurationOptionsBuilder<T> : ILocationBuilderWithDirec
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
-    public WritableConfigurationOptions<T> BuildOptions()
+    public WritableOptionsConfiguration<T> BuildOptions()
     {
         var configFilePath = _saveLocationManager.Build(FormatProvider);
         var validator = BuildValidator();
@@ -133,7 +133,7 @@ public record WritableConfigurationOptionsBuilder<T> : ILocationBuilderWithDirec
             FormatProvider.FileProvider = FileProvider;
         }
 
-        return new WritableConfigurationOptions<T>
+        return new WritableOptionsConfiguration<T>
         {
             FormatProvider = FormatProvider,
             ConfigFilePath = configFilePath,
