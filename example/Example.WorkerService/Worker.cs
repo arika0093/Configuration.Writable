@@ -10,10 +10,15 @@ public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
     public override Task StartAsync(CancellationToken stoppingToken)
     {
         // register change listener
-        _changeListener = options.OnChange((setting, _) => {
-            Console.WriteLine("## Config changed notification received.");
-            Console.WriteLine($"   New Name: {setting.Name}, LastUpdatedAt: {setting.LastUpdatedAt}");
-        });
+        _changeListener = options.OnChange(
+            (setting, _) =>
+            {
+                Console.WriteLine("## Config changed notification received.");
+                Console.WriteLine(
+                    $"   New Name: {setting.Name}, LastUpdatedAt: {setting.LastUpdatedAt}"
+                );
+            }
+        );
 
         return Task.CompletedTask;
     }

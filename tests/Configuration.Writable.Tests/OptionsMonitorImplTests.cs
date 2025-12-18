@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Configure;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 using Microsoft.Extensions.Options;
 

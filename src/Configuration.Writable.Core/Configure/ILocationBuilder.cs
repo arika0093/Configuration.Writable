@@ -57,12 +57,10 @@ public interface ILocationBuilderWithDirectory : ILocationBuilder
     /// <param name="enabled">If false, this location provider will be skipped.</param>
     ILocationBuilder UseCurrentDirectory(bool enabled = true);
 
-
     /// <summary>
     /// Sets the configuration folder to a special folder defined by <see cref="Environment.SpecialFolder"/>.
     /// </summary>
     /// <param name="folder">The special folder to use as the configuration folder.</param>
     /// <param name="enabled">If false, this location provider will be skipped.</param>
     ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder, bool enabled = true);
-
 }

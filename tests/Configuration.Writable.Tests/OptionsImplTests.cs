@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Configure;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;

@@ -43,7 +43,7 @@ public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
         set
         {
             _saveLocationManager.LocationBuilders.Clear();
-            if(value != null)
+            if (value != null)
             {
                 AddFilePath(value);
             }
@@ -223,14 +223,16 @@ public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
         _saveLocationManager.MakeLocationBuilder().UseExecutableDirectory(enabled);
 
     /// <inheritdoc />
-    public ILocationBuilder UseCurrentDirectory(bool enabled = true) => 
+    public ILocationBuilder UseCurrentDirectory(bool enabled = true) =>
         _saveLocationManager.MakeLocationBuilder().UseCurrentDirectory(enabled);
 
     /// <inheritdoc />
-    public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder, bool enabled = true) =>
-        _saveLocationManager.MakeLocationBuilder().UseSpecialFolder(folder, enabled);
+    public ILocationBuilder UseSpecialFolder(
+        Environment.SpecialFolder folder,
+        bool enabled = true
+    ) => _saveLocationManager.MakeLocationBuilder().UseSpecialFolder(folder, enabled);
 
     /// <inheritdoc />
-    public ILocationBuilder AddFilePath(string path) => 
+    public ILocationBuilder AddFilePath(string path) =>
         _saveLocationManager.MakeLocationBuilder().AddFilePath(path);
 }

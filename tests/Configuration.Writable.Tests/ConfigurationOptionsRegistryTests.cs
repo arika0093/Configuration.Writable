@@ -211,7 +211,11 @@ public class ConfigurationOptionsRegistryTests
         var option1 = CreateOptions("instance1", "file1.json");
         var option2 = CreateOptions("instance2", "file2.json");
         var option3 = CreateOptions("instance3", "file3.json");
-        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([option1, option2, option3]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([
+            option1,
+            option2,
+            option3,
+        ]);
 
         // Act
         registry.Clear();
@@ -227,7 +231,11 @@ public class ConfigurationOptionsRegistryTests
         var option1 = CreateOptions("instance1", "file1.json");
         var option2 = CreateOptions("instance2", "file2.json");
         var option3 = CreateOptions("instance3", "file3.json");
-        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([option1, option2, option3]);
+        var registry = new WritableOptionsConfigRegistoryImpl<TestSettings>([
+            option1,
+            option2,
+            option3,
+        ]);
         var removedInstances = new List<string>();
         registry.OnRemoved += name => removedInstances.Add(name);
 

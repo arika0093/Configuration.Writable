@@ -32,7 +32,10 @@ public static class WritableOptionsCoreExtensions
         where T : class, new()
     {
         // add IWritableOptionConfigRegistory<T>
-        services.AddSingleton<IWritableOptionConfigRegistory<T>, WritableOptionsConfigRegistoryImpl<T>>();
+        services.AddSingleton<
+            IWritableOptionConfigRegistory<T>,
+            WritableOptionsConfigRegistoryImpl<T>
+        >();
 
         // add WritableOptionsMonitor<T> (custom implementation)
         services.AddSingleton<OptionsMonitorImpl<T>>();

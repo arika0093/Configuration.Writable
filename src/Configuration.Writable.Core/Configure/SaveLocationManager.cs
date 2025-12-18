@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,7 +35,7 @@ internal class SaveLocationManager
     {
         string resultPath = "";
         // if nothing configured, use default "usersettings" in executable directory
-        if(LocationBuilders.Count == 0)
+        if (LocationBuilders.Count == 0)
         {
             var lb = new LocationBuilderInternal();
             lb.UseExecutableDirectory().AddFilePath(DefaultFileName);
@@ -48,23 +47,29 @@ internal class SaveLocationManager
         // 2. Target file already exists
         // 3. Target directory already exists
         // 4. Registration order (ascending)
-        var targetPath = LocationBuilders
-            .SelectMany(p => p.SaveLocationPaths)
-            .Where(p => !string.IsNullOrEmpty(p))
-            .Select((p,i) => new
-            {
-                Path = p,
-                Index = i,
-                ExistDirectory = Directory.Exists(Path.GetDirectoryName(p) ?? ""),
-                ExistFile = File.Exists(p),
-                CanWrite = CanWriteToDirectory(p)   
-            })
-            .OrderByDescending(p => p.CanWrite)
-            .ThenByDescending(p => p.ExistFile)
-            .ThenByDescending(p => p.ExistDirectory)
-            .ThenBy(p => p.Index)
-            .FirstOrDefault()
-            ?? throw new InvalidOperationException("No valid save location could be determined from the configured location providers.");
+        var targetPath =
+            LocationBuilders
+                .SelectMany(p => p.SaveLocationPaths)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Select(
+                    (p, i) =>
+                        new
+                        {
+                            Path = p,
+                            Index = i,
+                            ExistDirectory = Directory.Exists(Path.GetDirectoryName(p) ?? ""),
+                            ExistFile = File.Exists(p),
+                            CanWrite = CanWriteToDirectory(p),
+                        }
+                )
+                .OrderByDescending(p => p.CanWrite)
+                .ThenByDescending(p => p.ExistFile)
+                .ThenByDescending(p => p.ExistDirectory)
+                .ThenBy(p => p.Index)
+                .FirstOrDefault()
+            ?? throw new InvalidOperationException(
+                "No valid save location could be determined from the configured location providers."
+            );
 
         // if no file extension, add from format provider
         var fileName = Path.GetFileName(targetPath.Path);
@@ -72,7 +77,7 @@ internal class SaveLocationManager
         {
             resultPath = $"{targetPath.Path}.{formatProvider.FileExtension}";
         }
-        else 
+        else
         {
             resultPath = targetPath.Path;
         }
@@ -100,7 +105,6 @@ internal class SaveLocationManager
             return false;
         }
     }
-
 }
 
 internal class LocationBuilderInternal : ILocationBuilderWithDirectory
@@ -125,7 +129,7 @@ internal class LocationBuilderInternal : ILocationBuilderWithDirectory
     /// <inheritdoc />
     public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true)
     {
-        if(enabled)
+        if (enabled)
         {
             var root = StandardSaveLocationUtility.GetConfigDirectory();
             configFolder = Path.Combine(root, applicationId);
@@ -146,7 +150,7 @@ internal class LocationBuilderInternal : ILocationBuilderWithDirectory
     /// <inheritdoc />
     public ILocationBuilder UseExecutableDirectory(bool enabled = true)
     {
-        if(enabled)
+        if (enabled)
         {
             configFolder = AppContext.BaseDirectory;
         }
@@ -162,5 +166,4 @@ internal class LocationBuilderInternal : ILocationBuilderWithDirectory
         }
         return this;
     }
-
 }

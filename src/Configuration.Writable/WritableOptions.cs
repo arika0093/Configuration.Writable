@@ -40,9 +40,7 @@ public static class WritableOptions
     /// Initializes writable configuration with custom options.
     /// </summary>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
-    public static void Initialize<T>(
-        Action<WritableOptionsConfigBuilder<T>> configurationOptions
-    )
+    public static void Initialize<T>(Action<WritableOptionsConfigBuilder<T>> configurationOptions)
         where T : class, new() => GetInternalInstance<T>().Initialize(configurationOptions);
 
     /// <summary>
