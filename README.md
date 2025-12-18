@@ -162,10 +162,10 @@ If you want to toggle between development and production environments, you can u
 
 // without DI
 WritableOptions.Initialize<UserSetting>(opt => {
-#if RELEASE
-    var isProduction = true;
-#else
+#if DEBUG
     var isProduction = false;
+#else
+    var isProduction = true;
 #endif
     opt.UseStandardSaveDirectory("MyAppId", enabled: isProduction)
         .AddFilePath("mysettings");
