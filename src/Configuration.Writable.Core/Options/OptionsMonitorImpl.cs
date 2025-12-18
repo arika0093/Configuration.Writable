@@ -16,7 +16,7 @@ namespace Configuration.Writable;
 internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     where T : class, new()
 {
-    private readonly IWritableOptionConfigRegistry<T> _optionsRegistry;
+    private readonly IWritableOptionsConfigRegistry<T> _optionsRegistry;
 
     private readonly Dictionary<string, T> _cache = [];
     private readonly Dictionary<string, T> _defaultValue = [];
@@ -26,7 +26,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly object _throttleTimersLock = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    public OptionsMonitorImpl(IWritableOptionConfigRegistry<T> optionsRegistry)
+    public OptionsMonitorImpl(IWritableOptionsConfigRegistry<T> optionsRegistry)
     {
         _optionsRegistry = optionsRegistry;
         // subscribe to options added/removed events

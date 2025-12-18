@@ -8,7 +8,7 @@ namespace Configuration.Writable.Options;
 
 internal class WritableOptionsConfigRegistryImpl<T>(
     IEnumerable<WritableOptionsConfiguration<T>> options
-) : IWritableOptionConfigRegistry<T>
+) : IWritableOptionsConfigRegistry<T>
     where T : class, new()
 {
     // Map of instance names to their corresponding writable configuration options

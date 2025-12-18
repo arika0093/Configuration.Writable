@@ -7,7 +7,7 @@ namespace Configuration.Writable;
 /// <summary>
 /// Defines dynamic registry operations for writable configuration options of type <typeparamref name="T"/>.
 /// </summary>
-public interface IWritableOptionConfigRegistry<T>
+public interface IWritableOptionsConfigRegistry<T>
     where T : class, new()
 {
     /// <summary>
