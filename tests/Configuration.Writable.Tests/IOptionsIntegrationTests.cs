@@ -95,10 +95,9 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddWritableOptions<TestSettings>(options =>
+        builder.Services.AddWritableOptions<TestSettings>("custom", options =>
         {
             options.FilePath = testFileName;
-            options.InstanceName = "custom";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 

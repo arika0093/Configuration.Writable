@@ -357,9 +357,8 @@ public class ConfigurationOptionsRegistryTests
     {
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
-            InstanceName = instanceName,
             FilePath = filePath,
         };
-        return builder.BuildOptions();
+        return builder.BuildOptions(instanceName);
     }
 }

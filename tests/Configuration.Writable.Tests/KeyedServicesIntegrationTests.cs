@@ -23,9 +23,8 @@ public class KeyedServicesIntegrationTests
     public void AddWritableOptions_WithInstanceName_ShouldRegisterKeyedServices()
     {
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("Production", options =>
         {
-            options.InstanceName = "Production";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -68,7 +67,6 @@ public class KeyedServicesIntegrationTests
         var services = new ServiceCollection();
         services.AddWritableOptions<AppSettings>(options =>
         {
-            options.InstanceName = "";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -84,15 +82,13 @@ public class KeyedServicesIntegrationTests
     {
         var services = new ServiceCollection();
 
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("Development", options =>
         {
-            options.InstanceName = "Development";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("Production", options =>
         {
-            options.InstanceName = "Production";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
@@ -119,9 +115,8 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("TestInstance", options =>
         {
-            options.InstanceName = "TestInstance";
             options.FilePath = fileName;
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -150,9 +145,8 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("SaveTest", options =>
         {
-            options.InstanceName = "SaveTest";
             options.FilePath = fileName;
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -185,9 +179,8 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("ActionTest", options =>
         {
-            options.InstanceName = "ActionTest";
             options.FilePath = fileName;
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -216,9 +209,8 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("ReadOnlyTest", options =>
         {
-            options.InstanceName = "ReadOnlyTest";
             options.FilePath = fileName;
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -251,16 +243,14 @@ public class KeyedServicesIntegrationTests
 
         var services = new ServiceCollection();
 
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("Instance1", options =>
         {
-            options.InstanceName = "Instance1";
             options.FilePath = file1;
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("Instance2", options =>
         {
-            options.InstanceName = "Instance2";
             options.FilePath = file2;
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -289,9 +279,8 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("ConfigTest", options =>
         {
-            options.InstanceName = "ConfigTest";
             options.FilePath = fileName;
             options.UseInMemoryFileProvider(_FileProvider);
         });
@@ -324,9 +313,8 @@ public class KeyedServicesIntegrationTests
             string? notifiedName = null;
 
             var services = new ServiceCollection();
-            services.AddWritableOptions<AppSettings>(options =>
+            services.AddWritableOptions<AppSettings>("ChangeTest", options =>
             {
-                options.InstanceName = "ChangeTest";
                 options.FilePath = testFilePath;
             });
 
@@ -376,21 +364,18 @@ public class KeyedServicesIntegrationTests
     {
         var services = new ServiceCollection();
 
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("KeyA", options =>
         {
-            options.InstanceName = "KeyA";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("KeyB", options =>
         {
-            options.InstanceName = "KeyB";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 
-        services.AddWritableOptions<AppSettings>(options =>
+        services.AddWritableOptions<AppSettings>("KeyC", options =>
         {
-            options.InstanceName = "KeyC";
             options.UseInMemoryFileProvider(_FileProvider);
         });
 

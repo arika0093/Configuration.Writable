@@ -115,13 +115,7 @@ public record WritableOptionsConfigBuilder<T>
     /// </summary>
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
-        // If instanceName is explicitly provided (not default/empty), use it.
-        // Otherwise, fall back to the InstanceName property for backward compatibility.
-        var effectiveInstanceName = string.IsNullOrEmpty(instanceName) && !string.IsNullOrEmpty(InstanceName)
-            ? InstanceName
-            : instanceName;
-
-        var configFilePath = _saveLocationManager.Build(FormatProvider, effectiveInstanceName);
+        var configFilePath = _saveLocationManager.Build(FormatProvider, instanceName);
         var validator = BuildValidator();
         // override provider's file provider if set
         if (FileProvider != null)
@@ -133,24 +127,13 @@ public record WritableOptionsConfigBuilder<T>
         {
             FormatProvider = FormatProvider,
             ConfigFilePath = configFilePath,
-            InstanceName = effectiveInstanceName,
+            InstanceName = instanceName,
             SectionName = SectionName,
             OnChangeThrottleMs = OnChangeThrottleMs,
             Logger = Logger,
             Validator = validator,
         };
     }
-
-    /// <summary>
-    /// Creates a new instance of writable configuration options for the specified type.
-    /// </summary>
-    internal WritableOptionsConfiguration<T> BuildOptions() => BuildOptions(InstanceName);
-
-    /// <summary>
-    /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
-    /// This property is kept for backward compatibility.
-    /// </summary>
-    internal string InstanceName { get; set; } = MEOptions.DefaultName;
 
     /// <summary>
     /// Builds the composite validator from all registered validators.
