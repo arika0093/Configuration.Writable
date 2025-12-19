@@ -2,6 +2,28 @@
 
 ### 🚀 Features
 
+- Enhance instance name handling for writable options configuration (#26)
+- Refactor file provider handling in writable options configuration
+- Implement file and directory access checks in IFileProvider and its implementations
+- Add GetSpecifiedInstance method to IWritableNamedOptions and IReadOnlyNamedOptions interfaces
+- Enhance JSON serialization with source generation support and update documentation
+- Introduce IReadOnlyOptionsMonitor and IWritableOptionsMonitor interfaces for enhanced options management
+
+### 📚 Documentation
+
+- Update README to clarify change detection and callback registration for options
+- Update configuration options to use 'conf' instead of 'opt' for consistency
+- Update README and API to reflect changes in save location configuration methods
+- Update README to improve feature descriptions and formatting
+- Update README to remove unnecessary link and add customization sections
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.1.0-alpha.149
+## [0.1.0-alpha.149] - 2025-12-18
+
+### 🚀 Features
+
 - Add .NET Framework support and update test configurations
 - Update .NET workflow to use fixed version for .NET 10 and reintroduce .NET Framework 4.8 testing
 - Add dotnet-test-rerun for retrying failed tests and include GitHubActionsTestLogger package
