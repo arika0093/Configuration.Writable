@@ -4,6 +4,7 @@ using Configuration.Writable.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
 
@@ -24,7 +25,7 @@ public static class WritableOptionsExtensions
         where T : class, new()
     {
         var confBuilder = new WritableOptionsConfigBuilder<T>();
-        return services.AddWritableOptions<T>(confBuilder);
+        return services.AddWritableOptions<T>(MEOptions.DefaultName, confBuilder);
     }
 
     /// <summary>
@@ -38,8 +39,7 @@ public static class WritableOptionsExtensions
         where T : class, new()
     {
         var confBuilder = new WritableOptionsConfigBuilder<T>();
-        confBuilder.InstanceName = instanceName;
-        return services.AddWritableOptions<T>(confBuilder);
+        return services.AddWritableOptions<T>(instanceName, confBuilder);
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public static class WritableOptionsExtensions
         // build options
         var confBuilder = new WritableOptionsConfigBuilder<T>();
         configureOptions(confBuilder);
-        return services.AddWritableOptions<T>(confBuilder);
+        return services.AddWritableOptions<T>(MEOptions.DefaultName, confBuilder);
     }
 
     /// <summary>
@@ -81,8 +81,7 @@ public static class WritableOptionsExtensions
         // build options
         var confBuilder = new WritableOptionsConfigBuilder<T>();
         configureOptions(confBuilder);
-        confBuilder.InstanceName = instanceName;
-        return services.AddWritableOptions<T>(confBuilder);
+        return services.AddWritableOptions<T>(instanceName, confBuilder);
     }
 
     /// <summary>
@@ -91,15 +90,17 @@ public static class WritableOptionsExtensions
     /// </summary>
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
+    /// <param name="instanceName">The name of the options instance.</param>
     /// <param name="confBuilder">A pre-configured <see cref="WritableOptionsConfigBuilder{T}"/> instance used to specify the configuration file. </param>
     private static IServiceCollection AddWritableOptions<T>(
         this IServiceCollection services,
+        string instanceName,
         WritableOptionsConfigBuilder<T> confBuilder
     )
         where T : class, new()
     {
         var FileProvider = confBuilder.FileProvider;
-        var options = confBuilder.BuildOptions();
+        var options = confBuilder.BuildOptions(instanceName);
 
         // set FileProvider
         if (FileProvider != null)
@@ -110,7 +111,7 @@ public static class WritableOptionsExtensions
         // add T instance
         if (confBuilder.RegisterInstanceToContainer)
         {
-            if (string.IsNullOrEmpty(options.InstanceName))
+            if (string.IsNullOrEmpty(instanceName))
             {
                 services.AddSingleton(provider =>
                     provider.GetRequiredService<IReadOnlyOptions<T>>().CurrentValue
@@ -119,12 +120,12 @@ public static class WritableOptionsExtensions
             else
             {
                 services.AddKeyedSingleton<T>(
-                    options.InstanceName,
+                    instanceName,
                     (provider, _) =>
                     {
                         return provider
                             .GetRequiredService<IReadOnlyNamedOptions<T>>()
-                            .Get(options.InstanceName);
+                            .Get(instanceName);
                     }
                 );
             }
@@ -147,7 +148,7 @@ public static class WritableOptionsExtensions
         }
 
         // add options services
-        services.AddWritableOptionsCore<T>(options.InstanceName);
+        services.AddWritableOptionsCore<T>(instanceName);
         return services;
     }
 }

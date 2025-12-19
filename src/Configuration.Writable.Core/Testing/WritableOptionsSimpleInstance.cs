@@ -38,8 +38,7 @@ public class WritableOptionsSimpleInstance<T>
     {
         var optionBuilder = new WritableOptionsConfigBuilder<T>();
         configurationOptions(optionBuilder);
-        optionBuilder.InstanceName = instanceName;
-        _options = optionBuilder.BuildOptions();
+        _options = optionBuilder.BuildOptions(instanceName);
     }
 
     /// <summary>

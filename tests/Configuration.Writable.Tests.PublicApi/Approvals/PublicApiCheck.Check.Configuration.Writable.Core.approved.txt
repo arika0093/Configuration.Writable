@@ -19,13 +19,12 @@ namespace Configuration.Writable.Configure
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
         public Configuration.Writable.IFormatProvider FormatProvider { get; set; }
-        public string InstanceName { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public int OnChangeThrottleMs { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
-        public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions() { }
+        public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory() { }

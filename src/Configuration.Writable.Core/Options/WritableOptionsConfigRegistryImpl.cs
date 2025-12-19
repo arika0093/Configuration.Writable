@@ -39,17 +39,16 @@ internal class WritableOptionsConfigRegistryImpl<T>(
     {
         var optionsBuilder = new WritableOptionsConfigBuilder<T>();
         configure(optionsBuilder);
-        optionsBuilder.InstanceName = instanceName;
-        var option = optionsBuilder.BuildOptions();
+        var option = optionsBuilder.BuildOptions(instanceName);
 #if NET
-        var rst = _optionsMap.TryAdd(option.InstanceName, option);
+        var rst = _optionsMap.TryAdd(instanceName, option);
 #else
-        if (_optionsMap.ContainsKey(option.InstanceName))
+        if (_optionsMap.ContainsKey(instanceName))
         {
             // already exists
             return false;
         }
-        _optionsMap[option.InstanceName] = option;
+        _optionsMap[instanceName] = option;
         var rst = true;
 #endif
         if (rst)
