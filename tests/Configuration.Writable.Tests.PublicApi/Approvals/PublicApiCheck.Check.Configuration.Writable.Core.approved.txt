@@ -45,6 +45,9 @@ namespace Configuration.Writable.FileProvider
         public virtual int BackupMaxCount { get; set; }
         public virtual int MaxRetryCount { get; set; }
         public virtual System.Func<int, int> RetryDelay { get; set; }
+        public virtual bool CanWriteToDirectory(string path) { }
+        public virtual bool CanWriteToFile(string path) { }
+        public virtual bool DirectoryExists(string path) { }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
         public virtual bool FileExists(string path) { }
@@ -56,6 +59,9 @@ namespace Configuration.Writable.FileProvider
     }
     public interface IFileProvider
     {
+        bool CanWriteToDirectory(string path);
+        bool CanWriteToFile(string path);
+        bool DirectoryExists(string path);
         bool FileExists(string path);
         System.IO.Stream? GetFileStream(string path);
         System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default);
@@ -65,6 +71,9 @@ namespace Configuration.Writable.FileProvider
         public ZipFileProvider() { }
         public string EntriesDirectory { get; set; }
         public string ZipFileName { get; set; }
+        public bool CanWriteToDirectory(string path) { }
+        public bool CanWriteToFile(string path) { }
+        public bool DirectoryExists(string path) { }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
         public bool FileExists(string path) { }

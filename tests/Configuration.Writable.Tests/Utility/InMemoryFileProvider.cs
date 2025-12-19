@@ -54,6 +54,27 @@ public class InMemoryFileProvider : IFileProvider
         return new MemoryStream(content);
     }
 
+    /// <inheritdoc />
+    public bool DirectoryExists(string path)
+    {
+        // In-memory provider always has directories available
+        return true;
+    }
+
+    /// <inheritdoc />
+    public bool CanWriteToFile(string path)
+    {
+        // In-memory provider can write to a file if it exists
+        return FileExists(path);
+    }
+
+    /// <inheritdoc />
+    public bool CanWriteToDirectory(string path)
+    {
+        // In-memory provider can always write to any directory
+        return true;
+    }
+
     /// <summary>
     /// Reads the contents of the file at the specified path and returns them as a byte array.
     /// </summary>

@@ -115,9 +115,9 @@ public record WritableOptionsConfigBuilder<T>
     /// </summary>
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
-        var configFilePath = _saveLocationManager.Build(FormatProvider, instanceName);
-        var validator = BuildValidator();
         var fileProvider = FileProvider ?? new CommonFileProvider();
+        var configFilePath = _saveLocationManager.Build(FormatProvider, fileProvider, instanceName);
+        var validator = BuildValidator();
 
         return new WritableOptionsConfiguration<T>
         {

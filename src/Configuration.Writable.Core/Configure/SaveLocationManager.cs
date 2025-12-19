@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable.Configure;
 
@@ -40,8 +41,15 @@ internal class SaveLocationManager
     /// <summary>
     /// Builds the save location by evaluating the added location providers in order.
     /// </summary>
+    /// <param name="formatProvider">The format provider to determine the file extension.</param>
+    /// <param name="instanceName">The instance name for default location.</param>
+    /// <param name="fileProvider">The file provider to check file and directory access.</param>
     /// <returns>The first valid save location path found, or null if none are available.</returns>
-    public string Build(IFormatProvider formatProvider, string instanceName)
+    public string Build(
+        IFormatProvider formatProvider,
+        IFileProvider fileProvider,
+        string instanceName
+    )
     {
         string resultPath = "";
         // if nothing configured, use default location
@@ -68,8 +76,8 @@ internal class SaveLocationManager
                         p.Path,
                         p.Priority,
                         Index = i,
-                        CanWriteFile = CheckCanOpenFileWithWriteAccess(p.Path),
-                        CanWriteDir = CheckIsWritableToDirectory(p.Path),
+                        CanWriteFile = fileProvider.CanWriteToFile(p.Path),
+                        CanWriteDir = fileProvider.CanWriteToDirectory(p.Path),
                     }
             )
             .OrderByDescending(p => p.Priority)
@@ -103,57 +111,6 @@ internal class SaveLocationManager
     /// </summary>
     private static string GetDefaultLocationPath(string instanceName) =>
         !string.IsNullOrWhiteSpace(instanceName) ? instanceName : DefaultFileName;
-
-    /// <summary>
-    /// Checks if the application can open the specified file with write access.
-    /// </summary>
-    private static bool CheckCanOpenFileWithWriteAccess(string path)
-    {
-        try
-        {
-            if (!File.Exists(path))
-            {
-                // If the file does not exist, we cannot open it with write access
-                return false;
-            }
-
-            using var stream = File.Open(path, FileMode.Open, FileAccess.Write);
-            // If we can open the file with write access, return true
-            return true;
-        }
-        catch
-        {
-            // If an exception occurs, we cannot write to the file
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Checks if the application can write to the specified directory.
-    /// </summary>
-    private static bool CheckIsWritableToDirectory(string path)
-    {
-        try
-        {
-            var directory = Path.GetDirectoryName(path) ?? "";
-            if (!Directory.Exists(directory))
-            {
-                return false;
-            }
-
-            var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
-            // create and delete a temporary file to test write access
-            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
-            {
-                // No action needed here as the file will be deleted on close
-            }
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }
 
 internal class LocationBuilderInternal : ILocationBuilder

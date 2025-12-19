@@ -229,6 +229,57 @@ public class CommonFileProvider : IFileProvider, IDisposable
     }
 
     /// <inheritdoc />
+    public virtual bool DirectoryExists(string path)
+    {
+        var normalizedPath = Path.GetFullPath(path);
+        return Directory.Exists(normalizedPath);
+    }
+
+    /// <inheritdoc />
+    public virtual bool CanWriteToFile(string path)
+    {
+        try
+        {
+            var normalizedPath = Path.GetFullPath(path);
+            if (!File.Exists(normalizedPath))
+            {
+                return false;
+            }
+
+            using var stream = File.Open(normalizedPath, FileMode.Open, FileAccess.Write);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
+    public virtual bool CanWriteToDirectory(string path)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(path) ?? "";
+            if (!Directory.Exists(directory))
+            {
+                return false;
+            }
+
+            var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
+            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
+            {
+                // No action needed here as the file will be deleted on close
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);

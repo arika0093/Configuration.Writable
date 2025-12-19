@@ -45,6 +45,59 @@ public class ZipFileProvider : IFileProvider, IDisposable
     }
 
     /// <inheritdoc/>
+    public bool DirectoryExists(string path)
+    {
+        var zipPath = GetZipFilePath(path);
+        var directory = Path.GetDirectoryName(zipPath);
+        return !string.IsNullOrEmpty(directory) && Directory.Exists(directory);
+    }
+
+    /// <inheritdoc/>
+    public bool CanWriteToFile(string path)
+    {
+        try
+        {
+            var zipPath = GetZipFilePath(path);
+            if (!File.Exists(zipPath))
+            {
+                return false;
+            }
+
+            using var stream = File.Open(zipPath, FileMode.Open, FileAccess.Write);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc/>
+    public bool CanWriteToDirectory(string path)
+    {
+        try
+        {
+            var zipPath = GetZipFilePath(path);
+            var directory = Path.GetDirectoryName(zipPath) ?? "";
+            if (!Directory.Exists(directory))
+            {
+                return false;
+            }
+
+            var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
+            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
+            {
+                // No action needed here as the file will be deleted on close
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task SaveToFileAsync(
         string path,
         ReadOnlyMemory<byte> content,

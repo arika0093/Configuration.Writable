@@ -38,4 +38,25 @@ public interface IFileProvider
         ILogger? logger = null,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    /// Determines whether a directory exists at the specified path.
+    /// </summary>
+    /// <param name="path">The path of the directory to check. Can be either an absolute or relative path.</param>
+    /// <returns>true if the directory exists; otherwise, false.</returns>
+    bool DirectoryExists(string path);
+
+    /// <summary>
+    /// Checks if the specified file can be opened with write access.
+    /// </summary>
+    /// <param name="path">The path of the file to check for write access.</param>
+    /// <returns>true if the file exists and can be opened with write access; otherwise, false.</returns>
+    bool CanWriteToFile(string path);
+
+    /// <summary>
+    /// Checks if the specified directory can be written to by attempting to create a temporary file.
+    /// </summary>
+    /// <param name="path">The file path whose directory will be checked for write access.</param>
+    /// <returns>true if the directory exists and can be written to; otherwise, false.</returns>
+    bool CanWriteToDirectory(string path);
 }
