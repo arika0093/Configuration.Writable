@@ -1,9 +1,9 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
@@ -210,7 +210,7 @@ public record WritableOptionsConfigBuilder<T>
     public void UseFile(string? path)
     {
         _saveLocationManager.LocationBuilders.Clear();
-        if(!string.IsNullOrWhiteSpace(path))
+        if (!string.IsNullOrWhiteSpace(path))
         {
             _saveLocationManager.MakeLocationBuilder().AddFilePath(path!);
         }
@@ -230,10 +230,12 @@ public record WritableOptionsConfigBuilder<T>
     public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true)
     {
         var builder = _saveLocationManager.MakeLocationBuilder();
-        if(enabled) {
+        if (enabled)
+        {
             builder.UseStandardSaveDirectory(applicationId);
         }
-        else {
+        else
+        {
             builder.UseExecutableDirectory();
         }
         return builder;

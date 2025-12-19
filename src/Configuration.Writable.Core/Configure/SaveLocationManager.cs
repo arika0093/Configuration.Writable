@@ -20,10 +20,12 @@ internal class SaveLocationManager
     /// <summary>
     /// Gets the first registered save location path based on priority.
     /// </summary>
-    public string? LocationPath => LocationBuilders
-        .SelectMany(b => b.SaveLocationPaths)
-        .OrderByDescending(p => p.Priority)
-        .FirstOrDefault()?.Path;
+    public string? LocationPath =>
+        LocationBuilders
+            .SelectMany(b => b.SaveLocationPaths)
+            .OrderByDescending(p => p.Priority)
+            .FirstOrDefault()
+            ?.Path;
 
     /// <summary>
     /// Creates a new location builder and adds it to the manager.
