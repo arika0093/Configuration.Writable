@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable.Testing;
 
@@ -13,8 +14,6 @@ namespace Configuration.Writable.Testing;
 public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions<T>
     where T : class, new()
 {
-    private const string DefaultName = "";
-
     /// <summary>
     /// A dictionary containing named configuration values.
     /// </summary>
@@ -31,7 +30,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     /// <param name="value">The initial value to be used for the default name.</param>
     public WritableOptionsStub(T value)
     {
-        NamedValues[DefaultName] = value;
+        NamedValues[MEOptions.DefaultName] = value;
     }
 
     /// <summary>
@@ -44,14 +43,14 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     }
 
     /// <inheritdoc/>
-    public T CurrentValue => NamedValues[DefaultName];
+    public T CurrentValue => NamedValues[MEOptions.DefaultName];
 
     /// <inheritdoc/>
     public T Get(string? name) => NamedValues[name!];
 
     /// <inheritdoc/>
     public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
-        GetOptionsConfiguration(DefaultName);
+        GetOptionsConfiguration(MEOptions.DefaultName);
 
     /// <inheritdoc/>
     public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name)
@@ -84,7 +83,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
         OnChange(
             (t, changedName) =>
             {
-                if (changedName == DefaultName)
+                if (changedName == MEOptions.DefaultName)
                 {
                     listener(t);
                 }
@@ -105,11 +104,11 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
 
     /// <inheritdoc/>
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveAsync(DefaultName, newConfig, cancellationToken);
+        SaveAsync(MEOptions.DefaultName, newConfig, cancellationToken);
 
     /// <inheritdoc/>
     public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
-        SaveAsync(DefaultName, configUpdater, cancellationToken);
+        SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc/>
     public Task SaveAsync(string name, T newConfig, CancellationToken cancellationToken = default)

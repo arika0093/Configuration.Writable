@@ -8,6 +8,7 @@ using System.Linq;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable.Configure;
 
@@ -47,7 +48,7 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
     /// </summary>
-    public string InstanceName { get; set; } = Microsoft.Extensions.Options.Options.DefaultName;
+    public string InstanceName { get; set; } = MEOptions.DefaultName;
 
     /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
