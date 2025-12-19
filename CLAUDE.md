@@ -88,14 +88,14 @@ Each provider package is separate to minimize dependencies and allow users to in
 
 **Without DI:**
 ```csharp
-WritableOptions.Initialize<T>(opt => { /* configure */ });
+WritableOptions.Initialize<T>(conf => { /* configure */ });
 var options = WritableOptions.GetOptions<T>();
 await options.SaveAsync(setting => setting.Prop = value);
 ```
 
 **With DI:**
 ```csharp
-builder.Services.AddWritableOptions<T>(opt => { /* configure */ });
+builder.Services.AddWritableOptions<T>(conf => { /* configure */ });
 // Inject IReadOnlyOptions<T> or IWritableOptions<T>
 ```
 

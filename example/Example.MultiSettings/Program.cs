@@ -5,18 +5,18 @@ using Configuration.Writable.FileProvider;
 var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" };
 
 // initialize each setting with the same file provider
-WritableOptions.Initialize<UserSetting>(opt =>
+WritableOptions.Initialize<UserSetting>(conf =>
 {
-    opt.FilePath = "usersettings";
+    conf.FilePath = "usersettings";
     // use common file provider with zip file
-    opt.FileProvider = zipFileProvider;
+    conf.FileProvider = zipFileProvider;
 });
-WritableOptions.Initialize<UserSecretSetting>(opt =>
+WritableOptions.Initialize<UserSecretSetting>(conf =>
 {
-    opt.FilePath = "secrets";
-    opt.FileProvider = zipFileProvider;
+    conf.FilePath = "secrets";
+    conf.FileProvider = zipFileProvider;
     // dotnet add package Configuration.Writable.Encrypt
-    opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
+    conf.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 });
 
 // and get each setting

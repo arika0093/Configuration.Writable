@@ -9,8 +9,8 @@ A library that extends `Configuration.Writable` to support Yaml format for confi
 ```csharp
 using Configuration.Writable;
 
-WritableOptions.Initialize<UserSecretSetting>(opt => {
-    opt.FormatProvider = new YamlFormatProvider();
+WritableOptions.Initialize<UserSecretSetting>(conf => {
+    conf.FormatProvider = new YamlFormatProvider();
 });
 ```
 
@@ -18,7 +18,7 @@ WritableOptions.Initialize<UserSecretSetting>(opt => {
 
 ```csharp
 builder = new HostApplicationBuilder(args);
-builder.Services.AddWritableOptions<UserSecretSetting>(opt => {
-    opt.FormatProvider = new YamlFormatProvider();
+builder.Services.AddWritableOptions<UserSecretSetting>(conf => {
+    conf.FormatProvider = new YamlFormatProvider();
 });
 ```

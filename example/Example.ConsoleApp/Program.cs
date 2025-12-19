@@ -8,19 +8,19 @@ using Microsoft.Extensions.Logging;
 WritableOptions.Initialize<SampleSetting>();
 
 // if you want to specify a custom save location, use the following instead:
-WritableOptions.Initialize<SampleSetting>(opt =>
+WritableOptions.Initialize<SampleSetting>(conf =>
 {
     // save file location is ../config/mysettings.json
     // extension is determined by the provider (omittable)
-    // opt.FilePath = "../config/mysettings";
+    // conf.FilePath = "../config/mysettings";
 
-    // if you want to standard system configration location, use opt.UseStandardSaveDirectory("your-app-id");
+    // if you want to standard system configration location, use conf.UseStandardSaveDirectory("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
-    opt.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
+    conf.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
 
     // customize the provider and file writer
     // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
-    opt.FormatProvider = new JsonFormatProvider()
+    conf.FormatProvider = new JsonFormatProvider()
     {
         // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
         // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
@@ -29,7 +29,7 @@ WritableOptions.Initialize<SampleSetting>(opt =>
 
     // if you want to use logging, set Logger
     // required NuGet package: Microsoft.Extensions.Logging.Console
-    // opt.Logger = LoggerFactory
+    // conf.Logger = LoggerFactory
     //    .Create(builder => builder.AddConsole())
     //    .CreateLogger("UserConfig");
 
@@ -40,8 +40,8 @@ WritableOptions.Initialize<SampleSetting>(opt =>
     //
     // If use DataAnnotation validation with Source Generators,
     // see SampleSettingValidator class in this project and comment out below code.
-    opt.UseDataAnnotationsValidation = false;
-    opt.WithValidator<SampleSettingValidator>();
+    conf.UseDataAnnotationsValidation = false;
+    conf.WithValidator<SampleSettingValidator>();
 });
 
 // -------------------------------

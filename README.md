@@ -103,31 +103,31 @@ You can change various settings as arguments to `Initialize` or `AddWritableOpti
 
 ```csharp
 // Without DI
-WritableOptions.Initialize<SampleSetting>(opt => { /* ... */ });
+WritableOptions.Initialize<SampleSetting>(conf => { /* ... */ });
 
 // With DI
-builder.Services.AddWritableOptions<UserSetting>(opt => { /* ... */ });
+builder.Services.AddWritableOptions<UserSetting>(conf => { /* ... */ });
 ```
 
 ### Save Location
 Default behavior is to save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
-If you want to change the save location, use `opt.FilePath` or `opt.UseXxxDirectory().AddFilePath(path)`.
+If you want to change the save location, use `conf.FilePath` or `conf.UseXxxDirectory().AddFilePath(path)`.
 
 For example:
 ```csharp
 // to save to the parent directory
-opt.FilePath = "../myconfig";
+conf.FilePath = "../myconfig";
 
 // to save to child directory
-opt.FilePath = "config/myconfig";
+conf.FilePath = "config/myconfig";
 // You can also use AddFilePath instead of directly editing FilePath.
-opt.AddFilePath("config/myconfig");
+conf.AddFilePath("config/myconfig");
 
 // to save to a common settings directory
 //   in Windows: %APPDATA%/MyAppId
 //   in macOS: $XDG_CONFIG_HOME/MyAppId or ~/Library/Application Support/MyAppId
 //   in Linux: $XDG_CONFIG_HOME/MyAppId or ~/.config/MyAppId
-opt.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
+conf.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
 ```
 
 If you want to read/write files from multiple locations, you can call `AddFilePath` multiple times as follows.  
@@ -139,12 +139,12 @@ When multiple locations are specified, the load/save destination is determined o
 1. Order of registration (earlier registrations have higher priority)
 
 ```csharp
-opt.AddFilePath(@"D:\SpecialFolder\first"); // is not existing folder/file yet
-opt.UseStandardSaveDirectory("MyAppId")
-   .AddFilePath("second", priority: 10);
-opt.UseExecutableDirectory()
-   .AddFilePath("third") // is already exist directory but not file
-   .AddFilePath("child/fourth"); // is already exist file
+conf.AddFilePath(@"D:\SpecialFolder\first"); // is not existing folder/file yet
+conf.UseStandardSaveDirectory("MyAppId")
+    .AddFilePath("second", priority: 10);
+conf.UseExecutableDirectory()
+    .AddFilePath("third") // is already exist directory but not file
+    .AddFilePath("child/fourth"); // is already exist file
 
 // In this case, the priorities are as follows:
 // 1: %APPDATA%/MyAppId/second (priority 10)
@@ -161,25 +161,26 @@ If you want to toggle between development and production environments, you can u
 // - production:  %APPDATA%/MyAppId/mysettings.json (on Windows)
 
 // without DI
-WritableOptions.Initialize<UserSetting>(opt => {
+WritableOptions.Initialize<UserSetting>(conf => {
 #if DEBUG
     var isProduction = false;
 #else
     var isProduction = true;
 #endif
-    opt.UseStandardSaveDirectory("MyAppId", enabled: isProduction)
+    conf.UseStandardSaveDirectory("MyAppId", enabled: isProduction)
         .AddFilePath("mysettings");
 });
 
 // if using IHostApplicationBuilder
-builder.Services.AddWritableOptions<UserSetting>(opt => {
-    opt.UseStandardSaveDirectory("MyAppId", enabled: builder.Environment.IsProduction())
+builder.Services.AddWritableOptions<UserSetting>(conf => {
+    var isProd = builder.Environment.IsProduction();
+    conf.UseStandardSaveDirectory("MyAppId", enabled: isProd)
         .AddFilePath("mysettings");
 });
 ```
 
 ### FormatProvider
-If you want to change the format when saving files, specify `opt.FormatProvider`.
+If you want to change the format when saving files, specify `conf.FormatProvider`.
 Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
@@ -191,18 +192,18 @@ Currently, the following providers are available:
 
 ```csharp
 // use Json format with indentation
-opt.FormatProvider = new JsonFormatProvider() {
+conf.FormatProvider = new JsonFormatProvider() {
     JsonSerializerOptions = { WriteIndented = true },
 };
 
 // use Yaml format
 // (you need to install Configuration.Writable.Yaml package)
-opt.FormatProvider = new YamlFormatProvider();
+conf.FormatProvider = new YamlFormatProvider();
 
 // use encrypted format
 // NOTE: Be aware that this is a simple encryption.
 // (you need to install Configuration.Writable.Encrypt package)
-opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
+conf.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 ```
 
 > [!NOTE]
@@ -217,12 +218,12 @@ Default FileProvider (`CommonFileProvider`) supports the following features:
 * Atomic file writing (write to a temporary file first, then rename it)
 * Thread-safe: uses internal semaphore to ensure safe concurrent access
 
-If you want to change the way files are written, create a class that implements `IFileProvider` and specify it in `opt.FileProvider`.
+If you want to change the way files are written, create a class that implements `IFileProvider` and specify it in `conf.FileProvider`.
 
 ```csharp
 using Configuration.Writable.FileProvider;
 
-opt.FileProvider = new CommonFileProvider() {
+conf.FileProvider = new CommonFileProvider() {
     // retry up to 5 times when file access fails
     MaxRetryCount = 5,
     // wait 100ms, 200ms, 300ms, ... before each retry
@@ -267,23 +268,23 @@ public class MyService(IWritableOptions<UserSetting> options) : IDisposable
 ```
 
 By default, throttling is enabled to suppress high-frequency file changes. Additional changes within 1 second from change detection are ignored by default.  
-If you want to change the throttle duration, specify `opt.OnChangeThrottleMs`.
+If you want to change the throttle duration, specify `conf.OnChangeThrottleMs`.
 
 ```csharp
-opt.OnChangeThrottleMs = 500; // customize to 500ms
-opt.OnChangeThrottleMs = 0;   // disable throttling
+conf.OnChangeThrottleMs = 500; // customize to 500ms
+conf.OnChangeThrottleMs = 0;   // disable throttling
 ```
 
 ### RegisterInstanceToContainer
-If you want to directly reference the settings class, specify `opt.RegisterInstanceToContainer = true`.
+If you want to directly reference the settings class, specify `conf.RegisterInstanceToContainer = true`.
 
 > [!NOTE]
 > The dynamic update functionality provided by `IReadOnlyOptions<T>` will no longer be available.
 > Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
 
 ```csharp
-builder.Services.AddWritableOptions<UserSetting>(opt => {
-    opt.RegisterInstanceToContainer = true;
+builder.Services.AddWritableOptions<UserSetting>(conf => {
+    conf.RegisterInstanceToContainer = true;
 });
 
 // you can use UserSetting directly
@@ -308,12 +309,12 @@ public class MyOtherService(IReadOnlyOptions<UserSetting> options)
 
 ### Logging
 Logging is enabled by default in DI environments.  
-If you are not using DI, or if you want to override the logging settings, you can enable logging by specifying `opt.Logger`.
+If you are not using DI, or if you want to override the logging settings, you can enable logging by specifying `conf.Logger`.
 
 ```csharp
 // without DI
 // package add Microsoft.Extensions.Logging.Console
-opt.Logger = LoggerFactory
+conf.Logger = LoggerFactory
     // enable console logging 
     .Create(builder => builder.AddConsole())
     .CreateLogger("Configuration.Writable");
@@ -342,11 +343,11 @@ When saving settings, they are written to a configuration file in a structured f
 }
 ```
 
-To organize settings under a specific section, use `opt.SectionName`.
+To organize settings under a specific section, use `conf.SectionName`.
 
 ```jsonc
 {
-  // opt.SectionName = "MyAppSettings:Foo:Bar"
+  // conf.SectionName = "MyAppSettings:Foo:Bar"
   "MyAppSettings": {
     "Foo": {
       "Bar": {
@@ -366,9 +367,9 @@ If validation fails, an `OptionsValidationException` is thrown and the settings 
 ```csharp
 using Microsoft.Extensions.Options;
 
-builder.Services.AddWritableOptions<UserSetting>(opt => {
+builder.Services.AddWritableOptions<UserSetting>(conf => {
     // if you want to disable validation of DataAnnotations, do the following:
-    // opt.UseDataAnnotationsValidation = false;
+    // conf.UseDataAnnotationsValidation = false;
 });
 
 var options = WritableOptions.GetOptions<UserSetting>();
@@ -396,11 +397,11 @@ internal class UserSetting
 To use source generators for DataAnnotations, use the following pattern.
 
 ```csharp
-builder.Services.AddWritableOptions<UserSetting>(opt => {
+builder.Services.AddWritableOptions<UserSetting>(conf => {
     // disable attributes-based validation
-    opt.UseDataAnnotationsValidation = false;
+    conf.UseDataAnnotationsValidation = false;
     // enable source-generator-based validation
-    opt.WithValidator<UserSettingValidator>();
+    conf.WithValidator<UserSettingValidator>();
 });
 
 internal class UserSetting { /* ... */ }
@@ -414,15 +415,15 @@ Alternatively, you can add custom validation using `WithValidatorFunction` or `W
 ```csharp
 using Microsoft.Extensions.Options;
 
-builder.Services.AddWritableOptions<UserSetting>(opt => {
+builder.Services.AddWritableOptions<UserSetting>(conf => {
     // add custom validation function
-    opt.WithValidatorFunction(setting => {
+    conf.WithValidatorFunction(setting => {
         if (setting.Name.Contains("invalid"))
             return ValidateOptionsResult.Fail("Name must not contain 'invalid'.");
         return ValidateOptionsResult.Success;
     });
     // or use a custom validator class
-    opt.WithValidator<MyCustomValidator>();
+    conf.WithValidator<MyCustomValidator>();
 });
 
 // IValidateOptions sample
@@ -448,14 +449,14 @@ If you want to manage multiple settings of the same type, you must specify diffe
 
 ```csharp
 // first setting
-builder.Services.AddWritableOptions<UserSetting>(opt => {
-    opt.FilePath = "firstsettings.json";
-    opt.InstanceName = "First"; // here
+builder.Services.AddWritableOptions<UserSetting>(conf => {
+    conf.FilePath = "firstsettings.json";
+    conf.InstanceName = "First"; // here
 });
 // second setting
-builder.Services.AddWritableOptions<UserSetting>(opt => {
-    opt.FilePath = "secondsettings.json";
-    opt.InstanceName = "Second"; // here
+builder.Services.AddWritableOptions<UserSetting>(conf => {
+    conf.FilePath = "secondsettings.json";
+    conf.InstanceName = "Second"; // here
 });
 ```
 
@@ -520,9 +521,9 @@ public class DynamicOptionsService(IWritableOptionsConfigRegistry<UserSetting> r
 {
     public void AddNewOptions(string instanceName, string filePath)
     {
-        registry.TryAdd(opt => {
-            opt.InstanceName = instanceName;
-            opt.FilePath = filePath;
+        registry.TryAdd(conf => {
+            conf.InstanceName = instanceName;
+            conf.FilePath = filePath;
         });
     }
 
@@ -558,15 +559,15 @@ for example, to save `Foo`(foo.json) and `Bar`(bar.json) in `configurations.zip`
 var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" };
 
 // initialize each setting with the same file provider
-builder.Services.AddWritableOptions<Foo>(opt =>
+builder.Services.AddWritableOptions<Foo>(conf =>
 {
-    opt.FilePath = "foo";
-    opt.FileProvider = zipFileProvider;
+    conf.FilePath = "foo";
+    conf.FileProvider = zipFileProvider;
 });
-builder.Services.AddWritableOptions<Bar>(opt =>
+builder.Services.AddWritableOptions<Bar>(conf =>
 {
-    opt.FilePath = "bar";
-    opt.FileProvider = zipFileProvider;
+    conf.FilePath = "bar";
+    conf.FileProvider = zipFileProvider;
 });
 ```
 
@@ -592,8 +593,8 @@ If you want to perform tests that actually involve writing to the file system, u
 ```csharp
 var sampleFilePath = Path.GetTempFileName();
 var instance = new WritableOptionsSimpleInstance<UserSetting>();
-instance.Initialize(opt => {
-    opt.FilePath = sampleFilePath;
+instance.Initialize(conf => {
+    conf.FilePath = sampleFilePath;
 });
 var option = instance.GetOptions();
 

@@ -13,7 +13,7 @@ internal class WritableOptionsConfigRegistryImpl<T>(
 {
     // Map of instance names to their corresponding writable configuration options
     private readonly Dictionary<string, WritableOptionsConfiguration<T>> _optionsMap =
-        options.ToDictionary(opt => opt.InstanceName);
+        options.ToDictionary(conf => conf.InstanceName);
 
     /// <inheritdoc />
     public event Action<WritableOptionsConfiguration<T>> OnAdded = delegate { };

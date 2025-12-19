@@ -9,9 +9,9 @@ A library that extends `Configuration.Writable` to support encryption of configu
 ```csharp
 using Configuration.Writable;
 
-WritableOptions.Initialize<UserSecretSetting>(opt => {
-    opt.FilePath = "my-secret-folder/secrets";
-    opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
+WritableOptions.Initialize<UserSecretSetting>(conf => {
+    conf.FilePath = "my-secret-folder/secrets";
+    conf.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 });
 ```
 
@@ -19,8 +19,8 @@ WritableOptions.Initialize<UserSecretSetting>(opt => {
 
 ```csharp
 builder = new HostApplicationBuilder(args);
-builder.Services.AddWritableOptions<UserSecretSetting>(opt => {
-    opt.FilePath = "my-secret-folder/secrets";
-    opt.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
+builder.Services.AddWritableOptions<UserSecretSetting>(conf => {
+    conf.FilePath = "my-secret-folder/secrets";
+    conf.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 });
 ```
