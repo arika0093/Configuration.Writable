@@ -103,7 +103,7 @@ internal class SaveLocationManager
     /// </summary>
     private static string GetDefaultLocationPath(string instanceName) =>
         !string.IsNullOrWhiteSpace(instanceName) ? instanceName : DefaultFileName;
-    
+
     /// <summary>
     /// Checks if the application can open the specified file with write access.
     /// </summary>

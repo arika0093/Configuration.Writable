@@ -19,10 +19,7 @@ public class OptionsImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = "test.json",
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "test.json" };
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
@@ -44,10 +41,7 @@ public class OptionsImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = "test.json",
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "test.json" };
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
@@ -68,10 +62,7 @@ public class OptionsImplTests
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = "test.json",
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "test.json" };
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions("custom");
 
@@ -90,10 +81,7 @@ public class OptionsImplTests
         var FileProvider = new InMemoryFileProvider();
         var testSettings = new TestSettings { Name = "test", Value = 100 };
 
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = "test.json",
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "test.json" };
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 

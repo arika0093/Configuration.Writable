@@ -27,18 +27,24 @@ public class InstanceNameIntegrationTests
         var builder = Host.CreateApplicationBuilder();
 
         // first setting
-        builder.Services.AddWritableOptions<UserSetting>("First", conf =>
-        {
-            conf.FilePath = firstFileName;
-            conf.UseInMemoryFileProvider(_FileProvider);
-        });
+        builder.Services.AddWritableOptions<UserSetting>(
+            "First",
+            conf =>
+            {
+                conf.FilePath = firstFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         // second setting
-        builder.Services.AddWritableOptions<UserSetting>("Second", conf =>
-        {
-            conf.FilePath = secondFileName;
-            conf.UseInMemoryFileProvider(_FileProvider);
-        });
+        builder.Services.AddWritableOptions<UserSetting>(
+            "Second",
+            conf =>
+            {
+                conf.FilePath = secondFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var host = builder.Build();
         var config = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
@@ -103,17 +109,23 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.Services.AddWritableOptions<UserSetting>("First", conf =>
-        {
-            conf.FilePath = firstFileName;
-            conf.UseInMemoryFileProvider(_FileProvider);
-        });
+        builder.Services.AddWritableOptions<UserSetting>(
+            "First",
+            conf =>
+            {
+                conf.FilePath = firstFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
-        builder.Services.AddWritableOptions<UserSetting>("Second", conf =>
-        {
-            conf.FilePath = secondFileName;
-            conf.UseInMemoryFileProvider(_FileProvider);
-        });
+        builder.Services.AddWritableOptions<UserSetting>(
+            "Second",
+            conf =>
+            {
+                conf.FilePath = secondFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var host = builder.Build();
         var config = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
@@ -153,17 +165,23 @@ public class InstanceNameIntegrationTests
 
         var builder = Host.CreateApplicationBuilder();
 
-        builder.Services.AddWritableOptions<UserSetting>("First", conf =>
-        {
-            conf.FilePath = firstFileName;
-            conf.UseInMemoryFileProvider(_FileProvider);
-        });
+        builder.Services.AddWritableOptions<UserSetting>(
+            "First",
+            conf =>
+            {
+                conf.FilePath = firstFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
-        builder.Services.AddWritableOptions<UserSetting>("Second", conf =>
-        {
-            conf.FilePath = secondFileName;
-            conf.UseInMemoryFileProvider(_FileProvider);
-        });
+        builder.Services.AddWritableOptions<UserSetting>(
+            "Second",
+            conf =>
+            {
+                conf.FilePath = secondFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var host = builder.Build();
         var config = host.Services.GetRequiredService<IWritableOptions<UserSetting>>();

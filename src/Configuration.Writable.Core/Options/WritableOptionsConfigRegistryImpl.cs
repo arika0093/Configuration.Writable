@@ -13,9 +13,9 @@ internal class WritableOptionsConfigRegistryImpl<T>(
 {
     // Map of instance names to their corresponding writable configuration options
     // If multiple configurations have the same InstanceName, the last one wins (consistent with DI container behavior)
-    private readonly Dictionary<string, WritableOptionsConfiguration<T>> _optionsMap =
-        options.GroupBy(conf => conf.InstanceName)
-               .ToDictionary(g => g.Key, g => g.Last());
+    private readonly Dictionary<string, WritableOptionsConfiguration<T>> _optionsMap = options
+        .GroupBy(conf => conf.InstanceName)
+        .ToDictionary(g => g.Key, g => g.Last());
 
     /// <inheritdoc />
     public event Action<WritableOptionsConfiguration<T>> OnAdded = delegate { };

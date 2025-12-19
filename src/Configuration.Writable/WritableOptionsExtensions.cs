@@ -35,7 +35,10 @@ public static class WritableOptionsExtensions
     /// <typeparam name="T">The type of the options to configure. This type must be a class.</typeparam>
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
     /// <param name="instanceName">The name of the options instance.</param>
-    public static IServiceCollection AddWritableOptions<T>(this IServiceCollection services, string instanceName)
+    public static IServiceCollection AddWritableOptions<T>(
+        this IServiceCollection services,
+        string instanceName
+    )
         where T : class, new()
     {
         var confBuilder = new WritableOptionsConfigBuilder<T>();

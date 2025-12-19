@@ -95,11 +95,14 @@ public class IOptionsIntegrationTests
         var testFileName = Path.GetRandomFileName();
 
         var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddWritableOptions<TestSettings>("custom", options =>
-        {
-            options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        builder.Services.AddWritableOptions<TestSettings>(
+            "custom",
+            options =>
+            {
+                options.FilePath = testFileName;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var host = builder.Build();
         var optionsService = host.Services.GetRequiredService<IOptionsMonitor<TestSettings>>();

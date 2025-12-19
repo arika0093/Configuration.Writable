@@ -20,10 +20,7 @@ public class OptionsSnapshotImplTests
         InMemoryFileProvider FileProvider
     )
     {
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = fileName,
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = fileName };
         builder.UseInMemoryFileProvider(FileProvider);
         return builder.BuildOptions(instanceName);
     }

@@ -68,10 +68,13 @@ public class ConfigurationOptionsRegistryTests
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
 
         // Act
-        var result = registry.TryAdd("newInstance", conf =>
-        {
-            conf.FilePath = "new.json";
-        });
+        var result = registry.TryAdd(
+            "newInstance",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
 
         // Assert
         result.ShouldBeTrue();
@@ -89,10 +92,13 @@ public class ConfigurationOptionsRegistryTests
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([existingOption]);
 
         // Act
-        var result = registry.TryAdd("existing", conf =>
-        {
-            conf.FilePath = "new.json";
-        });
+        var result = registry.TryAdd(
+            "existing",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
 
         // Assert
         result.ShouldBeFalse();
@@ -109,10 +115,13 @@ public class ConfigurationOptionsRegistryTests
         registry.OnAdded += conf => addedOption = conf;
 
         // Act
-        registry.TryAdd("newInstance", conf =>
-        {
-            conf.FilePath = "new.json";
-        });
+        registry.TryAdd(
+            "newInstance",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
 
         // Assert
         addedOption.ShouldNotBeNull();
@@ -130,10 +139,13 @@ public class ConfigurationOptionsRegistryTests
         registry.OnAdded += _ => eventTriggered = true;
 
         // Act
-        registry.TryAdd("existing", conf =>
-        {
-            conf.FilePath = "new.json";
-        });
+        registry.TryAdd(
+            "existing",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
 
         // Assert
         eventTriggered.ShouldBeFalse();
@@ -288,10 +300,13 @@ public class ConfigurationOptionsRegistryTests
         registry.OnRemoved += _ => removedCount++;
 
         // Act
-        registry.TryAdd("test", conf =>
-        {
-            conf.FilePath = "test.json";
-        });
+        registry.TryAdd(
+            "test",
+            conf =>
+            {
+                conf.FilePath = "test.json";
+            }
+        );
         registry.TryRemove("test");
 
         // Assert
@@ -308,16 +323,22 @@ public class ConfigurationOptionsRegistryTests
 
         // Act & Assert - Add multiple
         registry
-            .TryAdd("second", conf =>
-            {
-                conf.FilePath = "second.json";
-            })
+            .TryAdd(
+                "second",
+                conf =>
+                {
+                    conf.FilePath = "second.json";
+                }
+            )
             .ShouldBeTrue();
         registry
-            .TryAdd("third", conf =>
-            {
-                conf.FilePath = "third.json";
-            })
+            .TryAdd(
+                "third",
+                conf =>
+                {
+                    conf.FilePath = "third.json";
+                }
+            )
             .ShouldBeTrue();
         registry.GetInstanceNames().Count().ShouldBe(3);
 
@@ -328,19 +349,25 @@ public class ConfigurationOptionsRegistryTests
 
         // Try to add duplicate
         registry
-            .TryAdd("initial", conf =>
-            {
-                conf.FilePath = "new.json";
-            })
+            .TryAdd(
+                "initial",
+                conf =>
+                {
+                    conf.FilePath = "new.json";
+                }
+            )
             .ShouldBeFalse();
         registry.Get("initial").ConfigFilePath.ShouldContain("initial.json");
 
         // Add removed one back
         registry
-            .TryAdd("second", conf =>
-            {
-                conf.FilePath = "second-new.json";
-            })
+            .TryAdd(
+                "second",
+                conf =>
+                {
+                    conf.FilePath = "second-new.json";
+                }
+            )
             .ShouldBeTrue();
         registry.Get("second").ConfigFilePath.ShouldContain("second-new.json");
 
@@ -355,10 +382,7 @@ public class ConfigurationOptionsRegistryTests
         string filePath
     )
     {
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = filePath,
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = filePath };
         return builder.BuildOptions(instanceName);
     }
 }

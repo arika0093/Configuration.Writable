@@ -23,7 +23,7 @@ public class WritableOptionsSimpleInstance<T>
     /// Initializes writable configuration with custom options.
     /// </summary>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
-    public void Initialize(Action<WritableOptionsConfigBuilder<T>> configurationOptions) => 
+    public void Initialize(Action<WritableOptionsConfigBuilder<T>> configurationOptions) =>
         Initialize(MEOptions.DefaultName, configurationOptions);
 
     /// <summary>

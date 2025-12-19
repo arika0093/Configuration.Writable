@@ -24,10 +24,7 @@ public class OptionsMonitorImplTests
         InMemoryFileProvider FileProvider
     )
     {
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = fileName,
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = fileName };
         builder.UseInMemoryFileProvider(FileProvider);
         return builder.BuildOptions(instanceName);
     }
@@ -483,10 +480,7 @@ public class OptionsMonitorImplTests
     public void OnChangeThrottle_DefaultValue_ShouldBe1000Ms()
     {
         // Arrange & Act
-        var builder = new WritableOptionsConfigBuilder<TestSettings>
-        {
-            FilePath = "test.json",
-        };
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "test.json" };
         var FileProvider = new InMemoryFileProvider();
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions("test");

@@ -23,10 +23,13 @@ public class KeyedServicesIntegrationTests
     public void AddWritableOptions_WithInstanceName_ShouldRegisterKeyedServices()
     {
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>("Production", options =>
-        {
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "Production",
+            options =>
+            {
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -82,15 +85,21 @@ public class KeyedServicesIntegrationTests
     {
         var services = new ServiceCollection();
 
-        services.AddWritableOptions<AppSettings>("Development", options =>
-        {
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "Development",
+            options =>
+            {
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
-        services.AddWritableOptions<AppSettings>("Production", options =>
-        {
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "Production",
+            options =>
+            {
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -115,11 +124,14 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>("TestInstance", options =>
-        {
-            options.FilePath = fileName;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "TestInstance",
+            options =>
+            {
+                options.FilePath = fileName;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetRequiredKeyedService<
@@ -145,11 +157,14 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>("SaveTest", options =>
-        {
-            options.FilePath = fileName;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "SaveTest",
+            options =>
+            {
+                options.FilePath = fileName;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetRequiredKeyedService<
@@ -179,11 +194,14 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>("ActionTest", options =>
-        {
-            options.FilePath = fileName;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "ActionTest",
+            options =>
+            {
+                options.FilePath = fileName;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetRequiredKeyedService<
@@ -209,11 +227,14 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>("ReadOnlyTest", options =>
-        {
-            options.FilePath = fileName;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "ReadOnlyTest",
+            options =>
+            {
+                options.FilePath = fileName;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -243,17 +264,23 @@ public class KeyedServicesIntegrationTests
 
         var services = new ServiceCollection();
 
-        services.AddWritableOptions<AppSettings>("Instance1", options =>
-        {
-            options.FilePath = file1;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "Instance1",
+            options =>
+            {
+                options.FilePath = file1;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
-        services.AddWritableOptions<AppSettings>("Instance2", options =>
-        {
-            options.FilePath = file2;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "Instance2",
+            options =>
+            {
+                options.FilePath = file2;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -279,11 +306,14 @@ public class KeyedServicesIntegrationTests
         var fileName = Path.GetRandomFileName();
 
         var services = new ServiceCollection();
-        services.AddWritableOptions<AppSettings>("ConfigTest", options =>
-        {
-            options.FilePath = fileName;
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "ConfigTest",
+            options =>
+            {
+                options.FilePath = fileName;
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetRequiredKeyedService<
@@ -313,10 +343,13 @@ public class KeyedServicesIntegrationTests
             string? notifiedName = null;
 
             var services = new ServiceCollection();
-            services.AddWritableOptions<AppSettings>("ChangeTest", options =>
-            {
-                options.FilePath = testFilePath;
-            });
+            services.AddWritableOptions<AppSettings>(
+                "ChangeTest",
+                options =>
+                {
+                    options.FilePath = testFilePath;
+                }
+            );
 
             var serviceProvider = services.BuildServiceProvider();
             var writableOptions = serviceProvider.GetRequiredKeyedService<
@@ -364,20 +397,29 @@ public class KeyedServicesIntegrationTests
     {
         var services = new ServiceCollection();
 
-        services.AddWritableOptions<AppSettings>("KeyA", options =>
-        {
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "KeyA",
+            options =>
+            {
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
-        services.AddWritableOptions<AppSettings>("KeyB", options =>
-        {
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "KeyB",
+            options =>
+            {
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
-        services.AddWritableOptions<AppSettings>("KeyC", options =>
-        {
-            options.UseInMemoryFileProvider(_FileProvider);
-        });
+        services.AddWritableOptions<AppSettings>(
+            "KeyC",
+            options =>
+            {
+                options.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
 
         var serviceProvider = services.BuildServiceProvider();
 
