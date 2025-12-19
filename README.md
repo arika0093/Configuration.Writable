@@ -1,5 +1,5 @@
 # Configuration.Writable
-[![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/arika0093/Configuration.Writable?style=flat-square)
+[![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) 
 
 A lightweight library that allows for easy saving and referencing of settings, with extensive customization options.
 
@@ -9,8 +9,6 @@ A lightweight library that allows for easy saving and referencing of settings, w
 * [Automatic detection](#change-detection) of external changes to configuration files and reflection of the latest settings.
 * Simple API that can be easily used in applications both [with](#with-di) and [without](#without-di) DI.
 * Highly [customizable configuration](#customization) methods, save locations, file formats, validation, logging, and more.
-
-[See more...](./docs/article/why-this-library.md)
 
 ## Usage
 ### Setup
@@ -97,6 +95,16 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
 ```
 
 ## Customization
+- [Configuration Method](#configuration-method)
+- [Save Location](#save-location)
+- [FormatProvider](#formatprovider)
+- [FileProvider](#fileprovider)
+- [Change Detection](#change-detection)
+- [RegisterInstanceToContainer](#registerinstancetocontainer)
+- [Logging](#logging)
+- [SectionName](#sectionname)
+- [Validation](#validation)
+
 ### Configuration Method
 You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
 
