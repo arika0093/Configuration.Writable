@@ -129,7 +129,7 @@ conf.UseStandardSaveDirectory("MyAppId")
 ```
 
 If you want to read/write files from multiple locations, you can call `UseXxxDirectory().AddFilePath` multiple times as follows.  
-When multiple locations are specified, the load/save destination is determined on first access according to the following rules:
+When multiple locations are specified, the load/save destination is determined on initialization on the following priority order:
 
 1. Explicit priority (descending)
 1. Target file already exists and able to open with write access
@@ -448,14 +448,12 @@ If you want to manage multiple settings of the same type, you must specify diffe
 
 ```csharp
 // first setting
-builder.Services.AddWritableOptions<UserSetting>(conf => {
+builder.Services.AddWritableOptions<UserSetting>("First", conf => {
     conf.UseFile("firstsettings.json");
-    conf.InstanceName = "First"; // here
 });
 // second setting
-builder.Services.AddWritableOptions<UserSetting>(conf => {
+builder.Services.AddWritableOptions<UserSetting>("Second", conf => {
     conf.UseFile("secondsettings.json");
-    conf.InstanceName = "Second"; // here
 });
 ```
 
@@ -520,9 +518,8 @@ public class DynamicOptionsService(IWritableOptionsConfigRegistry<UserSetting> r
 {
     public void AddNewOptions(string instanceName, string filePath)
     {
-        registry.TryAdd(conf => {
+        registry.TryAdd(instanceName, conf => {
             conf.UseFile(filePath);
-            conf.InstanceName = instanceName;
         });
     }
 
@@ -545,7 +542,7 @@ public class MyService(IWritableNamedOptions<UserSetting> options)
         // and save to specific instance
         await options.SaveAsync("UserDocument1", setting => {
             setting.Name = "document specific name";
-        }
+        });
     }
 }
 ```

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable.Testing;
 
@@ -22,10 +23,22 @@ public class WritableOptionsSimpleInstance<T>
     /// Initializes writable configuration with custom options.
     /// </summary>
     /// <param name="configurationOptions">An action to customize the configuration options.</param>
-    public void Initialize(Action<WritableOptionsConfigBuilder<T>> configurationOptions)
+    public void Initialize(Action<WritableOptionsConfigBuilder<T>> configurationOptions) => 
+        Initialize(MEOptions.DefaultName, configurationOptions);
+
+    /// <summary>
+    /// Initializes writable configuration with custom options.
+    /// </summary>
+    /// <param name="instanceName">The name of the options instance.</param>
+    /// <param name="configurationOptions">An action to customize the configuration options.</param>
+    public void Initialize(
+        string instanceName,
+        Action<WritableOptionsConfigBuilder<T>> configurationOptions
+    )
     {
         var optionBuilder = new WritableOptionsConfigBuilder<T>();
         configurationOptions(optionBuilder);
+        optionBuilder.InstanceName = instanceName;
         _options = optionBuilder.BuildOptions();
     }
 

@@ -35,10 +35,11 @@ internal class WritableOptionsConfigRegistryImpl<T>(
     public IEnumerable<string> GetInstanceNames() => _optionsMap.Keys;
 
     /// <inheritdoc />
-    public bool TryAdd(Action<WritableOptionsConfigBuilder<T>> configure)
+    public bool TryAdd(string instanceName, Action<WritableOptionsConfigBuilder<T>> configure)
     {
         var optionsBuilder = new WritableOptionsConfigBuilder<T>();
         configure(optionsBuilder);
+        optionsBuilder.InstanceName = instanceName;
         var option = optionsBuilder.BuildOptions();
 #if NET
         var rst = _optionsMap.TryAdd(option.InstanceName, option);

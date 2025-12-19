@@ -11,10 +11,11 @@ public interface IWritableOptionsConfigRegistry<T>
     where T : class, new()
 {
     /// <summary>
-    /// Attempts to add a new writable configuration options of type <typeparamref name="T"/> with the specified configuration action.
+    /// Attempts to add a new writable configuration options of type <typeparamref name="T"/> with the specified configuration action.]
     /// </summary>
+    /// <param name="instanceName">The instance name of the writable options to add.</param>
     /// <param name="configure">The action to configure the writable configuration options.</param>
-    bool TryAdd(Action<WritableOptionsConfigBuilder<T>> configure);
+    bool TryAdd(string instanceName, Action<WritableOptionsConfigBuilder<T>> configure);
 
     /// <summary>
     /// Attempts to remove the writable configuration options with the specified instance name.

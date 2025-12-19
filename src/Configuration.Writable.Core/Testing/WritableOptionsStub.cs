@@ -36,6 +36,16 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableOptionsStub{T}"/> class.
     /// </summary>
+    /// <param name="instanceName">The name of the options instance.</param>
+    /// <param name="value">The initial value to be used for the specified name.</param>
+    public WritableOptionsStub(string instanceName, T value)
+    {
+        NamedValues[instanceName] = value;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WritableOptionsStub{T}"/> class.
+    /// </summary>
     /// <param name="namedValues">A dictionary containing named configuration values.</param>
     public WritableOptionsStub(Dictionary<string, T> namedValues)
     {
@@ -158,6 +168,16 @@ public static class WritableOptionsStub
     /// <returns>A new instance of <see cref="WritableOptionsStub{T}"/>.</returns>
     public static WritableOptionsStub<T> Create<T>(T value)
         where T : class, new() => new(value);
+
+    /// <summary>
+    /// Creates a new instance of <see cref="WritableOptionsStub{T}"/> with the specified initial value.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration object.</typeparam>
+    /// <param name="instanceName">The name of the options instance.</param>
+    /// <param name="value">The initial value to be used for the specified instance name.</param>
+    /// <returns>A new instance of <see cref="WritableOptionsStub{T}"/>.</returns>
+    public static WritableOptionsStub<T> Create<T>(string instanceName, T value)
+        where T : class, new() => new(instanceName, value);
 
     /// <summary>
     /// Creates a new instance of <see cref="WritableOptionsStub{T}"/> with the specified named values.
