@@ -115,7 +115,7 @@ public record WritableOptionsConfigBuilder<T>
     /// </summary>
     public WritableOptionsConfiguration<T> BuildOptions()
     {
-        var configFilePath = _saveLocationManager.Build(FormatProvider);
+        var configFilePath = _saveLocationManager.Build(FormatProvider, InstanceName);
         var validator = BuildValidator();
         // override provider's file provider if set
         if (FileProvider != null)
