@@ -46,11 +46,6 @@ public record WritableOptionsConfigBuilder<T>
     }
 
     /// <summary>
-    /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
-    /// </summary>
-    public string InstanceName { get; set; } = MEOptions.DefaultName;
-
-    /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
     /// This helps to prevent excessive event firing during rapid changes. <br/>
     /// Defaults to 1000 ms.
@@ -139,6 +134,12 @@ public record WritableOptionsConfigBuilder<T>
             Validator = validator,
         };
     }
+
+    /// <summary>
+    /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
+    /// This is used to distinguish between multiple configurations of the same type.
+    /// </summary>
+    internal string InstanceName { get; set; } = MEOptions.DefaultName;
 
     /// <summary>
     /// Builds the composite validator from all registered validators.
