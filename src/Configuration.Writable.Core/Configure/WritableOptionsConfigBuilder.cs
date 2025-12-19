@@ -8,6 +8,7 @@ using System.Linq;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable.Configure;
 
@@ -43,11 +44,6 @@ public record WritableOptionsConfigBuilder<T>
         get => _saveLocationManager.LocationPath;
         set => UseFile(value);
     }
-
-    /// <summary>
-    /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
-    /// </summary>
-    public string InstanceName { get; set; } = Microsoft.Extensions.Options.Options.DefaultName;
 
     /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
@@ -117,9 +113,9 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
-    public WritableOptionsConfiguration<T> BuildOptions()
+    public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
-        var configFilePath = _saveLocationManager.Build(FormatProvider);
+        var configFilePath = _saveLocationManager.Build(FormatProvider, instanceName);
         var validator = BuildValidator();
         // override provider's file provider if set
         if (FileProvider != null)
@@ -131,7 +127,7 @@ public record WritableOptionsConfigBuilder<T>
         {
             FormatProvider = FormatProvider,
             ConfigFilePath = configFilePath,
-            InstanceName = InstanceName,
+            InstanceName = instanceName,
             SectionName = SectionName,
             OnChangeThrottleMs = OnChangeThrottleMs,
             Logger = Logger,

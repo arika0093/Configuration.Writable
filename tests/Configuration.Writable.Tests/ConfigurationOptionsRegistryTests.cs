@@ -68,9 +68,8 @@ public class ConfigurationOptionsRegistryTests
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
 
         // Act
-        var result = registry.TryAdd(conf =>
+        var result = registry.TryAdd("newInstance", conf =>
         {
-            conf.InstanceName = "newInstance";
             conf.FilePath = "new.json";
         });
 
@@ -90,9 +89,8 @@ public class ConfigurationOptionsRegistryTests
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([existingOption]);
 
         // Act
-        var result = registry.TryAdd(conf =>
+        var result = registry.TryAdd("existing", conf =>
         {
-            conf.InstanceName = "existing";
             conf.FilePath = "new.json";
         });
 
@@ -111,9 +109,8 @@ public class ConfigurationOptionsRegistryTests
         registry.OnAdded += conf => addedOption = conf;
 
         // Act
-        registry.TryAdd(conf =>
+        registry.TryAdd("newInstance", conf =>
         {
-            conf.InstanceName = "newInstance";
             conf.FilePath = "new.json";
         });
 
@@ -133,9 +130,8 @@ public class ConfigurationOptionsRegistryTests
         registry.OnAdded += _ => eventTriggered = true;
 
         // Act
-        registry.TryAdd(conf =>
+        registry.TryAdd("existing", conf =>
         {
-            conf.InstanceName = "existing";
             conf.FilePath = "new.json";
         });
 
@@ -292,9 +288,8 @@ public class ConfigurationOptionsRegistryTests
         registry.OnRemoved += _ => removedCount++;
 
         // Act
-        registry.TryAdd(conf =>
+        registry.TryAdd("test", conf =>
         {
-            conf.InstanceName = "test";
             conf.FilePath = "test.json";
         });
         registry.TryRemove("test");
@@ -313,16 +308,14 @@ public class ConfigurationOptionsRegistryTests
 
         // Act & Assert - Add multiple
         registry
-            .TryAdd(conf =>
+            .TryAdd("second", conf =>
             {
-                conf.InstanceName = "second";
                 conf.FilePath = "second.json";
             })
             .ShouldBeTrue();
         registry
-            .TryAdd(conf =>
+            .TryAdd("third", conf =>
             {
-                conf.InstanceName = "third";
                 conf.FilePath = "third.json";
             })
             .ShouldBeTrue();
@@ -335,9 +328,8 @@ public class ConfigurationOptionsRegistryTests
 
         // Try to add duplicate
         registry
-            .TryAdd(conf =>
+            .TryAdd("initial", conf =>
             {
-                conf.InstanceName = "initial";
                 conf.FilePath = "new.json";
             })
             .ShouldBeFalse();
@@ -345,9 +337,8 @@ public class ConfigurationOptionsRegistryTests
 
         // Add removed one back
         registry
-            .TryAdd(conf =>
+            .TryAdd("second", conf =>
             {
-                conf.InstanceName = "second";
                 conf.FilePath = "second-new.json";
             })
             .ShouldBeTrue();
@@ -366,9 +357,8 @@ public class ConfigurationOptionsRegistryTests
     {
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
-            InstanceName = instanceName,
             FilePath = filePath,
         };
-        return builder.BuildOptions();
+        return builder.BuildOptions(instanceName);
     }
 }

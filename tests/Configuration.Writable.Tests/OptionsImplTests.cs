@@ -22,10 +22,9 @@ public class OptionsImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -48,10 +47,9 @@ public class OptionsImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -73,10 +71,9 @@ public class OptionsImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = "custom",
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions("custom");
 
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -96,10 +93,9 @@ public class OptionsImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         // Preload data using the provider
         await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);

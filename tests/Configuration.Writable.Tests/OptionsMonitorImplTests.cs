@@ -27,10 +27,9 @@ public class OptionsMonitorImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = fileName,
-            InstanceName = instanceName,
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        return builder.BuildOptions();
+        return builder.BuildOptions(instanceName);
     }
 
     [Fact]
@@ -422,11 +421,10 @@ public class OptionsMonitorImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
             // Default throttle is 1000ms
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
@@ -455,11 +453,10 @@ public class OptionsMonitorImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = Microsoft.Extensions.Options.Options.DefaultName,
             OnChangeThrottleMs = 0, // Disable throttling
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         // Assert
         configOptions.OnChangeThrottleMs.ShouldBe(0);
@@ -472,12 +469,11 @@ public class OptionsMonitorImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = "test",
             OnChangeThrottleMs = 2000,
         };
         var FileProvider = new InMemoryFileProvider();
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions("test");
 
         // Assert
         configOptions.OnChangeThrottleMs.ShouldBe(2000);
@@ -490,11 +486,10 @@ public class OptionsMonitorImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            InstanceName = "test",
         };
         var FileProvider = new InMemoryFileProvider();
         builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions();
+        var configOptions = builder.BuildOptions("test");
 
         // Assert
         configOptions.OnChangeThrottleMs.ShouldBe(1000);
@@ -509,20 +504,18 @@ public class OptionsMonitorImplTests
         var builder1 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test1.json",
-            InstanceName = "instance1",
             OnChangeThrottleMs = 500,
         };
         builder1.UseInMemoryFileProvider(FileProvider);
-        var configOptions1 = builder1.BuildOptions();
+        var configOptions1 = builder1.BuildOptions("instance1");
 
         var builder2 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test2.json",
-            InstanceName = "instance2",
             OnChangeThrottleMs = 1500,
         };
         builder2.UseInMemoryFileProvider(FileProvider);
-        var configOptions2 = builder2.BuildOptions();
+        var configOptions2 = builder2.BuildOptions("instance2");
 
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
             configOptions1,

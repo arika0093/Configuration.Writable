@@ -23,10 +23,9 @@ public class OptionsSnapshotImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = fileName,
-            InstanceName = instanceName,
         };
         builder.UseInMemoryFileProvider(FileProvider);
-        return builder.BuildOptions();
+        return builder.BuildOptions(instanceName);
     }
 
     [Fact]

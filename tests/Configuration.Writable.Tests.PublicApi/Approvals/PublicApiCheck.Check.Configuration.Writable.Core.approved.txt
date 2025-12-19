@@ -19,13 +19,12 @@ namespace Configuration.Writable.Configure
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
         public Configuration.Writable.IFormatProvider FormatProvider { get; set; }
-        public string InstanceName { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public int OnChangeThrottleMs { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
-        public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions() { }
+        public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory() { }
@@ -133,7 +132,7 @@ namespace Configuration.Writable
         void Clear();
         Configuration.Writable.WritableOptionsConfiguration<T> Get(string instanceName);
         System.Collections.Generic.IEnumerable<string> GetInstanceNames();
-        bool TryAdd(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
+        bool TryAdd(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
         bool TryRemove(string instanceName);
     }
     public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>
@@ -184,6 +183,7 @@ namespace Configuration.Writable.Testing
         public Configuration.Writable.IWritableOptions<T> GetOptions() { }
         public void Initialize() { }
         public void Initialize(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configurationOptions) { }
+        public void Initialize(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configurationOptions) { }
     }
     public static class WritableOptionsStub
     {
@@ -191,12 +191,15 @@ namespace Configuration.Writable.Testing
             where T :  class, new () { }
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(T value)
             where T :  class, new () { }
+        public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(string instanceName, T value)
+            where T :  class, new () { }
     }
     public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptions<T>
         where T :  class, new ()
     {
         public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }
         public WritableOptionsStub(T value) { }
+        public WritableOptionsStub(string instanceName, T value) { }
         public System.Collections.Generic.List<System.Action<T, string?>> ChangeListeners { get; }
         public T CurrentValue { get; }
         public System.Collections.Generic.Dictionary<string, T> NamedValues { get; }

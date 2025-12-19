@@ -41,14 +41,15 @@ internal class SaveLocationManager
     /// Builds the save location by evaluating the added location providers in order.
     /// </summary>
     /// <returns>The first valid save location path found, or null if none are available.</returns>
-    public string Build(IFormatProvider formatProvider)
+    public string Build(IFormatProvider formatProvider, string instanceName)
     {
         string resultPath = "";
-        // if nothing configured, use default "usersettings" in executable directory
+        // if nothing configured, use default location
         if (LocationBuilders.Count == 0)
         {
+            var filePathInDefault = GetDefaultLocationPath(instanceName);
             var lb = new LocationBuilderInternal();
-            lb.UseExecutableDirectory().AddFilePath(DefaultFileName);
+            lb.UseExecutableDirectory().AddFilePath(filePathInDefault);
             LocationBuilders.Add(lb);
         }
 
@@ -97,6 +98,12 @@ internal class SaveLocationManager
         return resultPath;
     }
 
+    /// <summary>
+    /// Gets the default location path based on the instance name.
+    /// </summary>
+    private static string GetDefaultLocationPath(string instanceName) =>
+        !string.IsNullOrWhiteSpace(instanceName) ? instanceName : DefaultFileName;
+    
     /// <summary>
     /// Checks if the application can open the specified file with write access.
     /// </summary>

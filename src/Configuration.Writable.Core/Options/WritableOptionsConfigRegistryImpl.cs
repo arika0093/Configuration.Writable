@@ -12,8 +12,10 @@ internal class WritableOptionsConfigRegistryImpl<T>(
     where T : class, new()
 {
     // Map of instance names to their corresponding writable configuration options
+    // If multiple configurations have the same InstanceName, the last one wins (consistent with DI container behavior)
     private readonly Dictionary<string, WritableOptionsConfiguration<T>> _optionsMap =
-        options.ToDictionary(conf => conf.InstanceName);
+        options.GroupBy(conf => conf.InstanceName)
+               .ToDictionary(g => g.Key, g => g.Last());
 
     /// <inheritdoc />
     public event Action<WritableOptionsConfiguration<T>> OnAdded = delegate { };
@@ -35,20 +37,20 @@ internal class WritableOptionsConfigRegistryImpl<T>(
     public IEnumerable<string> GetInstanceNames() => _optionsMap.Keys;
 
     /// <inheritdoc />
-    public bool TryAdd(Action<WritableOptionsConfigBuilder<T>> configure)
+    public bool TryAdd(string instanceName, Action<WritableOptionsConfigBuilder<T>> configure)
     {
         var optionsBuilder = new WritableOptionsConfigBuilder<T>();
         configure(optionsBuilder);
-        var option = optionsBuilder.BuildOptions();
+        var option = optionsBuilder.BuildOptions(instanceName);
 #if NET
-        var rst = _optionsMap.TryAdd(option.InstanceName, option);
+        var rst = _optionsMap.TryAdd(instanceName, option);
 #else
-        if (_optionsMap.ContainsKey(option.InstanceName))
+        if (_optionsMap.ContainsKey(instanceName))
         {
             // already exists
             return false;
         }
-        _optionsMap[option.InstanceName] = option;
+        _optionsMap[instanceName] = option;
         var rst = true;
 #endif
         if (rst)

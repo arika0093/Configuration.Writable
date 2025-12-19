@@ -17,7 +17,7 @@ public class WritableOptionsConfigBuilderTests
     {
         var options = new WritableOptionsConfigBuilder<TestSettings>();
 
-        var path = options.BuildOptions().ConfigFilePath;
+        var path = options.BuildOptions("").ConfigFilePath;
         Path.GetFileName(path).ShouldBe("usersettings.json");
     }
 
@@ -26,7 +26,7 @@ public class WritableOptionsConfigBuilderTests
     {
         var options = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "custom" };
 
-        var path = options.BuildOptions().ConfigFilePath;
+        var path = options.BuildOptions("").ConfigFilePath;
         Path.GetFileName(path).ShouldBe("custom.json");
     }
 
@@ -52,7 +52,7 @@ public class WritableOptionsConfigBuilderTests
             var expectedBasePath = AppContext.BaseDirectory;
             var expectedPath = Path.Combine(expectedBasePath, "config", "relative", "test.json");
 
-            var actualPath = options.BuildOptions().ConfigFilePath;
+            var actualPath = options.BuildOptions("").ConfigFilePath;
             actualPath.ShouldBe(expectedPath);
 
             // Use a deterministic temp directory to avoid CI environment issues
@@ -65,7 +65,7 @@ public class WritableOptionsConfigBuilderTests
                 // Add small delay to ensure directory change is reflected in CI
                 Thread.Sleep(50);
 
-                var actualPathAfterCdChange = options.BuildOptions().ConfigFilePath;
+                var actualPathAfterCdChange = options.BuildOptions("").ConfigFilePath;
                 actualPathAfterCdChange.ShouldBe(expectedPath);
             }
             finally
@@ -97,7 +97,7 @@ public class WritableOptionsConfigBuilderTests
         options.UseExecutableDirectory().AddFilePath("test");
 
         var expectedPath = Path.Combine(AppContext.BaseDirectory, "test.json");
-        options.BuildOptions().ConfigFilePath.ShouldBe(expectedPath);
+        options.BuildOptions("").ConfigFilePath.ShouldBe(expectedPath);
     }
 
     [Fact]
@@ -107,6 +107,6 @@ public class WritableOptionsConfigBuilderTests
         options.UseCurrentDirectory().AddFilePath("usersettings");
 
         var expectedPath = Path.Combine(Directory.GetCurrentDirectory(), "usersettings.json");
-        options.BuildOptions().ConfigFilePath.ShouldBe(expectedPath);
+        options.BuildOptions("").ConfigFilePath.ShouldBe(expectedPath);
     }
 }

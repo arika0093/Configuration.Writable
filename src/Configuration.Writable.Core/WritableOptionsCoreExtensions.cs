@@ -1,6 +1,7 @@
 using Configuration.Writable.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
 
@@ -16,7 +17,7 @@ public static class WritableOptionsCoreExtensions
     /// <param name="services">The <see cref="IServiceCollection"/> to which the writable options services will be added.</param>
     /// <returns>The <see cref="IServiceCollection"/> instance with the writable options services registered.</returns>
     public static IServiceCollection AddWritableOptionsCore<T>(this IServiceCollection services)
-        where T : class, new() => services.AddWritableOptionsCore<T>("");
+        where T : class, new() => services.AddWritableOptionsCore<T>(MEOptions.DefaultName);
 
     /// <summary>
     /// Registers writable options services for the specified options type.
