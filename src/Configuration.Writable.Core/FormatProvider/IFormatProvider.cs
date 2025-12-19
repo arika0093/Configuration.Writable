@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable;
 
@@ -11,11 +10,6 @@ namespace Configuration.Writable;
 /// </summary>
 public interface IFormatProvider
 {
-    /// <summary>
-    /// Gets the file provider used for write operations.
-    /// </summary>
-    public IFileProvider FileProvider { get; set; }
-
     /// <summary>
     /// Gets the file extension associated with the current file, excluding the leading period (e.g., "txt").
     /// </summary>

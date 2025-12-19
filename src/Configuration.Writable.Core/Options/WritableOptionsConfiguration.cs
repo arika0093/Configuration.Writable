@@ -22,6 +22,11 @@ public record WritableOptionsConfiguration<T>
     public required IFormatProvider FormatProvider { get; init; }
 
     /// <summary>
+    /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations.
+    /// </summary>
+    public required IFileProvider FileProvider { get; init; }
+
+    /// <summary>
     /// Gets the full file path to the configuration file, combining config folder and file name.
     /// </summary>
     public required string ConfigFilePath { get; init; }

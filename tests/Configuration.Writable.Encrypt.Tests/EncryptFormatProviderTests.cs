@@ -108,13 +108,13 @@ public class EncryptFormatProviderTests
         var testFileName = Path.GetRandomFileName();
         var encryptionKey = "myencryptionkey123456789012345";
         var provider = new EncryptFormatProvider(encryptionKey);
-        provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.FormatProvider = provider;
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var originalSettings = new TestSettings
@@ -138,6 +138,7 @@ public class EncryptFormatProviderTests
         {
             options.FilePath = testFileName;
             options.FormatProvider = provider;
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         option = _instance.GetOptions();
@@ -156,13 +157,13 @@ public class EncryptFormatProviderTests
         var encryptionKey2 = "differentkey12345678901234567";
 
         var provider1 = new EncryptFormatProvider(encryptionKey1);
-        provider1.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.FormatProvider = provider1;
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var originalSettings = new TestSettings
@@ -177,12 +178,12 @@ public class EncryptFormatProviderTests
 
         // When loading with a different key, it should fail to decrypt and return default values
         var provider2 = new EncryptFormatProvider(encryptionKey2);
-        provider2.FileProvider = _FileProvider;
 
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.FormatProvider = provider2;
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         option = _instance.GetOptions();

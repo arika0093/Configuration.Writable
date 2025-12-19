@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.FileProvider;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable.Testing;
@@ -77,6 +78,7 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
             InstanceName = name,
             SectionName = sectionName,
             FormatProvider = null!,
+            FileProvider = new CommonFileProvider(),
             OnChangeThrottleMs = 1000,
         };
     }

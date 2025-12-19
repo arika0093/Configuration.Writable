@@ -1,4 +1,4 @@
-﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
 namespace Configuration.Writable.Configure
 {
     public interface ILocationBuilder
@@ -78,7 +78,6 @@ namespace Configuration.Writable
     {
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
-        public virtual Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
         public abstract T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
         public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
@@ -91,7 +90,6 @@ namespace Configuration.Writable
     public interface IFormatProvider
     {
         string FileExtension { get; }
-        Configuration.Writable.FileProvider.IFileProvider FileProvider { get; set; }
         T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
         T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
@@ -159,6 +157,7 @@ namespace Configuration.Writable
     {
         public WritableOptionsConfiguration() { }
         public required string ConfigFilePath { get; init; }
+        public required Configuration.Writable.FileProvider.IFileProvider FileProvider { get; init; }
         public required Configuration.Writable.IFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }

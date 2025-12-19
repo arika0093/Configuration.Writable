@@ -102,14 +102,7 @@ public static class WritableOptionsExtensions
     )
         where T : class, new()
     {
-        var FileProvider = confBuilder.FileProvider;
         var options = confBuilder.BuildOptions(instanceName);
-
-        // set FileProvider
-        if (FileProvider != null)
-        {
-            options.FormatProvider.FileProvider = FileProvider;
-        }
 
         // Use the actual instance name from built options (handles fallback logic)
         var actualInstanceName = options.InstanceName;

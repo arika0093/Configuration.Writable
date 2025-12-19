@@ -73,13 +73,13 @@ public class YamlFormatProviderTests
     {
         var testFileName = Path.GetRandomFileName();
         var provider = new YamlFormatProvider();
-        provider.FileProvider = _FileProvider;
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
             options.FormatProvider = provider;
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         var originalSettings = new TestSettings
@@ -99,6 +99,7 @@ public class YamlFormatProviderTests
         {
             options.FilePath = testFileName;
             options.FormatProvider = provider;
+            options.UseInMemoryFileProvider(_FileProvider);
         });
 
         option = _instance.GetOptions();

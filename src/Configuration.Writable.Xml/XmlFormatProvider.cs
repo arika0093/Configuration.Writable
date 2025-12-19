@@ -25,12 +25,12 @@ public class XmlFormatProvider : FormatProviderBase
     public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
     {
         var filePath = options.ConfigFilePath;
-        if (!FileProvider.FileExists(filePath))
+        if (!options.FileProvider.FileExists(filePath))
         {
             return new T();
         }
 
-        var stream = FileProvider.GetFileStream(filePath);
+        var stream = options.FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
             return new T();
@@ -100,8 +100,13 @@ public class XmlFormatProvider : FormatProviderBase
     )
     {
         var contents = GetSaveContents(config, options);
-        await FileProvider
-            .SaveToFileAsync(options.ConfigFilePath, contents, options.Logger, cancellationToken)
+        await options
+            .FileProvider.SaveToFileAsync(
+                options.ConfigFilePath,
+                contents,
+                options.Logger,
+                cancellationToken
+            )
             .ConfigureAwait(false);
     }
 

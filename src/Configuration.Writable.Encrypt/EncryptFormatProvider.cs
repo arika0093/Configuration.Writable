@@ -72,12 +72,12 @@ public class EncryptFormatProvider : FormatProviderBase
     public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
     {
         var filePath = options.ConfigFilePath;
-        if (!FileProvider.FileExists(filePath))
+        if (!options.FileProvider.FileExists(filePath))
         {
             return new T();
         }
 
-        var stream = FileProvider.GetFileStream(filePath);
+        var stream = options.FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
             return new T();
@@ -152,6 +152,7 @@ public class EncryptFormatProvider : FormatProviderBase
             SectionName = options.SectionName,
             Logger = options.Logger,
             FormatProvider = JsonProvider,
+            FileProvider = new FileProvider.CommonFileProvider(),
             InstanceName = options.InstanceName,
             OnChangeThrottleMs = options.OnChangeThrottleMs,
         };
@@ -189,8 +190,8 @@ public class EncryptFormatProvider : FormatProviderBase
             var encryptedBytes = encryptedMs.ToArray();
 
             // Write encrypted bytes to file
-            await FileProvider
-                .SaveToFileAsync(
+            await options
+                .FileProvider.SaveToFileAsync(
                     options.ConfigFilePath,
                     encryptedBytes,
                     options.Logger,

@@ -117,15 +117,12 @@ public record WritableOptionsConfigBuilder<T>
     {
         var configFilePath = _saveLocationManager.Build(FormatProvider, instanceName);
         var validator = BuildValidator();
-        // override provider's file provider if set
-        if (FileProvider != null)
-        {
-            FormatProvider.FileProvider = FileProvider;
-        }
+        var fileProvider = FileProvider ?? new CommonFileProvider();
 
         return new WritableOptionsConfiguration<T>
         {
             FormatProvider = FormatProvider,
+            FileProvider = fileProvider,
             ConfigFilePath = configFilePath,
             InstanceName = instanceName,
             SectionName = SectionName,

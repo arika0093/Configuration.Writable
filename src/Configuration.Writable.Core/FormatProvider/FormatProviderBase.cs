@@ -17,9 +17,6 @@ public abstract class FormatProviderBase : IFormatProvider
     public abstract string FileExtension { get; }
 
     /// <inheritdoc />
-    public virtual IFileProvider FileProvider { get; set; } = new CommonFileProvider();
-
-    /// <inheritdoc />
     public abstract T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
         where T : class, new();
 
