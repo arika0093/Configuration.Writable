@@ -99,7 +99,7 @@ internal class SaveLocationManager
     /// <summary>
     /// Gets the default location path based on the instance name.
     /// </summary>
-    private string GetDefaultLocationPath(string instanceName) =>
+    private static string GetDefaultLocationPath(string instanceName) =>
         !string.IsNullOrWhiteSpace(instanceName) ? instanceName : DefaultFileName;
     
     /// <summary>
