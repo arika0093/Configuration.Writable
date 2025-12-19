@@ -1,5 +1,6 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -14,7 +15,7 @@ namespace Configuration.Writable.Configure;
 /// Options for initializing writable configuration.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
+public record WritableOptionsConfigBuilder<T>
     where T : class, new()
 {
     private const string DefaultSectionName = "";
@@ -39,15 +40,8 @@ public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
     /// </summary>
     public string? FilePath
     {
-        get => _saveLocationManager.Build(FormatProvider);
-        set
-        {
-            _saveLocationManager.LocationBuilders.Clear();
-            if (value != null)
-            {
-                AddFilePath(value);
-            }
-        }
+        get => _saveLocationManager.LocationPath;
+        set => UseFile(value);
     }
 
     /// <summary>
@@ -209,30 +203,71 @@ public record WritableOptionsConfigBuilder<T> : ILocationBuilderWithDirectory
         return ValidateOptionsResult.Fail(errors);
     }
 
-    /// <inheritdoc />
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public IEnumerable<LocationPathInfo> SaveLocationPaths =>
-        _saveLocationManager.LocationBuilders.SelectMany(b => b.SaveLocationPaths);
+    /// <summary>
+    /// Use a specific file path for saving the configuration.
+    /// </summary>
+    /// <param name="path">The file path to use.</param>
+    public void UseFile(string? path)
+    {
+        _saveLocationManager.LocationBuilders.Clear();
+        if(!string.IsNullOrWhiteSpace(path))
+        {
+            _saveLocationManager.MakeLocationBuilder().AddFilePath(path!);
+        }
+    }
 
-    /// <inheritdoc />
-    public ILocationBuilder AddFilePath(string path, int priority = 0) =>
-        _saveLocationManager.MakeLocationBuilder().AddFilePath(path, priority);
+    /// <summary>
+    /// Sets the configuration folder to the standard save location for the specified application.
+    /// </summary>
+    /// <remarks>
+    /// in Windows: %APPDATA%/<paramref name="applicationId"/> <br/>
+    /// in macOS: ~/Library/Application Support/<paramref name="applicationId"/> <br/>
+    /// in Linux: $XDG_CONFIG_HOME/<paramref name="applicationId"/>
+    /// </remarks>
+    /// <param name="applicationId">The unique identifier of the application. This is used to determine the subdirectory within the user
+    /// configuration root directory.</param>
+    /// <param name="enabled">If false, alternatively uses the executable directory.</param>
+    public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true)
+    {
+        var builder = _saveLocationManager.MakeLocationBuilder();
+        if(enabled) {
+            builder.UseStandardSaveDirectory(applicationId);
+        }
+        else {
+            builder.UseExecutableDirectory();
+        }
+        return builder;
+    }
 
-    /// <inheritdoc />
-    public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) =>
-        _saveLocationManager.MakeLocationBuilder().UseStandardSaveDirectory(applicationId, enabled);
+    /// <summary>
+    /// Sets the configuration folder to the directory where the executable is located. (default behavior)
+    /// </summary>
+    /// <remarks>
+    /// This uses <see cref="AppContext.BaseDirectory"/> to determine the executable directory.
+    /// </remarks>
+    public ILocationBuilder UseExecutableDirectory() =>
+        _saveLocationManager.MakeLocationBuilder().UseExecutableDirectory();
 
-    /// <inheritdoc />
-    public ILocationBuilder UseExecutableDirectory(bool enabled = true) =>
-        _saveLocationManager.MakeLocationBuilder().UseExecutableDirectory(enabled);
+    /// <summary>
+    /// Sets the configuration folder to the current working directory.
+    /// </summary>
+    /// <remarks>
+    /// This uses <see cref="Directory.GetCurrentDirectory()"/> to determine the current directory.
+    /// </remarks>
+    public ILocationBuilder UseCurrentDirectory() =>
+        _saveLocationManager.MakeLocationBuilder().UseCurrentDirectory();
 
-    /// <inheritdoc />
-    public ILocationBuilder UseCurrentDirectory(bool enabled = true) =>
-        _saveLocationManager.MakeLocationBuilder().UseCurrentDirectory(enabled);
+    /// <summary>
+    /// Sets the configuration folder to a special folder defined by <see cref="Environment.SpecialFolder"/>.
+    /// </summary>
+    /// <param name="folder">The special folder to use as the configuration folder.</param>
+    public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder) =>
+        _saveLocationManager.MakeLocationBuilder().UseSpecialFolder(folder);
 
-    /// <inheritdoc />
-    public ILocationBuilder UseSpecialFolder(
-        Environment.SpecialFolder folder,
-        bool enabled = true
-    ) => _saveLocationManager.MakeLocationBuilder().UseSpecialFolder(folder, enabled);
+    /// <summary>
+    /// Sets the configuration folder to a custom folder path.
+    /// </summary>
+    /// <param name="directoryPath">The custom directory path to use as the configuration folder.</param>
+    public ILocationBuilder UseCustomDirectory(string directoryPath) =>
+        _saveLocationManager.MakeLocationBuilder().UseCustomDirectory(directoryPath);
 }

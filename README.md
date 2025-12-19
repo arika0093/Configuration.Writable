@@ -111,26 +111,24 @@ builder.Services.AddWritableOptions<UserSetting>(conf => { /* ... */ });
 
 ### Save Location
 Default behavior is to save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
-If you want to change the save location, use `conf.FilePath` or `conf.UseXxxDirectory().AddFilePath(path)`.
+If you want to change the save location, use `conf.UseFile(path)` or `conf.UseXxxDirectory().AddFilePath(path)`.
 
 For example:
 ```csharp
 // to save to the parent directory
-conf.FilePath = "../myconfig";
-
+conf.UseFile("../myconfig");
 // to save to child directory
-conf.FilePath = "config/myconfig";
-// You can also use AddFilePath instead of directly editing FilePath.
-conf.AddFilePath("config/myconfig");
+conf.UseFile("config/myconfig");
 
 // to save to a common settings directory
 //   in Windows: %APPDATA%/MyAppId
 //   in macOS: $XDG_CONFIG_HOME/MyAppId or ~/Library/Application Support/MyAppId
 //   in Linux: $XDG_CONFIG_HOME/MyAppId or ~/.config/MyAppId
-conf.UseStandardSaveDirectory("MyAppId").AddFilePath("myconfig");
+conf.UseStandardSaveDirectory("MyAppId")
+    .AddFilePath("myconfig");
 ```
 
-If you want to read/write files from multiple locations, you can call `AddFilePath` multiple times as follows.  
+If you want to read/write files from multiple locations, you can call `UseXxxDirectory().AddFilePath` multiple times as follows.  
 When multiple locations are specified, the load/save destination is determined on first access according to the following rules:
 
 1. Explicit priority (descending)
@@ -139,11 +137,12 @@ When multiple locations are specified, the load/save destination is determined o
 1. Order of registration (earlier registrations have higher priority)
 
 ```csharp
-conf.AddFilePath(@"D:\SpecialFolder\first"); // is not existing folder/file yet
+conf.UseCustomDirectory(@"D:\SpecialFolder\")
+    .AddFilePath("first");        // is not existing folder/file yet
 conf.UseStandardSaveDirectory("MyAppId")
     .AddFilePath("second", priority: 10);
 conf.UseExecutableDirectory()
-    .AddFilePath("third") // is already exist directory but not file
+    .AddFilePath("third")         // is already exist directory but not file
     .AddFilePath("child/fourth"); // is already exist file
 
 // In this case, the priorities are as follows:
@@ -450,12 +449,12 @@ If you want to manage multiple settings of the same type, you must specify diffe
 ```csharp
 // first setting
 builder.Services.AddWritableOptions<UserSetting>(conf => {
-    conf.FilePath = "firstsettings.json";
+    conf.UseFile("firstsettings.json");
     conf.InstanceName = "First"; // here
 });
 // second setting
 builder.Services.AddWritableOptions<UserSetting>(conf => {
-    conf.FilePath = "secondsettings.json";
+    conf.UseFile("secondsettings.json");
     conf.InstanceName = "Second"; // here
 });
 ```
@@ -522,8 +521,8 @@ public class DynamicOptionsService(IWritableOptionsConfigRegistry<UserSetting> r
     public void AddNewOptions(string instanceName, string filePath)
     {
         registry.TryAdd(conf => {
+            conf.UseFile(filePath);
             conf.InstanceName = instanceName;
-            conf.FilePath = filePath;
         });
     }
 
@@ -561,12 +560,12 @@ var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" }
 // initialize each setting with the same file provider
 builder.Services.AddWritableOptions<Foo>(conf =>
 {
-    conf.FilePath = "foo";
+    conf.UseFile("foo");
     conf.FileProvider = zipFileProvider;
 });
 builder.Services.AddWritableOptions<Bar>(conf =>
 {
-    conf.FilePath = "bar";
+    conf.UseFile("bar");
     conf.FileProvider = zipFileProvider;
 });
 ```
@@ -594,7 +593,7 @@ If you want to perform tests that actually involve writing to the file system, u
 var sampleFilePath = Path.GetTempFileName();
 var instance = new WritableOptionsSimpleInstance<UserSetting>();
 instance.Initialize(conf => {
-    conf.FilePath = sampleFilePath;
+    conf.UseFile(sampleFilePath);
 });
 var option = instance.GetOptions();
 

@@ -18,9 +18,17 @@ internal class SaveLocationManager
     public List<ILocationBuilder> LocationBuilders { get; private set; } = [];
 
     /// <summary>
+    /// Gets the first registered save location path based on priority.
+    /// </summary>
+    public string? LocationPath => LocationBuilders
+        .SelectMany(b => b.SaveLocationPaths)
+        .OrderByDescending(p => p.Priority)
+        .FirstOrDefault()?.Path;
+
+    /// <summary>
     /// Creates a new location builder and adds it to the manager.
     /// </summary>
-    public ILocationBuilderWithDirectory MakeLocationBuilder()
+    public LocationBuilderInternal MakeLocationBuilder()
     {
         var builder = new LocationBuilderInternal();
         LocationBuilders.Add(builder);
@@ -139,7 +147,7 @@ internal class SaveLocationManager
     }
 }
 
-internal class LocationBuilderInternal : ILocationBuilderWithDirectory
+internal class LocationBuilderInternal : ILocationBuilder
 {
     // intermediate folder before combining with file name
     private string configFolder = "";
@@ -158,44 +166,49 @@ internal class LocationBuilderInternal : ILocationBuilderWithDirectory
         return this;
     }
 
-    /// <inheritdoc />
-    public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true)
+    /// <summary>
+    /// Sets the configuration folder to the standard save location for the specified application.
+    /// </summary>
+    public ILocationBuilder UseStandardSaveDirectory(string applicationId)
     {
-        if (enabled)
-        {
-            var root = StandardSaveLocationUtility.GetConfigDirectory();
-            configFolder = Path.Combine(root, applicationId);
-        }
+        var root = StandardSaveLocationUtility.GetConfigDirectory();
+        configFolder = Path.Combine(root, applicationId);
         return this;
     }
 
-    /// <inheritdoc />
-    public ILocationBuilder UseCurrentDirectory(bool enabled = true)
+    /// <summary>
+    /// Sets the configuration folder to the directory where the executable is located. (default behavior)
+    /// </summary>
+    public ILocationBuilder UseCurrentDirectory()
     {
-        if (enabled)
-        {
-            configFolder = Directory.GetCurrentDirectory();
-        }
+        configFolder = Directory.GetCurrentDirectory();
         return this;
     }
 
-    /// <inheritdoc />
-    public ILocationBuilder UseExecutableDirectory(bool enabled = true)
+    /// <summary>
+    /// Sets the configuration folder to the current working directory.
+    /// </summary>
+    public ILocationBuilder UseExecutableDirectory()
     {
-        if (enabled)
-        {
-            configFolder = AppContext.BaseDirectory;
-        }
+        configFolder = AppContext.BaseDirectory;
         return this;
     }
 
-    /// <inheritdoc />
-    public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder, bool enabled = true)
+    /// <summary>
+    /// Sets the configuration folder to a special folder defined by <see cref="Environment.SpecialFolder"/>.
+    /// </summary>
+    public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder)
     {
-        if (enabled)
-        {
-            configFolder = Environment.GetFolderPath(folder);
-        }
+        configFolder = Environment.GetFolderPath(folder);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the configuration folder to a custom folder path.
+    /// </summary>
+    public ILocationBuilder UseCustomDirectory(string directoryPath)
+    {
+        configFolder = directoryPath;
         return this;
     }
 }
