@@ -34,7 +34,9 @@ The solution is organized into multiple packages:
 
 ### Core Packages
 - **Configuration.Writable.Core**: Core abstractions and implementations
-  - `IReadOnlyOptions<T>` / `IWritableOptions<T>`: Main interfaces extending `IOptionsMonitor<T>`
+  - `IReadOnlyOptions<T>` / `IWritableOptions<T>`: Main interfaces for unnamed access
+  - `IReadOnlyNamedOptions<T>` / `IWritableNamedOptions<T>`: Interfaces for named access
+  - `IReadOnlyOptionsMonitor<T>` / `IWritableOptionsMonitor<T>`: Unified interfaces with full `IOptionsMonitor<T>` compatibility
   - `OptionsMonitorImpl<T>`: Custom implementation of IOptionsMonitor
   - `WritableOptionsImpl<T>`: Main writable options implementation
   - Provider system for file format handling
@@ -70,11 +72,12 @@ Each provider package is separate to minimize dependencies and allow users to in
   - Thread-safe via internal semaphore
 
 **Options Implementation** (`src/Configuration.Writable.Core/Options/`)
-- `WritableOptionsImpl<T>`: Main implementation of `IWritableOptions<T>`
+- `WritableOptionsImpl<T>`: Main implementation of `IWritableOptions<T>`, `IWritableNamedOptions<T>`, and `IWritableOptionsMonitor<T>`
   - Wraps `OptionsMonitorImpl<T>` for monitoring functionality
   - Handles validation before save (DataAnnotations or custom validators)
   - Updates internal cache after successful save
   - Uses JSON deep copy for configuration updates
+  - Implements `IWritableOptionsMonitor<T>` for full `IOptionsMonitor<T>` compatibility with write capabilities
 - `OptionsMonitorImpl<T>`: Custom `IOptionsMonitor<T>` implementation with file change detection
 - `OptionsImpl<T>` and `OptionsSnapshotImpl<T>`: Standard options pattern implementations
 

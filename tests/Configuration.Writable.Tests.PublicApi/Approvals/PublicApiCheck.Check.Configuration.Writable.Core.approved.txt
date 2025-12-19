@@ -119,6 +119,12 @@ namespace Configuration.Writable
     {
         System.IDisposable? OnChange(System.Action<T, string?> listener);
     }
+    public interface IReadOnlyOptionsMonitor<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class, new ()
+    {
+        new T CurrentValue { get; }
+        new T Get(string name);
+    }
     public interface IReadOnlyOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
@@ -143,6 +149,12 @@ namespace Configuration.Writable
         System.Collections.Generic.IEnumerable<string> GetInstanceNames();
         bool TryAdd(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
         bool TryRemove(string instanceName);
+    }
+    public interface IWritableOptionsMonitor<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptionsMonitor<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class, new ()
+    {
+        new T CurrentValue { get; }
+        new T Get(string name);
     }
     public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>
         where T :  class, new ()
@@ -204,7 +216,7 @@ namespace Configuration.Writable.Testing
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(string instanceName, T value)
             where T :  class, new () { }
     }
-    public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptions<T>
+    public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptionsMonitor<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptionsMonitor<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class, new ()
     {
         public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }

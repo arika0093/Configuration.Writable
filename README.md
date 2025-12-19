@@ -660,9 +660,15 @@ These are very similar to the above `IOptionsMonitor<T>`, but differ in the foll
   * `IReadOnlyNamedOptions<T>`: `OnChange(string name, Action<T> listener)` method to register a callback for changes to a specific named instance.
   * The traditional `OnChange(Action<T, string> listener)` is also available.
 
-### `IWritableOptions<T>` / `IWritableNamedOptions<T>`  
-In addition to the features of `IReadOnly(Named)Options<T>`, these support saving settings.  
+### `IWritableOptions<T>` / `IWritableNamedOptions<T>`
+In addition to the features of `IReadOnly(Named)Options<T>`, these support saving settings.
 Other than the addition of the `SaveAsync` method, they are the same as the above `IReadOnly(Named)Options<T>`.
+
+### `IReadOnlyOptionsMonitor<T>` / `IWritableOptionsMonitor<T>`
+
+These interfaces unify the features of `IReadOnly(Writable)Options<T>` and `IReadOnly(Writable)NamedOptions<T>`, while maintaining compatibility with `IOptionsMonitor<T>`.  
+They are provided mainly to ensure compatibility with codebases that already use `IOptionsMonitor<T>`.  
+Therefore, you typically do not need to use these interfaces explicitly.
 
 ## License
 This project is licensed under the Apache-2.0 License.

@@ -62,6 +62,12 @@ public static class WritableOptionsCoreExtensions
         services.AddSingleton<IWritableNamedOptions<T>>(p =>
             p.GetRequiredService<WritableOptionsImpl<T>>()
         );
+        services.AddSingleton<IReadOnlyOptionsMonitor<T>>(p =>
+            p.GetRequiredService<WritableOptionsImpl<T>>()
+        );
+        services.AddSingleton<IWritableOptionsMonitor<T>>(p =>
+            p.GetRequiredService<WritableOptionsImpl<T>>()
+        );
 
         // if named instance, add named wrapper
         if (!string.IsNullOrEmpty(instanceName))
@@ -77,6 +83,14 @@ public static class WritableOptionsCoreExtensions
             services.AddKeyedSingleton<IReadOnlyOptions<T>>(
                 instanceName,
                 (p, key) => p.GetRequiredKeyedService<IWritableOptions<T>>(instanceName)
+            );
+            services.AddKeyedSingleton<IReadOnlyOptionsMonitor<T>>(
+                instanceName,
+                (p, key) => p.GetRequiredService<WritableOptionsImpl<T>>()
+            );
+            services.AddKeyedSingleton<IWritableOptionsMonitor<T>>(
+                instanceName,
+                (p, key) => p.GetRequiredService<WritableOptionsImpl<T>>()
             );
         }
         return services;

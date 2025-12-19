@@ -24,7 +24,7 @@ namespace Configuration.Writable;
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
     IWritableOptionsConfigRegistry<T> registryInstance
-) : IWritableOptions<T>, IWritableNamedOptions<T>
+) : IWritableOptionsMonitor<T>
     where T : class, new()
 {
     /// <inheritdoc />

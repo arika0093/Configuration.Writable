@@ -12,7 +12,7 @@ namespace Configuration.Writable.Testing;
 /// A simple stub implementation of <see cref="IWritableOptions{T}"/> or <see cref="IReadOnlyOptions{T}"/> for testing purposes.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions<T>
+public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     where T : class, new()
 {
     /// <summary>
