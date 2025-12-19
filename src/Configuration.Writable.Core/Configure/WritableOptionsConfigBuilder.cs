@@ -115,7 +115,13 @@ public record WritableOptionsConfigBuilder<T>
     /// </summary>
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
-        var configFilePath = _saveLocationManager.Build(FormatProvider, instanceName);
+        // If instanceName is explicitly provided (not default/empty), use it.
+        // Otherwise, fall back to the InstanceName property for backward compatibility.
+        var effectiveInstanceName = string.IsNullOrEmpty(instanceName) && !string.IsNullOrEmpty(InstanceName)
+            ? InstanceName
+            : instanceName;
+
+        var configFilePath = _saveLocationManager.Build(FormatProvider, effectiveInstanceName);
         var validator = BuildValidator();
         // override provider's file provider if set
         if (FileProvider != null)
@@ -127,7 +133,7 @@ public record WritableOptionsConfigBuilder<T>
         {
             FormatProvider = FormatProvider,
             ConfigFilePath = configFilePath,
-            InstanceName = instanceName,
+            InstanceName = effectiveInstanceName,
             SectionName = SectionName,
             OnChangeThrottleMs = OnChangeThrottleMs,
             Logger = Logger,

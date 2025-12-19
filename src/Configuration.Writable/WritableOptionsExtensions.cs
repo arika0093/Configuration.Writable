@@ -108,10 +108,13 @@ public static class WritableOptionsExtensions
             options.FormatProvider.FileProvider = FileProvider;
         }
 
+        // Use the actual instance name from built options (handles fallback logic)
+        var actualInstanceName = options.InstanceName;
+
         // add T instance
         if (confBuilder.RegisterInstanceToContainer)
         {
-            if (string.IsNullOrEmpty(instanceName))
+            if (string.IsNullOrEmpty(actualInstanceName))
             {
                 services.AddSingleton(provider =>
                     provider.GetRequiredService<IReadOnlyOptions<T>>().CurrentValue
@@ -120,12 +123,12 @@ public static class WritableOptionsExtensions
             else
             {
                 services.AddKeyedSingleton<T>(
-                    instanceName,
+                    actualInstanceName,
                     (provider, _) =>
                     {
                         return provider
                             .GetRequiredService<IReadOnlyNamedOptions<T>>()
-                            .Get(instanceName);
+                            .Get(actualInstanceName);
                     }
                 );
             }
@@ -148,7 +151,7 @@ public static class WritableOptionsExtensions
         }
 
         // add options services
-        services.AddWritableOptionsCore<T>(instanceName);
+        services.AddWritableOptionsCore<T>(actualInstanceName);
         return services;
     }
 }
