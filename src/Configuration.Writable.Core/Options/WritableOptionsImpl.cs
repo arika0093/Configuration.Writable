@@ -97,6 +97,14 @@ internal sealed class WritableOptionsImpl<T>(
     public IDisposable? OnChange(Action<T, string?> listener) =>
         optionMonitorInstance.OnChange(listener);
 
+    /// <inheritdoc />
+    IWritableOptions<T> IWritableNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        new WritableOptionsWithNameImpl<T>(this, name);
+
+    /// <inheritdoc />
+    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        new WritableOptionsWithNameImpl<T>(this, name);
+
     /// <summary>
     /// Asynchronously saves the specified configuration.
     /// </summary>

@@ -226,4 +226,199 @@ public class InstanceNameIntegrationTests
 
         host.Dispose();
     }
+
+    [Fact]
+    public async Task GetSpecifiedInstance_ShouldReturnBoundInstance()
+    {
+        var firstFileName = Path.GetRandomFileName();
+        var secondFileName = Path.GetRandomFileName();
+
+        var builder = Host.CreateApplicationBuilder();
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "First",
+            conf =>
+            {
+                conf.FilePath = firstFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "Second",
+            conf =>
+            {
+                conf.FilePath = secondFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        var host = builder.Build();
+        var namedOptions = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
+
+        // Get bound instances
+        var firstOptions = namedOptions.GetSpecifiedInstance("First");
+        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+
+        // Verify they are not null
+        firstOptions.ShouldNotBeNull();
+        secondOptions.ShouldNotBeNull();
+
+        // Verify they have the correct initial values
+        firstOptions.CurrentValue.Name.ShouldBe("default name");
+        secondOptions.CurrentValue.Name.ShouldBe("default name");
+
+        host.Dispose();
+    }
+
+    [Fact]
+    public async Task GetSpecifiedInstance_CurrentValue_ShouldReturnCorrectInstance()
+    {
+        var firstFileName = Path.GetRandomFileName();
+        var secondFileName = Path.GetRandomFileName();
+
+        var builder = Host.CreateApplicationBuilder();
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "First",
+            conf =>
+            {
+                conf.FilePath = firstFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "Second",
+            conf =>
+            {
+                conf.FilePath = secondFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        var host = builder.Build();
+        var namedOptions = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
+
+        // Save different values to each instance
+        await namedOptions.SaveAsync("First", setting => setting.Name = "first value");
+        await namedOptions.SaveAsync("Second", setting => setting.Name = "second value");
+
+        // Get bound instances
+        var firstOptions = namedOptions.GetSpecifiedInstance("First");
+        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+
+        // Verify CurrentValue returns the correct instance
+        firstOptions.CurrentValue.Name.ShouldBe("first value");
+        secondOptions.CurrentValue.Name.ShouldBe("second value");
+
+        host.Dispose();
+    }
+
+    [Fact]
+    public async Task GetSpecifiedInstance_SaveAsync_ShouldSaveToCorrectInstance()
+    {
+        var firstFileName = Path.GetRandomFileName();
+        var secondFileName = Path.GetRandomFileName();
+
+        var builder = Host.CreateApplicationBuilder();
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "First",
+            conf =>
+            {
+                conf.FilePath = firstFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "Second",
+            conf =>
+            {
+                conf.FilePath = secondFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        var host = builder.Build();
+        var namedOptions = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
+
+        // Get bound instances
+        var firstOptions = namedOptions.GetSpecifiedInstance("First");
+        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+
+        // Save using bound instances (no need to specify name)
+        await firstOptions.SaveAsync(setting =>
+        {
+            setting.Name = "saved via first instance";
+            setting.Age = 35;
+        });
+
+        await secondOptions.SaveAsync(setting =>
+        {
+            setting.Name = "saved via second instance";
+            setting.Age = 40;
+        });
+
+        // Verify values were saved to correct instances
+        namedOptions.Get("First").Name.ShouldBe("saved via first instance");
+        namedOptions.Get("First").Age.ShouldBe(35);
+        namedOptions.Get("Second").Name.ShouldBe("saved via second instance");
+        namedOptions.Get("Second").Age.ShouldBe(40);
+
+        // Also verify via bound instances
+        firstOptions.CurrentValue.Name.ShouldBe("saved via first instance");
+        firstOptions.CurrentValue.Age.ShouldBe(35);
+        secondOptions.CurrentValue.Name.ShouldBe("saved via second instance");
+        secondOptions.CurrentValue.Age.ShouldBe(40);
+
+        host.Dispose();
+    }
+
+    [Fact]
+    public async Task GetSpecifiedInstance_GetOptionsConfiguration_ShouldReturnCorrectConfiguration()
+    {
+        var firstFileName = Path.GetRandomFileName();
+        var secondFileName = Path.GetRandomFileName();
+
+        var builder = Host.CreateApplicationBuilder();
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "First",
+            conf =>
+            {
+                conf.FilePath = firstFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        builder.Services.AddWritableOptions<UserSetting>(
+            "Second",
+            conf =>
+            {
+                conf.FilePath = secondFileName;
+                conf.UseInMemoryFileProvider(_FileProvider);
+            }
+        );
+
+        var host = builder.Build();
+        var namedOptions = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
+
+        // Get bound instances
+        var firstOptions = namedOptions.GetSpecifiedInstance("First");
+        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+
+        // Get configurations
+        var firstConfig = firstOptions.GetOptionsConfiguration();
+        var secondConfig = secondOptions.GetOptionsConfiguration();
+
+        // Verify configurations
+        firstConfig.InstanceName.ShouldBe("First");
+        Path.GetFileName(firstConfig.ConfigFilePath).ShouldBe(firstFileName);
+        secondConfig.InstanceName.ShouldBe("Second");
+        Path.GetFileName(secondConfig.ConfigFilePath).ShouldBe(secondFileName);
+
+        host.Dispose();
+    }
 }

@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 namespace Configuration.Writable;
 
 /// <summary>
-/// Implementation of WritableOptions with a specified standard name. <br/>
-/// This is a wrapper to allow access as <c>[FromKeyedService("instanceName"))] IWritableOptions&lt;T&gt; ...</c>.
+/// Implementation of WritableOptions with a specified instance name.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
 /// <param name="innerWritableOptionsInstance">The inner writable options instance.</param>

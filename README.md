@@ -473,12 +473,21 @@ public class MyService(IWritableNamedOptions<UserSetting> options)
         await options.SaveAsync("Second", setting => {
             setting.Name = "second name";
         });
+
+        // If specifying the name each time is cumbersome, you can also use GetSpecifiedInstance
+        // By doing so, you can handle it in the same way as regular IReadOnlyOptions/IWritableOptions.
+        var firstOptions = options.GetSpecifiedInstance("First");
+        var firstSetting2 = firstOptions.CurrentValue;
+        await firstOptions.SaveAsync(setting => {
+            setting.Name = "first name 2";
+        });
     }
 }
 
 // Alternatively, you can also use IWritableOptions<T> with the [FromKeyedService] attribute
 public class MyOtherService(
-    [FromKeyedService("First")] IWritableOptions<UserSetting> firstOptions
+    [FromKeyedService("First")]
+    IWritableOptions<UserSetting> firstOptions
 )
 {
     public async Task GetAndSaveAsync()

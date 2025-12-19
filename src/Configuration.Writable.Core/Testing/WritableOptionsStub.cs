@@ -150,11 +150,60 @@ public class WritableOptionsStub<T> : IWritableOptions<T>, IWritableNamedOptions
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
+    IWritableOptions<T> IWritableNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        new WritableOptionsStubWithName<T>(this, name);
+
+    /// <inheritdoc/>
+    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        new WritableOptionsStubWithName<T>(this, name);
+
     // A simple disposable action implementation
     private sealed class DisposableAction(Action disposeAction) : IDisposable
     {
         public void Dispose() => disposeAction();
     }
+}
+
+/// <summary>
+/// A stub implementation of <see cref="IWritableOptions{T}"/> that is bound to a specific instance name.
+/// </summary>
+/// <typeparam name="T">The type of the configuration object.</typeparam>
+internal sealed class WritableOptionsStubWithName<T>(
+    WritableOptionsStub<T> innerStub,
+    string instanceName
+) : IWritableOptions<T>
+    where T : class, new()
+{
+    /// <inheritdoc/>
+    public T CurrentValue => innerStub.Get(instanceName);
+
+    /// <inheritdoc/>
+    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
+        innerStub.GetOptionsConfiguration(instanceName);
+
+    /// <inheritdoc/>
+    public IDisposable? OnChange(Action<T, string?> listener) =>
+        innerStub.OnChange(
+            (value, name) =>
+            {
+                if (name == instanceName)
+                {
+                    listener(value, name);
+                }
+            }
+        );
+
+    /// <inheritdoc/>
+    public IDisposable? OnChange(Action<T> listener) => innerStub.OnChange(instanceName, listener);
+
+    /// <inheritdoc/>
+    public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
+        innerStub.SaveAsync(instanceName, newConfig, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
+        innerStub.SaveAsync(instanceName, configUpdater, cancellationToken);
 }
 
 /// <summary>

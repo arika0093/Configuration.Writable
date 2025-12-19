@@ -111,6 +111,7 @@ namespace Configuration.Writable
     {
         T Get(string name);
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
+        Configuration.Writable.IReadOnlyOptions<T> GetSpecifiedInstance(string name);
         System.IDisposable? OnChange(string name, System.Action<T> listener);
     }
     public interface IReadOnlyOptionsCore<T>
@@ -128,6 +129,7 @@ namespace Configuration.Writable
     public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
+        Configuration.Writable.IWritableOptions<T> GetSpecifiedInstance(string name);
         System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
     }

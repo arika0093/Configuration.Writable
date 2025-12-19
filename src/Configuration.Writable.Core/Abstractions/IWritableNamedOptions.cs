@@ -13,6 +13,15 @@ public interface IWritableNamedOptions<T> : IReadOnlyNamedOptions<T>
     where T : class, new()
 {
     /// <summary>
+    /// Retrieves a writable options instance bound to the specified instanceName.
+    /// This allows you to work with named instances using the same API as regular <see cref="IWritableOptions{T}"/>,
+    /// without having to specify the name on every operation.
+    /// </summary>
+    /// <param name="name">The name of the instance to bind to.</param>
+    /// <returns>An <see cref="IWritableOptions{T}"/> instance bound to the specified name.</returns>
+    new IWritableOptions<T> GetSpecifiedInstance(string name);
+
+    /// <summary>
     /// Asynchronously saves the specified configuration.
     /// </summary>
     /// <param name="name">The name of the options instance to save.</param>
