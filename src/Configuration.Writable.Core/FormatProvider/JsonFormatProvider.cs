@@ -2,8 +2,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -19,7 +17,7 @@ public class JsonFormatProvider : FormatProviderBase
     /// Gets or sets the options to use when serializing and deserializing JSON data.
     /// </summary>
     public JsonSerializerOptions JsonSerializerOptions { get; init; } =
-        new() { WriteIndented = false, ReferenceHandler = ReferenceHandler.IgnoreCycles };
+        new() { WriteIndented = false };
 
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
@@ -116,24 +114,45 @@ public class JsonFormatProvider : FormatProviderBase
             typeof(T).Name
         );
 
-        // Serialize the new configuration
-        var serializeNode = JsonSerializer.SerializeToNode<T>(config, JsonSerializerOptions);
-        var configNode = serializeNode as JsonObject ?? new JsonObject();
-
-        options.Logger?.Log(
-            LogLevel.Trace,
-            "Creating nested section structure for section: {SectionName}",
-            options.SectionName
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(
+            stream,
+            new JsonWriterOptions
+            {
+                Indented = JsonSerializerOptions.WriteIndented,
+                Encoder = JsonSerializerOptions.Encoder,
+            }
         );
 
-        // Create nested section structure if needed
-        var nestedSection = CreateNestedSection(options.SectionName, configNode);
-        var sNode = JsonSerializer.SerializeToNode(nestedSection, JsonSerializerOptions);
-        JsonObject root = sNode as JsonObject ?? [];
+        var sectionName = options.SectionName;
+        if (string.IsNullOrWhiteSpace(sectionName))
+        {
+            // No section name, serialize directly
+            options.Logger?.Log(
+                LogLevel.Trace,
+                "Serializing configuration directly without section nesting"
+            );
+            JsonSerializer.Serialize(writer, config, JsonSerializerOptions);
+        }
+        else
+        {
+            options.Logger?.Log(
+                LogLevel.Trace,
+                "Creating nested section structure for section: {SectionName}",
+                sectionName
+            );
 
-        // Convert to bytes
-        var jsonString = root?.ToJsonString(JsonSerializerOptions) ?? "{}";
-        var bytes = Encoding.GetBytes(jsonString);
+            // Split section name into parts
+            var sections = GetSplitedSections(sectionName);
+
+            // Write nested structure
+            writer.WriteStartObject();
+            WriteNestedSections(writer, sections, 0, config, JsonSerializerOptions);
+            writer.WriteEndObject();
+        }
+
+        writer.Flush();
+        var bytes = stream.ToArray();
 
         options.Logger?.Log(
             LogLevel.Trace,
@@ -142,5 +161,39 @@ public class JsonFormatProvider : FormatProviderBase
         );
 
         return bytes;
+    }
+
+    /// <summary>
+    /// Recursively writes nested section structure using Utf8JsonWriter.
+    /// </summary>
+    private static void WriteNestedSections<T>(
+        Utf8JsonWriter writer,
+        string[] sections,
+        int currentIndex,
+        T config,
+        JsonSerializerOptions options
+    )
+        where T : class, new()
+    {
+        if (currentIndex >= sections.Length)
+        {
+            return;
+        }
+
+        var sectionName = sections[currentIndex];
+        writer.WritePropertyName(sectionName);
+
+        if (currentIndex == sections.Length - 1)
+        {
+            // Last section, write the actual configuration
+            JsonSerializer.Serialize(writer, config, options);
+        }
+        else
+        {
+            // More sections to go, write nested object
+            writer.WriteStartObject();
+            WriteNestedSections(writer, sections, currentIndex + 1, config, options);
+            writer.WriteEndObject();
+        }
     }
 }

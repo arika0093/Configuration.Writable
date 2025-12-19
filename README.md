@@ -179,7 +179,25 @@ builder.Services.AddWritableOptions<UserSetting>(conf => {
 ```
 
 ### FormatProvider
-If you want to change the format when saving files, specify `conf.FormatProvider`.
+By default, files are saved in JSON format. If you want to customize the format, specify `conf.FormatProvider` as follows.
+
+```csharp
+// use Json format with indentation
+conf.FormatProvider = new JsonFormatProvider() {
+    JsonSerializerOptions = {
+        // you can customize JsonSerializerOptions as needed
+        WriteIndented = true
+        // for source-generation-based serialize/deserialize, set TypeInfoResolver here
+        TypeInfoResolver = SampleSettingSerializerContext.Default,
+    },
+};
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(SampleSetting))]
+public partial class SampleSettingSerializerContext : JsonSerializerContext;
+```
+
+If you want to save in other formats, install the required packages and specify the corresponding provider.
 Currently, the following providers are available:
 
 | Provider                     | Description              | NuGet Package                |
@@ -190,11 +208,6 @@ Currently, the following providers are available:
 | [EncryptFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Encrypt/EncryptFormatProvider.cs) | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
 
 ```csharp
-// use Json format with indentation
-conf.FormatProvider = new JsonFormatProvider() {
-    JsonSerializerOptions = { WriteIndented = true },
-};
-
 // use Yaml format
 // (you need to install Configuration.Writable.Yaml package)
 conf.FormatProvider = new YamlFormatProvider();
@@ -204,10 +217,6 @@ conf.FormatProvider = new YamlFormatProvider();
 // (you need to install Configuration.Writable.Encrypt package)
 conf.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
 ```
-
-> [!NOTE]
-> To reduce dependencies and allow users to choose only the features they need, providers are offered as separate packages.
-> That said, the JSON provider is built into the main package because since many users are likely to use the JSON format.
 
 ### FileProvider
 Default FileProvider (`CommonFileProvider`) supports the following features:

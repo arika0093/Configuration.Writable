@@ -24,7 +24,13 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     {
         // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
         // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
-        JsonSerializerOptions = { WriteIndented = true },
+        JsonSerializerOptions =
+        {
+            WriteIndented = true,
+            // if you want to use Source Generation for better performance, set the Context here
+            // This enables NativeAOT-compatible JSON serialization
+            TypeInfoResolver = SampleSettingSerializerContext.Default,
+        },
     };
 
     // if you want to use logging, set Logger
