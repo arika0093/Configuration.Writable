@@ -139,7 +139,7 @@ public record WritableOptionsConfigBuilder<T>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").
     /// This is used to distinguish between multiple configurations of the same type.
     /// </summary>
-    internal string InstanceName { get; set; } = MEOptions.DefaultName;
+    public string InstanceName { get; set; } = MEOptions.DefaultName;
 
     /// <summary>
     /// Builds the composite validator from all registered validators.
