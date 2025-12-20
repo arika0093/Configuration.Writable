@@ -459,6 +459,57 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
 ## Advanced Usage
+### Support NativeAOT
+By applying a few settings, you can run this library in NativeAOT environments.
+
+```csharp
+// The following three settings are required:
+// 1. Specify TypeInfoResolver in JsonFormatProvider
+// 2. Use a NativeAOT-compatible CloneStrategy
+// 3. If using DataAnnotations, disable the built-in validation and use a Source Generator-based validator
+```
+
+// customize the provider and file writer
+conf.FormatProvider = new JsonFormatProvider()
+{
+    JsonSerializerOptions =
+    {
+        TypeInfoResolver = SampleSettingSerializerContext.Default,
+    },
+};
+
+// customize the cloning strategy
+// in NativeAOT, use Source Generation for JSON serialization
+conf.CloneStrategy = value =>
+{
+    var json = JsonSerializer.Serialize(
+        value,
+        SampleSettingSerializerContext.Default.SampleSetting
+    );
+    return JsonSerializer.Deserialize(
+        json,
+        SampleSettingSerializerContext.Default.SampleSetting
+    )!;
+};
+
+// If use DataAnnotation validation with Source Generators,
+// see SampleSettingValidator class in this project and comment out below code.
+conf.UseDataAnnotationsValidation = false;
+conf.WithValidator<SampleSettingValidator>();
+
+// ------
+public record SampleSetting { /* ... */ }
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(SampleSetting))]
+public partial class SampleSettingSerializerContext : JsonSerializerContext;
+
+[OptionsValidator]
+public partial class SampleSettingValidator : IValidateOptions<SampleSetting>;
+```
+
+For more details, please refer to the [Example.ConsoleApp.NativeAOT](./example/Example.ConsoleApp.NativeAot/) project.
+
 ### InstanceName
 If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
 

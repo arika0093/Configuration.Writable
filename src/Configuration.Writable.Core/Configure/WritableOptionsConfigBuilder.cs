@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -21,6 +22,14 @@ namespace Configuration.Writable.Configure;
 public record WritableOptionsConfigBuilder<T>
     where T : class, new()
 {
+#if NET
+    private const string AotJsonReason =
+        "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
+
+    private const string AotAnnotationsReason =
+        "Data Annotations validation may not be compatible with NativeAOT. You can disable it by setting UseDataAnnotationsValidation to false.";
+#endif
+
     private const string DefaultSectionName = "";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly SaveLocationManager _saveLocationManager = new();
@@ -121,6 +130,10 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
+#endif
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
         var fileProvider = FileProvider ?? new CommonFileProvider();
@@ -215,6 +228,10 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Gets the default cloning strategy which serializes and deserializes the object using JSON.
     /// </summary>
+#if NET
+    [RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050")]
+#endif
     private static T DefaultCloneStrategy(T value)
     {
         var json = JsonSerializer.Serialize(value);
@@ -224,6 +241,10 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Builds the composite validator from all registered validators.
     /// </summary>
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotAnnotationsReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotAnnotationsReason)]
+#endif
     private Func<T, ValidateOptionsResult>? BuildValidator()
     {
         var validators = new List<Func<T, ValidateOptionsResult>>(_validators);
@@ -260,6 +281,9 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Validates an object using Data Annotations.
     /// </summary>
+#if NET
+    [RequiresUnreferencedCode("Data Annotations validation may not be compatible with NativeAOT.")]
+#endif
     private static ValidateOptionsResult ValidateWithDataAnnotations(T value)
     {
         var context = new ValidationContext(value);
