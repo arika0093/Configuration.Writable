@@ -27,6 +27,9 @@ internal sealed class WritableOptionsImpl<T>(
 ) : IWritableOptionsMonitor<T>
     where T : class, new()
 {
+    // To ensure data integrity
+    private readonly SemaphoreSlim saveSemaphore = new(1, 1);
+
     /// <inheritdoc />
     public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
         GetOptions(MEOptions.DefaultName);
@@ -50,15 +53,25 @@ internal sealed class WritableOptionsImpl<T>(
     ) => SaveCoreAsync(newConfig, GetOptions(name), cancellationToken);
 
     /// <inheritdoc />
-    public Task SaveAsync(
+    public async Task SaveAsync(
         string name,
         Action<T> configUpdater,
         CancellationToken cancellationToken = default
     )
     {
-        var current = DeepCopy(Get(name));
-        configUpdater(current);
-        return SaveCoreAsync(current, GetOptions(name), cancellationToken);
+        await saveSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            // Create a deep copy to avoid modifying the current instance directly
+            // To avoid inconsistencies that may arise if other operations occur during this operation, protect it with a semaphore.
+            var current = DeepCopy(Get(name));
+            configUpdater(current);
+            await SaveCoreAsync(current, GetOptions(name), cancellationToken);
+        }
+        finally
+        {
+            saveSemaphore.Release();
+        }
     }
 
     /// <inheritdoc />

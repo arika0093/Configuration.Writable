@@ -336,6 +336,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
     }
 
+    // Disposable to unregister a listener
     private sealed class ChangeTrackerDisposable : IDisposable
     {
         private readonly OptionsMonitorImpl<T> _monitor;
