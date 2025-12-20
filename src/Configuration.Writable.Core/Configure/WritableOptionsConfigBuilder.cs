@@ -22,10 +22,8 @@ namespace Configuration.Writable.Configure;
 public record WritableOptionsConfigBuilder<T>
     where T : class, new()
 {
-    private const string NativeAOTErrorMessage = """
-        This method call may cause issues at runtime in NativeAOT applications. <br/>
-        See https://github.com/arika0093/Configuration.Writable/blob/main/README.md#support-nativeaot for more details.
-        """;
+    private const string NativeAotJustification =
+        "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
 
     private const string DefaultSectionName = "";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
@@ -127,6 +125,10 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+#endif
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
         var fileProvider = FileProvider ?? new CommonFileProvider();
@@ -222,7 +224,8 @@ public record WritableOptionsConfigBuilder<T>
     /// Gets the default cloning strategy which serializes and deserializes the object using JSON.
     /// </summary>
 #if NET
-    [RequiresUnreferencedCode(NativeAOTErrorMessage)]
+    [RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050")]
 #endif
     private static T DefaultCloneStrategy(T value)
     {
@@ -233,6 +236,10 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Builds the composite validator from all registered validators.
     /// </summary>
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+#endif
     private Func<T, ValidateOptionsResult>? BuildValidator()
     {
         var validators = new List<Func<T, ValidateOptionsResult>>(_validators);
@@ -270,7 +277,7 @@ public record WritableOptionsConfigBuilder<T>
     /// Validates an object using Data Annotations.
     /// </summary>
 #if NET
-    [RequiresUnreferencedCode(NativeAOTErrorMessage)]
+    [RequiresUnreferencedCode("Data Annotations validation may not be compatible with NativeAOT.")]
 #endif
     private static ValidateOptionsResult ValidateWithDataAnnotations(T value)
     {

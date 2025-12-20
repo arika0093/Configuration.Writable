@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -13,6 +14,9 @@ namespace Configuration.Writable.FormatProvider;
 /// </summary>
 public class JsonFormatProvider : FormatProviderBase
 {
+    private const string NativeAotJustification =
+        "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
+
     /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.
     /// </summary>
@@ -49,6 +53,10 @@ public class JsonFormatProvider : FormatProviderBase
     }
 
     /// <inheritdoc />
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+#endif
     public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
     {
         var jsonDocument = JsonDocument.Parse(stream);
@@ -102,6 +110,10 @@ public class JsonFormatProvider : FormatProviderBase
     /// <summary>
     /// Gets the save contents for the configuration.
     /// </summary>
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+#endif
     private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
         WritableOptionsConfiguration<T> options
@@ -166,6 +178,10 @@ public class JsonFormatProvider : FormatProviderBase
     /// <summary>
     /// Recursively writes nested section structure using Utf8JsonWriter.
     /// </summary>
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+#endif
     private static void WriteNestedSections<T>(
         Utf8JsonWriter writer,
         string[] sections,

@@ -1,9 +1,6 @@
-﻿using System.Text.Json;
-using Configuration.Writable;
-using Configuration.Writable.FileProvider;
+﻿using Configuration.Writable;
 using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp;
-using Microsoft.Extensions.Logging;
 
 // initialize the writable config system
 // default save location is ./userconfig.json
@@ -31,31 +28,8 @@ WritableOptions.Initialize<SampleSetting>(conf =>
         // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
 
         // customize JsonSerializerOptions
-        JsonSerializerOptions =
-        {
-            // WriteIndented = true,
-
-            // if you want to use Source Generation for better performance, set the Context here
-            // This enables NativeAOT-compatible JSON serialization
-            TypeInfoResolver = SampleSettingSerializerContext.Default,
-        },
+        JsonSerializerOptions = { WriteIndented = true },
     };
-
-    // customize the cloning strategy
-    // in NativeAOT, use Source Generation for JSON serialization
-    conf.CloneStrategy = value =>
-    {
-        var json = JsonSerializer.Serialize(
-            value,
-            SampleSettingSerializerContext.Default.SampleSetting
-        );
-        return JsonSerializer.Deserialize(
-            json,
-            SampleSettingSerializerContext.Default.SampleSetting
-        )!;
-    };
-
-    conf.SectionName = "Sample:Settings";
 
     // if you want to use logging, set Logger
     // required NuGet package: Microsoft.Extensions.Logging.Console
@@ -67,11 +41,6 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     // * UseDataAnnotationsValidation: use data annotation attributes in your config class. Defaults to true.
     // * WithValidatorFunction: a simple way to set validation function
     // * WithValidator: set a custom validation class implementing IValidateOptions<T>
-    //
-    // If use DataAnnotation validation with Source Generators,
-    // see SampleSettingValidator class in this project and comment out below code.
-    conf.UseDataAnnotationsValidation = false;
-    conf.WithValidator<SampleSettingValidator>();
 });
 
 // -------------------------------
