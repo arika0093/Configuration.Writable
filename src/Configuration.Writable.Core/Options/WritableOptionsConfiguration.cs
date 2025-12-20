@@ -1,9 +1,6 @@
-﻿#pragma warning disable S2326 // Unused type parameters should be removed
-using System;
-using System.IO;
+﻿using System;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
-using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -49,6 +46,11 @@ public record WritableOptionsConfiguration<T>
     /// This helps to prevent excessive event firing during rapid changes.
     /// </summary>
     public required int OnChangeThrottleMs { get; init; }
+
+    /// <summary>
+    /// Gets or sets the cloning strategy function to create deep copies of the configuration object.
+    /// </summary>
+    public required Func<T, T> CloneStrategy { get; init; }
 
     /// <summary>
     /// Gets or sets the logger for configuration operations.

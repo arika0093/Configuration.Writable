@@ -46,11 +46,22 @@ internal sealed class WritableOptionsImpl<T>(
         SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
-    public Task SaveAsync(
+    public async Task SaveAsync(
         string name,
         T newConfig,
         CancellationToken cancellationToken = default
-    ) => SaveCoreAsync(newConfig, GetOptions(name), cancellationToken);
+    )
+    {
+        await saveSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await SaveCoreAsync(newConfig, GetOptions(name), cancellationToken);
+        }
+        finally
+        {
+            saveSemaphore.Release();
+        }
+    }
 
     /// <inheritdoc />
     public async Task SaveAsync(
@@ -64,9 +75,10 @@ internal sealed class WritableOptionsImpl<T>(
         {
             // Create a deep copy to avoid modifying the current instance directly
             // To avoid inconsistencies that may arise if other operations occur during this operation, protect it with a semaphore.
-            var current = DeepCopy(Get(name));
+            var options = GetOptions(name);
+            var current = options.CloneStrategy(Get(name));
             configUpdater(current);
-            await SaveCoreAsync(current, GetOptions(name), cancellationToken);
+            await SaveCoreAsync(current, options, cancellationToken);
         }
         finally
         {
@@ -167,15 +179,4 @@ internal sealed class WritableOptionsImpl<T>(
     /// <exception cref="InvalidOperationException">Thrown if multiple configuration options with the specified name are found, or if no configuration option with
     /// the specified name exists.</exception>
     private WritableOptionsConfiguration<T> GetOptions(string name) => registryInstance.Get(name);
-
-    /// <summary>
-    /// Creates a deep copy of the specified object using JSON serialization/deserialization.
-    /// </summary>
-    /// <param name="original">The original object to copy.</param>
-    /// <returns>A deep copy of the original object.</returns>
-    private static T DeepCopy(T original)
-    {
-        var json = JsonSerializer.Serialize(original);
-        return JsonSerializer.Deserialize<T>(json)!;
-    }
 }

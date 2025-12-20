@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
@@ -34,6 +35,12 @@ public record WritableOptionsConfigBuilder<T>
     /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.
     /// </summary>
     public IFileProvider? FileProvider { get; set; } = null;
+
+    /// <summary>
+    /// Gets or sets the cloning strategy used when retrieving configuration instances. <br/>
+    /// If null, use Default cloning strategy (via JSON serialization).
+    /// </summary>
+    public Func<T, T>? CloneStrategy { get; set; } = null;
 
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
@@ -119,6 +126,7 @@ public record WritableOptionsConfigBuilder<T>
         var fileProvider = FileProvider ?? new CommonFileProvider();
         var configFilePath = _saveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
+        var cloneStrategy = CloneStrategy ?? DefaultCloneStrategy;
 
         return new WritableOptionsConfiguration<T>
         {
@@ -128,73 +136,10 @@ public record WritableOptionsConfigBuilder<T>
             InstanceName = instanceName,
             SectionName = SectionName,
             OnChangeThrottleMs = OnChangeThrottleMs,
+            CloneStrategy = cloneStrategy,
             Logger = Logger,
             Validator = validator,
         };
-    }
-
-    /// <summary>
-    /// Builds the composite validator from all registered validators.
-    /// </summary>
-    private Func<T, ValidateOptionsResult>? BuildValidator()
-    {
-        var validators = new List<Func<T, ValidateOptionsResult>>(_validators);
-
-        if (UseDataAnnotationsValidation)
-        {
-            validators.Add(ValidateWithDataAnnotations);
-        }
-        if (validators.Count == 0)
-        {
-            return null;
-        }
-        return value =>
-        {
-            var results = validators.Select(v => v(value)).ToList();
-            return CombineValidateOptionsResults(results);
-        };
-    }
-
-    /// <summary>
-    /// Combines multiple ValidateOptionsResult into a single result.
-    /// </summary>
-    private static ValidateOptionsResult CombineValidateOptionsResults(
-        List<ValidateOptionsResult> results
-    )
-    {
-        var allFailures = results.Where(r => r.Failed).SelectMany(r => r.Failures ?? []).ToList();
-
-        return allFailures.Count == 0
-            ? ValidateOptionsResult.Success
-            : ValidateOptionsResult.Fail(allFailures);
-    }
-
-    /// <summary>
-    /// Validates an object using Data Annotations.
-    /// </summary>
-    private static ValidateOptionsResult ValidateWithDataAnnotations(T value)
-    {
-        var context = new ValidationContext(value);
-        var validationResults = new List<ValidationResult>();
-
-        var isValid = Validator.TryValidateObject(
-            value,
-            context,
-            validationResults,
-            validateAllProperties: true
-        );
-
-        if (isValid)
-        {
-            return ValidateOptionsResult.Success;
-        }
-
-        var errors = validationResults
-            .Where(r => r.ErrorMessage != null)
-            .Select(r => r.ErrorMessage!)
-            .ToList();
-
-        return ValidateOptionsResult.Fail(errors);
     }
 
     /// <summary>
@@ -266,4 +211,77 @@ public record WritableOptionsConfigBuilder<T>
     /// <param name="directoryPath">The custom directory path to use as the configuration folder.</param>
     public ILocationBuilder UseCustomDirectory(string directoryPath) =>
         _saveLocationManager.MakeLocationBuilder().UseCustomDirectory(directoryPath);
+
+    /// <summary>
+    /// Gets the default cloning strategy which serializes and deserializes the object using JSON.
+    /// </summary>
+    private static T DefaultCloneStrategy(T value)
+    {
+        var json = JsonSerializer.Serialize(value);
+        return JsonSerializer.Deserialize<T>(json)!;
+    }
+
+    /// <summary>
+    /// Builds the composite validator from all registered validators.
+    /// </summary>
+    private Func<T, ValidateOptionsResult>? BuildValidator()
+    {
+        var validators = new List<Func<T, ValidateOptionsResult>>(_validators);
+
+        if (UseDataAnnotationsValidation)
+        {
+            validators.Add(ValidateWithDataAnnotations);
+        }
+        if (validators.Count == 0)
+        {
+            return null;
+        }
+        return value =>
+        {
+            var results = validators.Select(v => v(value)).ToList();
+            return CombineValidateOptionsResults(results);
+        };
+    }
+
+    /// <summary>
+    /// Combines multiple ValidateOptionsResult into a single result.
+    /// </summary>
+    private static ValidateOptionsResult CombineValidateOptionsResults(
+        List<ValidateOptionsResult> results
+    )
+    {
+        var allFailures = results.Where(r => r.Failed).SelectMany(r => r.Failures ?? []).ToList();
+
+        return allFailures.Count == 0
+            ? ValidateOptionsResult.Success
+            : ValidateOptionsResult.Fail(allFailures);
+    }
+
+    /// <summary>
+    /// Validates an object using Data Annotations.
+    /// </summary>
+    private static ValidateOptionsResult ValidateWithDataAnnotations(T value)
+    {
+        var context = new ValidationContext(value);
+        var validationResults = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(
+            value,
+            context,
+            validationResults,
+            validateAllProperties: true
+        );
+
+        if (isValid)
+        {
+            return ValidateOptionsResult.Success;
+        }
+
+        var errors = validationResults
+            .Where(r => r.ErrorMessage != null)
+            .Select(r => r.ErrorMessage!)
+            .ToList();
+
+        return ValidateOptionsResult.Fail(errors);
+    }
 }

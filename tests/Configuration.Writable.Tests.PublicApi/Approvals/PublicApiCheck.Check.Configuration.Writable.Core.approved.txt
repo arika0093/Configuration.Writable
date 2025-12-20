@@ -16,6 +16,7 @@ namespace Configuration.Writable.Configure
         where T :  class, new ()
     {
         public WritableOptionsConfigBuilder() { }
+        public System.Func<T, T>? CloneStrategy { get; set; }
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
         public Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; set; }
@@ -182,6 +183,7 @@ namespace Configuration.Writable
         where T :  class, new ()
     {
         public WritableOptionsConfiguration() { }
+        public required System.Func<T, T> CloneStrategy { get; init; }
         public required string ConfigFilePath { get; init; }
         public required Configuration.Writable.FileProvider.IFileProvider FileProvider { get; init; }
         public required Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; init; }
