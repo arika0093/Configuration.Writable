@@ -1,5 +1,6 @@
 ﻿using Configuration.Writable;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp;
 using Microsoft.Extensions.Logging;
 
