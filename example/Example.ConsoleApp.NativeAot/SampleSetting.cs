@@ -9,7 +9,7 @@ public record SampleSetting
 {
     [Required]
     [MinLength(3)]
-    // MinLenght attribute causes IL2060 warning in NativeAOT build, so suppress it here.
+    // MinLength attribute causes IL2026 warning in NativeAOT build, so suppress it here.
     [UnconditionalSuppressMessage("Trimming", "IL2026")]
     public string? Name { get; set; }
 
