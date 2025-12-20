@@ -14,8 +14,10 @@ namespace Configuration.Writable.FormatProvider;
 /// </summary>
 public class JsonFormatProvider : FormatProviderBase
 {
-    private const string NativeAotJustification =
+#if NET
+    private const string AotJsonReason =
         "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
+#endif
 
     /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.
@@ -54,8 +56,8 @@ public class JsonFormatProvider : FormatProviderBase
 
     /// <inheritdoc />
 #if NET
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
     public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
     {
@@ -111,8 +113,8 @@ public class JsonFormatProvider : FormatProviderBase
     /// Gets the save contents for the configuration.
     /// </summary>
 #if NET
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
     private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
@@ -179,8 +181,8 @@ public class JsonFormatProvider : FormatProviderBase
     /// Recursively writes nested section structure using Utf8JsonWriter.
     /// </summary>
 #if NET
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
     private static void WriteNestedSections<T>(
         Utf8JsonWriter writer,

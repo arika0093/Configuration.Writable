@@ -22,8 +22,13 @@ namespace Configuration.Writable.Configure;
 public record WritableOptionsConfigBuilder<T>
     where T : class, new()
 {
-    private const string NativeAotJustification =
+#if NET
+    private const string AotJsonReason =
         "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
+
+    private const string AotAnnotationsReason =
+        "Data Annotations validation may not be compatible with NativeAOT. You can disable it by setting UseDataAnnotationsValidation to false.";
+#endif
 
     private const string DefaultSectionName = "";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
@@ -126,8 +131,8 @@ public record WritableOptionsConfigBuilder<T>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
 #if NET
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
@@ -237,8 +242,8 @@ public record WritableOptionsConfigBuilder<T>
     /// Builds the composite validator from all registered validators.
     /// </summary>
 #if NET
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = NativeAotJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = NativeAotJustification)]
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotAnnotationsReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotAnnotationsReason)]
 #endif
     private Func<T, ValidateOptionsResult>? BuildValidator()
     {

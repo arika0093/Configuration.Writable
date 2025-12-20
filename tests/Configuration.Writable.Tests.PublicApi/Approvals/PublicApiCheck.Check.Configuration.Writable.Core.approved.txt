@@ -25,6 +25,8 @@ namespace Configuration.Writable.Configure
         public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
@@ -115,6 +117,8 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
         public override T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
