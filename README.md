@@ -467,7 +467,6 @@ By applying a few settings, you can run this library in NativeAOT environments.
 // 1. Specify TypeInfoResolver in JsonFormatProvider
 // 2. Use a NativeAOT-compatible CloneStrategy
 // 3. If using DataAnnotations, disable the built-in validation and use a Source Generator-based validator
-```
 
 // customize the provider and file writer
 conf.FormatProvider = new JsonFormatProvider()
