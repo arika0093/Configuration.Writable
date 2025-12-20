@@ -1,4 +1,5 @@
-﻿using Configuration.Writable;
+﻿using System.Text.Json;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp;
@@ -11,13 +12,16 @@ WritableOptions.Initialize<SampleSetting>();
 // if you want to specify a custom save location, use the following instead:
 WritableOptions.Initialize<SampleSetting>(conf =>
 {
-    // save file location is ../config/mysettings.json
+    // save file location is ./config/mysettings.json
     // extension is determined by the provider (omittable)
-    // conf.FilePath = "../config/mysettings";
+    conf.FilePath = "./config/mysettings";
+
+    // this is same as above
+    // conf.UseExecutableDirectory().AddFilePath("./config/mysettings");
 
     // if you want to standard system configration location, use conf.UseStandardSaveDirectory("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
-    conf.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
+    // conf.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
 
     // customize the provider and file writer
     // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
@@ -25,14 +29,33 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     {
         // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
         // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
+
+        // customize JsonSerializerOptions
         JsonSerializerOptions =
         {
-            WriteIndented = true,
+            // WriteIndented = true,
+
             // if you want to use Source Generation for better performance, set the Context here
             // This enables NativeAOT-compatible JSON serialization
             TypeInfoResolver = SampleSettingSerializerContext.Default,
         },
     };
+
+    // customize the cloning strategy
+    // in NativeAOT, use Source Generation for JSON serialization
+    conf.CloneStrategy = value =>
+    {
+        var json = JsonSerializer.Serialize(
+            value,
+            SampleSettingSerializerContext.Default.SampleSetting
+        );
+        return JsonSerializer.Deserialize(
+            json,
+            SampleSettingSerializerContext.Default.SampleSetting
+        )!;
+    };
+
+    conf.SectionName = "Sample:Settings";
 
     // if you want to use logging, set Logger
     // required NuGet package: Microsoft.Extensions.Logging.Console

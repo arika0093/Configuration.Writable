@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -21,6 +22,11 @@ namespace Configuration.Writable.Configure;
 public record WritableOptionsConfigBuilder<T>
     where T : class, new()
 {
+    private const string NativeAOTErrorMessage = """
+        This method call may cause issues at runtime in NativeAOT applications. <br/>
+        See https://github.com/arika0093/Configuration.Writable/blob/main/README.md#support-nativeaot for more details.
+        """;
+
     private const string DefaultSectionName = "";
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly SaveLocationManager _saveLocationManager = new();
@@ -215,6 +221,9 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Gets the default cloning strategy which serializes and deserializes the object using JSON.
     /// </summary>
+#if NET
+    [RequiresUnreferencedCode(NativeAOTErrorMessage)]
+#endif
     private static T DefaultCloneStrategy(T value)
     {
         var json = JsonSerializer.Serialize(value);
@@ -260,6 +269,9 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Validates an object using Data Annotations.
     /// </summary>
+#if NET
+    [RequiresUnreferencedCode(NativeAOTErrorMessage)]
+#endif
     private static ValidateOptionsResult ValidateWithDataAnnotations(T value)
     {
         var context = new ValidationContext(value);
