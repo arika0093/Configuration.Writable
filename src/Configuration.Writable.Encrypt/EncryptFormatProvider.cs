@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
 /// Provides functionality for managing writable configuration files with encryption support.

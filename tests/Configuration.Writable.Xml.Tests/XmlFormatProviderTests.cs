@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Xml.Tests;

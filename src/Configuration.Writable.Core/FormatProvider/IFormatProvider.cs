@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
 /// Defines a provider for managing writable configurations, including serialization and deserialization of configuration objects.

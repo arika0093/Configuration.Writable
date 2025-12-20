@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <RootNamespace>Configuration.Writable</RootNamespace>
+    <RootNamespace>Configuration.Writable.FormatProvider</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Configuration.Writable.Core\Configuration.Writable.Core.csproj" />

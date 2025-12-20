@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
 /// Writable configuration provider base class.

@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
 /// Writable configuration implementation for JSON files.

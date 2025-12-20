@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <RootNamespace>Configuration.Writable</RootNamespace>
+    <RootNamespace>Configuration.Writable.FormatProvider</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="YamlDotNet" Version="*" />

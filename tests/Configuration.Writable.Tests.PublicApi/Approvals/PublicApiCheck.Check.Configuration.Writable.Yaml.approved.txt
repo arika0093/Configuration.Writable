@@ -1,7 +1,7 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
-namespace Configuration.Writable
+namespace Configuration.Writable.FormatProvider
 {
-    public class YamlFormatProvider : Configuration.Writable.FormatProviderBase
+    public class YamlFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase
     {
         public YamlFormatProvider() { }
         public YamlDotNet.Serialization.IDeserializer Deserializer { get; init; }

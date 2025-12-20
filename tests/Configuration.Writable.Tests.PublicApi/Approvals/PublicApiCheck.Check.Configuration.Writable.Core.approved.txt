@@ -18,7 +18,7 @@ namespace Configuration.Writable.Configure
         public WritableOptionsConfigBuilder() { }
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IFileProvider? FileProvider { get; set; }
-        public Configuration.Writable.IFormatProvider FormatProvider { get; set; }
+        public Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public int OnChangeThrottleMs { get; set; }
         public bool RegisterInstanceToContainer { get; set; }
@@ -81,9 +81,9 @@ namespace Configuration.Writable.FileProvider
         public System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
     }
 }
-namespace Configuration.Writable
+namespace Configuration.Writable.FormatProvider
 {
-    public abstract class FormatProviderBase : Configuration.Writable.IFormatProvider
+    public abstract class FormatProviderBase : Configuration.Writable.FormatProvider.IFormatProvider
     {
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
@@ -106,6 +106,22 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
+    public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase
+    {
+        public JsonFormatProvider() { }
+        public System.Text.Encoding Encoding { get; init; }
+        public override string FileExtension { get; }
+        public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
+        public override T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
+            where T :  class, new () { }
+        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
+            where T :  class, new () { }
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new () { }
+    }
+}
+namespace Configuration.Writable
+{
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
@@ -162,26 +178,13 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
     }
-    public class JsonFormatProvider : Configuration.Writable.FormatProviderBase
-    {
-        public JsonFormatProvider() { }
-        public System.Text.Encoding Encoding { get; init; }
-        public override string FileExtension { get; }
-        public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        public override T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
-        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new () { }
-    }
     public class WritableOptionsConfiguration<T> : System.IEquatable<Configuration.Writable.WritableOptionsConfiguration<T>>
         where T :  class, new ()
     {
         public WritableOptionsConfiguration() { }
         public required string ConfigFilePath { get; init; }
         public required Configuration.Writable.FileProvider.IFileProvider FileProvider { get; init; }
-        public required Configuration.Writable.IFormatProvider FormatProvider { get; init; }
+        public required Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required int OnChangeThrottleMs { get; init; }

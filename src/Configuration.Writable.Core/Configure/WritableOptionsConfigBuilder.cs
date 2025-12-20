@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -27,7 +28,7 @@ public record WritableOptionsConfigBuilder<T>
     /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public IFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
+    public FormatProvider.IFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.

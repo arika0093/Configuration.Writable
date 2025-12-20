@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Configure;
 
@@ -46,7 +47,7 @@ internal class SaveLocationManager
     /// <param name="fileProvider">The file provider to check file and directory access.</param>
     /// <returns>The first valid save location path found, or null if none are available.</returns>
     public string Build(
-        IFormatProvider formatProvider,
+        FormatProvider.IFormatProvider formatProvider,
         IFileProvider fileProvider,
         string instanceName
     )

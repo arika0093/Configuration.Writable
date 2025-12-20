@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Internal;
 
 namespace Configuration.Writable.Tests;

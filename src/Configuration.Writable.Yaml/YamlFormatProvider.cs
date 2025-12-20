@@ -5,11 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
 /// Writable configuration implementation for Yaml files.
