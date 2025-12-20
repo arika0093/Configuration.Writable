@@ -1,5 +1,6 @@
 ﻿using Configuration.Writable;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 
 // if you want to save one file with multiple settings, you can use ZipFileProvider
 var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" };

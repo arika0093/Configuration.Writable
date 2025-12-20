@@ -1,5 +1,5 @@
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 using Example.WorkerService;
 
 var builder = Host.CreateApplicationBuilder(args);
