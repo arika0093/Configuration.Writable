@@ -2,6 +2,32 @@
 
 ### 🚀 Features
 
+- Implement semaphore for thread-safe configuration updates in WritableOptionsImpl
+- Add cloning strategy support for configuration options and update related implementations
+- Add JSON cloning strategy support and update related configurations
+- Enhance NativeAOT support with format provider and cloning strategy updates
+- Implement cloning strategy in OptionsMonitor and OptionsSnapshot for improved value management
+
+### 🐛 Bug Fixes
+
+- Correct import statements for consistency in example projects
+- Add missing format provider import in example console app
+- Remove unnecessary closing code block in README for NativeAOT instructions
+- Update version to 0.1 in version.json
+
+### 🚜 Refactor
+
+- Update namespaces and format provider references for consistency across the project
+- Remove unused using directives across multiple files for cleaner code
+- Update test method names and assertions for clarity in Options tests
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.1.0-alpha.159
+## [0.1.0-alpha.159] - 2025-12-19
+
+### 🚀 Features
+
 - Enhance instance name handling for writable options configuration (#26)
 - Refactor file provider handling in writable options configuration
 - Implement file and directory access checks in IFileProvider and its implementations
