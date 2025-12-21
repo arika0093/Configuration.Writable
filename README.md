@@ -189,6 +189,8 @@ builder.Services.AddWritableOptions<UserSetting>(conf => {
 By default, files are saved in JSON format. If you want to customize the format, specify `conf.FormatProvider` as follows.
 
 ```csharp
+using Configuration.Writable.FormatProvider;
+
 // use Json format with indentation
 conf.FormatProvider = new JsonFormatProvider() {
     JsonSerializerOptions = {
@@ -215,6 +217,8 @@ Currently, the following providers are available:
 | [EncryptFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Encrypt/EncryptFormatProvider.cs) | save in AES-256-CBC encrypted JSON format. | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Encrypt?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Encrypt/)  |
 
 ```csharp
+using Configuration.Writable.FormatProvider;
+
 // use Yaml format
 // (you need to install Configuration.Writable.Yaml package)
 conf.FormatProvider = new YamlFormatProvider();
@@ -460,15 +464,13 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 
 ## Advanced Usage
 ### Support NativeAOT
-By applying a few settings, you can run this library in NativeAOT environments.
+By applying a few settings, you can run this library in NativeAOT environments. The following three settings are required:
+1. Specify TypeInfoResolver in JsonFormatProvider
+2. Use a NativeAOT-compatible CloneStrategy
+3. If using DataAnnotations, disable the built-in validation and use a Source Generator-based validator
 
 ```csharp
-// The following three settings are required:
-// 1. Specify TypeInfoResolver in JsonFormatProvider
-// 2. Use a NativeAOT-compatible CloneStrategy
-// 3. If using DataAnnotations, disable the built-in validation and use a Source Generator-based validator
-
-// customize the provider and file writer
+// 1. customize the provider and file writer
 conf.FormatProvider = new JsonFormatProvider()
 {
     JsonSerializerOptions =
@@ -477,11 +479,11 @@ conf.FormatProvider = new JsonFormatProvider()
     },
 };
 
-// customize the cloning strategy
+// 2. customize the cloning strategy
 // in NativeAOT, use Source Generation for JSON serialization
 conf.UseJsonCloneStrategy(SampleSettingSerializerContext.Default.SampleSetting);
 
-// If use DataAnnotation validation with Source Generators,
+// 3. If use DataAnnotation validation with Source Generators,
 // see SampleSettingValidator class in this project and comment out below code.
 conf.UseDataAnnotationsValidation = false;
 conf.WithValidator<SampleSettingValidator>();
@@ -489,10 +491,12 @@ conf.WithValidator<SampleSettingValidator>();
 // ------
 public record SampleSetting { /* ... */ }
 
+// add source generation context
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(SampleSetting))]
 public partial class SampleSettingSerializerContext : JsonSerializerContext;
 
+// add validator with source generation
 [OptionsValidator]
 public partial class SampleSettingValidator : IValidateOptions<SampleSetting>;
 ```
