@@ -154,7 +154,8 @@ public class OptionsMonitorImplTests
         var value2 = monitor.Get(Microsoft.Extensions.Options.Options.DefaultName);
 
         // Assert
-        value1.ShouldBeSameAs(value2);
+        value1.ShouldNotBeSameAs(value2);
+        value1.ShouldBeEquivalentTo(value2);
     }
 
     [Fact]

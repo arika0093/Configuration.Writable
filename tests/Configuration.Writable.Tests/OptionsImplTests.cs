@@ -37,7 +37,7 @@ public class OptionsImplTests
     }
 
     [Fact]
-    public void Value_ShouldReturnSameInstanceOnMultipleCalls()
+    public void Value_ShouldReturnSameValueOnMultipleCalls()
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
@@ -54,7 +54,8 @@ public class OptionsImplTests
         var value2 = options.Value;
 
         // Assert
-        value1.ShouldBeSameAs(value2);
+        value1.ShouldNotBeSameAs(value2);
+        value1.ShouldBeEquivalentTo(value2);
     }
 
     [Fact]

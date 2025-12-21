@@ -166,7 +166,7 @@ public class OptionsSnapshotImplTests
     }
 
     [Fact]
-    public void Snapshot_MultipleCalls_ShouldReturnSameInstance()
+    public void Snapshot_MultipleCalls_ShouldReturnSameValue()
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
@@ -185,7 +185,8 @@ public class OptionsSnapshotImplTests
         var value2 = snapshot.Value;
 
         // Assert
-        value1.ShouldBeSameAs(value2);
+        value1.ShouldNotBeSameAs(value2);
+        value1.ShouldBeEquivalentTo(value2);
     }
 
     [Fact]
