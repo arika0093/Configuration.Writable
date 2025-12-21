@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
@@ -31,6 +32,7 @@ public record WritableOptionsConfigBuilder<T>
 #endif
 
     private const string DefaultSectionName = "";
+    private Func<T, T>? _cloneStrategy = null;
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly SaveLocationManager _saveLocationManager = new();
 
@@ -44,12 +46,6 @@ public record WritableOptionsConfigBuilder<T>
     /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.
     /// </summary>
     public IFileProvider? FileProvider { get; set; } = null;
-
-    /// <summary>
-    /// Gets or sets the cloning strategy used when retrieving configuration instances. <br/>
-    /// If null, use Default cloning strategy (via JSON serialization).
-    /// </summary>
-    public Func<T, T>? CloneStrategy { get; set; } = null;
 
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
@@ -97,6 +93,48 @@ public record WritableOptionsConfigBuilder<T>
     public string SectionName { get; set; } = DefaultSectionName;
 
     /// <summary>
+    /// Sets the cloning strategy to use JSON serialization for deep cloning of the configuration object.
+    /// </summary>
+#if NET
+    [RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050")]
+#endif
+    [MemberNotNull(nameof(_cloneStrategy))]
+    public void UseJsonCloneStrategy()
+    {
+        _cloneStrategy = value =>
+        {
+            var json = JsonSerializer.Serialize(value);
+            return JsonSerializer.Deserialize<T>(json)!;
+        };
+    }
+
+    /// <summary>
+    /// Sets the cloning strategy to use JSON serialization for deep cloning of the configuration object.
+    /// This overload allows specifying custom JsonTypeInfo for serialization.
+    /// </summary>
+    /// <param name="jsonTypeInfo">The JsonTypeInfo to use for serialization and deserialization.</param>
+    [MemberNotNull(nameof(_cloneStrategy))]
+    public void UseJsonCloneStrategy(JsonTypeInfo<T> jsonTypeInfo)
+    {
+        _cloneStrategy = value =>
+        {
+            var json = JsonSerializer.Serialize(value, jsonTypeInfo);
+            return JsonSerializer.Deserialize<T>(json, jsonTypeInfo)!;
+        };
+    }
+
+    /// <summary>
+    /// Sets a custom cloning strategy for deep cloning of the configuration object.
+    /// </summary>
+    /// <param name="cloneStrategy">A function that defines the cloning strategy.</param>
+    [MemberNotNull(nameof(_cloneStrategy))]
+    public void UseCustomCloneStrategy(Func<T, T> cloneStrategy)
+    {
+        _cloneStrategy = cloneStrategy;
+    }
+
+    /// <summary>
     /// Adds a custom validation function to be executed before saving configuration.
     /// </summary>
     /// <param name="validator">A function that validates the configuration and returns a <see cref="ValidateOptionsResult"/>.</param>
@@ -139,7 +177,10 @@ public record WritableOptionsConfigBuilder<T>
         var fileProvider = FileProvider ?? new CommonFileProvider();
         var configFilePath = _saveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
-        var cloneStrategy = CloneStrategy ?? DefaultCloneStrategy;
+        if (_cloneStrategy == null)
+        {
+            UseJsonCloneStrategy();
+        }
 
         return new WritableOptionsConfiguration<T>
         {
@@ -149,7 +190,7 @@ public record WritableOptionsConfigBuilder<T>
             InstanceName = instanceName,
             SectionName = SectionName,
             OnChangeThrottleMs = OnChangeThrottleMs,
-            CloneStrategy = cloneStrategy,
+            CloneStrategy = _cloneStrategy,
             Logger = Logger,
             Validator = validator,
         };

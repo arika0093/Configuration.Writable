@@ -479,17 +479,7 @@ conf.FormatProvider = new JsonFormatProvider()
 
 // customize the cloning strategy
 // in NativeAOT, use Source Generation for JSON serialization
-conf.CloneStrategy = value =>
-{
-    var json = JsonSerializer.Serialize(
-        value,
-        SampleSettingSerializerContext.Default.SampleSetting
-    );
-    return JsonSerializer.Deserialize(
-        json,
-        SampleSettingSerializerContext.Default.SampleSetting
-    )!;
-};
+conf.UseJsonCloneStrategy(SampleSettingSerializerContext.Default.SampleSetting);
 
 // If use DataAnnotation validation with Source Generators,
 // see SampleSettingValidator class in this project and comment out below code.

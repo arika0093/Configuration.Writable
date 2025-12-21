@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configuration.Writable.Core
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "providers", "providers", "{0204B543-0BA5-499B-A2D7-14BAB07F10DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.ConsoleApp.NativeAot", "example\Example.ConsoleApp.NativeAot\Example.ConsoleApp.NativeAot.csproj", "{2CF5BBAF-F95E-D4A8-B719-CA63214ACECC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,10 @@ Global
 		{4A9EFE5D-157E-7AD7-935F-4F27B3D7DA92}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A9EFE5D-157E-7AD7-935F-4F27B3D7DA92}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A9EFE5D-157E-7AD7-935F-4F27B3D7DA92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CF5BBAF-F95E-D4A8-B719-CA63214ACECC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CF5BBAF-F95E-D4A8-B719-CA63214ACECC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CF5BBAF-F95E-D4A8-B719-CA63214ACECC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CF5BBAF-F95E-D4A8-B719-CA63214ACECC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -120,6 +126,7 @@ Global
 		{90925F04-57CB-4E78-BAB4-30553801D2AD} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{4A9EFE5D-157E-7AD7-935F-4F27B3D7DA92} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{0204B543-0BA5-499B-A2D7-14BAB07F10DF} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{2CF5BBAF-F95E-D4A8-B719-CA63214ACECC} = {1D587995-D2B1-D47C-23B4-E8E972FA15E9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E73558E3-09FC-4E17-896B-7BD02861757F}
