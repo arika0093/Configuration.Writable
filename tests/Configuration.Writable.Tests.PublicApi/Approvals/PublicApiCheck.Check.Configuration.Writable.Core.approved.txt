@@ -218,7 +218,7 @@ namespace Configuration.Writable.Testing
         where T :  class, new ()
     {
         public WritableOptionsSimpleInstance() { }
-        public Configuration.Writable.IWritableOptions<T> GetOptions() { }
+        public Configuration.Writable.IWritableOptionsMonitor<T> GetOptions() { }
         public void Initialize() { }
         public void Initialize(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configurationOptions) { }
         public void Initialize(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configurationOptions) { }

@@ -44,7 +44,7 @@ public class WritableOptionsSimpleInstance<T>
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
-    public IWritableOptions<T> GetOptions()
+    public IWritableOptionsMonitor<T> GetOptions()
     {
         if (_options == null)
         {
