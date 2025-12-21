@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Configuration.Writable;
+﻿using Configuration.Writable;
 using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp.NativeAot;
 

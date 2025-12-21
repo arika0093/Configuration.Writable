@@ -1,9 +1,7 @@
 ﻿using System;
 using Configuration.Writable.Configure;
-using Configuration.Writable.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;

@@ -1,6 +1,4 @@
 using System.Threading.Tasks;
-using Configuration.Writable;
-using Configuration.Writable.Testing;
 
 namespace Configuration.Writable.Tests;
 

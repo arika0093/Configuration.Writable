@@ -1,7 +1,6 @@
 ﻿#pragma warning disable S2326 // Unused type parameters should be removed
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -12,7 +11,6 @@ using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable.Configure;
 

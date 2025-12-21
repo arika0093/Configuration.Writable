@@ -4,7 +4,7 @@ namespace Example.WorkerService;
 
 public class Worker(IWritableOptions<SampleSetting> options) : BackgroundService
 {
-    private bool IsRepeat = true;
+    private readonly bool IsRepeat = true;
     private IDisposable? _changeListener;
 
     public override Task StartAsync(CancellationToken stoppingToken)

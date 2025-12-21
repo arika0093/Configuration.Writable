@@ -1,6 +1,3 @@
-using System;
-using Microsoft.Extensions.Options;
-
 namespace Configuration.Writable;
 
 /// <summary>

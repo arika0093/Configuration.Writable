@@ -4,9 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
-using Configuration.Writable.Internal;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Configuration.Writable.Tests;
 

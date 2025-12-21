@@ -4,7 +4,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FileProvider;

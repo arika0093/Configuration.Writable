@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Configure;
 

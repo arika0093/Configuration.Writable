@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
-using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
