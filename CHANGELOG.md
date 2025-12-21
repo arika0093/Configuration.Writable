@@ -24,6 +24,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Update changelog for release 0.1.0-alpha.159
+- Update changelog for release 0.1.0-alpha.2
 ## [0.1.0-alpha.159] - 2025-12-19
 
 ### 🚀 Features
