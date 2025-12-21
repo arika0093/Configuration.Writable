@@ -73,10 +73,9 @@ internal sealed class WritableOptionsImpl<T>(
         await saveSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // Create a deep copy to avoid modifying the current instance directly
             // To avoid inconsistencies that may arise if other operations occur during this operation, protect it with a semaphore.
             var options = GetOptions(name);
-            var current = options.CloneStrategy(Get(name));
+            var current = Get(name);
             configUpdater(current);
             await SaveCoreAsync(current, options, cancellationToken);
         }

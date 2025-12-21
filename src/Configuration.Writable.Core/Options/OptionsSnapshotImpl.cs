@@ -11,20 +11,26 @@ namespace Configuration.Writable.Options;
 internal class OptionsSnapshotImpl<T> : IOptionsSnapshot<T>
     where T : class, new()
 {
+    private readonly OptionsMonitorImpl<T> _optionsMonitor;
     private readonly Dictionary<string, T> _snapshotValues = [];
 
-    public OptionsSnapshotImpl(OptionsMonitorImpl<T> _optionsMonitor)
+    public OptionsSnapshotImpl(OptionsMonitorImpl<T> optionsMonitor)
     {
-        var keys = _optionsMonitor.GetInstanceNames();
+        _optionsMonitor = optionsMonitor;
+        var keys = optionsMonitor.GetInstanceNames();
         foreach (var key in keys)
         {
-            _snapshotValues[key] = _optionsMonitor.GetDefaultValue(key);
+            _snapshotValues[key] = optionsMonitor.GetDefaultValue(key);
         }
     }
 
     /// <inheritdoc />
-    public T Value => _snapshotValues[MEOptions.DefaultName];
+    public T Value => GetCachedDefaultValue(MEOptions.DefaultName);
 
     /// <inheritdoc />
-    public T Get(string? name) => _snapshotValues[name!];
+    public T Get(string? name) => GetCachedDefaultValue(name!);
+
+    // Get the cached default value for the given name
+    private T GetCachedDefaultValue(string name) =>
+        _optionsMonitor.GetClonedValue(name, _snapshotValues[name]);
 }

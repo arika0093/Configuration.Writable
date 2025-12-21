@@ -23,8 +23,12 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly Dictionary<string, List<Action<T, string?>>> _listeners = [];
     private readonly Dictionary<string, FileSystemWatcher?> _watchers = [];
     private readonly Dictionary<string, Timer?> _throttleTimers = [];
-    private readonly object _throttleTimersLock = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+#if NET9_0_OR_GREATER
+    private readonly Lock _throttleTimersLock = new();
+#else
+    private readonly object _throttleTimersLock = new();
+#endif
 
     public OptionsMonitorImpl(IWritableOptionsConfigRegistry<T> optionsRegistry)
     {
@@ -49,7 +53,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         name ??= MEOptions.DefaultName;
         if (_cache.TryGetValue(name, out var cached))
         {
-            return cached;
+            return GetClonedValue(name, cached);
         }
         // Load configuration if not cached
         return LoadConfiguration(name);
@@ -94,7 +98,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         if (_defaultValue.TryGetValue(instanceName, out var defaultValue))
         {
-            return defaultValue;
+            return GetClonedValue(instanceName, defaultValue);
         }
         throw new InvalidOperationException($"No default value found for instance: {instanceName}");
     }
@@ -117,6 +121,17 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     internal void ClearCache(string instanceName)
     {
         _cache.Remove(instanceName);
+    }
+
+    /// <summary>
+    /// Returns a cloned copy of the given value using the clone strategy defined in the options configuration.
+    /// </summary>
+    /// <param name="instanceName">The name of the options instance. </param>
+    /// <param name="value">The value to clone.</param>
+    internal T GetClonedValue(string instanceName, T value)
+    {
+        var options = _optionsRegistry.Get(instanceName);
+        return options.CloneStrategy(value);
     }
 
     // Called when new options are added to the registry.
