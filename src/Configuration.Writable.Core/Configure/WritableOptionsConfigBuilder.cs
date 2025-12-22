@@ -175,6 +175,9 @@ public record WritableOptionsConfigBuilder<T>
         var fileProvider = FileProvider ?? new CommonFileProvider();
         var configFilePath = _saveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
+        var sectionNamePart = SectionName
+            .Split([":", "__"], StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
         if (_cloneMethod == null)
         {
             UseJsonCloneStrategy();
@@ -186,7 +189,7 @@ public record WritableOptionsConfigBuilder<T>
             FileProvider = fileProvider,
             ConfigFilePath = configFilePath,
             InstanceName = instanceName,
-            SectionName = SectionName,
+            SectionNameParts = sectionNamePart,
             OnChangeThrottleMs = OnChangeThrottleMs,
             CloneMethod = _cloneMethod,
             Logger = Logger,
@@ -263,19 +266,6 @@ public record WritableOptionsConfigBuilder<T>
     /// <param name="directoryPath">The custom directory path to use as the configuration folder.</param>
     public ILocationBuilder UseCustomDirectory(string directoryPath) =>
         _saveLocationManager.MakeLocationBuilder().UseCustomDirectory(directoryPath);
-
-    /// <summary>
-    /// Gets the default cloning strategy which serializes and deserializes the object using JSON.
-    /// </summary>
-#if NET
-    [RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050")]
-#endif
-    private static T DefaultCloneStrategy(T value)
-    {
-        var json = JsonSerializer.Serialize(value);
-        return JsonSerializer.Deserialize<T>(json)!;
-    }
 
     /// <summary>
     /// Builds the composite validator from all registered validators.

@@ -17,7 +17,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 {
     private readonly IWritableOptionsConfigRegistry<T> _optionsRegistry;
 
-    // TODO: These private variables are consolidated into a single class and managed with ConcurrentDictionary<string, OptionsMonitorDataSource>.        
+    // TODO: These private variables are consolidated into a single class and managed with ConcurrentDictionary<string, OptionsMonitorDataSource>.
     private readonly Dictionary<string, T> _cache = [];
     private readonly Dictionary<string, T> _defaultValue = [];
     private readonly Dictionary<string, List<Action<T, string?>>> _listeners = [];
@@ -53,7 +53,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         name ??= MEOptions.DefaultName;
         if (_cache.TryGetValue(name, out var cached))
         {
-            // TODO: Since generating a Clone each time it is retrieved is costly, a better method needs to be considered.
+            // TODO: Since generating a CloneMethod each time it is retrieved is costly, a better method needs to be considered.
             return GetClonedValue(name, cached);
         }
         // Load configuration if not cached

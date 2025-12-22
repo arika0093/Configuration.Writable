@@ -34,41 +34,24 @@ public abstract class FormatProviderBase : IFormatProvider
     /// Creates a nested dictionary structure from a section name that supports ':' and '__' as separators.
     /// For example, "SectionA:SectionB" or "SectionA__SectionB" will create { "SectionA": { "SectionB": value } }.
     /// </summary>
-    /// <param name="sectionName">The section name with potential separators.</param>
+    /// <param name="parts">The list of section name parts split by the separators.</param>
     /// <param name="value">The value to place at the deepest level.</param>
     /// <returns>A nested dictionary representing the section hierarchy, or the original value if no separators are found.</returns>
-    protected static object CreateNestedSection(string sectionName, object value)
+    protected static object CreateNestedSection(List<string> parts, object value)
     {
-        if (string.IsNullOrWhiteSpace(sectionName))
-        {
-            return value;
-        }
-
-        // Split by ':' or '__' separators
-        var parts = GetSplitedSections(sectionName);
-
-        if (parts.Length <= 1)
+        if (parts.Count <= 0)
         {
             // No separators found, return a simple dictionary
-            return new Dictionary<string, object> { [sectionName] = value };
+            return value;
         }
 
         // Build nested structure from the inside out
         object current = value;
-        for (int i = parts.Length - 1; i >= 0; i--)
+        for (int i = parts.Count - 1; i >= 0; i--)
         {
             current = new Dictionary<string, object> { [parts[i]] = current };
         }
 
         return current;
     }
-
-    /// <summary>
-    /// Splits the specified section name into its constituent parts using colon (:) and double underscore (__) as
-    /// delimiters.
-    /// </summary>
-    /// <param name="sectionName">The section name to split. Cannot be null.</param>
-    /// <returns>An array of strings containing the individual sections. The array does not include empty entries.</returns>
-    protected static string[] GetSplitedSections(string sectionName) =>
-        sectionName.Split([":", "__"], StringSplitOptions.RemoveEmptyEntries);
 }
