@@ -20,6 +20,7 @@ internal class OptionsSnapshotImpl<T> : IOptionsSnapshot<T>
         var keys = optionsMonitor.GetInstanceNames();
         foreach (var key in keys)
         {
+            // TODO: The Snapshot needs to be the value (not Default) at the time it is created.
             _snapshotValues[key] = optionsMonitor.GetDefaultValue(key);
         }
     }
