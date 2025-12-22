@@ -157,8 +157,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         var opt = _optionsRegistry.Get(instanceName);
         // Load the initial value
         var initialValue = LoadConfigurationFromProvider(instanceName);
+        var defaultValue = opt.CloneMethod(initialValue);
         // Create data source with initial value as both cache and default
-        var dataSource = new OptionsMonitorDataSource(initialValue, initialValue);
+        var dataSource = new OptionsMonitorDataSource(initialValue, defaultValue);
         _dataSources[instanceName] = dataSource;
         // Setup file watcher
         SetupFileWatcher(opt, dataSource);
