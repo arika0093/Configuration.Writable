@@ -675,44 +675,55 @@ Assert.Contains("expected name", json);
 ## Interfaces
 Here, we describe the main interfaces provided by this library.
 
-### `IOptions<T>`
+![](./assets/interfaces.drawio.svg)
+
+### `IOptions`
 Provides the value at application startup.
 Even if the configuration file is updated later, accessing through this interface will not reflect the changes.  
-Named access is not supported.  
+Named access is not supported. Only the unnamed instance is accessible via the `.Value` property.  
 
-This is identical to MS.E.O.'s [`IOptions<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptions-1).
+This is identical to MS.E.O.'s [`IOptions`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptions-1).
 
-### `IOptionsMonitor<T>`
+### `IOptionsSnapshot`
+Provides the latest value per request (Scoped). The content of the configuration file at the time the object is created is reflected, and even if the configuration file is updated later, the latest value is not reflected.  
+Named access is supported via the `.Get(name)` method.
+
+This is identical to MS.E.O.'s [`IOptionsSnapshot`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionssnapshot-1).
+
+### `IOptionsMonitor`
 Provides the latest value at the current time.
 When the configuration file is updated, the latest value is automatically reflected.  
 Both named and unnamed access are supported; for unnamed access, use `.CurrentValue`, and for named access, use `.Get(name)`.  
 Change detection is done by registering a callback with the `OnChange(Action<T, string> listener)` method. Since changes for both unnamed and named instances are detected, you need to identify the target name from the second string argument as needed.
 
-This is identical to MS.E.O.'s [`IOptionsMonitor<T>`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
+This is identical to MS.E.O.'s [`IOptionsMonitor`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
 
-### `IReadOnlyOptions<T>` / `IReadOnlyNamedOptions<T>`
+### `IReadOnlyOptions` / `IReadOnlyNamedOptions`
 Provides the latest value at the current time.
 When the configuration file is updated, the latest value is automatically reflected.  
-These are very similar to the above `IOptionsMonitor<T>`, but differ in the following ways:
+These are very similar to the above `IOptionsMonitor`, but differ in the following ways:
 
 * You can retrieve configuration options (such as file save location) via the `GetOptionsConfiguration` method.
 * The interfaces are split into two, depending on whether named access is supported:
-  * `IReadOnlyOptions<T>`: Does not support named access, only accessible via `.CurrentValue`.
-  * `IReadOnlyNamedOptions<T>`: Supports named access only via `.Get(name)`.
+  * `IReadOnlyOptions`: Does not support named access, only accessible via `.CurrentValue`.
+  * `IReadOnlyNamedOptions`: Supports named access only via `.Get(name)`.
 * The method of registering `OnChange` callbacks is different:
-  * `IReadOnlyOptions<T>`: `OnChange(Action<T> listener)` method to register a callback for changes to the unnamed instance.
-  * `IReadOnlyNamedOptions<T>`: `OnChange(string name, Action<T> listener)` method to register a callback for changes to a specific named instance.
+  * `IReadOnlyOptions`: `OnChange(Action<T> listener)` method to register a callback for changes to the unnamed instance.
+  * `IReadOnlyNamedOptions`: `OnChange(string name, Action<T> listener)` method to register a callback for changes to a specific named instance.
   * The traditional `OnChange(Action<T, string> listener)` is also available.
 
-### `IWritableOptions<T>` / `IWritableNamedOptions<T>`
-In addition to the features of `IReadOnly(Named)Options<T>`, these support saving settings.
-Other than the addition of the `SaveAsync` method, they are the same as the above `IReadOnly(Named)Options<T>`.
+### `IWritableOptions` / `IWritableNamedOptions`
+In addition to the features of `IReadOnly(Named)Options`, these support saving settings.
+Other than the addition of the `SaveAsync` method, they are the same as the above `IReadOnly(Named)Options`.
 
-### `IReadOnlyOptionsMonitor<T>` / `IWritableOptionsMonitor<T>`
-
-These interfaces unify the features of `IReadOnly(Writable)Options<T>` and `IReadOnly(Writable)NamedOptions<T>`, while maintaining compatibility with `IOptionsMonitor<T>`.  
+### `IReadOnlyOptionsMonitor<T>`
+This interface integrates the functionalities of `IReadOnlyOptions`, `IReadOnlyNamedOptions`, and `IOptionsMonitor<T>`.
 They are provided mainly to ensure compatibility with codebases that already use `IOptionsMonitor<T>`.  
 Therefore, you typically do not need to use these interfaces explicitly.
+
+### `IWritableOptionsMonitor<T>`
+This interface integrates the functionalities of `IWritableOptions`, `IWritableNamedOptions`, and `IOptionsMonitor<T>`.
+Except for the above `IReadOnlyOptionsMonitor<T>`, you typically do not need to use these interfaces explicitly.
 
 ## License
 This project is licensed under the Apache-2.0 License.
