@@ -148,6 +148,7 @@ namespace Configuration.Writable
     {
         new T CurrentValue { get; }
         new T Get(string name);
+        new System.IDisposable? OnChange(System.Action<T, string?> listener);
     }
     public interface IReadOnlyOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
