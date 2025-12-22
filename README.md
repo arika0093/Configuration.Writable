@@ -675,7 +675,7 @@ Assert.Contains("expected name", json);
 ## Interfaces
 Here, we describe the main interfaces provided by this library.
 
-![](./assets/interfaces.drawio.svg)
+<img src="./assets/interfaces.drawio.svg" alt="Interfaces Diagram" width="600"/>
 
 ### `IOptions`
 Provides the value at application startup.
