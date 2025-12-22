@@ -78,7 +78,7 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
             InstanceName = name,
             SectionName = sectionName,
             FormatProvider = null!, // no need for format provider in stub
-            CloneStrategy = t => t, // no need for cloning in stub
+            CloneMethod = t => t, // no need for cloning in stub
             FileProvider = new CommonFileProvider(),
             OnChangeThrottleMs = 1000,
         };

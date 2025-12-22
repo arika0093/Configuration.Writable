@@ -153,7 +153,7 @@ public class EncryptFormatProvider : FormatProviderBase
             Logger = options.Logger,
             FormatProvider = JsonProvider,
             FileProvider = new FileProvider.CommonFileProvider(),
-            CloneStrategy = options.CloneStrategy,
+            CloneMethod = options.CloneMethod,
             InstanceName = options.InstanceName,
             OnChangeThrottleMs = options.OnChangeThrottleMs,
         };

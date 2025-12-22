@@ -30,7 +30,7 @@ public record WritableOptionsConfigBuilder<T>
 #endif
 
     private const string DefaultSectionName = "";
-    private Func<T, T>? _cloneStrategy = null;
+    private Func<T, T>? _cloneMethod = null;
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly SaveLocationManager _saveLocationManager = new();
 
@@ -97,10 +97,10 @@ public record WritableOptionsConfigBuilder<T>
     [RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
     [UnconditionalSuppressMessage("AOT", "IL3050")]
 #endif
-    [MemberNotNull(nameof(_cloneStrategy))]
+    [MemberNotNull(nameof(_cloneMethod))]
     public void UseJsonCloneStrategy()
     {
-        _cloneStrategy = value =>
+        _cloneMethod = value =>
         {
             var json = JsonSerializer.Serialize(value);
             return JsonSerializer.Deserialize<T>(json)!;
@@ -112,10 +112,10 @@ public record WritableOptionsConfigBuilder<T>
     /// This overload allows specifying custom JsonTypeInfo for serialization.
     /// </summary>
     /// <param name="jsonTypeInfo">The JsonTypeInfo to use for serialization and deserialization.</param>
-    [MemberNotNull(nameof(_cloneStrategy))]
+    [MemberNotNull(nameof(_cloneMethod))]
     public void UseJsonCloneStrategy(JsonTypeInfo<T> jsonTypeInfo)
     {
-        _cloneStrategy = value =>
+        _cloneMethod = value =>
         {
             var json = JsonSerializer.Serialize(value, jsonTypeInfo);
             return JsonSerializer.Deserialize<T>(json, jsonTypeInfo)!;
@@ -126,10 +126,10 @@ public record WritableOptionsConfigBuilder<T>
     /// Sets a custom cloning strategy for deep cloning of the configuration object.
     /// </summary>
     /// <param name="cloneStrategy">A function that defines the cloning strategy.</param>
-    [MemberNotNull(nameof(_cloneStrategy))]
+    [MemberNotNull(nameof(_cloneMethod))]
     public void UseCustomCloneStrategy(Func<T, T> cloneStrategy)
     {
-        _cloneStrategy = cloneStrategy;
+        _cloneMethod = cloneStrategy;
     }
 
     /// <summary>
@@ -175,7 +175,7 @@ public record WritableOptionsConfigBuilder<T>
         var fileProvider = FileProvider ?? new CommonFileProvider();
         var configFilePath = _saveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
-        if (_cloneStrategy == null)
+        if (_cloneMethod == null)
         {
             UseJsonCloneStrategy();
         }
@@ -188,7 +188,7 @@ public record WritableOptionsConfigBuilder<T>
             InstanceName = instanceName,
             SectionName = SectionName,
             OnChangeThrottleMs = OnChangeThrottleMs,
-            CloneStrategy = _cloneStrategy,
+            CloneMethod = _cloneMethod,
             Logger = Logger,
             Validator = validator,
         };

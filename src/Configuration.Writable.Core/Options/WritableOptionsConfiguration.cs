@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
@@ -40,7 +41,12 @@ public record WritableOptionsConfiguration<T>
     /// If use multiple configuration file for same type T, you must set different SectionName for each.
     /// </summary>
     public required string SectionName { get; init; }
-    // TODO: Perform the split at the time of creation and store the values. The Provider side will only use the split values.
+
+    /// <summary>
+    /// Gets or sets the parts of the section name split by ':' and '__' for hierarchical navigation.
+    /// If empty, that means the root of the configuration file.
+    /// </summary>
+    public required List<string> SectionNameParts { get; init; }
 
     /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
@@ -51,7 +57,7 @@ public record WritableOptionsConfiguration<T>
     /// <summary>
     /// Gets or sets the cloning strategy function to create deep copies of the configuration object.
     /// </summary>
-    public required Func<T, T> CloneStrategy { get; init; } // TODO: rename to Clone
+    public required Func<T, T> CloneMethod { get; init; } // TODO: rename to CloneMethod
 
     /// <summary>
     /// Gets or sets the logger for configuration operations.

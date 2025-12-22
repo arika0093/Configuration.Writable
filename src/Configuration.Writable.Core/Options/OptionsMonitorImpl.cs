@@ -132,7 +132,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     internal T GetClonedValue(string instanceName, T value)
     {
         var options = _optionsRegistry.Get(instanceName);
-        return options.CloneStrategy(value);
+        return options.CloneMethod(value);
     }
 
     // Called when new options are added to the registry.
