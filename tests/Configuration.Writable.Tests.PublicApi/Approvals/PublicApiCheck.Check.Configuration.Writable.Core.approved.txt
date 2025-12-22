@@ -28,16 +28,13 @@ namespace Configuration.Writable.Configure
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("_cloneMethod")]
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory() { }
         public void UseFile(string? path) { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("_cloneMethod")]
         [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050")]
         public void UseJsonCloneStrategy() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("_cloneMethod")]
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
         public Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }

@@ -97,7 +97,6 @@ public record WritableOptionsConfigBuilder<T>
     [RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
     [UnconditionalSuppressMessage("AOT", "IL3050")]
 #endif
-    [MemberNotNull(nameof(_cloneMethod))]
     public void UseJsonCloneStrategy()
     {
         _cloneMethod = value =>
@@ -112,7 +111,6 @@ public record WritableOptionsConfigBuilder<T>
     /// This overload allows specifying custom JsonTypeInfo for serialization.
     /// </summary>
     /// <param name="jsonTypeInfo">The JsonTypeInfo to use for serialization and deserialization.</param>
-    [MemberNotNull(nameof(_cloneMethod))]
     public void UseJsonCloneStrategy(JsonTypeInfo<T> jsonTypeInfo)
     {
         _cloneMethod = value =>
@@ -126,7 +124,6 @@ public record WritableOptionsConfigBuilder<T>
     /// Sets a custom cloning strategy for deep cloning of the configuration object.
     /// </summary>
     /// <param name="cloneStrategy">A function that defines the cloning strategy.</param>
-    [MemberNotNull(nameof(_cloneMethod))]
     public void UseCustomCloneStrategy(Func<T, T> cloneStrategy)
     {
         _cloneMethod = cloneStrategy;
@@ -191,7 +188,7 @@ public record WritableOptionsConfigBuilder<T>
             InstanceName = instanceName,
             SectionNameParts = sectionNamePart,
             OnChangeThrottleMs = OnChangeThrottleMs,
-            CloneMethod = _cloneMethod,
+            CloneMethod = _cloneMethod!,
             Logger = Logger,
             Validator = validator,
         };
