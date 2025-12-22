@@ -50,10 +50,9 @@ public class XmlFormatProvider : FormatProviderBase
         }
 
         // Navigate to the section if specified
-        var sectionName = options.SectionName;
-        if (!string.IsNullOrWhiteSpace(sectionName))
+        var sections = options.SectionNameParts;
+        if (sections.Count > 0)
         {
-            var sections = GetSplitedSections(sectionName);
             var current = root;
 
             foreach (var section in sections)
@@ -115,8 +114,7 @@ public class XmlFormatProvider : FormatProviderBase
     )
         where T : class, new()
     {
-        var sectionName = options.SectionName;
-        var parts = GetSplitedSections(sectionName);
+        var parts = options.SectionNameParts;
 
         // Serialize the configuration to XML
         var serializer = new XmlSerializer(typeof(T));
@@ -136,7 +134,7 @@ public class XmlFormatProvider : FormatProviderBase
         var innerXml = configElement.InnerXml;
 
         // Build the nested structure from innermost to outermost
-        for (int i = parts.Length - 1; i >= 0; i--)
+        for (int i = parts.Count - 1; i >= 0; i--)
         {
             innerXml = $"<{parts[i]}>{innerXml}</{parts[i]}>";
         }

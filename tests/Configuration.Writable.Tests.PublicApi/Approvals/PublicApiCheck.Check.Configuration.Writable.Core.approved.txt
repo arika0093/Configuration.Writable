@@ -28,16 +28,13 @@ namespace Configuration.Writable.Configure
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("_cloneStrategy")]
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory() { }
         public void UseFile(string? path) { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("_cloneStrategy")]
         [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050")]
         public void UseJsonCloneStrategy() { }
-        [System.Diagnostics.CodeAnalysis.MemberNotNull("_cloneStrategy")]
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
         public Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
@@ -103,8 +100,7 @@ namespace Configuration.Writable.FormatProvider
             where T :  class, new ();
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
-        protected static object CreateNestedSection(string sectionName, object value) { }
-        protected static string[] GetSplitedSections(string sectionName) { }
+        protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
     }
     public interface IFormatProvider
     {
@@ -194,14 +190,14 @@ namespace Configuration.Writable
         where T :  class, new ()
     {
         public WritableOptionsConfiguration() { }
-        public required System.Func<T, T> CloneStrategy { get; init; }
+        public required System.Func<T, T> CloneMethod { get; init; }
         public required string ConfigFilePath { get; init; }
         public required Configuration.Writable.FileProvider.IFileProvider FileProvider { get; init; }
         public required Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required int OnChangeThrottleMs { get; init; }
-        public required string SectionName { get; init; }
+        public required System.Collections.Generic.List<string> SectionNameParts { get; init; }
         public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }
     }
     public static class WritableOptionsCoreExtensions

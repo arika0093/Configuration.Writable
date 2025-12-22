@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
@@ -65,10 +66,9 @@ public class JsonFormatProvider : FormatProviderBase
         var root = jsonDocument.RootElement;
 
         // Navigate to the section if specified
-        var sectionName = options.SectionName;
-        if (!string.IsNullOrWhiteSpace(sectionName))
+        var sections = options.SectionNameParts;
+        if (sections.Count > 0)
         {
-            var sections = GetSplitedSections(sectionName);
             var current = root;
 
             foreach (var section in sections)
@@ -138,8 +138,8 @@ public class JsonFormatProvider : FormatProviderBase
             }
         );
 
-        var sectionName = options.SectionName;
-        if (string.IsNullOrWhiteSpace(sectionName))
+        var sections = options.SectionNameParts;
+        if (sections.Count == 0)
         {
             // No section name, serialize directly
             options.Logger?.Log(
@@ -153,11 +153,8 @@ public class JsonFormatProvider : FormatProviderBase
             options.Logger?.Log(
                 LogLevel.Trace,
                 "Creating nested section structure for section: {SectionName}",
-                sectionName
+                sections
             );
-
-            // Split section name into parts
-            var sections = GetSplitedSections(sectionName);
 
             // Write nested structure
             writer.WriteStartObject();
@@ -186,14 +183,14 @@ public class JsonFormatProvider : FormatProviderBase
 #endif
     private static void WriteNestedSections<T>(
         Utf8JsonWriter writer,
-        string[] sections,
+        List<string> sections,
         int currentIndex,
         T config,
         JsonSerializerOptions options
     )
         where T : class, new()
     {
-        if (currentIndex >= sections.Length)
+        if (currentIndex >= sections.Count)
         {
             return;
         }
@@ -201,7 +198,7 @@ public class JsonFormatProvider : FormatProviderBase
         var sectionName = sections[currentIndex];
         writer.WritePropertyName(sectionName);
 
-        if (currentIndex == sections.Length - 1)
+        if (currentIndex == sections.Count - 1)
         {
             // Last section, write the actual configuration
             JsonSerializer.Serialize(writer, config, options);

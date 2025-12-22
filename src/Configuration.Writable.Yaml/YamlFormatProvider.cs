@@ -77,10 +77,9 @@ public class YamlFormatProvider : FormatProviderBase
         }
 
         // Navigate to the section if specified
-        var sectionName = options.SectionName;
-        if (!string.IsNullOrWhiteSpace(sectionName))
+        var sections = options.SectionNameParts;
+        if (sections.Count > 0)
         {
-            var sections = GetSplitedSections(sectionName);
             object current = yamlObject;
 
             foreach (var section in sections)
@@ -166,7 +165,7 @@ public class YamlFormatProvider : FormatProviderBase
     )
         where T : class, new()
     {
-        var sectionName = options.SectionName;
+        var sections = options.SectionNameParts;
         var serializer = Serializer;
 
         // Serialize config to dictionary
@@ -177,8 +176,8 @@ public class YamlFormatProvider : FormatProviderBase
             ?? new Dictionary<string, object>();
 
         // Create nested section structure
-        var nestedSection = CreateNestedSection(sectionName, configDict);
-        var yamlString = serializer.Serialize(nestedSection);
+        var nestedSectionValue = CreateNestedSection(sections, configDict);
+        var yamlString = serializer.Serialize(nestedSectionValue);
         return Encoding.GetBytes(yamlString);
     }
 }

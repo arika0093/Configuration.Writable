@@ -20,17 +20,17 @@ internal class OptionsSnapshotImpl<T> : IOptionsSnapshot<T>
         var keys = optionsMonitor.GetInstanceNames();
         foreach (var key in keys)
         {
-            _snapshotValues[key] = optionsMonitor.GetDefaultValue(key);
+            _snapshotValues[key] = optionsMonitor.Get(key);
         }
     }
 
     /// <inheritdoc />
-    public T Value => GetCachedDefaultValue(MEOptions.DefaultName);
+    public T Value => GetCachedValue(MEOptions.DefaultName);
 
     /// <inheritdoc />
-    public T Get(string? name) => GetCachedDefaultValue(name!);
+    public T Get(string? name) => GetCachedValue(name!);
 
     // Get the cached default value for the given name
-    private T GetCachedDefaultValue(string name) =>
+    private T GetCachedValue(string name) =>
         _optionsMonitor.GetClonedValue(name, _snapshotValues[name]);
 }

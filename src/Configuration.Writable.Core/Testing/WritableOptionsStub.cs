@@ -76,9 +76,9 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
         {
             ConfigFilePath = "",
             InstanceName = name,
-            SectionName = sectionName,
+            SectionNameParts = [sectionName], // use dummy section name parts in stub
             FormatProvider = null!, // no need for format provider in stub
-            CloneStrategy = t => t, // no need for cloning in stub
+            CloneMethod = t => t, // no need for cloning in stub
             FileProvider = new CommonFileProvider(),
             OnChangeThrottleMs = 1000,
         };

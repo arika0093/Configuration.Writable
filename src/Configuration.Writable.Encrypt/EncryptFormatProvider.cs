@@ -149,11 +149,11 @@ public class EncryptFormatProvider : FormatProviderBase
         var tempOptions = new WritableOptionsConfiguration<T>
         {
             ConfigFilePath = tempFilePath,
-            SectionName = options.SectionName,
+            SectionNameParts = options.SectionNameParts,
             Logger = options.Logger,
             FormatProvider = JsonProvider,
             FileProvider = new FileProvider.CommonFileProvider(),
-            CloneStrategy = options.CloneStrategy,
+            CloneMethod = options.CloneMethod,
             InstanceName = options.InstanceName,
             OnChangeThrottleMs = options.OnChangeThrottleMs,
         };
