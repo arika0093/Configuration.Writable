@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
@@ -17,4 +18,7 @@ public interface IReadOnlyOptionsMonitor<T>
 
     /// <inheritdoc cref="IReadOnlyNamedOptions{T}.Get(string?)" />
     new T Get(string name);
+
+    /// <inheritdoc cref="IReadOnlyOptionsCore{T}.OnChange" />
+    new IDisposable? OnChange(Action<T, string?> listener);
 }
