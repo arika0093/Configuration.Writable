@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -16,13 +17,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     where T : class, new()
 {
     private readonly IWritableOptionsConfigRegistry<T> _optionsRegistry;
-
-    // TODO: These private variables are consolidated into a single class and managed with ConcurrentDictionary<string, OptionsMonitorDataSource>.
-    private readonly Dictionary<string, T> _cache = [];
-    private readonly Dictionary<string, T> _defaultValue = [];
-    private readonly Dictionary<string, List<Action<T, string?>>> _listeners = [];
-    private readonly Dictionary<string, FileSystemWatcher?> _watchers = [];
-    private readonly Dictionary<string, Timer?> _throttleTimers = [];
+    private readonly ConcurrentDictionary<string, OptionsMonitorDataSource> _dataSources = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 #if NET9_0_OR_GREATER
     private readonly Lock _throttleTimersLock = new();
@@ -51,10 +46,12 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     public T Get(string? name)
     {
         name ??= MEOptions.DefaultName;
-        if (_cache.TryGetValue(name, out var cached))
+        if (_dataSources.TryGetValue(name, out var dataSource))
         {
-            // TODO: Since generating a CloneMethod each time it is retrieved is costly, a better method needs to be considered.
-            return GetClonedValue(name, cached);
+            // NOTE: Cloning on every Get() call is necessary to prevent external mutations from affecting the cache.
+            // To optimize performance, users should provide an efficient CloneMethod (e.g., using source generators
+            // or manual cloning instead of JSON serialization).
+            return GetClonedValue(name, dataSource.Cache);
         }
         // Load configuration if not cached
         return LoadConfiguration(name);
@@ -65,12 +62,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         foreach (var instanceName in GetInstanceNames())
         {
-            if (!_listeners.TryGetValue(instanceName, out var value))
+            if (_dataSources.TryGetValue(instanceName, out var dataSource))
             {
-                value = [];
-                _listeners[instanceName] = value;
+                dataSource.Listeners.Add(listener);
             }
-            value.Add(listener);
         }
         return new ChangeTrackerDisposable(this, listener);
     }
@@ -97,9 +92,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// </summary>
     internal T GetDefaultValue(string instanceName)
     {
-        if (_defaultValue.TryGetValue(instanceName, out var defaultValue))
+        if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
-            return GetClonedValue(instanceName, defaultValue);
+            return GetClonedValue(instanceName, dataSource.DefaultValue);
         }
         throw new InvalidOperationException($"No default value found for instance: {instanceName}");
     }
@@ -113,7 +108,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <param name="value">The new value to cache.</param>
     internal void UpdateCache(string instanceName, T value)
     {
-        _cache[instanceName] = value;
+        if (_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            dataSource.Cache = value;
+        }
     }
 
     /// <summary>
@@ -121,7 +119,12 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// </summary>
     internal void ClearCache(string instanceName)
     {
-        _cache.Remove(instanceName);
+        if (_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            // Reload from file
+            var options = _optionsRegistry.Get(instanceName);
+            dataSource.Cache = options.FormatProvider.LoadConfiguration<T>(options);
+        }
     }
 
     /// <summary>
@@ -142,21 +145,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     // Called when options are removed from the registry.
     private void OnOptionsRemoved(string instanceName)
     {
-        _cache.Remove(instanceName);
-        _defaultValue.Remove(instanceName);
-        _listeners.Remove(instanceName);
-        if (_watchers.TryGetValue(instanceName, out var watcher))
+        if (_dataSources.TryRemove(instanceName, out var dataSource))
         {
-            watcher?.Dispose();
-            _watchers.Remove(instanceName);
-        }
-        lock (_throttleTimersLock)
-        {
-            if (_throttleTimers.TryGetValue(instanceName, out var timer))
-            {
-                timer?.Dispose();
-                _throttleTimers.Remove(instanceName);
-            }
+            dataSource.Dispose();
         }
     }
 
@@ -164,25 +155,36 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private void InitializeOptions(string instanceName)
     {
         var opt = _optionsRegistry.Get(instanceName);
-        // Store the default value for IOptions
-        var defaultValue = LoadConfiguration(instanceName);
-        _defaultValue[instanceName] = defaultValue;
+        // Load the initial value
+        var initialValue = LoadConfigurationFromProvider(instanceName);
+        // Create data source with initial value as both cache and default
+        var dataSource = new OptionsMonitorDataSource(initialValue, initialValue);
+        _dataSources[instanceName] = dataSource;
         // Setup file watcher
-        SetupFileWatcher(opt);
+        SetupFileWatcher(opt, dataSource);
     }
 
     // Loads configuration from the provider and updates the cache.
     private T LoadConfiguration(string instanceName)
+    {
+        var value = LoadConfigurationFromProvider(instanceName);
+        if (_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            // Don't notify listeners during explicit load, only file change events should notify
+            dataSource.Cache = value;
+        }
+        return value;
+    }
+
+    // Loads configuration from the provider without updating cache
+    private T LoadConfigurationFromProvider(string instanceName)
     {
         var options = _optionsRegistry.Get(instanceName);
         _semaphore.Wait();
         try
         {
             // Use the provider to load configuration (provider will check file existence via its FileProvider)
-            var value = options.FormatProvider.LoadConfiguration<T>(options);
-            // Don't notify listeners during initial load, only file change events should notify
-            _cache[instanceName] = value;
-            return value;
+            return options.FormatProvider.LoadConfiguration<T>(options);
         }
         finally
         {
@@ -191,7 +193,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Sets up a FileSystemWatcher to monitor changes to the configuration file.
-    private void SetupFileWatcher(WritableOptionsConfiguration<T> options)
+    private void SetupFileWatcher(
+        WritableOptionsConfiguration<T> options,
+        OptionsMonitorDataSource dataSource
+    )
     {
         var filePath = options.ConfigFilePath;
         var directory = Path.GetDirectoryName(filePath);
@@ -199,7 +204,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
         if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName))
         {
-            _watchers[options.InstanceName] = null;
+            dataSource.Watcher = null;
             return;
         }
 
@@ -213,7 +218,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             catch
             {
                 // If we can't create the directory, we can't watch it
-                _watchers[options.InstanceName] = null;
+                dataSource.Watcher = null;
                 return;
             }
         }
@@ -231,12 +236,12 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             watcher.Deleted += (sender, args) => OnFileChanged(options.InstanceName, args);
             watcher.Renamed += (sender, args) => OnFileChanged(options.InstanceName, args);
 
-            _watchers[options.InstanceName] = watcher;
+            dataSource.Watcher = watcher;
         }
         catch
         {
             // If file watching is not supported, continue without it
-            _watchers[options.InstanceName] = null;
+            dataSource.Watcher = null;
         }
     }
 
@@ -284,16 +289,32 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         catch (IOException)
         {
             // Clear cache because next Get() will try to reload
-            _cache.Remove(instanceName);
+            if (_dataSources.TryGetValue(instanceName, out var dataSource))
+            {
+                // Force reload on next access by loading from file
+                try
+                {
+                    dataSource.Cache = LoadConfigurationFromProvider(instanceName);
+                }
+                catch
+                {
+                    // If reload fails, keep the old cached value
+                }
+            }
         }
     }
 
     // Checks if the throttle timer is active for the given instance name
     private bool HandleThrottle(string instanceName, int throttleMs)
     {
+        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            return false;
+        }
+
         lock (_throttleTimersLock)
         {
-            if (_throttleTimers.TryGetValue(instanceName, out var timer) && timer != null)
+            if (dataSource.ThrottleTimer != null)
             {
                 // Timer is active, so we are in throttle period
                 return true;
@@ -305,10 +326,13 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                     // Dispose and remove the timer after throttle period
                     lock (_throttleTimersLock)
                     {
-                        if (_throttleTimers.TryGetValue(instanceName, out var t))
+                        if (
+                            _dataSources.TryGetValue(instanceName, out var ds)
+                            && ds.ThrottleTimer != null
+                        )
                         {
-                            t?.Dispose();
-                            _throttleTimers.Remove(instanceName);
+                            ds.ThrottleTimer.Dispose();
+                            ds.ThrottleTimer = null;
                         }
                     }
                 },
@@ -316,7 +340,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 throttleMs,
                 Timeout.Infinite
             );
-            _throttleTimers[instanceName] = newTimer;
+            dataSource.ThrottleTimer = newTimer;
             return false;
         }
     }
@@ -343,9 +367,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     // Notifies all registered listeners of a configuration change
     private void NotifyListeners(string instanceName, T value)
     {
-        if (_listeners.TryGetValue(instanceName, out var listeners))
+        if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
-            foreach (var listener in listeners)
+            foreach (var listener in dataSource.Listeners)
             {
                 listener(value, instanceName);
             }
@@ -373,9 +397,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             _monitor._semaphore.Wait();
             try
             {
-                foreach (var listeners in _monitor._listeners.Values)
+                foreach (var dataSource in _monitor._dataSources.Values)
                 {
-                    listeners.Remove(_listener);
+                    dataSource.Listeners.Remove(_listener);
                 }
             }
             finally
@@ -384,6 +408,28 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
 
             _disposed = true;
+        }
+    }
+
+    // Data container for each monitored options instance
+    private sealed class OptionsMonitorDataSource : IDisposable
+    {
+        public T Cache { get; set; }
+        public T DefaultValue { get; set; }
+        public List<Action<T, string?>> Listeners { get; } = [];
+        public FileSystemWatcher? Watcher { get; set; }
+        public Timer? ThrottleTimer { get; set; }
+
+        public OptionsMonitorDataSource(T cache, T defaultValue)
+        {
+            Cache = cache;
+            DefaultValue = defaultValue;
+        }
+
+        public void Dispose()
+        {
+            Watcher?.Dispose();
+            ThrottleTimer?.Dispose();
         }
     }
 }
