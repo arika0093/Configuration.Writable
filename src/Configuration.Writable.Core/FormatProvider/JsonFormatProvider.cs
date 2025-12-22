@@ -139,7 +139,7 @@ public class JsonFormatProvider : FormatProviderBase
         );
 
         var sections = options.SectionNameParts;
-        if (sections.Count > 0)
+        if (sections.Count == 0)
         {
             // No section name, serialize directly
             options.Logger?.Log(
