@@ -40,6 +40,7 @@ public record WritableOptionsConfiguration<T>
     /// If use multiple configuration file for same type T, you must set different SectionName for each.
     /// </summary>
     public required string SectionName { get; init; }
+    // TODO: Perform the split at the time of creation and store the values. The Provider side will only use the split values.
 
     /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
@@ -50,7 +51,7 @@ public record WritableOptionsConfiguration<T>
     /// <summary>
     /// Gets or sets the cloning strategy function to create deep copies of the configuration object.
     /// </summary>
-    public required Func<T, T> CloneStrategy { get; init; }
+    public required Func<T, T> CloneStrategy { get; init; } // TODO: rename to Clone
 
     /// <summary>
     /// Gets or sets the logger for configuration operations.
