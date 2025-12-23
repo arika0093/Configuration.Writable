@@ -193,7 +193,7 @@ using Configuration.Writable.FormatProvider;
 
 // use Json format with indentation
 conf.FormatProvider = new JsonFormatProvider() {
-    JsonSerializerOptions = {
+    JsonSerializerOptions = new () {
         // you can customize JsonSerializerOptions as needed
         WriteIndented = true
         // for source-generation-based serialize/deserialize, set TypeInfoResolver here
@@ -699,31 +699,32 @@ Change detection is done by registering a callback with the `OnChange(Action<T, 
 This is identical to MS.E.O.'s [`IOptionsMonitor`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
 
 ### `IReadOnlyOptions` / `IReadOnlyNamedOptions`
-Provides the latest value at the current time.
-When the configuration file is updated, the latest value is automatically reflected.  
-These are very similar to the above `IOptionsMonitor`, but differ in the following ways:
+Provides the latest values at the current point in time. When the configuration file is updated, the latest values are automatically reflected.  
+These are very similar to the `IOptionsMonitor` mentioned above but have been improved for easier use in the following ways. Unless there is a specific reason, it is recommended to use these interfaces.
 
-* You can retrieve configuration options (such as file save location) via the `GetOptionsConfiguration` method.
-* The interfaces are split into two, depending on whether named access is supported:
-  * `IReadOnlyOptions`: Does not support named access, only accessible via `.CurrentValue`.
-  * `IReadOnlyNamedOptions`: Supports named access only via `.Get(name)`.
-* The method of registering `OnChange` callbacks is different:
-  * `IReadOnlyOptions`: `OnChange(Action<T> listener)` method to register a callback for changes to the unnamed instance.
-  * `IReadOnlyNamedOptions`: `OnChange(string name, Action<T> listener)` method to register a callback for changes to a specific named instance.
-  * The traditional `OnChange(Action<T, string> listener)` is also available.
+* [`IReadOnlyOptions`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyOptions.cs)
+    * A simple read-only options interface that does not support named access.
+    * Use the `.CurrentValue` property to access the current value.
+    * Use the `OnChange(Action<T> listener)` method to monitor changes to the options.
+* [`IReadOnlyNamedOptions`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyNamedOptions.cs)
+    * A read-only options interface that supports named access.
+    * Use the `.Get(name)` method to access named options.
+    * Use the `OnChange(string name, Action<T> listener)` method to monitor changes to specific named options.
+    * Use `GetSpecifiedInstance(name)` to retrieve a pre-specified `IReadOnlyOptions` instance.
+* Both interfaces allow you to retrieve configuration options (e.g., file save locations) using the `GetOptionsConfiguration` method.
 
 ### `IWritableOptions` / `IWritableNamedOptions`
 In addition to the features of `IReadOnly(Named)Options`, these support saving settings.
 Other than the addition of the `SaveAsync` method, they are the same as the above `IReadOnly(Named)Options`.
 
 ### `IReadOnlyOptionsMonitor<T>`
-This interface integrates the functionalities of `IReadOnlyOptions`, `IReadOnlyNamedOptions`, and `IOptionsMonitor<T>`.
+This interface combines the functionalities of `IReadOnlyOptions`, `IReadOnlyNamedOptions`, and `IOptionsMonitor<T>`.
 They are provided mainly to ensure compatibility with codebases that already use `IOptionsMonitor<T>`.  
 Therefore, you typically do not need to use these interfaces explicitly.
 
 ### `IWritableOptionsMonitor<T>`
-This interface integrates the functionalities of `IWritableOptions`, `IWritableNamedOptions`, and `IOptionsMonitor<T>`.
-Except for the above `IReadOnlyOptionsMonitor<T>`, you typically do not need to use these interfaces explicitly.
+This interface combines the functionalities of `IWritableOptions`, `IWritableNamedOptions`, and `IOptionsMonitor<T>`.
+Like the above `IReadOnlyOptionsMonitor<T>`, you typically do not need to use these interfaces explicitly.
 
 ## License
 This project is licensed under the Apache-2.0 License.
