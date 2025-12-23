@@ -1,4 +1,24 @@
-## [unreleased]
+## [0.1.3] - 2025-12-23
+
+### 🚀 Features
+
+- Refactor options monitoring with thread-safe data structures and clarified APIs (#28)
+- Add OnChange method to IReadOnlyOptionsMonitor interface for better options monitoring
+- Add OnChange method to IReadOnlyOptionsMonitor interface for improved options change handling
+
+### 🐛 Bug Fixes
+
+- Update dependencies for generate-changelog job in release workflow
+- Update return type of GetOptions method to IWritableOptionsMonitor
+
+### 📚 Documentation
+
+- Add CloneStrategy section to README for performance improvements
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.1.0
+## [0.1.0] - 2025-12-21
 
 ### 🚀 Features
 
