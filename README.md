@@ -104,6 +104,7 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
 - [Logging](#logging)
 - [SectionName](#sectionname)
 - [Validation](#validation)
+- [CloneStrategy](#clonestrategy)
 
 ### Configuration Method
 You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
@@ -461,6 +462,29 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
+
+### CloneStrategy
+To improve performance, the configuration file is not read every time. Instead, it is loaded and stored as an internal cache when a change event is detected.  
+To prevent direct editing of this cache, a deep copy is created and provided to the user each time it is retrieved or saved.
+
+By default, JSON serialization (`UseJsonCloneStrategy()`) is used for deep copying.  
+Internally, it works as follows:
+
+```csharp
+// internal code 
+var json = JsonSerializer.Serialize(value);
+return JsonSerializer.Deserialize<T>(json)!;
+```
+
+While this approach is not very performant, it ensures that a clone can be reliably created for any serializable object, making it the default method.  
+Of course, if a custom clone strategy is required, it can be freely specified.
+
+```csharp
+conf.UseCustomCloneStrategy(original => {
+    // Any custom cloning library can be used
+    return original.DeepClone();
+});
+```
 
 ## Advanced Usage
 ### Support NativeAOT
