@@ -36,6 +36,9 @@ namespace Configuration.Writable.Configure
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050")]
         public void UseJsonCloneStrategy() { }
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
+        public void UseMigration<TOld, TNew>(System.Func<TOld, TNew> migrator)
+            where TOld :  class, Configuration.Writable.IHasVersion, new ()
+            where TNew :  class, Configuration.Writable.IHasVersion, new () { }
         public Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
         public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
@@ -101,6 +104,8 @@ namespace Configuration.Writable.FormatProvider
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
         protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
+        protected static T LoadConfigurationWithMigration<T>(System.Text.Json.JsonElement jsonElement, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Func<System.Text.Json.JsonElement, System.Type, object> deserializeFunc)
+            where T :  class, new () { }
     }
     public interface IFormatProvider
     {
@@ -130,6 +135,10 @@ namespace Configuration.Writable.FormatProvider
 }
 namespace Configuration.Writable
 {
+    public interface IHasVersion
+    {
+        int Version { get; }
+    }
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
@@ -187,6 +196,13 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
     }
+    public class MigrationStep : System.IEquatable<Configuration.Writable.MigrationStep>
+    {
+        public MigrationStep() { }
+        public required System.Type FromType { get; init; }
+        public required System.Func<object, object> MigrationFunc { get; init; }
+        public required System.Type ToType { get; init; }
+    }
     public class WritableOptionsConfiguration<T> : System.IEquatable<Configuration.Writable.WritableOptionsConfiguration<T>>
         where T :  class, new ()
     {
@@ -197,6 +213,7 @@ namespace Configuration.Writable
         public required Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
+        public System.Collections.Generic.List<Configuration.Writable.MigrationStep> MigrationSteps { get; init; }
         public required int OnChangeThrottleMs { get; init; }
         public required System.Collections.Generic.List<string> SectionNameParts { get; init; }
         public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }

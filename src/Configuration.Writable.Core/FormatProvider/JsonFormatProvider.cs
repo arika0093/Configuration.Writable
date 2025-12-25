@@ -84,11 +84,24 @@ public class JsonFormatProvider : FormatProviderBase
                 }
             }
 
-            return JsonSerializer.Deserialize<T>(current.GetRawText(), JsonSerializerOptions)
-                ?? new T();
+            // Use migration-aware deserialization
+            return LoadConfigurationWithMigration(
+                current,
+                options,
+                (jsonElement, type) =>
+                    JsonSerializer.Deserialize(jsonElement.GetRawText(), type, JsonSerializerOptions)
+                        ?? Activator.CreateInstance(type)!
+            );
         }
 
-        return JsonSerializer.Deserialize<T>(root.GetRawText(), JsonSerializerOptions) ?? new T();
+        // Use migration-aware deserialization
+        return LoadConfigurationWithMigration(
+            root,
+            options,
+            (jsonElement, type) =>
+                JsonSerializer.Deserialize(jsonElement.GetRawText(), type, JsonSerializerOptions)
+                    ?? Activator.CreateInstance(type)!
+        );
     }
 
     /// <inheritdoc />

@@ -1,12 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable;
+
+/// <summary>
+/// Represents a single migration step from one configuration version to another.
+/// </summary>
+public record MigrationStep
+{
+    /// <summary>
+    /// Gets the source type that will be migrated from.
+    /// </summary>
+    public required Type FromType { get; init; }
+
+    /// <summary>
+    /// Gets the target type that will be migrated to.
+    /// </summary>
+    public required Type ToType { get; init; }
+
+    /// <summary>
+    /// Gets the migration function that transforms an instance of FromType to ToType.
+    /// The function takes an object (which should be of type FromType) and returns an object (of type ToType).
+    /// </summary>
+    public required Func<object, object> MigrationFunc { get; init; }
+}
 
 /// <summary>
 /// Options for initializing writable configuration.
@@ -64,4 +85,10 @@ public record WritableOptionsConfiguration<T>
     /// If null, no validation is performed. Defaults to null.
     /// </summary>
     public Func<T, ValidateOptionsResult>? Validator { get; init; }
+
+    /// <summary>
+    /// Gets the list of migration steps to apply when loading configuration from older versions.
+    /// The migrations are applied in the order they are defined (e.g., V1 -> V2 -> V3).
+    /// </summary>
+    public List<MigrationStep> MigrationSteps { get; init; } = [];
 }
