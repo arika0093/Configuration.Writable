@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -116,6 +117,13 @@ public class XmlFormatProvider : FormatProviderBase
     {
         var parts = options.SectionNameParts;
 
+        // Section name specified - use partial write (merge with existing file)
+        if (parts.Count > 0)
+        {
+            return GetPartialSaveContents(config, options);
+        }
+
+        // No section name - create full XML with <configuration> wrapper
         // Serialize the configuration to XML
         var serializer = new XmlSerializer(typeof(T));
         using var sw = new StringWriter();
@@ -130,19 +138,167 @@ public class XmlFormatProvider : FormatProviderBase
             throw new InvalidOperationException("Failed to serialize configuration to XML");
         }
 
-        // Build nested XML structure
+        // Build nested XML structure with innerXml
         var innerXml = configElement.InnerXml;
-
-        // Build the nested structure from innermost to outermost
-        for (int i = parts.Count - 1; i >= 0; i--)
-        {
-            innerXml = $"<{parts[i]}>{innerXml}</{parts[i]}>";
-        }
 
         var xmlString = $"""
             <?xml version="1.0" encoding="utf-8"?>
             <configuration>{innerXml}</configuration>
             """;
         return Encoding.UTF8.GetBytes(xmlString);
+    }
+
+    /// <summary>
+    /// Gets the save contents for partial write (when SectionName is specified).
+    /// Reads existing file and merges the new configuration into the specified section.
+    /// </summary>
+    private static ReadOnlyMemory<byte> GetPartialSaveContents<T>(
+        T config,
+        WritableOptionsConfiguration<T> options
+    )
+        where T : class, new()
+    {
+        var parts = options.SectionNameParts;
+        XDocument? existingDoc = null;
+
+        // Try to read existing file
+        if (options.FileProvider.FileExists(options.ConfigFilePath))
+        {
+            try
+            {
+                using var fileStream = options.FileProvider.GetFileStream(options.ConfigFilePath);
+                if (fileStream != null && fileStream.Length > 0)
+                {
+                    existingDoc = XDocument.Load(fileStream);
+                    options.Logger?.LogTrace("Loaded existing XML file for partial update");
+                }
+            }
+            catch (XmlException ex)
+            {
+                options.Logger?.LogWarning(
+                    ex,
+                    "Failed to parse existing XML file, will create new file structure"
+                );
+            }
+        }
+
+        // Serialize the configuration to XML
+        var serializer = new XmlSerializer(typeof(T));
+        using var sw = new StringWriter();
+        serializer.Serialize(sw, config);
+        var configXmlDoc = new XmlDocument();
+        configXmlDoc.LoadXml(sw.ToString());
+
+        // Get the root element containing the serialized data
+        var configElement = configXmlDoc.DocumentElement;
+        if (configElement == null)
+        {
+            throw new InvalidOperationException("Failed to serialize configuration to XML");
+        }
+
+        XDocument resultDoc;
+
+        if (existingDoc == null || existingDoc.Root == null)
+        {
+            // No existing file, create new nested structure
+            options.Logger?.LogTrace(
+                "Creating new nested section structure for section: {SectionName}",
+                string.Join(":", parts)
+            );
+
+            // Build nested XML structure
+            var innerXml = configElement.InnerXml;
+
+            // Build the nested structure from innermost to outermost
+            for (int i = parts.Count - 1; i >= 0; i--)
+            {
+                innerXml = $"<{parts[i]}>{innerXml}</{parts[i]}>";
+            }
+
+            var xmlString = $"""
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>{innerXml}</configuration>
+                """;
+            resultDoc = XDocument.Parse(xmlString);
+        }
+        else
+        {
+            // Merge with existing document
+            options.Logger?.LogTrace(
+                "Merging with existing XML file for section: {SectionName}",
+                string.Join(":", parts)
+            );
+
+            resultDoc = new XDocument(existingDoc);
+            var root = resultDoc.Root;
+
+            if (root == null)
+            {
+                throw new InvalidOperationException(
+                    "Existing XML document has no root element"
+                );
+            }
+
+            // Navigate to the parent element where we need to insert/update the section
+            XElement? current = root;
+
+            for (int i = 0; i < parts.Count; i++)
+            {
+                var sectionName = parts[i];
+                var existing = current.Element(sectionName);
+
+                if (i == parts.Count - 1)
+                {
+                    // This is the final section - replace or add it
+                    if (existing != null)
+                    {
+                        // Replace existing section
+                        existing.ReplaceWith(
+                            new XElement(sectionName, XElement.Parse(configElement.OuterXml).Nodes())
+                        );
+                    }
+                    else
+                    {
+                        // Add new section
+                        current.Add(
+                            new XElement(sectionName, XElement.Parse(configElement.OuterXml).Nodes())
+                        );
+                    }
+                }
+                else
+                {
+                    // Navigate deeper or create intermediate sections
+                    if (existing != null)
+                    {
+                        current = existing;
+                    }
+                    else
+                    {
+                        // Create missing intermediate section
+                        var newSection = new XElement(sectionName);
+                        current.Add(newSection);
+                        current = newSection;
+                    }
+                }
+            }
+        }
+
+        // Write result to string
+        using var resultWriter = new StringWriter();
+        using var xmlWriter = XmlWriter.Create(
+            resultWriter,
+            new XmlWriterSettings
+            {
+                Indent = true,
+                Encoding = Encoding.UTF8,
+                OmitXmlDeclaration = false,
+            }
+        );
+        resultDoc.WriteTo(xmlWriter);
+        xmlWriter.Flush();
+
+        options.Logger?.LogTrace("Partial XML serialization completed successfully");
+
+        return Encoding.UTF8.GetBytes(resultWriter.ToString());
     }
 }

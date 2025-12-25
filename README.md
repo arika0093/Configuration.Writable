@@ -353,7 +353,8 @@ info: Configuration.Writable[0]
 ```
 
 ### SectionName
-When saving settings, they are written to a configuration file in a structured format. By default, settings are stored directly at the root level:
+When saving settings, they are written to a configuration file in a structured format.
+By default, settings are stored directly at the root level:
 
 ```jsonc
 {
@@ -363,18 +364,41 @@ When saving settings, they are written to a configuration file in a structured f
 }
 ```
 
-To organize settings under a specific section, use `conf.SectionName`.
+For example, if you want to write to `appsettings.json` and coexist with other settings, you can use `conf.SectionName` to group settings in a specific section.  
+To write settings to a specific section, only that section is updated while the rest remains unchanged.
+
+```csharp
+// configure to save under MyAppSettings:Foo:Bar section
+builder.Services.AddWritableOptions<UserSetting>(conf => {
+    conf.UseFile("appsettings.json");
+    conf.SectionName = "MyAppSettings:Foo:Bar";
+});
+
+// and save settings
+options.SaveAsync(setting => {
+    setting.Name = "custom name";
+    setting.Age = 30;
+});
+```
+
+The resulting `appsettings.json` will look like this:
 
 ```jsonc
 {
-  // conf.SectionName = "MyAppSettings:Foo:Bar"
   "MyAppSettings": {
     "Foo": {
       "Bar": {
-        // properties of UserSetting
+        // saved under MyAppSettings:Foo:Bar section
         "Name": "custom name",
         "Age": 30
       }
+    }
+  },
+  // another settings remain unchanged
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning"
     }
   }
 }
