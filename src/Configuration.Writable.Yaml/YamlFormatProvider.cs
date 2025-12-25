@@ -61,6 +61,7 @@ public class YamlFormatProvider : FormatProviderBase
     }
 
     /// <inheritdoc />
+    /// <inheritdoc />
     public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
     {
         using var reader = new StreamReader(stream, Encoding);
@@ -71,28 +72,28 @@ public class YamlFormatProvider : FormatProviderBase
             return new T();
         }
 
-        // Deserialize the YAML to a dictionary first
-        var deserializer = Deserializer;
-        var yamlObject = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
+        // For migration support, we need to:
+        // 1. Parse YAML to extract the version
+        // 2. Deserialize the YAML content to the correct type based on version
+        // 3. Apply migrations if needed
 
-        if (yamlObject == null)
-        {
-            return new T();
-        }
-
-        // Navigate to the section if specified
         var sections = options.SectionNameParts;
+        string targetYamlContent = yamlContent;
+
+        // Navigate to section if specified
         if (sections.Count > 0)
         {
-            object current = yamlObject;
+            var yamlObject = Deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
+            if (yamlObject == null)
+            {
+                return new T();
+            }
 
+            object current = yamlObject;
             foreach (var section in sections)
             {
-                // YamlDotNet can deserialize as Dictionary<string, object> at the root level
-                // but nested dictionaries might be Dictionary<object, object>
                 if (current is Dictionary<string, object> stringKeyDict)
                 {
-                    // Try case-insensitive lookup to handle naming convention differences
                     var key = stringKeyDict.Keys.FirstOrDefault(k =>
                         string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
                     );
@@ -102,85 +103,94 @@ public class YamlFormatProvider : FormatProviderBase
                     }
                     else
                     {
-                        // Section not found, return default instance
                         return new T();
                     }
                 }
                 else if (current is Dictionary<object, object> objectKeyDict)
                 {
-                    // Handle Dictionary<object, object> for nested sections
-                    var key = objectKeyDict
-                        .Keys.OfType<string>()
-                        .FirstOrDefault(k =>
-                            string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
-                        );
+                    var key = objectKeyDict.Keys.OfType<string>().FirstOrDefault(k =>
+                        string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
+                    );
                     if (key != null && objectKeyDict.TryGetValue(key, out var value))
                     {
                         current = value;
                     }
                     else
                     {
-                        // Section not found, return default instance
                         return new T();
                     }
                 }
                 else
                 {
-                    // Current is not a dictionary, return default instance
                     return new T();
                 }
             }
 
-            // Use migration-aware deserialization
-            return LoadConfigurationWithMigration(
-                current,
-                options,
-                data =>
-                {
-                    // Try to extract version from the current object
-                    if (data is Dictionary<string, object> dict
-                        && dict.TryGetValue("Version", out var versionObj))
-                    {
-                        if (versionObj is int intVersion)
-                            return intVersion;
-                        if (int.TryParse(versionObj?.ToString(), out var parsedVersion))
-                            return parsedVersion;
-                    }
-                    return null;
-                },
-                (data, type) =>
-                {
-                    var serialized = Serializer.Serialize(data);
-                    return Deserializer.Deserialize(serialized, type) ?? Activator.CreateInstance(type)!;
-                }
-            );
+            // Serialize the section back to YAML
+            targetYamlContent = Serializer.Serialize(current);
         }
 
-        // Use migration-aware deserialization
+        // Use migration-aware loading
         return LoadConfigurationWithMigration(
-            yamlObject,
+            targetYamlContent,
             options,
-            data =>
+            yaml =>
             {
-                // Try to extract version from the root object
-                if (data is Dictionary<string, object> dict
-                    && dict.TryGetValue("Version", out var versionObj))
+                // Try to deserialize as dictionary to extract version
+                try
                 {
-                    if (versionObj is int intVersion)
-                        return intVersion;
-                    if (int.TryParse(versionObj?.ToString(), out var parsedVersion))
-                        return parsedVersion;
+                    var dict = Deserializer.Deserialize<Dictionary<string, object>>(yaml);
+                    if (dict != null)
+                    {
+                        if (dict.TryGetValue("Version", out var versionObj)
+                            && versionObj != null
+                            && TryConvertToInt(versionObj, out var version))
+                        {
+                            return version;
+                        }
+                        if (dict.TryGetValue("version", out versionObj)
+                            && versionObj != null
+                            && TryConvertToInt(versionObj, out version))
+                        {
+                            return version;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore deserialization errors for version detection
                 }
                 return null;
             },
-            (data, type) =>
+            (yaml, type) =>
             {
-                var serialized = Serializer.Serialize(data);
-                return Deserializer.Deserialize(serialized, type) ?? Activator.CreateInstance(type)!;
+                // Deserialize YAML directly to the target type
+                // Use a deserializer without naming convention for direct type deserialization
+                var plainDeserializer = new DeserializerBuilder()
+                    .IgnoreUnmatchedProperties()
+                    .Build();
+
+                try
+                {
+                    var result = plainDeserializer.Deserialize(yaml, type);
+                    return result ?? Activator.CreateInstance(type)!;
+                }
+                catch (Exception)
+                {
+                    // If plain deserialization fails, try with the configured deserializer
+                    try
+                    {
+                        var result = Deserializer.Deserialize(yaml, type);
+                        return result ?? Activator.CreateInstance(type)!;
+                    }
+                    catch
+                    {
+                        return Activator.CreateInstance(type)!;
+                    }
+                }
             }
         );
     }
-
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
@@ -412,5 +422,101 @@ public class YamlFormatProvider : FormatProviderBase
 
             MergeSection(nestedDict, sections, currentIndex + 1, newValue);
         }
+    }
+
+    /// <summary>
+    /// Normalizes dictionary keys from camelCase to PascalCase for proper JSON deserialization.
+    /// </summary>
+    private static object NormalizeDictionaryKeys(object obj)
+    {
+        if (obj is Dictionary<string, object> stringDict)
+        {
+            var normalized = new Dictionary<string, object>();
+            foreach (var kvp in stringDict)
+            {
+                // Convert camelCase key to PascalCase
+                var normalizedKey = ToPascalCase(kvp.Key);
+                normalized[normalizedKey] = NormalizeDictionaryKeys(kvp.Value);
+            }
+            return normalized;
+        }
+
+        if (obj is Dictionary<object, object> objectDict)
+        {
+            var normalized = new Dictionary<string, object>();
+            foreach (var kvp in objectDict)
+            {
+                var key = kvp.Key.ToString() ?? string.Empty;
+                var normalizedKey = ToPascalCase(key);
+                normalized[normalizedKey] = NormalizeDictionaryKeys(kvp.Value);
+            }
+            return normalized;
+        }
+
+        // For lists/arrays, normalize each element
+        if (obj is System.Collections.IList list)
+        {
+            var normalized = new List<object>();
+            foreach (var item in list)
+            {
+                normalized.Add(NormalizeDictionaryKeys(item));
+            }
+            return normalized;
+        }
+
+        // For other types, return as-is
+        return obj;
+    }
+
+    /// <summary>
+    /// Converts a camelCase string to PascalCase.
+    /// </summary>
+    private static string ToPascalCase(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        // Convert first character to uppercase
+        return char.ToUpperInvariant(value[0]) + value.Substring(1);
+    }
+
+    /// <summary>
+    /// Tries to convert an object to an integer, handling various numeric types.
+    /// </summary>
+    private static bool TryConvertToInt(object value, out int result)
+    {
+        result = 0;
+
+        if (value is int intValue)
+        {
+            result = intValue;
+            return true;
+        }
+
+        if (value is long longValue && longValue >= int.MinValue && longValue <= int.MaxValue)
+        {
+            result = (int)longValue;
+            return true;
+        }
+
+        if (value is double doubleValue && doubleValue >= int.MinValue
+            && doubleValue <= int.MaxValue
+            && Math.Abs(doubleValue % 1) < double.Epsilon)
+        {
+            result = (int)doubleValue;
+            return true;
+        }
+
+        if (value is decimal decimalValue && decimalValue >= int.MinValue
+            && decimalValue <= int.MaxValue
+            && decimalValue % 1 == 0)
+        {
+            result = (int)decimalValue;
+            return true;
+        }
+
+        return false;
     }
 }

@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
+using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
