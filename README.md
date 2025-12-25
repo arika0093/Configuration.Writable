@@ -369,7 +369,7 @@ To write settings to a specific section, only that section is updated while the 
 
 ```csharp
 // configure to save under MyAppSettings:Foo:Bar section
-builder.Services.AddWritableOptions<UserSetting>(conf =>
+builder.Services.AddWritableOptions<UserSetting>(conf => {
     conf.UseFile("appsettings.json");
     conf.SectionName = "MyAppSettings:Foo:Bar";
 });
