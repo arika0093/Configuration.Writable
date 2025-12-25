@@ -11,6 +11,9 @@ WritableOptions.Initialize<SampleSetting>(conf =>
 {
     conf.FilePath = "./config/mysettings";
 
+    // if you want to customize the section name in the config file
+    // conf.SectionName = "App:SampleSetting";
+
     // customize the provider and file writer
     conf.FormatProvider = new JsonFormatProvider()
     {
