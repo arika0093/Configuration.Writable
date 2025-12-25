@@ -26,7 +26,10 @@ public class YamlFormatProvider : FormatProviderBase
     /// Gets or sets the deserializer used to convert YAML to objects.
     /// </summary>
     public IDeserializer Deserializer { get; init; } =
-        new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
+        new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
+            .Build();
 
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
@@ -128,15 +131,54 @@ public class YamlFormatProvider : FormatProviderBase
                 }
             }
 
-            // Serialize and deserialize to convert to T
-            var serializer = Serializer;
-            var serialized = serializer.Serialize(current);
-            return deserializer.Deserialize<T>(serialized) ?? new T();
+            // Use migration-aware deserialization
+            return LoadConfigurationWithMigration(
+                current,
+                options,
+                data =>
+                {
+                    // Try to extract version from the current object
+                    if (data is Dictionary<string, object> dict
+                        && dict.TryGetValue("Version", out var versionObj))
+                    {
+                        if (versionObj is int intVersion)
+                            return intVersion;
+                        if (int.TryParse(versionObj?.ToString(), out var parsedVersion))
+                            return parsedVersion;
+                    }
+                    return null;
+                },
+                (data, type) =>
+                {
+                    var serialized = Serializer.Serialize(data);
+                    return Deserializer.Deserialize(serialized, type) ?? Activator.CreateInstance(type)!;
+                }
+            );
         }
 
-        // Deserialize from root
-        var rootSerialized = Serializer.Serialize(yamlObject);
-        return deserializer.Deserialize<T>(rootSerialized) ?? new T();
+        // Use migration-aware deserialization
+        return LoadConfigurationWithMigration(
+            yamlObject,
+            options,
+            data =>
+            {
+                // Try to extract version from the root object
+                if (data is Dictionary<string, object> dict
+                    && dict.TryGetValue("Version", out var versionObj))
+                {
+                    if (versionObj is int intVersion)
+                        return intVersion;
+                    if (int.TryParse(versionObj?.ToString(), out var parsedVersion))
+                        return parsedVersion;
+                }
+                return null;
+            },
+            (data, type) =>
+            {
+                var serialized = Serializer.Serialize(data);
+                return Deserializer.Deserialize(serialized, type) ?? Activator.CreateInstance(type)!;
+            }
+        );
     }
 
     /// <inheritdoc />

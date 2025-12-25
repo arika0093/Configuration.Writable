@@ -4,6 +4,7 @@ using System.Linq;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
+using Shouldly;
 using Xunit;
 
 namespace Configuration.Writable.Tests;
@@ -33,14 +34,14 @@ public class MigrationSupportTests : IDisposable
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>();
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() =>
+        var exception = Should.Throw<InvalidOperationException>(() =>
         {
             builder.UseMigration<MySettingsV3, MySettingsV2>(v3 => new MySettingsV2());
         });
 
-        Assert.Contains("downgrade", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("version 3", exception.Message);
-        Assert.Contains("version 2", exception.Message);
+        exception.Message.ShouldContain("downgrade", Case.Insensitive);
+        exception.Message.ShouldContain("version 3");
+        exception.Message.ShouldContain("version 2");
     }
 
     [Fact]
@@ -50,12 +51,12 @@ public class MigrationSupportTests : IDisposable
         var builder = new WritableOptionsConfigBuilder<MySettingsV2>();
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() =>
+        var exception = Should.Throw<InvalidOperationException>(() =>
         {
             builder.UseMigration<MySettingsV2, MySettingsV2>(v2 => new MySettingsV2());
         });
 
-        Assert.Contains("downgrade", exception.Message, StringComparison.OrdinalIgnoreCase);
+        exception.Message.ShouldContain("downgrade", Case.Insensitive);
     }
 
     [Fact]
@@ -73,9 +74,9 @@ public class MigrationSupportTests : IDisposable
         var options = builder.BuildOptions("");
 
         // Assert
-        Assert.Single(options.MigrationSteps);
-        Assert.Equal(typeof(MySettingsV1), options.MigrationSteps[0].FromType);
-        Assert.Equal(typeof(MySettingsV2), options.MigrationSteps[0].ToType);
+        options.MigrationSteps.Count.ShouldBe(1);
+        options.MigrationSteps[0].FromType.ShouldBe(typeof(MySettingsV1));
+        options.MigrationSteps[0].ToType.ShouldBe(typeof(MySettingsV2));
     }
 
     [Fact]
@@ -97,11 +98,11 @@ public class MigrationSupportTests : IDisposable
         var options = builder.BuildOptions("");
 
         // Assert
-        Assert.Equal(2, options.MigrationSteps.Count);
-        Assert.Equal(typeof(MySettingsV1), options.MigrationSteps[0].FromType);
-        Assert.Equal(typeof(MySettingsV2), options.MigrationSteps[0].ToType);
-        Assert.Equal(typeof(MySettingsV2), options.MigrationSteps[1].FromType);
-        Assert.Equal(typeof(MySettingsV3), options.MigrationSteps[1].ToType);
+        options.MigrationSteps.Count.ShouldBe(2);
+        options.MigrationSteps[0].FromType.ShouldBe(typeof(MySettingsV1));
+        options.MigrationSteps[0].ToType.ShouldBe(typeof(MySettingsV2));
+        options.MigrationSteps[1].FromType.ShouldBe(typeof(MySettingsV2));
+        options.MigrationSteps[1].ToType.ShouldBe(typeof(MySettingsV3));
     }
 
     [Fact]
@@ -134,10 +135,10 @@ public class MigrationSupportTests : IDisposable
         var result = provider.LoadConfiguration(options);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(3, result.Version);
-        Assert.Single(result.Configs);
-        Assert.Equal("Test", result.Configs[0].Name);
+        result.ShouldNotBeNull();
+        result.Version.ShouldBe(3);
+        result.Configs.Length.ShouldBe(1);
+        result.Configs[0].Name.ShouldBe("Test");
     }
 
     [Fact]
@@ -173,10 +174,10 @@ public class MigrationSupportTests : IDisposable
         var result = provider.LoadConfiguration(options);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Version);
-        Assert.Single(result.Names);
-        Assert.Equal("TestName", result.Names[0]);
+        result.ShouldNotBeNull();
+        result.Version.ShouldBe(2);
+        result.Names.Length.ShouldBe(1);
+        result.Names[0].ShouldBe("TestName");
     }
 
     [Fact]
@@ -216,10 +217,10 @@ public class MigrationSupportTests : IDisposable
         var result = provider.LoadConfiguration(options);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(3, result.Version);
-        Assert.Single(result.Configs);
-        Assert.Equal("TestName", result.Configs[0].Name);
+        result.ShouldNotBeNull();
+        result.Version.ShouldBe(3);
+        result.Configs.Length.ShouldBe(1);
+        result.Configs[0].Name.ShouldBe("TestName");
     }
 
     [Fact]
@@ -249,8 +250,8 @@ public class MigrationSupportTests : IDisposable
         var result = provider.LoadConfiguration(options);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("TestName", result.Name);
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("TestName");
     }
 
     [Fact]
@@ -281,8 +282,8 @@ public class MigrationSupportTests : IDisposable
         var result = provider.LoadConfiguration(options);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("TestName", result.Name);
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("TestName");
     }
 
     // Test model classes

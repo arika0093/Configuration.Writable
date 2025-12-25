@@ -10,23 +10,60 @@ namespace Configuration.Writable;
 /// <summary>
 /// Represents a single migration step from one configuration version to another.
 /// </summary>
-public record MigrationStep
+public abstract class MigrationStep
 {
     /// <summary>
     /// Gets the source type that will be migrated from.
     /// </summary>
-    public required Type FromType { get; init; }
+    public Type FromType { get; protected init; } = null!;
 
     /// <summary>
     /// Gets the target type that will be migrated to.
     /// </summary>
-    public required Type ToType { get; init; }
+    public Type ToType { get; protected init; } = null!;
 
     /// <summary>
-    /// Gets the migration function that transforms an instance of FromType to ToType.
-    /// The function takes an object (which should be of type FromType) and returns an object (of type ToType).
+    /// Applies the migration to the given object.
     /// </summary>
-    public required Func<object, object> MigrationFunc { get; init; }
+    /// <param name="oldValue">The old configuration instance to migrate.</param>
+    /// <returns>The migrated configuration instance.</returns>
+    public abstract object Migrate(object oldValue);
+}
+
+/// <summary>
+/// Type-safe migration step from one configuration version to another.
+/// </summary>
+/// <typeparam name="TOld">The old configuration type.</typeparam>
+/// <typeparam name="TNew">The new configuration type.</typeparam>
+public sealed class MigrationStep<TOld, TNew> : MigrationStep
+    where TOld : class, IHasVersion
+    where TNew : class, IHasVersion
+{
+    private readonly Func<TOld, TNew> _migrationFunc;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MigrationStep{TOld, TNew}"/> class.
+    /// </summary>
+    /// <param name="migrationFunc">The function that performs the migration.</param>
+    public MigrationStep(Func<TOld, TNew> migrationFunc)
+    {
+        _migrationFunc = migrationFunc;
+        FromType = typeof(TOld);
+        ToType = typeof(TNew);
+    }
+
+    /// <inheritdoc />
+    public override object Migrate(object oldValue)
+    {
+        if (oldValue is not TOld typedOldValue)
+        {
+            throw new InvalidOperationException(
+                $"Expected type {typeof(TOld).Name} but received {oldValue.GetType().Name}"
+            );
+        }
+
+        return _migrationFunc(typedOldValue);
+    }
 }
 
 /// <summary>

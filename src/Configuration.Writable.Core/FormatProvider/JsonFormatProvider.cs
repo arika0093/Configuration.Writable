@@ -88,6 +88,15 @@ public class JsonFormatProvider : FormatProviderBase
             return LoadConfigurationWithMigration(
                 current,
                 options,
+                jsonElement =>
+                {
+                    if (jsonElement.TryGetProperty("Version", out var versionElement)
+                        && versionElement.ValueKind == JsonValueKind.Number)
+                    {
+                        return versionElement.GetInt32();
+                    }
+                    return null;
+                },
                 (jsonElement, type) =>
                     JsonSerializer.Deserialize(jsonElement.GetRawText(), type, JsonSerializerOptions)
                         ?? Activator.CreateInstance(type)!
@@ -98,6 +107,15 @@ public class JsonFormatProvider : FormatProviderBase
         return LoadConfigurationWithMigration(
             root,
             options,
+            jsonElement =>
+            {
+                if (jsonElement.TryGetProperty("Version", out var versionElement)
+                    && versionElement.ValueKind == JsonValueKind.Number)
+                {
+                    return versionElement.GetInt32();
+                }
+                return null;
+            },
             (jsonElement, type) =>
                 JsonSerializer.Deserialize(jsonElement.GetRawText(), type, JsonSerializerOptions)
                     ?? Activator.CreateInstance(type)!

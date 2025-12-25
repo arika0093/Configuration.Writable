@@ -63,34 +63,30 @@ public abstract class FormatProviderBase : IFormatProvider
     /// This method handles version detection and migration chain application.
     /// </summary>
     /// <typeparam name="T">The target configuration type.</typeparam>
-    /// <param name="jsonElement">The JSON element containing the configuration data.</param>
+    /// <typeparam name="TData">The type of the data source (e.g., JsonElement, XElement, Dictionary).</typeparam>
+    /// <param name="data">The data containing the configuration.</param>
     /// <param name="options">The writable options configuration containing migration steps.</param>
-    /// <param name="deserializeFunc">A function that deserializes a JsonElement to a specific type.</param>
+    /// <param name="getVersionFunc">A function that extracts the version number from the data, or null if no version is present.</param>
+    /// <param name="deserializeFunc">A function that deserializes the data to a specific type.</param>
     /// <returns>The configuration object of type T, with all migrations applied if necessary.</returns>
-    protected static T LoadConfigurationWithMigration<T>(
-        JsonElement jsonElement,
+    protected static T LoadConfigurationWithMigration<T, TData>(
+        TData data,
         WritableOptionsConfiguration<T> options,
-        Func<JsonElement, Type, object> deserializeFunc
+        Func<TData, int?> getVersionFunc,
+        Func<TData, Type, object> deserializeFunc
     )
         where T : class, new()
     {
         // If no migrations are registered or T doesn't implement IHasVersion, deserialize directly
         if (options.MigrationSteps.Count == 0 || !typeof(IHasVersion).IsAssignableFrom(typeof(T)))
         {
-            return (T)deserializeFunc(jsonElement, typeof(T));
+            return (T)deserializeFunc(data, typeof(T));
         }
 
         // Try to read the version property
-        int? fileVersion = null;
-        if (jsonElement.TryGetProperty("Version", out var versionElement))
-        {
-            if (versionElement.ValueKind == JsonValueKind.Number)
-            {
-                fileVersion = versionElement.GetInt32();
-            }
-        }
+        int? fileVersion = getVersionFunc(data);
 
-        // If no version found in file, try deserializing as oldest type in migration chain
+        // If no version found in file, try deserializing as target type
         if (fileVersion == null)
         {
             options.Logger?.Log(
@@ -98,7 +94,7 @@ public abstract class FormatProviderBase : IFormatProvider
                 "No Version property found in configuration file. Attempting to deserialize as target type {TargetType}",
                 typeof(T).Name
             );
-            return (T)deserializeFunc(jsonElement, typeof(T));
+            return (T)deserializeFunc(data, typeof(T));
         }
 
         options.Logger?.Log(
@@ -109,7 +105,7 @@ public abstract class FormatProviderBase : IFormatProvider
 
         // Find the starting type based on version
         Type? currentType = null;
-        var targetVersion = ((IHasVersion)new T()).Version;
+        var targetVersion = VersionCache.GetVersion(typeof(T)) ?? 0;
 
         // If file version matches target version, deserialize directly
         if (fileVersion.Value == targetVersion)
@@ -120,7 +116,7 @@ public abstract class FormatProviderBase : IFormatProvider
                 fileVersion.Value,
                 typeof(T).Name
             );
-            return (T)deserializeFunc(jsonElement, typeof(T));
+            return (T)deserializeFunc(data, typeof(T));
         }
 
         // Build complete migration chain including all types
@@ -136,14 +132,11 @@ public abstract class FormatProviderBase : IFormatProvider
         // Find the type matching the file version
         foreach (var type in allTypes)
         {
-            if (typeof(IHasVersion).IsAssignableFrom(type))
+            var version = VersionCache.GetVersion(type);
+            if (version.HasValue && version.Value == fileVersion.Value)
             {
-                var instance = (IHasVersion)Activator.CreateInstance(type)!;
-                if (instance.Version == fileVersion.Value)
-                {
-                    currentType = type;
-                    break;
-                }
+                currentType = type;
+                break;
             }
         }
 
@@ -155,7 +148,7 @@ public abstract class FormatProviderBase : IFormatProvider
                 fileVersion.Value,
                 typeof(T).Name
             );
-            return (T)deserializeFunc(jsonElement, typeof(T));
+            return (T)deserializeFunc(data, typeof(T));
         }
 
         // Deserialize as the found type
@@ -166,7 +159,7 @@ public abstract class FormatProviderBase : IFormatProvider
             currentType.Name
         );
 
-        object current = deserializeFunc(jsonElement, currentType);
+        object current = deserializeFunc(data, currentType);
 
         // Apply migrations until we reach type T
         while (currentType != typeof(T))
@@ -180,16 +173,19 @@ public abstract class FormatProviderBase : IFormatProvider
                 );
             }
 
+            var fromVersion = VersionCache.GetVersion(migration.FromType) ?? 0;
+            var toVersion = VersionCache.GetVersion(migration.ToType) ?? 0;
+
             options.Logger?.Log(
                 LogLevel.Information,
                 "Applying migration from {FromType} (v{FromVersion}) to {ToType} (v{ToVersion})",
                 migration.FromType.Name,
-                ((IHasVersion)current).Version,
+                fromVersion,
                 migration.ToType.Name,
-                ((IHasVersion)Activator.CreateInstance(migration.ToType)!).Version
+                toVersion
             );
 
-            current = migration.MigrationFunc(current);
+            current = migration.Migrate(current);
             currentType = migration.ToType;
         }
 

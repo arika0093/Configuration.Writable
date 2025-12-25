@@ -173,8 +173,8 @@ public record WritableOptionsConfigBuilder<T>
         where TNew : class, IHasVersion, new()
     {
         // Validate that this is not a downgrade
-        var oldVersion = new TOld().Version;
-        var newVersion = new TNew().Version;
+        var oldVersion = VersionCache.GetVersion<TOld>();
+        var newVersion = VersionCache.GetVersion<TNew>();
 
         if (newVersion <= oldVersion)
         {
@@ -186,14 +186,7 @@ public record WritableOptionsConfigBuilder<T>
             );
         }
 
-        _migrationSteps.Add(
-            new MigrationStep
-            {
-                FromType = typeof(TOld),
-                ToType = typeof(TNew),
-                MigrationFunc = obj => migrator((TOld)obj),
-            }
-        );
+        _migrationSteps.Add(new MigrationStep<TOld, TNew>(migrator));
     }
 
     /// <summary>

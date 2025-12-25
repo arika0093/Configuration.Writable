@@ -70,22 +70,50 @@ public class XmlFormatProvider : FormatProviderBase
                 }
             }
 
-            // Deserialize from the found section
-            using var reader = current.CreateReader();
-            var serializer = new XmlSerializer(
-                typeof(T),
-                new XmlRootAttribute(current.Name.LocalName)
+            // Use migration-aware deserialization
+            return LoadConfigurationWithMigration(
+                current,
+                options,
+                element =>
+                {
+                    // Try to find Version element
+                    var versionElement = element.Element("Version");
+                    if (versionElement != null && int.TryParse(versionElement.Value, out var version))
+                    {
+                        return version;
+                    }
+                    return null;
+                },
+                (element, type) =>
+                {
+                    using var reader = element.CreateReader();
+                    var serializer = new XmlSerializer(type, new XmlRootAttribute(element.Name.LocalName));
+                    return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+                }
             );
-            return (serializer.Deserialize(reader) as T) ?? new T();
         }
 
-        // Deserialize from root
-        using var rootReader = root.CreateReader();
-        var rootSerializer = new XmlSerializer(
-            typeof(T),
-            new XmlRootAttribute(root.Name.LocalName)
+        // Use migration-aware deserialization
+        return LoadConfigurationWithMigration(
+            root,
+            options,
+            element =>
+            {
+                // Try to find Version element
+                var versionElement = element.Element("Version");
+                if (versionElement != null && int.TryParse(versionElement.Value, out var version))
+                {
+                    return version;
+                }
+                return null;
+            },
+            (element, type) =>
+            {
+                using var reader = element.CreateReader();
+                var serializer = new XmlSerializer(type, new XmlRootAttribute(element.Name.LocalName));
+                return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+            }
         );
-        return (rootSerializer.Deserialize(rootReader) as T) ?? new T();
     }
 
     /// <inheritdoc />
