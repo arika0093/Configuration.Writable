@@ -20,19 +20,28 @@ In the future, having a source generator will also broaden the range of features
 ```csharp
 // in library
 namespace Configuration.Writable;
+// Interface used as a marker of source generation
 public interface IDeepCloneable<T>
 {
     T DeepClone();
 }
-// Interface used as a marker of source generation
-public interface IWritableOptionsModel<T> : IDeepCloneable<T>
+
+public interface IOptionsModel<T> : IDeepCloneable<T>
 {
     // and other in the future
 }
+public interface IVersionedOptionsModel<T> : IOptionsModel<T>, IHasVersion
+{
+    // ...
+}
+```
+
+```csharp
 
 // user side
 // must be marked as partial. if not partial, generation will be skipped.
-public partial class MySettings : IWritableOptionsModel<MySettings>
+// if IDeepCloneable<T> is included in the base interfaces and there is no implementation, generation will be performed.
+public partial class MySettings : IOptionsModel<MySettings>
 {
     public string Name { get; set; }
     public int Age { get; set; }

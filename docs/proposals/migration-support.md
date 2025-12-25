@@ -8,7 +8,7 @@ Configuration.Writable will provide an interface like the following:
 
 ```csharp
 namespace Configuration.Writable;
-public interface IOptionsModel
+public interface IHasVersion
 {
     public int Version { get; }
 }
@@ -17,20 +17,20 @@ public interface IOptionsModel
 Users can implement this interface as shown below:
 
 ```csharp
-public class MySettingV1 : IOptionsModel
+public class MySettingV1 : IHasVersion
 {
     public int Version => 1;
     public string Name { get; set; }
 }
 
-public class MySettingV2 : IOptionsModel
+public class MySettingV2 : IHasVersion
 {
     public int Version => 2;
     // Changed to a list
     public List<string> Names { get; set; }
 }
 
-public class MySettingV3 : IOptionsModel
+public class MySettingV3 : IHasVersion
 {
     public int Version => 3;
     // Changed to a more complex type
@@ -70,8 +70,8 @@ TODO
 * Only type `V3` is registered, but the FormatProvider must be able to read data for `V1` and `V2` as well.
     * Internally, `UseMigration` will store `typeof(T)`.
 * First, only the version is read, and then deserialization is performed with the appropriate type according to that value.
-    * Processing is switched depending on whether `IOptionsModel` is implemented or not.
-    * If `IOptionsModel` is implemented, should it first be deserialized as `IOptionsModel`?
+    * Processing is switched depending on whether `IHasVersion` is implemented or not.
+    * If `IHasVersion` is implemented, should it first be deserialized as `IHasVersion`?
         * If deserialized directly as `V3`, the Version value in the file may be overwritten.
     * Care is needed when a SectionName is specified. (The Version in the section should be read)
 * Operation in NativeAOT environments must be confirmed.
