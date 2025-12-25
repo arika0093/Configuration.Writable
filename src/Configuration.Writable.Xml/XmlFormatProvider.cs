@@ -117,19 +117,35 @@ public class XmlFormatProvider : FormatProviderBase
     {
         var parts = options.SectionNameParts;
 
-        if (parts.Count == 0)
+        // Section name specified - use partial write (merge with existing file)
+        if (parts.Count > 0)
         {
-            // No section name, serialize directly (full file overwrite)
-            var serializer = new XmlSerializer(typeof(T));
-            using var sw = new StringWriter();
-            serializer.Serialize(sw, config);
-            return Encoding.UTF8.GetBytes(sw.ToString());
-        }
-        else
-        {
-            // Section specified - use partial write (merge with existing file)
             return GetPartialSaveContents(config, options);
         }
+
+        // No section name - create full XML with <configuration> wrapper
+        // Serialize the configuration to XML
+        var serializer = new XmlSerializer(typeof(T));
+        using var sw = new StringWriter();
+        serializer.Serialize(sw, config);
+        var xmlDocument = new XmlDocument();
+        xmlDocument.LoadXml(sw.ToString());
+
+        // Get the root element containing the serialized data
+        var configElement = xmlDocument.DocumentElement;
+        if (configElement == null)
+        {
+            throw new InvalidOperationException("Failed to serialize configuration to XML");
+        }
+
+        // Build nested XML structure with innerXml
+        var innerXml = configElement.InnerXml;
+
+        var xmlString = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <configuration>{innerXml}</configuration>
+            """;
+        return Encoding.UTF8.GetBytes(xmlString);
     }
 
     /// <summary>

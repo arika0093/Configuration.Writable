@@ -298,8 +298,8 @@ public class XmlPartialWriteTests
 
         root.ShouldNotBeNull();
 
-        // Should contain only the new data, no configuration wrapper
-        root.Name.LocalName.ShouldBe("AppSettings");
+        // Should have configuration wrapper with AppSettings content directly inside
+        root.Name.LocalName.ShouldBe("configuration");
         root.Element("Name")?.Value.ShouldBe("CompletelyNew");
         root.Element("Version")?.Value.ShouldBe("99");
     }
