@@ -24,15 +24,23 @@ public interface IDeepCloneable<T>
 {
     T DeepClone();
 }
+// Interface used as a marker of source generation
+public interface IWritableOptionsModel<T> : IDeepCloneable<T>
+{
+    // and other in the future
+}
 
 // user side
-[ConfigurationWritableModel] // add it
-public partial class MySettings // mark as partial
+// must be marked as partial. if not partial, generation will be skipped.
+public partial class MySettings : IWritableOptionsModel<MySettings>
 {
     public string Name { get; set; }
     public int Age { get; set; }
     public List<string> Tags { get; set; }
     public ChildClass Child { get; set; }
+
+    // If the user implements this themselves, the SourceGenerator will skip generation
+    // public MySettings DeepClone() => { ... }
 }
 
 // generated code
@@ -46,17 +54,25 @@ public partial class MySettings : IDeepCloneable<MySettings>
             Age = this.Age,
             // should be deepcopy, not shallow copy
             Tags = this.Tags.ToList(),
-            Child = new ChildClass
-            {
+            Child = new ChildClass {
                 // ...
             }
         };
     }
 }
 
-// Configuration.Writable.Core/WritableOptionsConfigBuilder
-if(T is IDeepCloneable<T> cloneable)
+// in WritableOptionsConfigBuilder
+public void UseDefaultCloneStrategy()
 {
-    _cloneMethod = cloneable.DeepClone;
+    if(T is IDeepCloneable<T> cloneable)
+    {
+        _cloneMethod = (value) => cloneable.DeepClone();
+    }
+    else
+    {
+        UseJsonCloneStrategy();
+    }
 }
 ```
+
+Considering the content of [migration-support.md](migration-support.md), it is better to provide this as an automatic interface implementation rather than using an attribute.
