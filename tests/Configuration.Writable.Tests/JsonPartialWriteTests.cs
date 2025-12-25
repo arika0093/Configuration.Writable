@@ -48,10 +48,7 @@ public class JsonPartialWriteTests
               }
             }
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize writable options for AppSettings section only
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -61,7 +58,7 @@ public class JsonPartialWriteTests
             options.SectionName = "AppSettings";
             options.FormatProvider = new JsonFormatProvider
             {
-                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
             options.UseInMemoryFileProvider(_fileProvider);
         });
@@ -85,10 +82,7 @@ public class JsonPartialWriteTests
 
         // Verify UserSettings was preserved
         root.GetProperty("UserSettings").GetProperty("Theme").GetString().ShouldBe("light");
-        root.GetProperty("UserSettings")
-            .GetProperty("Notifications")
-            .GetBoolean()
-            .ShouldBe(false);
+        root.GetProperty("UserSettings").GetProperty("Notifications").GetBoolean().ShouldBe(false);
 
         // Verify OtherSection was preserved
         root.GetProperty("OtherSection")
@@ -117,10 +111,7 @@ public class JsonPartialWriteTests
               }
             }
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize writable options for nested section
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -130,7 +121,7 @@ public class JsonPartialWriteTests
             options.SectionName = "App:Settings";
             options.FormatProvider = new JsonFormatProvider
             {
-                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
             options.UseInMemoryFileProvider(_fileProvider);
         });
@@ -174,7 +165,7 @@ public class JsonPartialWriteTests
             options.SectionName = "AppSettings";
             options.FormatProvider = new JsonFormatProvider
             {
-                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
             options.UseInMemoryFileProvider(_fileProvider);
         });
@@ -210,10 +201,7 @@ public class JsonPartialWriteTests
               }
             }
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
         instance.Initialize(options =>
@@ -222,7 +210,7 @@ public class JsonPartialWriteTests
             options.SectionName = "NewSection";
             options.FormatProvider = new JsonFormatProvider
             {
-                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
             options.UseInMemoryFileProvider(_fileProvider);
         });
@@ -245,10 +233,7 @@ public class JsonPartialWriteTests
         root.GetProperty("NewSection").GetProperty("Version").GetInt32().ShouldBe(3);
 
         // Verify existing section was preserved
-        root.GetProperty("ExistingSection")
-            .GetProperty("Value")
-            .GetString()
-            .ShouldBe("Exists");
+        root.GetProperty("ExistingSection").GetProperty("Value").GetString().ShouldBe("Exists");
     }
 
     [Fact]
@@ -264,10 +249,7 @@ public class JsonPartialWriteTests
               }
             }
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize without SectionName
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -277,7 +259,7 @@ public class JsonPartialWriteTests
             // No SectionName specified - full overwrite
             options.FormatProvider = new JsonFormatProvider
             {
-                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true }
+                JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
             options.UseInMemoryFileProvider(_fileProvider);
         });
@@ -302,5 +284,4 @@ public class JsonPartialWriteTests
         // Old section should not exist
         root.TryGetProperty("OldSection", out _).ShouldBe(false);
     }
-
 }

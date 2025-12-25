@@ -49,10 +49,7 @@ public class XmlPartialWriteTests
               </OtherSection>
             </configuration>
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize writable options for AppSettings section only
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -118,10 +115,7 @@ public class XmlPartialWriteTests
               </App>
             </configuration>
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize writable options for nested section
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -213,10 +207,7 @@ public class XmlPartialWriteTests
               </ExistingSection>
             </configuration>
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
         instance.Initialize(options =>
@@ -268,10 +259,7 @@ public class XmlPartialWriteTests
               </OldSection>
             </configuration>
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize without SectionName
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -303,5 +291,4 @@ public class XmlPartialWriteTests
         root.Element("Name")?.Value.ShouldBe("CompletelyNew");
         root.Element("Version")?.Value.ShouldBe("99");
     }
-
 }

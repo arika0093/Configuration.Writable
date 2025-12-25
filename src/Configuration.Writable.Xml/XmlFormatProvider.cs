@@ -234,9 +234,7 @@ public class XmlFormatProvider : FormatProviderBase
 
             if (root == null)
             {
-                throw new InvalidOperationException(
-                    "Existing XML document has no root element"
-                );
+                throw new InvalidOperationException("Existing XML document has no root element");
             }
 
             // Navigate to the parent element where we need to insert/update the section
@@ -254,14 +252,20 @@ public class XmlFormatProvider : FormatProviderBase
                     {
                         // Replace existing section
                         existing.ReplaceWith(
-                            new XElement(sectionName, XElement.Parse(configElement.OuterXml).Nodes())
+                            new XElement(
+                                sectionName,
+                                XElement.Parse(configElement.OuterXml).Nodes()
+                            )
                         );
                     }
                     else
                     {
                         // Add new section
                         current.Add(
-                            new XElement(sectionName, XElement.Parse(configElement.OuterXml).Nodes())
+                            new XElement(
+                                sectionName,
+                                XElement.Parse(configElement.OuterXml).Nodes()
+                            )
                         );
                     }
                 }

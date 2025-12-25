@@ -46,10 +46,7 @@ public class YamlPartialWriteTests
             otherSection:
               value: ShouldBePreserved
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize writable options for AppSettings section only
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -111,10 +108,7 @@ public class YamlPartialWriteTests
               other:
                 value: Preserved
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         // Initialize writable options for nested section
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
@@ -206,10 +200,7 @@ public class YamlPartialWriteTests
             existingSection:
               value: Exists
             """;
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(initialContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(initialContent));
 
         var instance = new WritableOptionsSimpleInstance<AppSettings>();
         instance.Initialize(options =>
@@ -286,5 +277,4 @@ public class YamlPartialWriteTests
         result["name"].ShouldBe("CompletelyNew");
         result["version"].ToString().ShouldBe("99");
     }
-
 }

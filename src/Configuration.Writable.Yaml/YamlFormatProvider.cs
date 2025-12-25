@@ -244,7 +244,8 @@ public class YamlFormatProvider : FormatProviderBase
             );
 
             var nestedSectionValue = CreateNestedSection(sections, configDict);
-            resultDict = nestedSectionValue as Dictionary<string, object>
+            resultDict =
+                nestedSectionValue as Dictionary<string, object>
                 ?? new Dictionary<string, object>();
         }
         else
