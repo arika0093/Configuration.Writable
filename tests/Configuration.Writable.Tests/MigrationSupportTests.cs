@@ -1,33 +1,19 @@
 using System;
-using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
-using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 
 namespace Configuration.Writable.Tests;
 
-public class MigrationSupportTests : IDisposable
+public class MigrationSupportTests
 {
-    private readonly string _tempDirectory;
-
-    public MigrationSupportTests()
-    {
-        _tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(_tempDirectory);
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_tempDirectory))
-        {
-            Directory.Delete(_tempDirectory, true);
-        }
-    }
+    private readonly InMemoryFileProvider _fileProvider = new();
 
     [Fact]
     public void UseMigration_ShouldThrowException_WhenDowngradeDetected()
@@ -109,27 +95,26 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadWithMigration_ShouldDeserializeDirectly_WhenVersionMatches()
+    public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenVersionMatches()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings1.json");
-        File.WriteAllText(
-            filePath,
-            """
+        var fileName = "settings1.json";
+        var content = """
             {
                 "Version": 3,
                 "Configs": [
                     { "Name": "Test" }
                 ]
             }
-            """
-        );
+            """;
+        await _fileProvider.SaveToFileAsync(fileName, Encoding.UTF8.GetBytes(content));
 
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>
         {
-            FilePath = filePath,
+            FilePath = fileName,
             FormatProvider = new JsonFormatProvider()
         };
+        builder.FileProvider = _fileProvider;
 
         var options = builder.BuildOptions("");
         var provider = new JsonFormatProvider();
@@ -145,25 +130,24 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadWithMigration_ShouldApplySingleMigration_WhenVersionIsOlder()
+    public async Task LoadWithMigration_ShouldApplySingleMigration_WhenVersionIsOlder()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings2.json");
-        File.WriteAllText(
-            filePath,
-            """
+        var fileName = "settings2.json";
+        var content = """
             {
                 "Version": 1,
                 "Name": "TestName"
             }
-            """
-        );
+            """;
+        await _fileProvider.SaveToFileAsync(fileName, Encoding.UTF8.GetBytes(content));
 
         var builder = new WritableOptionsConfigBuilder<MySettingsV2>
         {
-            FilePath = filePath,
+            FilePath = fileName,
             FormatProvider = new JsonFormatProvider()
         };
+        builder.FileProvider = _fileProvider;
 
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
@@ -184,26 +168,24 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadWithMigration_ShouldApplyMultipleMigrations_WhenVersionIsOlder()
+    public async Task LoadWithMigration_ShouldApplyMultipleMigrations_WhenVersionIsOlder()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings3.json");
-        File.WriteAllText(
-            filePath,
-            """
+        var fileName = "settings3.json";
+        var content = """
             {
                 "Version": 1,
                 "Name": "TestName"
             }
-            """
-        );
+            """;
+        await _fileProvider.SaveToFileAsync(fileName, Encoding.UTF8.GetBytes(content));
 
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>
         {
-            FilePath = filePath,
+            FilePath = fileName,
             FormatProvider = new JsonFormatProvider()
         };
-
+        builder.FileProvider = _fileProvider;
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
             Names = [v1.Name]
@@ -227,25 +209,23 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadWithMigration_ShouldDeserializeDirectly_WhenNoMigrationsRegistered()
+    public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenNoMigrationsRegistered()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings4.json");
-        File.WriteAllText(
-            filePath,
-            """
+        var fileName = "settings4.json";
+        var content = """
             {
                 "Name": "TestName"
             }
-            """
-        );
+            """;
+        await _fileProvider.SaveToFileAsync(fileName, Encoding.UTF8.GetBytes(content));
 
         var builder = new WritableOptionsConfigBuilder<SettingsWithoutVersion>
         {
-            FilePath = filePath,
+            FilePath = fileName,
             FormatProvider = new JsonFormatProvider()
         };
-
+        builder.FileProvider = _fileProvider;
         var options = builder.BuildOptions("");
         var provider = new JsonFormatProvider();
 
@@ -258,26 +238,24 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadWithMigration_ShouldDeserializeDirectly_WhenTypeDoesNotImplementIHasVersion()
+    public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenTypeDoesNotImplementIHasVersion()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings5.json");
-        File.WriteAllText(
-            filePath,
-            """
+        var fileName = "settings5.json";
+        var content = """
             {
                 "Version": 1,
                 "Name": "TestName"
             }
-            """
-        );
+            """;
+        await _fileProvider.SaveToFileAsync(fileName, Encoding.UTF8.GetBytes(content));
 
         var builder = new WritableOptionsConfigBuilder<SettingsWithoutVersion>
         {
-            FilePath = filePath,
+            FilePath = fileName,
             FormatProvider = new JsonFormatProvider()
         };
-
+        builder.FileProvider = _fileProvider;
         var options = builder.BuildOptions("");
         var provider = new JsonFormatProvider();
 

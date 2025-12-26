@@ -85,7 +85,9 @@ public class YamlFormatProvider : FormatProviderBase
         }
 
         // Deserialize YAML directly to the target type
+        // Use CamelCaseNamingConvention to match serialization
         var plainDeserializer = new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
             .Build();
 
