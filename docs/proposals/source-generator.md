@@ -13,75 +13,93 @@ It is not necessary to highly optimize for speed; the important point is that a 
 In the future, having a source generator will also broaden the range of features that can be added.
 
 ### Approach
-* Provide an additional library: Configuration.Writable.Generators.
-* This library will be bundled and provided together with `Configuration.Writable` (not used standalone).
-* The following code will be generated:
+Create a dedicated library called `ICloneableGenerator` and use it as a dependency.
+This library consists of the following two components:
+* `ICloneableGenerator` (Abstraction)
+    * `ICloneableGenerator.Generator` (Source Generator)
+
+`ICloneableGenerator` provides the following interfaces:
 
 ```csharp
-// in library
-namespace Configuration.Writable;
-// Interface used as a marker of source generation
 public interface IDeepCloneable<T>
 {
     T DeepClone();
 }
 
-public interface IOptionsModel<T> : IDeepCloneable<T>
+public interface IShallowCloneable<T>
 {
-    // and other in the future
-}
-public interface IVersionedOptionsModel<T> : IOptionsModel<T>, IHasVersion
-{
-    // ...
+    T ShallowClone();
 }
 ```
+
+`ICloneableGenerator.Generator` is a source generator that automatically generates implementations of the `DeepClone` or `ShallowClone` methods for classes that implement `IDeepCloneable<T>` or `IShallowCloneable<T>`.
 
 ```csharp
+// 3rd-party library side
+public interface ISomeLibraryClass<T> : IDeepCloneable<T> //, ...
+{
+
+}
+public abstract class SomeLibraryBaseClass<T> : IShallowCloneable<T> //, ...
+{
+    public abstract T ShallowClone(); // not implemented
+}
 
 // user side
-// must be marked as partial. if not partial, generation will be skipped.
-// if IDeepCloneable<T> is included in the base interfaces and there is no implementation, generation will be performed.
-public partial class MySettings : IOptionsModel<MySettings>
+
+// Conditions for automatic generation:
+// 1. The class must be partial.
+// 2. It must implement IDeepCloneable<T> or IShallowCloneable<T> (including derived interfaces/classes).
+// 3. The implementation must not already exist.
+
+// OK
+public partial class SampleSetting : IDeepCloneable<SampleSetting>
 {
     public string Name { get; set; }
-    public int Age { get; set; }
-    public List<string> Tags { get; set; }
-    public ChildClass Child { get; set; }
-
-    // If the user implements this themselves, the SourceGenerator will skip generation
-    // public MySettings DeepClone() => { ... }
+    // The DeepClone method implementation will be auto-generated
 }
 
-// generated code
-public partial class MySettings : IDeepCloneable<MySettings>
+// OK
+public partial class SampleSetting : ISomeLibraryClass<SampleSetting>
 {
-    public MySettings DeepClone()
-    {
-        return new MySettings
-        {
-            Name = this.Name,
-            Age = this.Age,
-            // should be deepcopy, not shallow copy
-            Tags = this.Tags.ToList(),
-            Child = new ChildClass {
-                // ...
-            }
-        };
-    }
+    public string Name { get; set; }
+    // The DeepClone method implementation will be auto-generated
 }
 
-// in WritableOptionsConfigBuilder
-public void UseDefaultCloneStrategy()
+// OK
+public partial class SampleSetting : SomeLibraryBaseClass<SampleSetting>
 {
-    if(T is IDeepCloneable<T> cloneable)
+    public string Name { get; set; }
+    // The ShallowClone method implementation will be auto-generated
+}
+
+// NG
+public class SampleSetting : IDeepCloneable<SampleSetting> // not partial
+{
+    public string Name { get; set; }
+    // The DeepClone method implementation will NOT be auto-generated
+}
+
+public partial class SampleSetting : IDeepCloneable<SampleSetting>
+{
+    public string Name { get; set; }
+
+    public SampleSetting DeepClone() // Already implemented, so will NOT be auto-generated
     {
-        _cloneMethod = (value) => cloneable.DeepClone();
-    }
-    else
-    {
-        UseJsonCloneStrategy();
+        return new SampleSetting { Name = this.Name };
     }
 }
 ```
 
-Considering the content of [migration-support.md](migration-support.md), it is better to provide this as an automatic interface implementation rather than using an attribute.
+Add the above library as a dependency and specify the CloneStrategy as follows:
+
+```csharp
+if(typeof(T) is IDeepCloneable<T>)
+{
+    _cloneMethod = (value) => ((IDeepCloneable<T>)value).DeepClone();
+}
+```
+
+Although there are many libraries that automatically generate clone methods, a dedicated library is created for the following reasons:
+* To allow the auto-generated `DeepClone` method to be used within 3rd party libraries.
+* To enable support without requiring extra effort from users.
