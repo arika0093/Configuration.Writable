@@ -3,7 +3,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
@@ -68,69 +67,6 @@ public class EncryptFormatProvider : FormatProviderBase
 
     /// <inheritdoc />
     public override string FileExtension => "";
-
-    /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-    {
-        var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return new T();
-        }
-
-        var stream = options.FileProvider.GetFileStream(filePath);
-        if (stream == null)
-        {
-            return new T();
-        }
-
-        using (stream)
-        {
-            return this.LoadWithMigration(stream, options);
-        }
-    }
-
-    /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
-    {
-        try
-        {
-            // Read encrypted data
-            using var br = new BinaryReader(stream);
-
-            // Read IV (first 16 bytes for AES)
-            var iv = br.ReadBytes(16);
-
-            // Read the rest as encrypted data
-            byte[] encryptedData;
-            using (var ms1 = new MemoryStream())
-            {
-                br.BaseStream.CopyTo(ms1);
-                encryptedData = ms1.ToArray();
-            }
-
-            // Decrypt
-            using var aes = Aes.Create();
-            aes.Key = Key;
-            aes.IV = iv;
-
-            using var decryptor = aes.CreateDecryptor();
-            using var ms = new MemoryStream(encryptedData);
-            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-
-            // Use JsonProvider to deserialize the decrypted content
-            return JsonProvider.LoadConfiguration<T>(cs, options);
-        }
-        catch (Exception ex)
-        {
-            // If decryption fails, return default instance
-            options.Logger?.LogWarning(
-                ex,
-                "Failed to decrypt configuration, returning default instance."
-            );
-            return new T();
-        }
-    }
 
     /// <inheritdoc />
     public override object LoadConfiguration(

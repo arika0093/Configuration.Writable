@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Configuration.Writable.Migration;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
@@ -117,15 +118,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <summary>
     /// Clears the cached value for the specified instance name.
     /// </summary>
-    internal void ClearCache(string instanceName)
-    {
-        if (_dataSources.TryGetValue(instanceName, out var dataSource))
-        {
-            // Reload from file
-            var options = _optionsRegistry.Get(instanceName);
-            dataSource.Cache = options.FormatProvider.LoadConfiguration<T>(options);
-        }
-    }
+    internal void ClearCache(string instanceName) => LoadConfiguration(instanceName);
 
     /// <summary>
     /// Returns a cloned copy of the given value using the clone strategy defined in the options configuration.
@@ -185,7 +178,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         try
         {
             // Use the provider to load configuration (provider will check file existence via its FileProvider)
-            return options.FormatProvider.LoadConfiguration<T>(options);
+            return options.FormatProvider.LoadWithMigration<T>(options);
         }
         finally
         {

@@ -25,14 +25,14 @@ public interface IFormatProvider
         where T : class, new();
 
     /// <summary>
-    /// Loads configuration from a stream and deserializes it to the specified type.
+    /// Loads configuration from a file and deserializes it to the specified type.
+    /// This is a non-generic version required for migration support.
     /// </summary>
     /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
-    /// <param name="stream">The stream containing the configuration data.</param>
+    /// <param name="type">The type of the configuration object to load.</param>
     /// <param name="options">The options that control how the configuration is loaded.</param>
     /// <returns>The deserialized configuration object.</returns>
-    T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
-        where T : class, new();
+    object LoadConfiguration(Type type, WritableOptionsConfiguration<object> options);
 
     /// <summary>
     /// Loads configuration from a stream and deserializes it to the specified type.

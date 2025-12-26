@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -41,135 +40,13 @@ public class YamlFormatProvider : FormatProviderBase
     public override string FileExtension => "yaml";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-    {
-        var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return new T();
-        }
-
-        var stream = options.FileProvider.GetFileStream(filePath);
-        if (stream == null)
-        {
-            return new T();
-        }
-
-        using (stream)
-        {
-            return this.LoadWithMigration(stream, options);
-        }
-    }
-
-    /// <inheritdoc />
-    /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
-    {
-        using var reader = new StreamReader(stream, Encoding);
-        var yamlContent = reader.ReadToEnd();
-
-        if (string.IsNullOrWhiteSpace(yamlContent))
-        {
-            return new T();
-        }
-
-        // For migration support, we need to:
-        // 1. Parse YAML to extract the version
-        // 2. Deserialize the YAML content to the correct type based on version
-        // 3. Apply migrations if needed
-
-        var sections = options.SectionNameParts;
-        string targetYamlContent = yamlContent;
-
-        // Navigate to section if specified
-        if (sections.Count > 0)
-        {
-            var yamlObject = Deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
-            if (yamlObject == null)
-            {
-                return new T();
-            }
-
-            object current = yamlObject;
-            foreach (var section in sections)
-            {
-                if (current is Dictionary<string, object> stringKeyDict)
-                {
-                    var key = stringKeyDict.Keys.FirstOrDefault(k =>
-                        string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
-                    );
-                    if (key != null && stringKeyDict.TryGetValue(key, out var value))
-                    {
-                        current = value;
-                    }
-                    else
-                    {
-                        return new T();
-                    }
-                }
-                else if (current is Dictionary<object, object> objectKeyDict)
-                {
-                    var key = objectKeyDict.Keys.OfType<string>().FirstOrDefault(k =>
-                        string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
-                    );
-                    if (key != null && objectKeyDict.TryGetValue(key, out var value))
-                    {
-                        current = value;
-                    }
-                    else
-                    {
-                        return new T();
-                    }
-                }
-                else
-                {
-                    return new T();
-                }
-            }
-
-            // Serialize the section back to YAML
-            targetYamlContent = Serializer.Serialize(current);
-        }
-
-        // Deserialize YAML directly to the target type
-        var plainDeserializer = new DeserializerBuilder()
-            .IgnoreUnmatchedProperties()
-            .Build();
-
-        try
-        {
-            var result = plainDeserializer.Deserialize<T>(targetYamlContent);
-            return result ?? new T();
-        }
-        catch (Exception)
-        {
-            // If plain deserialization fails, try with the configured deserializer
-            try
-            {
-                var result = Deserializer.Deserialize<T>(targetYamlContent);
-                return result ?? new T();
-            }
-            catch
-            {
-                return new T();
-            }
-        }
-    }
-
-    /// <inheritdoc />
     public override object LoadConfiguration(
         Type type,
         Stream stream,
         System.Collections.Generic.List<string> sectionNameParts
     )
     {
-        using var reader = new StreamReader(
-            stream,
-            System.Text.Encoding.UTF8,
-            detectEncodingFromByteOrderMarks: true,
-            bufferSize: -1,
-            leaveOpen: true
-        );
+        using var reader = new StreamReader(stream, Encoding, leaveOpen: true);
         var yamlContent = reader.ReadToEnd();
 
         string targetYamlContent = yamlContent;

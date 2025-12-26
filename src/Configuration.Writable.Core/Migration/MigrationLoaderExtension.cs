@@ -9,7 +9,7 @@ namespace Configuration.Writable.Migration;
 /// <summary>
 /// Extension methods for migration loading.
 /// </summary>
-public static class MigrationLoaderExtension
+internal static class MigrationLoaderExtension
 {
     /// <summary>
     /// Attempts to deserialize and apply migrations to reach the target type T.
@@ -18,14 +18,11 @@ public static class MigrationLoaderExtension
     /// <typeparam name="T">The target configuration type.</typeparam>
     public static T LoadWithMigration<T>(
         this FormatProvider.IFormatProvider formatProvider,
-        Stream stream,
         WritableOptionsConfiguration<T> options
     )
         where T : class, new()
     {
-        // Load configuration
-        var config = formatProvider.LoadConfiguration(stream, options);
-
+        var config = formatProvider.LoadConfiguration<T>(options); 
         // If loaded config doesn't implement IHasVersion (shouldn't happen but be safe), return it
         if (config is not IHasVersion versionedConfig)
         {
@@ -59,31 +56,15 @@ public static class MigrationLoaderExtension
         Type? currentType = allTypes.FirstOrDefault(t => VersionCache.GetVersion(t) == fileVersion);
         if (currentType == null)
         {
-            options.Logger?.LogWarning(
-                "No type found matching version {Version} in migration chain. Returning as target type {TargetType}",
-                fileVersion,
-                typeof(T).Name
-            );
-            return config;
-        }
-
-        // Reset stream position to re-read
-        if (stream.CanSeek)
-        {
-            stream.Position = 0;
-        }
-        else
-        {
             throw new InvalidOperationException(
-                "Stream must be seekable to support migration. The stream position cannot be reset."
+                $"No type found matching version {fileVersion} in migration chain."
             );
         }
 
         // Deserialize as the found type
         var current = formatProvider.LoadConfiguration(
             currentType,
-            stream,
-            options.SectionNameParts
+            options as WritableOptionsConfiguration<object>
         );
 
         // Apply migrations until we reach type T
