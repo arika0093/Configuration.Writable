@@ -19,20 +19,20 @@ Users can implement this interface as shown below:
 ```csharp
 public class MySettingV1 : IHasVersion
 {
-    public int Version => 1;
+    public int Version { get; set; } =1;
     public string Name { get; set; }
 }
 
 public class MySettingV2 : IHasVersion
 {
-    public int Version => 2;
+    public int Version { get; set; } =2;
     // Changed to a list
     public List<string> Names { get; set; }
 }
 
 public class MySettingV3 : IHasVersion
 {
-    public int Version => 3;
+    public int Version { get; set; } =3;
     // Changed to a more complex type
     public List<FooConfig> Configs { get; set; }
 }

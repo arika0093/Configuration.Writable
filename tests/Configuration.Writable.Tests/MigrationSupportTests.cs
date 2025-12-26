@@ -289,19 +289,19 @@ public class MigrationSupportTests : IDisposable
     // Test model classes
     public class MySettingsV1 : IHasVersion
     {
-        public int Version => 1;
+        public int Version { get; set; } =1;
         public string Name { get; set; } = "";
     }
 
     public class MySettingsV2 : IHasVersion
     {
-        public int Version => 2;
+        public int Version { get; set; } =2;
         public string[] Names { get; set; } = [];
     }
 
     public class MySettingsV3 : IHasVersion
     {
-        public int Version => 3;
+        public int Version { get; set; } =3;
         public FooConfig[] Configs { get; set; } = [];
     }
 
