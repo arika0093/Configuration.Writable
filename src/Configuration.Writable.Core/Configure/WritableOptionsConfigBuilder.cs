@@ -276,7 +276,7 @@ public record WritableOptionsConfigBuilder<T>
     /// Sets the configuration folder to the current working directory.
     /// </summary>
     /// <remarks>
-    /// This uses <see cref="Directory.GetCurrentDirectory()"/> to determine the current directory.
+    /// This uses <see cref="System.IO.Directory.GetCurrentDirectory()"/> to determine the current directory.
     /// </remarks>
     public ILocationBuilder UseCurrentDirectory() =>
         _saveLocationManager.MakeLocationBuilder().UseCurrentDirectory();
