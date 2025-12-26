@@ -19,44 +19,26 @@ public class XmlFormatProvider : FormatProviderBase
     public override string FileExtension => "xml";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-    {
-        var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return new T();
-        }
-
-        var stream = options.FileProvider.GetFileStream(filePath);
-        if (stream == null)
-        {
-            return new T();
-        }
-
-        using (stream)
-        {
-            return LoadConfiguration(stream, options);
-        }
-    }
-
-    /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
+    public override object LoadConfiguration(
+        Type type,
+        Stream stream,
+        System.Collections.Generic.List<string> sectionNameParts
+    )
     {
         var xmlDoc = XDocument.Load(stream);
         var root = xmlDoc.Root;
 
         if (root == null)
         {
-            return new T();
+            return Activator.CreateInstance(type)!;
         }
 
         // Navigate to the section if specified
-        var sections = options.SectionNameParts;
-        if (sections.Count > 0)
+        if (sectionNameParts.Count > 0)
         {
             var current = root;
 
-            foreach (var section in sections)
+            foreach (var section in sectionNameParts)
             {
                 var element = current.Element(section);
                 if (element != null)
@@ -66,26 +48,20 @@ public class XmlFormatProvider : FormatProviderBase
                 else
                 {
                     // Section not found, return default instance
-                    return new T();
+                    return Activator.CreateInstance(type)!;
                 }
             }
 
-            // Deserialize from the found section
             using var reader = current.CreateReader();
-            var serializer = new XmlSerializer(
-                typeof(T),
-                new XmlRootAttribute(current.Name.LocalName)
-            );
-            return (serializer.Deserialize(reader) as T) ?? new T();
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(current.Name.LocalName));
+            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
         }
 
-        // Deserialize from root
-        using var rootReader = root.CreateReader();
-        var rootSerializer = new XmlSerializer(
-            typeof(T),
-            new XmlRootAttribute(root.Name.LocalName)
-        );
-        return (rootSerializer.Deserialize(rootReader) as T) ?? new T();
+        using (var reader = root.CreateReader())
+        {
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
+            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+        }
     }
 
     /// <inheritdoc />

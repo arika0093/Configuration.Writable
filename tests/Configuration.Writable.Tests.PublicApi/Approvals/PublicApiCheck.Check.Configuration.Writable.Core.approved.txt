@@ -36,6 +36,9 @@ namespace Configuration.Writable.Configure
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050")]
         public void UseJsonCloneStrategy() { }
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
+        public void UseMigration<TOld, TNew>(System.Func<TOld, TNew> migrator)
+            where TOld :  class, Configuration.Writable.IHasVersion, new ()
+            where TNew :  class, Configuration.Writable.IHasVersion, new () { }
         public Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
         public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
@@ -94,10 +97,11 @@ namespace Configuration.Writable.FormatProvider
     {
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
-        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new ();
-        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new ();
+        public abstract object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts);
+        public T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
+            where T :  class, new () { }
+        public object LoadConfiguration<T>(System.Type type, Configuration.Writable.WritableOptionsConfiguration<T> options)
+            where T :  class, new () { }
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
         protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
@@ -105,9 +109,10 @@ namespace Configuration.Writable.FormatProvider
     public interface IFormatProvider
     {
         string FileExtension { get; }
+        object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts);
         T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
-        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
+        object LoadConfiguration<T>(System.Type type, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
@@ -118,18 +123,19 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        public override T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
-        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
+        public override object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
 }
 namespace Configuration.Writable
 {
+    public interface IHasVersion
+    {
+        int Version { get; set; }
+    }
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {

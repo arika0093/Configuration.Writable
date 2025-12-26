@@ -35,43 +35,25 @@ public class JsonFormatProvider : FormatProviderBase
     public override string FileExtension => "json";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-    {
-        var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return new T();
-        }
-
-        var stream = options.FileProvider.GetFileStream(filePath);
-        if (stream == null)
-        {
-            return new T();
-        }
-
-        using (stream)
-        {
-            return LoadConfiguration(stream, options);
-        }
-    }
-
-    /// <inheritdoc />
 #if NET
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
-    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
+    public override object LoadConfiguration(
+        Type type,
+        Stream stream,
+        List<string> sectionNameParts
+    )
     {
         var jsonDocument = JsonDocument.Parse(stream);
         var root = jsonDocument.RootElement;
 
         // Navigate to the section if specified
-        var sections = options.SectionNameParts;
-        if (sections.Count > 0)
+        if (sectionNameParts.Count > 0)
         {
             var current = root;
 
-            foreach (var section in sections)
+            foreach (var section in sectionNameParts)
             {
                 if (current.TryGetProperty(section, out var element))
                 {
@@ -80,15 +62,16 @@ public class JsonFormatProvider : FormatProviderBase
                 else
                 {
                     // Section not found, return default instance
-                    return new T();
+                    return Activator.CreateInstance(type)!;
                 }
             }
 
-            return JsonSerializer.Deserialize<T>(current.GetRawText(), JsonSerializerOptions)
-                ?? new T();
+            return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
+                ?? Activator.CreateInstance(type)!;
         }
 
-        return JsonSerializer.Deserialize<T>(root.GetRawText(), JsonSerializerOptions) ?? new T();
+        return JsonSerializer.Deserialize(root.GetRawText(), type, JsonSerializerOptions)
+            ?? Activator.CreateInstance(type)!;
     }
 
     /// <inheritdoc />

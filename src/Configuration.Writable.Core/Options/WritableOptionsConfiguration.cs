@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
+using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -64,4 +64,10 @@ public record WritableOptionsConfiguration<T>
     /// If null, no validation is performed. Defaults to null.
     /// </summary>
     public Func<T, ValidateOptionsResult>? Validator { get; init; }
+
+    /// <summary>
+    /// Gets the list of migration steps to apply when loading configuration from older versions.
+    /// The migrations are applied in the order they are defined (e.g., V1 -> V2 -> V3).
+    /// </summary>
+    internal List<MigrationStep> MigrationSteps { get; init; } = [];
 }

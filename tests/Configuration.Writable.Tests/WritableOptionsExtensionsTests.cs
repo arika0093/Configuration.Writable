@@ -1,8 +1,10 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Migration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
 
@@ -15,6 +17,41 @@ public class WritableOptionsExtensionsTests
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 42;
         public bool IsEnabled { get; set; } = true;
+    }
+
+    public class TestSettingsV1 : IHasVersion
+    {
+        public int Version { get; set; } = 1;
+        public string OldName { get; set; } = "old_default";
+    }
+
+    public class TestSettingsV2 : IHasVersion
+    {
+        public int Version { get; set; } = 2;
+        public string Name { get; set; } = "default";
+        public int Value { get; set; } = 42;
+    }
+
+    public class ValidatableSettings
+    {
+        public string Name { get; set; } = "default";
+        public int Count { get; set; } = 0;
+    }
+
+    public class ValidatableSettingsValidator : IValidateOptions<ValidatableSettings>
+    {
+        public ValidateOptionsResult Validate(string? name, ValidatableSettings options)
+        {
+            if (string.IsNullOrWhiteSpace(options.Name))
+            {
+                return ValidateOptionsResult.Fail("Name cannot be empty");
+            }
+            if (options.Count < 0)
+            {
+                return ValidateOptionsResult.Fail("Count must be non-negative");
+            }
+            return ValidateOptionsResult.Success;
+        }
     }
 
     [Fact]
@@ -139,5 +176,122 @@ public class WritableOptionsExtensionsTests
         var currentValue = writableOptions.CurrentValue;
         currentValue.Name.ShouldBe("action_host_test");
         currentValue.Value.ShouldBe(600);
+    }
+
+    [Fact]
+    public async Task AddWritableOptions_WithMigration_ShouldApplyMigration()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        // Create an old version file
+        var oldContent = """
+        {
+            "Version": 1,
+            "OldName": "migrated_value"
+        }
+        """;
+        await _FileProvider.SaveToFileAsync(testFileName, System.Text.Encoding.UTF8.GetBytes(oldContent));
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddWritableOptions<TestSettingsV2>(options =>
+        {
+            options.FilePath = testFileName;
+            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseMigration<TestSettingsV1, TestSettingsV2>(v1 => new TestSettingsV2
+            {
+                Name = v1.OldName,
+                Value = 100
+            });
+        });
+
+        var host = builder.Build();
+        var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettingsV2>>();
+
+        var currentValue = writableOptions.CurrentValue;
+        currentValue.Version.ShouldBe(2);
+        currentValue.Name.ShouldBe("migrated_value");
+        currentValue.Value.ShouldBe(100);
+    }
+
+    [Fact]
+    public async Task AddWritableOptions_WithValidation_ShouldValidateOnSave()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddWritableOptions<ValidatableSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.UseInMemoryFileProvider(_FileProvider);
+            options.WithValidator<ValidatableSettingsValidator>();
+        });
+
+        var host = builder.Build();
+        var writableOptions = host.Services.GetRequiredService<IWritableOptions<ValidatableSettings>>();
+
+        // Valid settings should save successfully
+        var validSettings = new ValidatableSettings
+        {
+            Name = "valid_name",
+            Count = 10
+        };
+        await writableOptions.SaveAsync(validSettings);
+        writableOptions.CurrentValue.Name.ShouldBe("valid_name");
+        writableOptions.CurrentValue.Count.ShouldBe(10);
+
+        // Invalid settings should throw exception
+        var invalidSettings = new ValidatableSettings
+        {
+            Name = "",
+            Count = -5
+        };
+        var exception = await Should.ThrowAsync<OptionsValidationException>(
+            async () => await writableOptions.SaveAsync(invalidSettings)
+        );
+        exception.Message.ShouldContain("Name cannot be empty");
+    }
+
+    [Fact]
+    public async Task AddWritableOptions_WithValidatorFunction_ShouldValidateOnSave()
+    {
+        var testFileName = Path.GetRandomFileName();
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddWritableOptions<ValidatableSettings>(options =>
+        {
+            options.FilePath = testFileName;
+            options.UseInMemoryFileProvider(_FileProvider);
+            options.WithValidatorFunction(settings =>
+            {
+                if (settings.Count > 100)
+                {
+                    return ValidateOptionsResult.Fail("Count must be less than or equal to 100");
+                }
+                return ValidateOptionsResult.Success;
+            });
+        });
+
+        var host = builder.Build();
+        var writableOptions = host.Services.GetRequiredService<IWritableOptions<ValidatableSettings>>();
+
+        // Valid settings should save successfully
+        var validSettings = new ValidatableSettings
+        {
+            Name = "test",
+            Count = 50
+        };
+        await writableOptions.SaveAsync(validSettings);
+        writableOptions.CurrentValue.Count.ShouldBe(50);
+
+        // Invalid settings should throw exception
+        var invalidSettings = new ValidatableSettings
+        {
+            Name = "test",
+            Count = 150
+        };
+        var exception = await Should.ThrowAsync<OptionsValidationException>(
+            async () => await writableOptions.SaveAsync(invalidSettings)
+        );
+        exception.Message.ShouldContain("Count must be less than or equal to 100");
     }
 }
