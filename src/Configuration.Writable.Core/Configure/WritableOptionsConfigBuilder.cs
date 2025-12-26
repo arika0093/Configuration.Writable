@@ -179,11 +179,13 @@ public record WritableOptionsConfigBuilder<T>
 
         if (newVersion <= oldVersion)
         {
-            throw new InvalidOperationException(
-                $"Migration downgrade detected: Cannot migrate from version {oldVersion} ({typeof(TOld).Name}) "
-                    + $"to version {newVersion} ({typeof(TNew).Name}). "
-                    + "Migrations must move to a higher version number. "
-                    + "If you need to revert to a previous schema, increase the version number and implement logic to convert to the older format."
+            var oldName = typeof(TOld).Name;
+            var newName = typeof(TNew).Name;
+            throw new InvalidOperationException($"""
+                Migration downgrade detected: Cannot migrate from version {oldVersion} ({oldName}) to version {newVersion} ({newName}).
+                Migrations must move to a higher version number.
+                If you need to revert to a previous schema, increase the version number and implement logic to convert to the older format.
+                """
             );
         }
 

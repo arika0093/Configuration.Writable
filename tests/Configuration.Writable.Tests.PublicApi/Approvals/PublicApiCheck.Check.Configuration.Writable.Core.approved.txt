@@ -97,22 +97,22 @@ namespace Configuration.Writable.FormatProvider
     {
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
-        public abstract T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new ();
-        public abstract T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new ();
+        public abstract object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts);
+        public T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
+            where T :  class, new () { }
+        public object LoadConfiguration<T>(System.Type type, Configuration.Writable.WritableOptionsConfiguration<T> options)
+            where T :  class, new () { }
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
         protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
-        protected static T LoadConfigurationWithMigration<T>(System.Text.Json.JsonElement jsonElement, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Func<System.Text.Json.JsonElement, System.Type, object> deserializeFunc)
-            where T :  class, new () { }
     }
     public interface IFormatProvider
     {
         string FileExtension { get; }
+        object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts);
         T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
-        T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
+        object LoadConfiguration<T>(System.Type type, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
@@ -123,12 +123,9 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        public override T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
-        public override T LoadConfiguration<T>(System.IO.Stream stream, Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
+        public override object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
@@ -196,13 +193,6 @@ namespace Configuration.Writable
         System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
     }
-    public class MigrationStep : System.IEquatable<Configuration.Writable.MigrationStep>
-    {
-        public MigrationStep() { }
-        public required System.Type FromType { get; init; }
-        public required System.Func<object, object> MigrationFunc { get; init; }
-        public required System.Type ToType { get; init; }
-    }
     public class WritableOptionsConfiguration<T> : System.IEquatable<Configuration.Writable.WritableOptionsConfiguration<T>>
         where T :  class, new ()
     {
@@ -213,7 +203,6 @@ namespace Configuration.Writable
         public required Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
-        public System.Collections.Generic.List<Configuration.Writable.MigrationStep> MigrationSteps { get; init; }
         public required int OnChangeThrottleMs { get; init; }
         public required System.Collections.Generic.List<string> SectionNameParts { get; init; }
         public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }

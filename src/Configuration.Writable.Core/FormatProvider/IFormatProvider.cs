@@ -32,7 +32,8 @@ public interface IFormatProvider
     /// <param name="type">The type of the configuration object to load.</param>
     /// <param name="options">The options that control how the configuration is loaded.</param>
     /// <returns>The deserialized configuration object.</returns>
-    object LoadConfiguration(Type type, WritableOptionsConfiguration<object> options);
+    object LoadConfiguration<T>(Type type, WritableOptionsConfiguration<T> options)
+        where T : class, new();
 
     /// <summary>
     /// Loads configuration from a stream and deserializes it to the specified type.

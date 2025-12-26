@@ -16,7 +16,7 @@ internal static class MigrationLoaderExtension
     /// This method handles version detection and migration chain application.
     /// </summary>
     /// <typeparam name="T">The target configuration type.</typeparam>
-    public static T LoadWithMigration<T>(
+    internal static T LoadWithMigration<T>(
         this FormatProvider.IFormatProvider formatProvider,
         WritableOptionsConfiguration<T> options
     )
@@ -64,7 +64,7 @@ internal static class MigrationLoaderExtension
         // Deserialize as the found type
         var current = formatProvider.LoadConfiguration(
             currentType,
-            options as WritableOptionsConfiguration<object>
+            options
         );
 
         // Apply migrations until we reach type T

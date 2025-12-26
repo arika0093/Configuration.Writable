@@ -46,7 +46,7 @@ public class YamlFormatProvider : FormatProviderBase
         System.Collections.Generic.List<string> sectionNameParts
     )
     {
-        using var reader = new StreamReader(stream, Encoding, leaveOpen: true);
+        using var reader = new StreamReader(stream, Encoding);
         var yamlContent = reader.ReadToEnd();
 
         string targetYamlContent = yamlContent;
@@ -398,43 +398,5 @@ public class YamlFormatProvider : FormatProviderBase
 
         // Convert first character to uppercase
         return char.ToUpperInvariant(value[0]) + value.Substring(1);
-    }
-
-    /// <summary>
-    /// Tries to convert an object to an integer, handling various numeric types.
-    /// </summary>
-    private static bool TryConvertToInt(object value, out int result)
-    {
-        result = 0;
-
-        if (value is int intValue)
-        {
-            result = intValue;
-            return true;
-        }
-
-        if (value is long longValue && longValue >= int.MinValue && longValue <= int.MaxValue)
-        {
-            result = (int)longValue;
-            return true;
-        }
-
-        if (value is double doubleValue && doubleValue >= int.MinValue
-            && doubleValue <= int.MaxValue
-            && Math.Abs(doubleValue % 1) < double.Epsilon)
-        {
-            result = (int)doubleValue;
-            return true;
-        }
-
-        if (value is decimal decimalValue && decimalValue >= int.MinValue
-            && decimalValue <= int.MaxValue
-            && decimalValue % 1 == 0)
-        {
-            result = (int)decimalValue;
-            return true;
-        }
-
-        return false;
     }
 }
