@@ -64,7 +64,20 @@ builder.Services.AddWritableOptions<MySettingV3>(conf => {
 ```
 
 ### Implementation Plan
-TODO
+* Create an interface `IHasVersion` with a `Version` property.
+* UseMigration<TFrom, TTo> extension method to register migration logic.
+    * マイグレーションチェーンを内部的に保持する。
+    * バージョン情報をキャッシュするための`VersionCache`クラスに情報を追加する。
+* MigrationLoaderExtensionを追加し、`LoadWithMigration<T>`メソッドを実装する。
+    * `IFormatProvider`の拡張メソッドとして実装する。
+    * まずは普通に読み込みを行い、`IHasVersion`を実装しているか確認する。
+    * 実装している場合、Versionを確認し、登録されている型と異なる場合はマイグレーションを実行する。
+        * Versionの値を見てどの型と一致するかを確認
+        * LoadConfiguration(Type, ...)を使ってその型で読み込みを行う。
+        * そこから登録されているマイグレーションチェーンをたどって最新の型に変換する。
+* FormatProvider.LoadConfiguration<T>の代わりにLoadWithMigration<T>を呼び出すようにする。
+* FormatProviderの実装で、LoadConfiguration<T>に追加でLoadConfiguration(Type, ...)を実装する。
+
 
 ### Considerations
 * Only type `V3` is registered, but the FormatProvider must be able to read data for `V1` and `V2` as well.

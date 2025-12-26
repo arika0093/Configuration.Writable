@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 
-namespace Configuration.Writable;
+namespace Configuration.Writable.Migration;
 
 /// <summary>
 /// Provides a cache for version numbers of types that implement <see cref="IHasVersion"/>.
