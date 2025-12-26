@@ -9,7 +9,7 @@ namespace Configuration.Writable.Migration;
 /// <summary>
 /// Extension methods for migration loading.
 /// </summary>
-internal static class MigrationLoaderExtension
+public static class MigrationLoaderExtension
 {
     /// <summary>
     /// Attempts to deserialize and apply migrations to reach the target type T.
@@ -26,18 +26,19 @@ internal static class MigrationLoaderExtension
         // Load configuration
         var config = formatProvider.LoadConfiguration(stream, options);
 
-        // If no migrations are registered or T doesn't implement IHasVersion, return directly
-        if (config is not IHasVersion version || options.MigrationSteps.Count == 0)
+        // If loaded config doesn't implement IHasVersion (shouldn't happen but be safe), return it
+        if (config is not IHasVersion versionedConfig)
         {
             return config;
         }
 
-        // Try to read the version property from the deserialized config
-        var fileVersion = version.Version;
-        // Find the starting type based on version
+        // Get version from loaded config
+        var fileVersion = versionedConfig.Version;
+
+        // Get target version
         var targetVersion = VersionCache.GetVersion(typeof(T))
             ?? throw new InvalidOperationException(
-                $"Target type {typeof(T).Name} does not implement IHasVersion."
+                $"Target type {typeof(T).Name} does not implement IHasVersion correctly."
             );
 
         // If file version matches target version, return directly
@@ -47,7 +48,7 @@ internal static class MigrationLoaderExtension
         }
 
         // Build complete migration chain including all types
-        HashSet<Type> allTypes = [ typeof(T) ];
+        HashSet<Type> allTypes = [typeof(T)];
         foreach (var step in options.MigrationSteps)
         {
             allTypes.Add(step.FromType);
@@ -66,19 +67,36 @@ internal static class MigrationLoaderExtension
             return config;
         }
 
+        // Reset stream position to re-read
+        if (stream.CanSeek)
+        {
+            stream.Position = 0;
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                "Stream must be seekable to support migration. The stream position cannot be reset."
+            );
+        }
+
         // Deserialize as the found type
-        var current = formatProvider.LoadConfiguration(currentType, stream, options);
+        var current = formatProvider.LoadConfiguration(
+            currentType,
+            stream,
+            options.SectionNameParts
+        );
 
         // Apply migrations until we reach type T
         while (currentType != typeof(T))
         {
-            var migration = options.MigrationSteps
-                .FirstOrDefault(m => m.FromType == currentType)
-                ?? throw new InvalidOperationException($"""
-                    No migration found from {currentType.Name} to reach {typeof(T).Name}.
-                    Ensure all migration steps are registered in the correct order.
-                    """
+            var migration = options.MigrationSteps.FirstOrDefault(m => m.FromType == currentType);
+            if (migration == null)
+            {
+                throw new InvalidOperationException(
+                    $"No migration found from {currentType.Name} to reach {typeof(T).Name}. "
+                        + "Ensure all migration steps are registered in the correct order."
                 );
+            }
 
             var fromVersion = VersionCache.GetVersion(migration.FromType) ?? 0;
             var toVersion = VersionCache.GetVersion(migration.ToType) ?? 0;

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,6 +33,16 @@ public interface IFormatProvider
     /// <returns>The deserialized configuration object.</returns>
     T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
         where T : class, new();
+
+    /// <summary>
+    /// Loads configuration from a stream and deserializes it to the specified type.
+    /// This is a non-generic version required for migration support.
+    /// </summary>
+    /// <param name="type">The type of the configuration object to load.</param>
+    /// <param name="stream">The stream containing the configuration data.</param>
+    /// <param name="sectionNameParts">The parts of the section name split by ':' and '__' for hierarchical navigation.</param>
+    /// <returns>The deserialized configuration object.</returns>
+    object LoadConfiguration(Type type, Stream stream, System.Collections.Generic.List<string> sectionNameParts);
 
     /// <summary>
     /// Asynchronously saves the specified configuration object to a file.

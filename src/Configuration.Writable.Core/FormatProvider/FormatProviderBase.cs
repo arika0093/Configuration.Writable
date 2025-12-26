@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -24,6 +21,9 @@ public abstract class FormatProviderBase : IFormatProvider
     /// <inheritdoc />
     public abstract T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
         where T : class, new();
+
+    /// <inheritdoc />
+    public abstract object LoadConfiguration(Type type, Stream stream, List<string> sectionNameParts);
 
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(

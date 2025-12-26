@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
@@ -85,7 +86,7 @@ public class EncryptFormatProvider : FormatProviderBase
 
         using (stream)
         {
-            return LoadConfiguration(stream, options);
+            return this.LoadWithMigration(stream, options);
         }
     }
 
@@ -128,6 +129,48 @@ public class EncryptFormatProvider : FormatProviderBase
                 "Failed to decrypt configuration, returning default instance."
             );
             return new T();
+        }
+    }
+
+    /// <inheritdoc />
+    public override object LoadConfiguration(
+        Type type,
+        Stream stream,
+        System.Collections.Generic.List<string> sectionNameParts
+    )
+    {
+        try
+        {
+            // Read encrypted data
+            using var br = new BinaryReader(stream, System.Text.Encoding.UTF8, leaveOpen: true);
+
+            // Read IV (first 16 bytes for AES)
+            var iv = br.ReadBytes(16);
+
+            // Read the rest as encrypted data
+            byte[] encryptedData;
+            using (var ms1 = new MemoryStream())
+            {
+                br.BaseStream.CopyTo(ms1);
+                encryptedData = ms1.ToArray();
+            }
+
+            // Decrypt
+            using var aes = Aes.Create();
+            aes.Key = Key;
+            aes.IV = iv;
+
+            using var decryptor = aes.CreateDecryptor();
+            using var ms = new MemoryStream(encryptedData);
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+
+            // Use JsonProvider to deserialize the decrypted content
+            return JsonProvider.LoadConfiguration(type, cs, sectionNameParts);
+        }
+        catch (Exception)
+        {
+            // If decryption fails, return default instance
+            return Activator.CreateInstance(type)!;
         }
     }
 

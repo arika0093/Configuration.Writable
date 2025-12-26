@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
@@ -35,7 +36,7 @@ public class XmlFormatProvider : FormatProviderBase
 
         using (stream)
         {
-            return LoadConfiguration(stream, options);
+            return this.LoadWithMigration(stream, options);
         }
     }
 
@@ -70,50 +71,60 @@ public class XmlFormatProvider : FormatProviderBase
                 }
             }
 
-            // Use migration-aware deserialization
-            return LoadConfigurationWithMigration(
-                current,
-                options,
-                element =>
-                {
-                    // Try to find Version element
-                    var versionElement = element.Element("Version");
-                    if (versionElement != null && int.TryParse(versionElement.Value, out var version))
-                    {
-                        return version;
-                    }
-                    return null;
-                },
-                (element, type) =>
-                {
-                    using var reader = element.CreateReader();
-                    var serializer = new XmlSerializer(type, new XmlRootAttribute(element.Name.LocalName));
-                    return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
-                }
-            );
+            using var currentReader = current.CreateReader();
+            var currentSerializer = new XmlSerializer(typeof(T), new XmlRootAttribute(current.Name.LocalName));
+            return (T?)(currentSerializer.Deserialize(currentReader) ?? new T());
         }
 
-        // Use migration-aware deserialization
-        return LoadConfigurationWithMigration(
-            root,
-            options,
-            element =>
+        using var rootReader = root.CreateReader();
+        var rootSerializer = new XmlSerializer(typeof(T), new XmlRootAttribute(root.Name.LocalName));
+        return (T?)(rootSerializer.Deserialize(rootReader) ?? new T());
+    }
+
+    /// <inheritdoc />
+    public override object LoadConfiguration(
+        Type type,
+        Stream stream,
+        System.Collections.Generic.List<string> sectionNameParts
+    )
+    {
+        var xmlDoc = XDocument.Load(stream);
+        var root = xmlDoc.Root;
+
+        if (root == null)
+        {
+            return Activator.CreateInstance(type)!;
+        }
+
+        // Navigate to the section if specified
+        if (sectionNameParts.Count > 0)
+        {
+            var current = root;
+
+            foreach (var section in sectionNameParts)
             {
-                // Try to find Version element
-                var versionElement = element.Element("Version");
-                if (versionElement != null && int.TryParse(versionElement.Value, out var version))
+                var element = current.Element(section);
+                if (element != null)
                 {
-                    return version;
+                    current = element;
                 }
-                return null;
-            },
-            (element, type) =>
-            {
-                using var reader = element.CreateReader();
-                var serializer = new XmlSerializer(type, new XmlRootAttribute(element.Name.LocalName));
-                return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+                else
+                {
+                    // Section not found, return default instance
+                    return Activator.CreateInstance(type)!;
+                }
             }
-        );
+
+            using var reader = current.CreateReader();
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(current.Name.LocalName));
+            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+        }
+
+        using (var reader = root.CreateReader())
+        {
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
+            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+        }
     }
 
     /// <inheritdoc />

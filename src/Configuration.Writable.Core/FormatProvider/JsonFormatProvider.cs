@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
@@ -51,7 +52,7 @@ public class JsonFormatProvider : FormatProviderBase
 
         using (stream)
         {
-            return LoadConfiguration(stream, options);
+            return this.LoadWithMigration(stream, options);
         }
     }
 
@@ -84,42 +85,51 @@ public class JsonFormatProvider : FormatProviderBase
                 }
             }
 
-            // Use migration-aware deserialization
-            return LoadConfigurationWithMigration(
-                current,
-                options,
-                jsonElement =>
-                {
-                    if (jsonElement.TryGetProperty("Version", out var versionElement)
-                        && versionElement.ValueKind == JsonValueKind.Number)
-                    {
-                        return versionElement.GetInt32();
-                    }
-                    return null;
-                },
-                (jsonElement, type) =>
-                    JsonSerializer.Deserialize(jsonElement.GetRawText(), type, JsonSerializerOptions)
-                        ?? Activator.CreateInstance(type)!
-            );
+            return JsonSerializer.Deserialize<T>(current.GetRawText(), JsonSerializerOptions)
+                ?? new T();
         }
 
-        // Use migration-aware deserialization
-        return LoadConfigurationWithMigration(
-            root,
-            options,
-            jsonElement =>
+        return JsonSerializer.Deserialize<T>(root.GetRawText(), JsonSerializerOptions) ?? new T();
+    }
+
+    /// <inheritdoc />
+#if NET
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
+#endif
+    public override object LoadConfiguration(
+        Type type,
+        Stream stream,
+        List<string> sectionNameParts
+    )
+    {
+        var jsonDocument = JsonDocument.Parse(stream);
+        var root = jsonDocument.RootElement;
+
+        // Navigate to the section if specified
+        if (sectionNameParts.Count > 0)
+        {
+            var current = root;
+
+            foreach (var section in sectionNameParts)
             {
-                if (jsonElement.TryGetProperty("Version", out var versionElement)
-                    && versionElement.ValueKind == JsonValueKind.Number)
+                if (current.TryGetProperty(section, out var element))
                 {
-                    return versionElement.GetInt32();
+                    current = element;
                 }
-                return null;
-            },
-            (jsonElement, type) =>
-                JsonSerializer.Deserialize(jsonElement.GetRawText(), type, JsonSerializerOptions)
-                    ?? Activator.CreateInstance(type)!
-        );
+                else
+                {
+                    // Section not found, return default instance
+                    return Activator.CreateInstance(type)!;
+                }
+            }
+
+            return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
+                ?? Activator.CreateInstance(type)!;
+        }
+
+        return JsonSerializer.Deserialize(root.GetRawText(), type, JsonSerializerOptions)
+            ?? Activator.CreateInstance(type)!;
     }
 
     /// <inheritdoc />
