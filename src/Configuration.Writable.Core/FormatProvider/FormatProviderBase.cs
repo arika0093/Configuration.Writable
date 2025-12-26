@@ -29,7 +29,8 @@ public abstract class FormatProviderBase : IFormatProvider
     public T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
         where T : class, new()
     {
-        return LoadConfiguration(typeof(T), options)! as T;
+        var rst = LoadConfiguration(typeof(T), options)!;
+        return rst as T;
     }
 
     /// <inheritdoc />

@@ -73,9 +73,10 @@ internal static class MigrationLoaderExtension
             var migration = options.MigrationSteps.FirstOrDefault(m => m.FromType == currentType);
             if (migration == null)
             {
-                throw new InvalidOperationException(
-                    $"No migration found from {currentType.Name} to reach {typeof(T).Name}. "
-                        + "Ensure all migration steps are registered in the correct order."
+                throw new InvalidOperationException($"""
+                    No migration found from {currentType.Name} to reach {typeof(T).Name}.
+                    Ensure all migration steps are registered in the correct order.
+                    """
                 );
             }
 

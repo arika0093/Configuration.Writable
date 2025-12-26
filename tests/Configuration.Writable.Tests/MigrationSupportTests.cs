@@ -5,6 +5,7 @@ using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
+using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 
@@ -87,6 +88,7 @@ public class MigrationSupportTests : IDisposable
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>();
 
         // Act
+        builder.Logger = ConsoleLoggerFactory.Create();
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
             Names = [v1.Name]
