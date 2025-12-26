@@ -134,7 +134,7 @@ namespace Configuration.Writable
 {
     public interface IHasVersion
     {
-        int Version { get; }
+        int Version { get; set; }
     }
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()

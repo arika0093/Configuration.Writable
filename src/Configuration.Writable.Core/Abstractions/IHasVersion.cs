@@ -12,5 +12,5 @@ public interface IHasVersion
     /// This value is used to determine which migrations need to be applied
     /// when loading configuration data from a file.
     /// </summary>
-    int Version { get; }
+    int Version { get; set; }
 }

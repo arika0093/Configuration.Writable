@@ -30,7 +30,7 @@ public abstract class FormatProviderBase : IFormatProvider
         where T : class, new()
     {
         var rst = LoadConfiguration(typeof(T), options)!;
-        return rst as T;
+        return (T)rst;
     }
 
     /// <inheritdoc />
