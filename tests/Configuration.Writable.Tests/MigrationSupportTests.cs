@@ -4,6 +4,7 @@ using System.Linq;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
+using Configuration.Writable.Migration;
 using Shouldly;
 using Xunit;
 
@@ -106,10 +107,10 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadConfiguration_ShouldDeserializeDirectly_WhenVersionMatches()
+    public void LoadWithMigration_ShouldDeserializeDirectly_WhenVersionMatches()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings.json");
+        var filePath = Path.Combine(_tempDirectory, "settings1.json");
         File.WriteAllText(
             filePath,
             """
@@ -132,7 +133,7 @@ public class MigrationSupportTests : IDisposable
         var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadConfiguration(options);
+        var result = provider.LoadWithMigration(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -142,10 +143,10 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadConfiguration_ShouldApplySingleMigration_WhenVersionIsOlder()
+    public void LoadWithMigration_ShouldApplySingleMigration_WhenVersionIsOlder()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings.json");
+        var filePath = Path.Combine(_tempDirectory, "settings2.json");
         File.WriteAllText(
             filePath,
             """
@@ -171,7 +172,7 @@ public class MigrationSupportTests : IDisposable
         var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadConfiguration(options);
+        var result = provider.LoadWithMigration(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -181,10 +182,10 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadConfiguration_ShouldApplyMultipleMigrations_WhenVersionIsOlder()
+    public void LoadWithMigration_ShouldApplyMultipleMigrations_WhenVersionIsOlder()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings.json");
+        var filePath = Path.Combine(_tempDirectory, "settings3.json");
         File.WriteAllText(
             filePath,
             """
@@ -214,7 +215,7 @@ public class MigrationSupportTests : IDisposable
         var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadConfiguration(options);
+        var result = provider.LoadWithMigration(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -224,10 +225,10 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadConfiguration_ShouldDeserializeDirectly_WhenNoMigrationsRegistered()
+    public void LoadWithMigration_ShouldDeserializeDirectly_WhenNoMigrationsRegistered()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings.json");
+        var filePath = Path.Combine(_tempDirectory, "settings4.json");
         File.WriteAllText(
             filePath,
             """
@@ -247,7 +248,7 @@ public class MigrationSupportTests : IDisposable
         var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadConfiguration(options);
+        var result = provider.LoadWithMigration(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -255,10 +256,10 @@ public class MigrationSupportTests : IDisposable
     }
 
     [Fact]
-    public void LoadConfiguration_ShouldDeserializeDirectly_WhenTypeDoesNotImplementIHasVersion()
+    public void LoadWithMigration_ShouldDeserializeDirectly_WhenTypeDoesNotImplementIHasVersion()
     {
         // Arrange
-        var filePath = Path.Combine(_tempDirectory, "settings.json");
+        var filePath = Path.Combine(_tempDirectory, "settings5.json");
         File.WriteAllText(
             filePath,
             """
@@ -279,7 +280,7 @@ public class MigrationSupportTests : IDisposable
         var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadConfiguration(options);
+        var result = provider.LoadWithMigration(options);
 
         // Assert
         result.ShouldNotBeNull();
