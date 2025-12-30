@@ -7,10 +7,10 @@ public static class ConsoleLoggerFactory
 {
     public static ILogger Create(
         string name = "Configuration.Writable",
-        LogLevel minLogLevel = LogLevel.Trace
+        LogLevel minLogLevel = LogLevel.Trace    
     )
     {
-        using var loggerFactory = LoggerFactory.Create(builder =>
+        var loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.AddConsole().SetMinimumLevel(minLogLevel);
         });
