@@ -26,7 +26,10 @@ public class YamlFormatProvider : FormatProviderBase
     /// Gets or sets the deserializer used to convert YAML to objects.
     /// </summary>
     public IDeserializer Deserializer { get; init; } =
-        new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
+        new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
+            .Build();
 
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
@@ -37,106 +40,75 @@ public class YamlFormatProvider : FormatProviderBase
     public override string FileExtension => "yaml";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-    {
-        var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return new T();
-        }
-
-        var stream = options.FileProvider.GetFileStream(filePath);
-        if (stream == null)
-        {
-            return new T();
-        }
-
-        using (stream)
-        {
-            return LoadConfiguration(stream, options);
-        }
-    }
-
-    /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
+    public override object LoadConfiguration(
+        Type type,
+        Stream stream,
+        List<string> sectionNameParts
+    )
     {
         using var reader = new StreamReader(stream, Encoding);
         var yamlContent = reader.ReadToEnd();
 
-        if (string.IsNullOrWhiteSpace(yamlContent))
-        {
-            return new T();
-        }
-
-        // Deserialize the YAML to a dictionary first
-        var deserializer = Deserializer;
-        var yamlObject = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
-
-        if (yamlObject == null)
-        {
-            return new T();
-        }
+        string targetYamlContent = yamlContent;
 
         // Navigate to the section if specified
-        var sections = options.SectionNameParts;
-        if (sections.Count > 0)
+        if (sectionNameParts.Count > 0)
         {
-            object current = yamlObject;
-
-            foreach (var section in sections)
+            var data = Deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
+            if (data == null)
             {
-                // YamlDotNet can deserialize as Dictionary<string, object> at the root level
-                // but nested dictionaries might be Dictionary<object, object>
-                if (current is Dictionary<string, object> stringKeyDict)
+                return Activator.CreateInstance(type)!;
+            }
+
+            object? current = data;
+            foreach (var section in sectionNameParts)
+            {
+                if (current is Dictionary<string, object> dict)
                 {
-                    // Try case-insensitive lookup to handle naming convention differences
-                    var key = stringKeyDict.Keys.FirstOrDefault(k =>
-                        string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
-                    );
-                    if (key != null && stringKeyDict.TryGetValue(key, out var value))
+                    if (dict.TryGetValue(section, out var value))
                     {
                         current = value;
                     }
                     else
                     {
-                        // Section not found, return default instance
-                        return new T();
-                    }
-                }
-                else if (current is Dictionary<object, object> objectKeyDict)
-                {
-                    // Handle Dictionary<object, object> for nested sections
-                    var key = objectKeyDict
-                        .Keys.OfType<string>()
-                        .FirstOrDefault(k =>
-                            string.Equals(k, section, StringComparison.OrdinalIgnoreCase)
-                        );
-                    if (key != null && objectKeyDict.TryGetValue(key, out var value))
-                    {
-                        current = value;
-                    }
-                    else
-                    {
-                        // Section not found, return default instance
-                        return new T();
+                        return Activator.CreateInstance(type)!;
                     }
                 }
                 else
                 {
-                    // Current is not a dictionary, return default instance
-                    return new T();
+                    return Activator.CreateInstance(type)!;
                 }
             }
 
-            // Serialize and deserialize to convert to T
-            var serializer = Serializer;
-            var serialized = serializer.Serialize(current);
-            return deserializer.Deserialize<T>(serialized) ?? new T();
+            // Serialize the section back to YAML
+            targetYamlContent = Serializer.Serialize(current);
         }
 
-        // Deserialize from root
-        var rootSerialized = Serializer.Serialize(yamlObject);
-        return deserializer.Deserialize<T>(rootSerialized) ?? new T();
+        // Deserialize YAML directly to the target type
+        // Use CamelCaseNamingConvention to match serialization
+        var plainDeserializer = new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
+            .Build();
+
+        try
+        {
+            var result = plainDeserializer.Deserialize(targetYamlContent, type);
+            return result ?? Activator.CreateInstance(type)!;
+        }
+        catch (Exception)
+        {
+            // If plain deserialization fails, try with the configured deserializer
+            try
+            {
+                var result = Deserializer.Deserialize(targetYamlContent, type);
+                return result ?? Activator.CreateInstance(type)!;
+            }
+            catch
+            {
+                return Activator.CreateInstance(type)!;
+            }
+        }
     }
 
     /// <inheritdoc />

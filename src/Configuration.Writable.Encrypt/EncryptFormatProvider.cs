@@ -69,33 +69,16 @@ public class EncryptFormatProvider : FormatProviderBase
     public override string FileExtension => "";
 
     /// <inheritdoc />
-    public override T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-    {
-        var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return new T();
-        }
-
-        var stream = options.FileProvider.GetFileStream(filePath);
-        if (stream == null)
-        {
-            return new T();
-        }
-
-        using (stream)
-        {
-            return LoadConfiguration(stream, options);
-        }
-    }
-
-    /// <inheritdoc />
-    public override T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
+    public override object LoadConfiguration(
+        Type type,
+        Stream stream,
+        System.Collections.Generic.List<string> sectionNameParts
+    )
     {
         try
         {
             // Read encrypted data
-            using var br = new BinaryReader(stream);
+            using var br = new BinaryReader(stream, System.Text.Encoding.UTF8, leaveOpen: true);
 
             // Read IV (first 16 bytes for AES)
             var iv = br.ReadBytes(16);
@@ -118,16 +101,12 @@ public class EncryptFormatProvider : FormatProviderBase
             using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
 
             // Use JsonProvider to deserialize the decrypted content
-            return JsonProvider.LoadConfiguration<T>(cs, options);
+            return JsonProvider.LoadConfiguration(type, cs, sectionNameParts);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // If decryption fails, return default instance
-            options.Logger?.LogWarning(
-                ex,
-                "Failed to decrypt configuration, returning default instance."
-            );
-            return new T();
+            return Activator.CreateInstance(type)!;
         }
     }
 

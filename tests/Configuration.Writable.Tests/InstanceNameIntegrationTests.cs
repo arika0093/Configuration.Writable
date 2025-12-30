@@ -227,7 +227,7 @@ public class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public async Task GetSpecifiedInstance_ShouldReturnBoundInstance()
+    public void GetSpecifiedInstance_ShouldReturnBoundInstance()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();
@@ -376,7 +376,7 @@ public class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public async Task GetSpecifiedInstance_GetOptionsConfiguration_ShouldReturnCorrectConfiguration()
+    public void GetSpecifiedInstance_GetOptionsConfiguration_ShouldReturnCorrectConfiguration()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();

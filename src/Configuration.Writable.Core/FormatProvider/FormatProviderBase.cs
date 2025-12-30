@@ -15,12 +15,7 @@ public abstract class FormatProviderBase : IFormatProvider
     public abstract string FileExtension { get; }
 
     /// <inheritdoc />
-    public abstract T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-        where T : class, new();
-
-    /// <inheritdoc />
-    public abstract T LoadConfiguration<T>(Stream stream, WritableOptionsConfiguration<T> options)
-        where T : class, new();
+    public abstract object LoadConfiguration(Type type, Stream stream, List<string> sectionNameParts);
 
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(
@@ -29,6 +24,37 @@ public abstract class FormatProviderBase : IFormatProvider
         CancellationToken cancellationToken = default
     )
         where T : class, new();
+
+    /// <inheritdoc />
+    public T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
+        where T : class, new()
+    {
+        var rst = LoadConfiguration(typeof(T), options)!;
+        return (T)rst;
+    }
+
+    /// <inheritdoc />
+    public object LoadConfiguration<T>(Type type, WritableOptionsConfiguration<T> options)
+        where T : class, new()
+    {
+        // Check if file exists
+        var filePath = options.ConfigFilePath;
+        if (!options.FileProvider.FileExists(filePath))
+        {
+            return Activator.CreateInstance(type)!;
+        }
+
+        var stream = options.FileProvider.GetFileStream(filePath);
+        if (stream == null)
+        {
+            return Activator.CreateInstance(type)!;
+        }
+
+        using (stream)
+        {
+            return LoadConfiguration(type, stream, options.SectionNameParts);
+        }
+    }
 
     /// <summary>
     /// Creates a nested dictionary structure from a section name that supports ':' and '__' as separators.

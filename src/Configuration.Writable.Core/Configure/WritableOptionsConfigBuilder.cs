@@ -3,12 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
+using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -33,6 +33,7 @@ public record WritableOptionsConfigBuilder<T>
     private Func<T, T>? _cloneMethod = null;
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly SaveLocationManager _saveLocationManager = new();
+    private readonly List<MigrationStep> _migrationSteps = [];
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
@@ -161,6 +162,37 @@ public record WritableOptionsConfigBuilder<T>
     }
 
     /// <summary>
+    /// Registers a migration step from an old configuration version to a new version.
+    /// Migrations should be registered in sequential order (e.g., V1 -> V2, then V2 -> V3).
+    /// </summary>
+    /// <typeparam name="TOld">The old configuration type. Must implement <see cref="IHasVersion"/>.</typeparam>
+    /// <typeparam name="TNew">The new configuration type. Must implement <see cref="IHasVersion"/>.</typeparam>
+    /// <param name="migrator">A function that converts an instance of <typeparamref name="TOld"/> to <typeparamref name="TNew"/>.</param>
+    /// <exception cref="InvalidOperationException">Thrown when attempting to register a downgrade migration (where the new version is less than the old version).</exception>
+    public void UseMigration<TOld, TNew>(Func<TOld, TNew> migrator)
+        where TOld : class, IHasVersion, new()
+        where TNew : class, IHasVersion, new()
+    {
+        // Validate that this is not a downgrade
+        var oldVersion = VersionCache.GetVersion<TOld>();
+        var newVersion = VersionCache.GetVersion<TNew>();
+
+        if (newVersion <= oldVersion)
+        {
+            var oldName = typeof(TOld).Name;
+            var newName = typeof(TNew).Name;
+            throw new InvalidOperationException($"""
+                Migration downgrade detected: Cannot migrate from version {oldVersion} ({oldName}) to version {newVersion} ({newName}).
+                Migrations must move to a higher version number.
+                If you need to revert to a previous schema, increase the version number and implement logic to convert to the older format.
+                """
+            );
+        }
+
+        _migrationSteps.Add(new MigrationStep<TOld, TNew>(migrator));
+    }
+
+    /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
 #if NET
@@ -191,6 +223,7 @@ public record WritableOptionsConfigBuilder<T>
             CloneMethod = _cloneMethod!,
             Logger = Logger,
             Validator = validator,
+            MigrationSteps = [.. _migrationSteps],
         };
     }
 
@@ -245,7 +278,7 @@ public record WritableOptionsConfigBuilder<T>
     /// Sets the configuration folder to the current working directory.
     /// </summary>
     /// <remarks>
-    /// This uses <see cref="Directory.GetCurrentDirectory()"/> to determine the current directory.
+    /// This uses <see cref="System.IO.Directory.GetCurrentDirectory()"/> to determine the current directory.
     /// </remarks>
     public ILocationBuilder UseCurrentDirectory() =>
         _saveLocationManager.MakeLocationBuilder().UseCurrentDirectory();
