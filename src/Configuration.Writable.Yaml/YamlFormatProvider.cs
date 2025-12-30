@@ -43,7 +43,7 @@ public class YamlFormatProvider : FormatProviderBase
     public override object LoadConfiguration(
         Type type,
         Stream stream,
-        System.Collections.Generic.List<string> sectionNameParts
+        List<string> sectionNameParts
     )
     {
         using var reader = new StreamReader(stream, Encoding);
