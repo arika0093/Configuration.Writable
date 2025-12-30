@@ -22,7 +22,7 @@ internal static class MigrationLoaderExtension
     )
         where T : class, new()
     {
-        var config = formatProvider.LoadConfiguration<T>(options); 
+        var config = formatProvider.LoadConfiguration<T>(options);
         // If loaded config doesn't implement IHasVersion (shouldn't happen but be safe), return it
         if (config is not IHasVersion versionedConfig)
         {
@@ -33,7 +33,8 @@ internal static class MigrationLoaderExtension
         var fileVersion = versionedConfig.Version;
 
         // Get target version
-        var targetVersion = VersionCache.GetVersion(typeof(T))
+        var targetVersion =
+            VersionCache.GetVersion(typeof(T))
             ?? throw new InvalidOperationException(
                 $"Target type {typeof(T).Name} does not implement IHasVersion correctly."
             );
@@ -62,10 +63,7 @@ internal static class MigrationLoaderExtension
         }
 
         // Deserialize as the found type
-        var current = formatProvider.LoadConfiguration(
-            currentType,
-            options
-        );
+        var current = formatProvider.LoadConfiguration(currentType, options);
 
         // Apply migrations until we reach type T
         while (currentType != typeof(T))
@@ -73,7 +71,8 @@ internal static class MigrationLoaderExtension
             var migration = options.MigrationSteps.FirstOrDefault(m => m.FromType == currentType);
             if (migration == null)
             {
-                throw new InvalidOperationException($"""
+                throw new InvalidOperationException(
+                    $"""
                     No migration found from {currentType.Name} to reach {typeof(T).Name}.
                     Ensure all migration steps are registered in the correct order.
                     """

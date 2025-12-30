@@ -181,7 +181,8 @@ public record WritableOptionsConfigBuilder<T>
         {
             var oldName = typeof(TOld).Name;
             var newName = typeof(TNew).Name;
-            throw new InvalidOperationException($"""
+            throw new InvalidOperationException(
+                $"""
                 Migration downgrade detected: Cannot migrate from version {oldVersion} ({oldName}) to version {newVersion} ({newName}).
                 Migrations must move to a higher version number.
                 If you need to revert to a previous schema, increase the version number and implement logic to convert to the older format.

@@ -43,7 +43,11 @@ public interface IFormatProvider
     /// <param name="stream">The stream containing the configuration data.</param>
     /// <param name="sectionNameParts">The parts of the section name split by ':' and '__' for hierarchical navigation.</param>
     /// <returns>The deserialized configuration object.</returns>
-    object LoadConfiguration(Type type, Stream stream, System.Collections.Generic.List<string> sectionNameParts);
+    object LoadConfiguration(
+        Type type,
+        Stream stream,
+        System.Collections.Generic.List<string> sectionNameParts
+    );
 
     /// <summary>
     /// Asynchronously saves the specified configuration object to a file.

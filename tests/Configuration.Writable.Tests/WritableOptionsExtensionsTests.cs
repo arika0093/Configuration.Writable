@@ -185,12 +185,15 @@ public class WritableOptionsExtensionsTests
 
         // Create an old version file
         var oldContent = """
-        {
-            "Version": 1,
-            "OldName": "migrated_value"
-        }
-        """;
-        await _FileProvider.SaveToFileAsync(testFileName, System.Text.Encoding.UTF8.GetBytes(oldContent));
+            {
+                "Version": 1,
+                "OldName": "migrated_value"
+            }
+            """;
+        await _FileProvider.SaveToFileAsync(
+            testFileName,
+            System.Text.Encoding.UTF8.GetBytes(oldContent)
+        );
 
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddWritableOptions<TestSettingsV2>(options =>
@@ -200,7 +203,7 @@ public class WritableOptionsExtensionsTests
             options.UseMigration<TestSettingsV1, TestSettingsV2>(v1 => new TestSettingsV2
             {
                 Name = v1.OldName,
-                Value = 100
+                Value = 100,
             });
         });
 
@@ -227,26 +230,20 @@ public class WritableOptionsExtensionsTests
         });
 
         var host = builder.Build();
-        var writableOptions = host.Services.GetRequiredService<IWritableOptions<ValidatableSettings>>();
+        var writableOptions = host.Services.GetRequiredService<
+            IWritableOptions<ValidatableSettings>
+        >();
 
         // Valid settings should save successfully
-        var validSettings = new ValidatableSettings
-        {
-            Name = "valid_name",
-            Count = 10
-        };
+        var validSettings = new ValidatableSettings { Name = "valid_name", Count = 10 };
         await writableOptions.SaveAsync(validSettings);
         writableOptions.CurrentValue.Name.ShouldBe("valid_name");
         writableOptions.CurrentValue.Count.ShouldBe(10);
 
         // Invalid settings should throw exception
-        var invalidSettings = new ValidatableSettings
-        {
-            Name = "",
-            Count = -5
-        };
-        var exception = await Should.ThrowAsync<OptionsValidationException>(
-            async () => await writableOptions.SaveAsync(invalidSettings)
+        var invalidSettings = new ValidatableSettings { Name = "", Count = -5 };
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
+            await writableOptions.SaveAsync(invalidSettings)
         );
         exception.Message.ShouldContain("Name cannot be empty");
     }
@@ -272,25 +269,19 @@ public class WritableOptionsExtensionsTests
         });
 
         var host = builder.Build();
-        var writableOptions = host.Services.GetRequiredService<IWritableOptions<ValidatableSettings>>();
+        var writableOptions = host.Services.GetRequiredService<
+            IWritableOptions<ValidatableSettings>
+        >();
 
         // Valid settings should save successfully
-        var validSettings = new ValidatableSettings
-        {
-            Name = "test",
-            Count = 50
-        };
+        var validSettings = new ValidatableSettings { Name = "test", Count = 50 };
         await writableOptions.SaveAsync(validSettings);
         writableOptions.CurrentValue.Count.ShouldBe(50);
 
         // Invalid settings should throw exception
-        var invalidSettings = new ValidatableSettings
-        {
-            Name = "test",
-            Count = 150
-        };
-        var exception = await Should.ThrowAsync<OptionsValidationException>(
-            async () => await writableOptions.SaveAsync(invalidSettings)
+        var invalidSettings = new ValidatableSettings { Name = "test", Count = 150 };
+        var exception = await Should.ThrowAsync<OptionsValidationException>(async () =>
+            await writableOptions.SaveAsync(invalidSettings)
         );
         exception.Message.ShouldContain("Count must be less than or equal to 100");
     }

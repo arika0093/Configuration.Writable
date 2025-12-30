@@ -56,7 +56,7 @@ public class MigrationSupportTests
         // Act
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
-            Names = [v1.Name]
+            Names = [v1.Name],
         });
 
         var options = builder.BuildOptions("");
@@ -77,11 +77,11 @@ public class MigrationSupportTests
         builder.Logger = ConsoleLoggerFactory.Create();
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
-            Names = [v1.Name]
+            Names = [v1.Name],
         });
         builder.UseMigration<MySettingsV2, MySettingsV3>(v2 => new MySettingsV3
         {
-            Configs = v2.Names.Select(name => new FooConfig { Name = name }).ToArray()
+            Configs = v2.Names.Select(name => new FooConfig { Name = name }).ToArray(),
         });
 
         var options = builder.BuildOptions("");
@@ -112,7 +112,7 @@ public class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider()
+            FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
 
@@ -145,13 +145,13 @@ public class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<MySettingsV2>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider()
+            FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
 
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
-            Names = [v1.Name]
+            Names = [v1.Name],
         });
 
         var options = builder.BuildOptions("");
@@ -183,16 +183,16 @@ public class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider()
+            FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
-            Names = [v1.Name]
+            Names = [v1.Name],
         });
         builder.UseMigration<MySettingsV2, MySettingsV3>(v2 => new MySettingsV3
         {
-            Configs = v2.Names.Select(name => new FooConfig { Name = name }).ToArray()
+            Configs = v2.Names.Select(name => new FooConfig { Name = name }).ToArray(),
         });
 
         var options = builder.BuildOptions("");
@@ -223,7 +223,7 @@ public class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<SettingsWithoutVersion>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider()
+            FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
         var options = builder.BuildOptions("");
@@ -253,7 +253,7 @@ public class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<SettingsWithoutVersion>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider()
+            FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
         var options = builder.BuildOptions("");
@@ -270,19 +270,19 @@ public class MigrationSupportTests
     // Test model classes
     public class MySettingsV1 : IHasVersion
     {
-        public int Version { get; set; } =1;
+        public int Version { get; set; } = 1;
         public string Name { get; set; } = "";
     }
 
     public class MySettingsV2 : IHasVersion
     {
-        public int Version { get; set; } =2;
+        public int Version { get; set; } = 2;
         public string[] Names { get; set; } = [];
     }
 
     public class MySettingsV3 : IHasVersion
     {
-        public int Version { get; set; } =3;
+        public int Version { get; set; } = 3;
         public FooConfig[] Configs { get; set; } = [];
     }
 

@@ -15,7 +15,11 @@ public abstract class FormatProviderBase : IFormatProvider
     public abstract string FileExtension { get; }
 
     /// <inheritdoc />
-    public abstract object LoadConfiguration(Type type, Stream stream, List<string> sectionNameParts);
+    public abstract object LoadConfiguration(
+        Type type,
+        Stream stream,
+        List<string> sectionNameParts
+    );
 
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(
