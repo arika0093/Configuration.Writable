@@ -53,11 +53,8 @@ public class JsonFormatProvider : FormatProviderBase
         {
             if (JsonWriterHelper.TryNavigateToSection(root, sectionNameParts, out var current))
             {
-                return JsonSerializer.Deserialize(
-                        current.GetRawText(),
-                        type,
-                        JsonSerializerOptions
-                    ) ?? Activator.CreateInstance(type)!;
+                return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
+                    ?? Activator.CreateInstance(type)!;
             }
             else
             {

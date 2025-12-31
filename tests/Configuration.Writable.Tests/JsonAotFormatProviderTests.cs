@@ -486,7 +486,8 @@ public class JsonAotFormatProviderTests
         const string testFileName = "aot_partial_preserve.json";
 
         // Pre-populate with multiple sections
-        var preContent = @"{""OtherSection"":{""Data"":""preserved""},""AppSettings"":{""Name"":""Old""}}";
+        var preContent =
+            @"{""OtherSection"":{""Data"":""preserved""},""AppSettings"":{""Name"":""Old""}}";
         var bytes = System.Text.Encoding.UTF8.GetBytes(preContent);
         await _fileProvider.SaveToFileAsync(testFileName, bytes);
 

@@ -67,10 +67,7 @@ internal static class JsonWriterHelper
     )
         where T : class, new()
     {
-        logger?.Log(
-            LogLevel.Trace,
-            "Serializing configuration directly without section nesting"
-        );
+        logger?.Log(LogLevel.Trace, "Serializing configuration directly without section nesting");
 
         using var stream = new MemoryStream();
         using var writer = new Utf8JsonWriter(stream, writerOptions);
@@ -122,10 +119,7 @@ internal static class JsonWriterHelper
                 if (fileStream != null && fileStream.Length > 0)
                 {
                     existingDocument = JsonDocument.Parse(fileStream);
-                    logger?.Log(
-                        LogLevel.Trace,
-                        "Loaded existing JSON file for partial update"
-                    );
+                    logger?.Log(LogLevel.Trace, "Loaded existing JSON file for partial update");
                 }
             }
             catch (JsonException ex)
