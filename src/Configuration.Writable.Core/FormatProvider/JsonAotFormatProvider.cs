@@ -136,144 +136,41 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
 
         var sections = options.SectionNameParts;
         var serializerOptions = GetEffectiveOptions();
+        var typeInfo = serializerOptions.GetTypeInfo(typeof(T));
+        var serializeAction = CreateSerializeAction<T>(typeInfo);
+        var writerOptions = new JsonWriterOptions
+        {
+            Indented = serializerOptions.WriteIndented,
+            Encoder = serializerOptions.Encoder,
+        };
 
         if (sections.Count == 0)
         {
-            // No section name, serialize directly (full file overwrite)
-            options.Logger?.Log(
-                LogLevel.Trace,
-                "Serializing configuration directly without section nesting"
+            return JsonWriterHelper.GetFullSaveContents(
+                config,
+                writerOptions,
+                serializeAction,
+                options.Logger
             );
-
-            using var stream = new MemoryStream();
-            using var writer = new Utf8JsonWriter(
-                stream,
-                new JsonWriterOptions
-                {
-                    Indented = serializerOptions.WriteIndented,
-                    Encoder = serializerOptions.Encoder,
-                }
-            );
-
-            var typeInfo = serializerOptions.GetTypeInfo(typeof(T));
-            JsonSerializer.Serialize(writer, config, typeInfo);
-            writer.Flush();
-            var bytes = stream.ToArray();
-
-            options.Logger?.Log(
-                LogLevel.Trace,
-                "JSON serialization completed successfully, size: {Size} bytes",
-                bytes.Length
-            );
-
-            return bytes;
         }
         else
         {
-            // Section specified - use partial write (merge with existing file)
             options.Logger?.Log(
                 LogLevel.Trace,
                 "Using partial write for section: {SectionName}",
                 string.Join(":", sections)
             );
 
-            return GetPartialSaveContents(config, options);
-        }
-    }
-
-    /// <summary>
-    /// Gets the save contents for partial write (when SectionName is specified).
-    /// Reads existing file and merges the new configuration into the specified section.
-    /// </summary>
-    private ReadOnlyMemory<byte> GetPartialSaveContents<T>(
-        T config,
-        WritableOptionsConfiguration<T> options
-    )
-        where T : class, new()
-    {
-        var sections = options.SectionNameParts;
-        var serializerOptions = GetEffectiveOptions();
-        JsonDocument? existingDocument = null;
-
-        // Try to read existing file
-        if (options.FileProvider.FileExists(options.ConfigFilePath))
-        {
-            try
-            {
-                using var fileStream = options.FileProvider.GetFileStream(options.ConfigFilePath);
-                if (fileStream != null && fileStream.Length > 0)
-                {
-                    existingDocument = JsonDocument.Parse(fileStream);
-                    options.Logger?.Log(
-                        LogLevel.Trace,
-                        "Loaded existing JSON file for partial update"
-                    );
-                }
-            }
-            catch (JsonException ex)
-            {
-                options.Logger?.Log(
-                    LogLevel.Warning,
-                    ex,
-                    "Failed to parse existing JSON file, will create new file structure"
-                );
-            }
-        }
-
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(
-            stream,
-            new JsonWriterOptions
-            {
-                Indented = serializerOptions.WriteIndented,
-                Encoder = serializerOptions.Encoder,
-            }
-        );
-
-        var typeInfo = serializerOptions.GetTypeInfo(typeof(T));
-
-        // Create serialize action using JsonTypeInfo
-        var serializeAction = CreateSerializeAction<T>(typeInfo);
-
-        if (existingDocument != null)
-        {
-            using (existingDocument)
-            {
-                // Merge with existing document
-                JsonWriterHelper.WritePartialUpdate(
-                    writer,
-                    existingDocument.RootElement,
-                    sections,
-                    0,
-                    config,
-                    serializeAction
-                );
-            }
-        }
-        else
-        {
-            // No existing file, create new nested structure
-            options.Logger?.Log(
-                LogLevel.Trace,
-                "Creating new nested section structure for section: {SectionName}",
-                string.Join(":", sections)
+            return JsonWriterHelper.GetPartialSaveContents(
+                config,
+                sections,
+                writerOptions,
+                serializeAction,
+                options.FileProvider,
+                options.ConfigFilePath,
+                options.Logger
             );
-
-            writer.WriteStartObject();
-            JsonWriterHelper.WriteNestedSections(writer, sections, 0, config, serializeAction);
-            writer.WriteEndObject();
         }
-
-        writer.Flush();
-        var bytes = stream.ToArray();
-
-        options.Logger?.Log(
-            LogLevel.Trace,
-            "Partial JSON serialization completed successfully, size: {Size} bytes",
-            bytes.Length
-        );
-
-        return bytes;
     }
 
     /// <summary>

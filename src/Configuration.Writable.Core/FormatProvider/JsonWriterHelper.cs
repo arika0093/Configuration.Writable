@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
+using Configuration.Writable.FileProvider;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -45,6 +48,138 @@ internal static class JsonWriterHelper
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Gets save contents for full file write (no section name).
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration.</typeparam>
+    /// <param name="config">The configuration object to serialize.</param>
+    /// <param name="writerOptions">The JSON writer options.</param>
+    /// <param name="serializeAction">The action to serialize the config object.</param>
+    /// <param name="logger">Optional logger for trace output.</param>
+    /// <returns>The serialized bytes.</returns>
+    public static ReadOnlyMemory<byte> GetFullSaveContents<T>(
+        T config,
+        JsonWriterOptions writerOptions,
+        JsonSerializeAction<T> serializeAction,
+        ILogger? logger
+    )
+        where T : class, new()
+    {
+        logger?.Log(
+            LogLevel.Trace,
+            "Serializing configuration directly without section nesting"
+        );
+
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream, writerOptions);
+
+        serializeAction(writer, config);
+        writer.Flush();
+        var bytes = stream.ToArray();
+
+        logger?.Log(
+            LogLevel.Trace,
+            "JSON serialization completed successfully, size: {Size} bytes",
+            bytes.Length
+        );
+
+        return bytes;
+    }
+
+    /// <summary>
+    /// Gets save contents for partial write (with section name).
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration.</typeparam>
+    /// <param name="config">The configuration object to serialize.</param>
+    /// <param name="sections">The section path parts.</param>
+    /// <param name="writerOptions">The JSON writer options.</param>
+    /// <param name="serializeAction">The action to serialize the config object.</param>
+    /// <param name="fileProvider">The file provider to read existing file.</param>
+    /// <param name="configFilePath">The configuration file path.</param>
+    /// <param name="logger">Optional logger for trace output.</param>
+    /// <returns>The serialized bytes.</returns>
+    public static ReadOnlyMemory<byte> GetPartialSaveContents<T>(
+        T config,
+        List<string> sections,
+        JsonWriterOptions writerOptions,
+        JsonSerializeAction<T> serializeAction,
+        IFileProvider fileProvider,
+        string configFilePath,
+        ILogger? logger
+    )
+        where T : class, new()
+    {
+        JsonDocument? existingDocument = null;
+
+        // Try to read existing file
+        if (fileProvider.FileExists(configFilePath))
+        {
+            try
+            {
+                using var fileStream = fileProvider.GetFileStream(configFilePath);
+                if (fileStream != null && fileStream.Length > 0)
+                {
+                    existingDocument = JsonDocument.Parse(fileStream);
+                    logger?.Log(
+                        LogLevel.Trace,
+                        "Loaded existing JSON file for partial update"
+                    );
+                }
+            }
+            catch (JsonException ex)
+            {
+                logger?.Log(
+                    LogLevel.Warning,
+                    ex,
+                    "Failed to parse existing JSON file, will create new file structure"
+                );
+            }
+        }
+
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream, writerOptions);
+
+        if (existingDocument != null)
+        {
+            using (existingDocument)
+            {
+                // Merge with existing document
+                WritePartialUpdate(
+                    writer,
+                    existingDocument.RootElement,
+                    sections,
+                    0,
+                    config,
+                    serializeAction
+                );
+            }
+        }
+        else
+        {
+            // No existing file, create new nested structure
+            logger?.Log(
+                LogLevel.Trace,
+                "Creating new nested section structure for section: {SectionName}",
+                string.Join(":", sections)
+            );
+
+            writer.WriteStartObject();
+            WriteNestedSections(writer, sections, 0, config, serializeAction);
+            writer.WriteEndObject();
+        }
+
+        writer.Flush();
+        var bytes = stream.ToArray();
+
+        logger?.Log(
+            LogLevel.Trace,
+            "Partial JSON serialization completed successfully, size: {Size} bytes",
+            bytes.Length
+        );
+
+        return bytes;
     }
 
     /// <summary>
