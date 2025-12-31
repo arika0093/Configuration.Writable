@@ -9,6 +9,7 @@ using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
+using IDeepCloneable;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -90,6 +91,22 @@ public record WritableOptionsConfigBuilder<T>
     /// If empty that means the root of the configuration file.
     /// </summary>
     public string SectionName { get; set; } = DefaultSectionName;
+
+    /// <summary>
+    /// Sets the cloning strategy to use the default deep clone method if <typeparamref name="T"/> implements <see cref="IDeepCloneable{T}"/>.
+    /// If not, it falls back to JSON serialization for deep cloning.
+    /// </summary>
+    public void UseDefaultCloneStrategy()
+    {
+        if (typeof(IDeepCloneable<T>).IsAssignableFrom(typeof(T)))
+        {
+            _cloneMethod = value => ((IDeepCloneable<T>)value).DeepClone();
+        }
+        else
+        {
+            UseJsonCloneStrategy();
+        }
+    }
 
     /// <summary>
     /// Sets the cloning strategy to use JSON serialization for deep cloning of the configuration object.
@@ -210,7 +227,7 @@ public record WritableOptionsConfigBuilder<T>
             .ToList();
         if (_cloneMethod == null)
         {
-            UseJsonCloneStrategy();
+            UseDefaultCloneStrategy();
         }
 
         return new WritableOptionsConfiguration<T>

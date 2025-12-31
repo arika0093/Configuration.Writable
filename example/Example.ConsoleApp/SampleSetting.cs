@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using IDeepCloneable;
 
 namespace Example.ConsoleApp;
 
-public record SampleSetting
+public partial record SampleSetting : IDeepCloneable<SampleSetting>
 {
     [Required]
     [MinLength(3)]

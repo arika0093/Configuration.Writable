@@ -2,6 +2,12 @@
   "version": 1,
   "dependencies": {
     ".NETStandard,Version=v2.0": {
+      "IDeepCloneable": {
+        "type": "Direct",
+        "requested": "[*, )",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
+      },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "Direct",
         "requested": "[10.*, )",
@@ -168,6 +174,12 @@
       }
     },
     "net10.0": {
+      "IDeepCloneable": {
+        "type": "Direct",
+        "requested": "[*, )",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
+      },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "Direct",
         "requested": "[10.*, )",
@@ -217,6 +229,12 @@
       }
     },
     "net8.0": {
+      "IDeepCloneable": {
+        "type": "Direct",
+        "requested": "[*, )",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
+      },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "Direct",
         "requested": "[10.*, )",
@@ -272,6 +290,12 @@
       }
     },
     "net9.0": {
+      "IDeepCloneable": {
+        "type": "Direct",
+        "requested": "[*, )",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
+      },
       "Microsoft.Extensions.Logging.Abstractions": {
         "type": "Direct",
         "requested": "[10.*, )",

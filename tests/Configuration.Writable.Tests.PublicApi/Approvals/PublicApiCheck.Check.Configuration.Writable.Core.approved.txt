@@ -30,6 +30,7 @@ namespace Configuration.Writable.Configure
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
+        public void UseDefaultCloneStrategy() { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory() { }
         public void UseFile(string? path) { }
         [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
