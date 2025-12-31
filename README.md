@@ -21,7 +21,7 @@ dotnet add package Configuration.Writable
 Then, prepare a class (`UserSetting`) in advance that you want to read and write as settings.
 
 ```csharp
-public class UserSetting
+public partial class UserSetting : IDeepCloneable<UserSetting>
 {
     public string Name { get; set; } = "default name";
     public int Age { get; set; } = 20;
@@ -104,7 +104,6 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
 - [Logging](#logging)
 - [SectionName](#sectionname)
 - [Validation](#validation)
-- [CloneStrategy](#clonestrategy)
 
 ### Configuration Method
 You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
@@ -487,35 +486,11 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
-### CloneStrategy
-To improve performance, the configuration file is not read every time. Instead, it is loaded and stored as an internal cache when a change event is detected.  
-To prevent direct editing of this cache, a deep copy is created and provided to the user each time it is retrieved or saved.
-
-By default, JSON serialization (`UseJsonCloneStrategy()`) is used for deep copying.  
-Internally, it works as follows:
-
-```csharp
-// internal code 
-var json = JsonSerializer.Serialize(value);
-return JsonSerializer.Deserialize<T>(json)!;
-```
-
-While this approach is not very performant, it ensures that a clone can be reliably created for any serializable object, making it the default method.  
-Of course, if a custom clone strategy is required, it can be freely specified.
-
-```csharp
-conf.UseCustomCloneStrategy(original => {
-    // Any custom cloning library can be used
-    return original.DeepClone();
-});
-```
-
 ## Advanced Usage
 ### Support NativeAOT
 By applying a few settings, you can run this library in NativeAOT environments. The following three settings are required:
 1. Specify TypeInfoResolver in JsonFormatProvider
-2. Use a NativeAOT-compatible CloneStrategy
-3. If using DataAnnotations, disable the built-in validation and use a Source Generator-based validator
+2. If using DataAnnotations, disable the built-in validation and use a Source Generator-based validator
 
 ```csharp
 // 1. customize the provider and file writer
@@ -527,17 +502,16 @@ conf.FormatProvider = new JsonFormatProvider()
     },
 };
 
-// 2. customize the cloning strategy
-// in NativeAOT, use Source Generation for JSON serialization
-conf.UseJsonCloneStrategy(SampleSettingSerializerContext.Default.SampleSetting);
-
-// 3. If use DataAnnotation validation with Source Generators,
+// 2. If use DataAnnotation validation with Source Generators,
 // see SampleSettingValidator class in this project and comment out below code.
 conf.UseDataAnnotationsValidation = false;
 conf.WithValidator<SampleSettingValidator>();
 
 // ------
-public record SampleSetting { /* ... */ }
+public partial class SampleSetting : IDeepCloneable<SampleSetting>
+{
+    /* ... */
+}
 
 // add source generation context
 [JsonSourceGenerationOptions(WriteIndented = true)]
@@ -662,6 +636,20 @@ public class MyService(IWritableNamedOptions<UserSetting> options)
         });
     }
 }
+```
+
+### CloneStrategy
+To improve performance, the configuration file is not read every time. Instead, it is loaded and stored as an internal cache when a change event is detected.  
+To prevent direct editing of this cache, a deep copy is created and provided to the user each time it is retrieved or saved.
+
+By default, deep copying of the settings class is supported via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).  
+This is sufficient for most cases, but if you want to use a different cloning method, you can customize it with `conf.UseCustomCloneStrategy`.
+
+```csharp
+conf.UseCustomCloneStrategy(original => {
+    // Any custom cloning library can be used
+    return original.DeepClone();
+});
 ```
 
 ### Multiple Settings in a Single File
