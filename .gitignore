@@ -16,3 +16,5 @@ docs/_site/
 docs/obj/
 # claude
 .claude/
+# test config files
+config/
