@@ -29,6 +29,11 @@
         "resolved": "10.17.0.131074",
         "contentHash": "N8agHzX1pK3Xv/fqMig/mHspPAmh/aKkGg7lUC1xfezAhFtPTuRqBjuyas622Tvy5jnsN5zCXJVclvNkfJJ4rQ=="
       },
+      "IDeepCloneable": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
+      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "10.0.1",
@@ -165,6 +170,7 @@
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
+          "IDeepCloneable": "[*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.*, )",
           "Microsoft.Extensions.Options": "[10.*, )",
           "System.ComponentModel.Annotations": "[5.*, )",
@@ -190,6 +196,11 @@
         "requested": "[10.*, )",
         "resolved": "10.17.0.131074",
         "contentHash": "N8agHzX1pK3Xv/fqMig/mHspPAmh/aKkGg7lUC1xfezAhFtPTuRqBjuyas622Tvy5jnsN5zCXJVclvNkfJJ4rQ=="
+      },
+      "IDeepCloneable": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Transitive",
@@ -221,6 +232,7 @@
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
+          "IDeepCloneable": "[*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.*, )",
           "Microsoft.Extensions.Options": "[10.*, )"
         }
@@ -245,6 +257,11 @@
         "resolved": "10.17.0.131074",
         "contentHash": "N8agHzX1pK3Xv/fqMig/mHspPAmh/aKkGg7lUC1xfezAhFtPTuRqBjuyas622Tvy5jnsN5zCXJVclvNkfJJ4rQ=="
       },
+      "IDeepCloneable": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
+      },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Transitive",
         "resolved": "10.0.1",
@@ -281,6 +298,7 @@
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
+          "IDeepCloneable": "[*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.*, )",
           "Microsoft.Extensions.Options": "[10.*, )"
         }
@@ -305,6 +323,11 @@
         "resolved": "10.17.0.131074",
         "contentHash": "N8agHzX1pK3Xv/fqMig/mHspPAmh/aKkGg7lUC1xfezAhFtPTuRqBjuyas622Tvy5jnsN5zCXJVclvNkfJJ4rQ=="
       },
+      "IDeepCloneable": {
+        "type": "Transitive",
+        "resolved": "0.0.2",
+        "contentHash": "PYL82GePQM9cWdb3zOvH88I6Z0qHuvw4RIgWp+YYzm9UJUllc9I6UKeOH2B6EgHe6CiXK5k4g2Y9/UGtuZqH3Q=="
+      },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "Transitive",
         "resolved": "10.0.1",
@@ -341,6 +364,7 @@
       "configuration.writable.core": {
         "type": "Project",
         "dependencies": {
+          "IDeepCloneable": "[*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.*, )",
           "Microsoft.Extensions.Options": "[10.*, )"
         }
