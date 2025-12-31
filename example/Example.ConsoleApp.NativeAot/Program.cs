@@ -15,16 +15,8 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     // conf.SectionName = "App:SampleSetting";
 
     // customize the provider and file writer
-    conf.FormatProvider = new JsonFormatProvider()
-    {
-        // customize JsonSerializerOptions
-        JsonSerializerOptions =
-        {
-            // if you want to use Source Generation for better performance, set the Context here
-            // This enables NativeAOT-compatible JSON serialization
-            TypeInfoResolver = SampleSettingSerializerContext.Default,
-        },
-    };
+    // JsonAotFormatProvider is the recommended provider for NativeAOT scenarios
+    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 
     // customize the cloning strategy
     // in NativeAOT, use Source Generation for JSON serialization

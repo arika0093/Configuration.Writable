@@ -51,23 +51,19 @@ public class JsonFormatProvider : FormatProviderBase
         // Navigate to the section if specified
         if (sectionNameParts.Count > 0)
         {
-            var current = root;
-
-            foreach (var section in sectionNameParts)
+            if (JsonWriterHelper.TryNavigateToSection(root, sectionNameParts, out var current))
             {
-                if (current.TryGetProperty(section, out var element))
-                {
-                    current = element;
-                }
-                else
-                {
-                    // Section not found, return default instance
-                    return Activator.CreateInstance(type)!;
-                }
+                return JsonSerializer.Deserialize(
+                        current.GetRawText(),
+                        type,
+                        JsonSerializerOptions
+                    ) ?? Activator.CreateInstance(type)!;
             }
-
-            return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
-                ?? Activator.CreateInstance(type)!;
+            else
+            {
+                // Section not found, return default instance
+                return Activator.CreateInstance(type)!;
+            }
         }
 
         return JsonSerializer.Deserialize(root.GetRawText(), type, JsonSerializerOptions)
@@ -207,18 +203,21 @@ public class JsonFormatProvider : FormatProviderBase
             }
         );
 
+        // Create serialize action that captures JsonSerializerOptions
+        var serializeAction = CreateSerializeAction<T>(JsonSerializerOptions);
+
         if (existingDocument != null)
         {
             using (existingDocument)
             {
                 // Merge with existing document
-                WritePartialUpdate(
+                JsonWriterHelper.WritePartialUpdate(
                     writer,
                     existingDocument.RootElement,
                     sections,
                     0,
                     config,
-                    JsonSerializerOptions
+                    serializeAction
                 );
             }
         }
@@ -232,7 +231,7 @@ public class JsonFormatProvider : FormatProviderBase
             );
 
             writer.WriteStartObject();
-            WriteNestedSections(writer, sections, 0, config, JsonSerializerOptions);
+            JsonWriterHelper.WriteNestedSections(writer, sections, 0, config, serializeAction);
             writer.WriteEndObject();
         }
 
@@ -249,120 +248,15 @@ public class JsonFormatProvider : FormatProviderBase
     }
 
     /// <summary>
-    /// Writes a partial update by merging existing JSON with new configuration at the specified section path.
+    /// Creates a serialize action for the given JsonSerializerOptions.
     /// </summary>
 #if NET
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
-    private static void WritePartialUpdate<T>(
-        Utf8JsonWriter writer,
-        JsonElement existingElement,
-        List<string> sections,
-        int currentIndex,
-        T config,
-        JsonSerializerOptions options
-    )
+    private static JsonSerializeAction<T> CreateSerializeAction<T>(JsonSerializerOptions options)
         where T : class, new()
     {
-        if (currentIndex >= sections.Count)
-        {
-            // Reached the target section depth, write the config
-            JsonSerializer.Serialize(writer, config, options);
-            return;
-        }
-
-        var targetSection = sections[currentIndex];
-
-        if (existingElement.ValueKind != JsonValueKind.Object)
-        {
-            // Existing element is not an object, replace with new structure
-            writer.WriteStartObject();
-            WriteNestedSections(writer, sections, currentIndex, config, options);
-            writer.WriteEndObject();
-            return;
-        }
-
-        // Write object and merge properties
-        writer.WriteStartObject();
-
-        foreach (var property in existingElement.EnumerateObject())
-        {
-            if (property.Name == targetSection)
-            {
-                // This is the target section, recurse or replace
-                writer.WritePropertyName(property.Name);
-
-                if (currentIndex == sections.Count - 1)
-                {
-                    // This is the final section, replace with new config
-                    JsonSerializer.Serialize(writer, config, options);
-                }
-                else
-                {
-                    // More sections to go, recurse
-                    WritePartialUpdate(
-                        writer,
-                        property.Value,
-                        sections,
-                        currentIndex + 1,
-                        config,
-                        options
-                    );
-                }
-            }
-            else
-            {
-                // Copy other properties as-is
-                writer.WritePropertyName(property.Name);
-                property.Value.WriteTo(writer);
-            }
-        }
-
-        // If target section doesn't exist in existing document, add it
-        if (!existingElement.TryGetProperty(targetSection, out _))
-        {
-            WriteNestedSections(writer, sections, currentIndex, config, options);
-        }
-
-        writer.WriteEndObject();
-    }
-
-    /// <summary>
-    /// Recursively writes nested section structure using Utf8JsonWriter.
-    /// </summary>
-#if NET
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
-#endif
-    private static void WriteNestedSections<T>(
-        Utf8JsonWriter writer,
-        List<string> sections,
-        int currentIndex,
-        T config,
-        JsonSerializerOptions options
-    )
-        where T : class, new()
-    {
-        if (currentIndex >= sections.Count)
-        {
-            return;
-        }
-
-        var sectionName = sections[currentIndex];
-        writer.WritePropertyName(sectionName);
-
-        if (currentIndex == sections.Count - 1)
-        {
-            // Last section, write the actual configuration
-            JsonSerializer.Serialize(writer, config, options);
-        }
-        else
-        {
-            // More sections to go, write nested object
-            writer.WriteStartObject();
-            WriteNestedSections(writer, sections, currentIndex + 1, config, options);
-            writer.WriteEndObject();
-        }
+        return (writer, value) => JsonSerializer.Serialize(writer, value, options);
     }
 }
