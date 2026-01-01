@@ -178,7 +178,6 @@
         }
       }
     },
-    ".NETStandard,Version=v2.0/linux-x64": {},
     "net10.0": {
       "Nerdbank.GitVersioning": {
         "type": "Direct",
@@ -239,7 +238,6 @@
         }
       }
     },
-    "net10.0/linux-x64": {},
     "net8.0": {
       "Nerdbank.GitVersioning": {
         "type": "Direct",
@@ -306,7 +304,6 @@
         }
       }
     },
-    "net8.0/linux-x64": {},
     "net9.0": {
       "Nerdbank.GitVersioning": {
         "type": "Direct",
@@ -372,7 +369,6 @@
           "Microsoft.Extensions.Options": "[10.*, )"
         }
       }
-    },
-    "net9.0/linux-x64": {}
+    }
   }
 }
