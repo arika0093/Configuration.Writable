@@ -1,23 +1,16 @@
 ﻿using Configuration.Writable;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
-
-// if you want to save one file with multiple settings, you can use ZipFileProvider
-var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" };
 
 // initialize each setting with the same file provider
 WritableOptions.Initialize<UserSetting>(conf =>
 {
     conf.FilePath = "usersettings";
     // use common file provider with zip file
-    conf.FileProvider = zipFileProvider;
+    conf.SectionName = "UserSettings";
 });
 WritableOptions.Initialize<UserSecretSetting>(conf =>
 {
-    conf.FilePath = "secrets";
-    conf.FileProvider = zipFileProvider;
-    // dotnet add package Configuration.Writable.Encrypt
-    conf.FormatProvider = new EncryptFormatProvider("any-encrypt-password");
+    conf.FilePath = "usersettings";
+    conf.SectionName = "Secrets";
 });
 
 // and get each setting

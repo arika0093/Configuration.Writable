@@ -21,7 +21,10 @@ dotnet add package Configuration.Writable
 Then, prepare a class (`UserSetting`) in advance that you want to read and write as settings.
 
 ```csharp
-public partial class UserSetting : IDeepCloneable<UserSetting>
+using Configuration.Writable;
+
+// add IOptionsModel and mark as partial class
+public partial class UserSetting : IOptionsModel<UserSetting>
 {
     public string Name { get; set; } = "default name";
     public int Age { get; set; } = 20;
@@ -403,6 +406,19 @@ The resulting `appsettings.json` will look like this:
 }
 ```
 
+By using this method, it is possible to save multiple configuration classes in different sections within the same file.
+
+```csharp
+builder.Services.AddWritableOptions<UserSettingA>(conf => {
+    conf.UseFile("appsettings.json");
+    conf.SectionName = "SettingsA";
+});
+builder.Services.AddWritableOptions<UserSettingB>(conf => {
+    conf.UseFile("appsettings.json");
+    conf.SectionName = "SettingsB";
+});
+```
+
 ### Validation
 By default, validation using `DataAnnotations` is enabled.
 If validation fails, an `OptionsValidationException` is thrown and the settings are not saved.
@@ -649,26 +665,6 @@ This is sufficient for most cases, but if you want to use a different cloning me
 conf.UseCustomCloneStrategy(original => {
     // Any custom cloning library can be used
     return original.DeepClone();
-});
-```
-
-### Multiple Settings in a Single File
-Using `ZipFileProvider`, you can save multiple settings classes in a single configuration file.
-for example, to save `Foo`(foo.json) and `Bar`(bar.json) in `configurations.zip`:
-
-```csharp
-var zipFileProvider = new ZipFileProvider { ZipFileName = "configurations.zip" };
-
-// initialize each setting with the same file provider
-builder.Services.AddWritableOptions<Foo>(conf =>
-{
-    conf.UseFile("foo");
-    conf.FileProvider = zipFileProvider;
-});
-builder.Services.AddWritableOptions<Bar>(conf =>
-{
-    conf.UseFile("bar");
-    conf.FileProvider = zipFileProvider;
 });
 ```
 

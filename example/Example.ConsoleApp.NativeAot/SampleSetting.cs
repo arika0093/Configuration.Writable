@@ -1,12 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using IDeepCloneable;
+using Configuration.Writable;
 using Microsoft.Extensions.Options;
 
 namespace Example.ConsoleApp.NativeAot;
 
-public partial record SampleSetting : IDeepCloneable<SampleSetting>
+public partial class SampleSetting : IOptionsModel<SampleSetting>
 {
     [Required]
     [MinLength(3)]

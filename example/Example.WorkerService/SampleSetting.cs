@@ -1,8 +1,9 @@
 using System.Text.Json.Serialization;
+using Configuration.Writable;
 
 namespace Example.WorkerService;
 
-public record SampleSetting
+public partial class SampleSetting : IOptionsModel<SampleSetting>
 {
     public string? Name { get; set; }
     public DateTime LastUpdatedAt { get; set; } = DateTime.Now;

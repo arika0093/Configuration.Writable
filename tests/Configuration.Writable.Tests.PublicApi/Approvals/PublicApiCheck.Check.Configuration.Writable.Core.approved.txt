@@ -118,6 +118,16 @@ namespace Configuration.Writable.FormatProvider
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
+    public class JsonAotFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase
+    {
+        public JsonAotFormatProvider(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
+        public System.Text.Encoding Encoding { get; init; }
+        public override string FileExtension { get; }
+        public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; init; }
+        public override object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts) { }
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new () { }
+    }
     public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase
     {
         public JsonFormatProvider() { }
@@ -137,6 +147,8 @@ namespace Configuration.Writable
     {
         int Version { get; set; }
     }
+    public interface IOptionsModel<T> : IDeepCloneable.IDeepCloneable<T>
+        where T :  class, new () { }
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
