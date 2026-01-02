@@ -1,3 +1,17 @@
+## [0.1.12] - 2026-01-01
+
+### 🚀 Features
+
+- Enhance source generator with IWritableOptionsModel interface and update MySettings class
+- Rename IOptionsModel to IHasVersion and update related implementations
+- Support partial write section (#33)
+- Introduce ICloneableGenerator library for automatic cloning implementations
+- Add JsonAotFormatProvider for improved AOT support in JsonSerializerContext
+- Support config migration (#34)
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.1.3
 ## [0.1.3] - 2025-12-23
 
 ### 🚀 Features
