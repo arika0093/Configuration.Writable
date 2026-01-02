@@ -16,3 +16,9 @@ docs/_site/
 docs/obj/
 # claude
 .claude/
+
+# Docusaurus
+docs/site/node_modules/
+docs/site/.docusaurus/
+docs/site/build/
+docs/site/.cache/
