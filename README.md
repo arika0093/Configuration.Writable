@@ -519,41 +519,28 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
-## Advanced Usage
 ### Support NativeAOT
-By applying a few settings, you can run this library in NativeAOT environments. The following three settings are required:
-1. Specify TypeInfoResolver in JsonFormatProvider
-2. If using DataAnnotations, disable the built-in validation and use a Source Generator-based validator
+With a few settings, you can use this library in NativeAOT environments. The following three steps are required:
+1. Prepare a `JsonSerializerContext` and `OptionsValidator`
+2. Use `JsonAotFormatProvider` instead of `JsonFormatProvider`
+3. Disable the built-in validation and use a Source Generator-based validator
 
 ```csharp
-// 1. customize the provider and file writer
-conf.FormatProvider = new JsonFormatProvider()
-{
-    JsonSerializerOptions =
-    {
-        TypeInfoResolver = SampleSettingSerializerContext.Default,
-    },
-};
-
-// 2. If use DataAnnotation validation with Source Generators,
-// see SampleSettingValidator class in this project and comment out below code.
-conf.UseDataAnnotationsValidation = false;
-conf.WithValidator<SampleSettingValidator>();
-
-// ------
-public partial class SampleSetting : IDeepCloneable<SampleSetting>
-{
-    /* ... */
-}
-
-// add source generation context
+// 1. prepare JsonSerializerContext and OptionsValidator
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(SampleSetting))]
 public partial class SampleSettingSerializerContext : JsonSerializerContext;
 
-// add validator with source generation
 [OptionsValidator]
 public partial class SampleSettingValidator : IValidateOptions<SampleSetting>;
+
+// -----
+// 2. use JsonAotFormatProvider
+conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+
+// 3. disable built-in validation and use source-generator-based validator
+conf.UseDataAnnotationsValidation = false;
+conf.WithValidator<SampleSettingValidator>();
 ```
 
 For more details, please refer to the [Example.ConsoleApp.NativeAOT](./example/Example.ConsoleApp.NativeAot/) project.
