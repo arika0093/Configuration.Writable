@@ -3,13 +3,13 @@
 // initialize each setting with the same file provider
 WritableOptions.Initialize<UserSetting>(conf =>
 {
-    conf.FilePath = "usersettings";
+    conf.UseFile("usersettings");
     // use common file provider with zip file
     conf.SectionName = "UserSettings";
 });
 WritableOptions.Initialize<UserSecretSetting>(conf =>
 {
-    conf.FilePath = "usersettings";
+    conf.UseFile("usersettings");
     conf.SectionName = "Secrets";
 });
 

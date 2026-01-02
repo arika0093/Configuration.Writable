@@ -9,7 +9,7 @@ WritableOptions.Initialize<SampleSetting>();
 // if you want to specify a custom save location, use the following instead:
 WritableOptions.Initialize<SampleSetting>(conf =>
 {
-    conf.FilePath = "./config/mysettings";
+    conf.UseFile("./config/mysettings");
 
     // if you want to customize the section name in the config file
     // conf.SectionName = "App:SampleSetting";

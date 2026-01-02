@@ -8,7 +8,7 @@ builder.Services.AddWritableOptions<SampleSetting>(conf =>
 {
     // save file location is ./config/mysettings.json
     // extension is determined by the provider (omittable)
-    conf.FilePath = "./config/mysettings";
+    conf.UseFile("./config/mysettings");
 
     // if you want to standard system configration location, use conf.UseStandardSaveDirectory("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
@@ -16,16 +16,7 @@ builder.Services.AddWritableOptions<SampleSetting>(conf =>
 
     // customize the provider and file writer
     // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
-    conf.FormatProvider = new JsonFormatProvider()
-    {
-        JsonSerializerOptions =
-        {
-            WriteIndented = true,
-            // if you want to use Source Generation for better performance, set the Context here
-            // This enables NativeAOT-compatible JSON serialization
-            TypeInfoResolver = SampleSettingSerializerContext.Default,
-        },
-    };
+    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 
     // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
     // conf.FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
