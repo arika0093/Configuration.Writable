@@ -519,6 +519,7 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
+## Advanced Usage
 ### Support NativeAOT
 With a few settings, you can use this library in NativeAOT environments. The following three steps are required:
 1. Prepare a `JsonSerializerContext` and `OptionsValidator`
