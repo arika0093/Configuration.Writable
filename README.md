@@ -5,9 +5,10 @@ A lightweight library that allows for easy saving and referencing of settings, w
 
 ## Features
 * Read and write user settings with type safety.
-* [Built-in](#FileProvider): Atomic file writing, automatic retry, and backup creation.
+* [Built-in](#FileProvider) Atomic file writing, automatic retry, and backup creation.
 * [Automatic detection](#change-detection) of external changes to configuration files and reflection of the latest settings.
-* Simple API that can be easily used in applications both [with](#with-di) and [without](#without-di) DI.
+* Simple API that can be easily used in applications both [with](#host-application-with-di) and [without](#simple-application-without-di) DI.
+* Partial updates to settings make it usable even with [ASP.NET Core](#sectionname).
 * Highly [customizable configuration](#customization) methods, save locations, file formats, validation, logging, and more.
 
 ## Usage
@@ -31,7 +32,7 @@ public partial class UserSetting : IOptionsModel<UserSetting>
 }
 ```
 
-### Without DI
+### Simple Application (Without DI)
 If you are not using DI (for example, in WinForms, WPF, console apps, etc.),
 Use `WritableOptions` as the starting point for reading and writing settings.
 
@@ -57,7 +58,7 @@ await options.SaveAsync(setting =>
 // By default, it's saved to ./usersettings.json
 ```
 
-### With DI
+### Host Application (With DI)
 If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), register `IReadOnlyOptions<T>` and `IWritableOptions<T>` in the DI container.
 First, call `AddWritableOptions<T>` to register the settings class.
 
@@ -96,6 +97,22 @@ public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
     }
 }
 ```
+
+### ASP.NET Core (With DI)
+By explicitly specifying the [SectionName](#sectionname), you can dynamically update existing configuration files such as `appsettings.json`.
+
+```csharp
+var builder = WebApplication.CreateSlimBuilder(args);
+builder.Services.AddWritableOptions<SampleSetting>(conf =>
+{
+    conf.UseFile("appsettings.json");
+    conf.SectionName = "MySetting";
+});
+
+// In this case, the settings will be saved under the `MySetting` section in `appsettings.json`.
+```
+
+Reading and writing settings is performed in the same way as described above in [Host Application](#host-application-with-di).
 
 ## Customization
 - [Configuration Method](#configuration-method)
