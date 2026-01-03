@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
         'customization/validation',
         'customization/logging',
         'customization/section-name',
+        'customization/register-instance',
       ],
     },
     {
@@ -39,6 +40,9 @@ const sidebars: SidebarsConfig = {
       label: 'Advanced',
       items: [
         'advanced/native-aot',
+        'advanced/instance-name',
+        'advanced/dynamic-options',
+        'advanced/clone-strategy',
         'advanced/testing',
       ],
     },
