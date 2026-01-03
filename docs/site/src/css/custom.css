@@ -28,3 +28,77 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Shiki code block styling */
+pre[class*="language-"],
+code[class*="language-"] {
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+  tab-size: 4;
+  hyphens: none;
+}
+
+/* Code block container */
+div[data-rehype-pretty-code-fragment] {
+  position: relative;
+  margin: 1rem 0;
+}
+
+div[data-rehype-pretty-code-fragment] pre {
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  background-color: transparent !important;
+}
+
+div[data-rehype-pretty-code-fragment] code {
+  display: grid;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: var(--ifm-code-font-size);
+  background-color: transparent !important;
+  padding: 0;
+}
+
+div[data-rehype-pretty-code-fragment] code[data-line-numbers] {
+  counter-reset: line;
+}
+
+div[data-rehype-pretty-code-fragment] code[data-line-numbers] > [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 1rem;
+  margin-right: 1.5rem;
+  text-align: right;
+  color: gray;
+}
+
+div[data-rehype-pretty-code-fragment] code > [data-line] {
+  padding: 0 1rem;
+}
+
+/* Highlighted lines */
+div[data-rehype-pretty-code-fragment] [data-highlighted-line] {
+  background-color: rgba(200, 200, 255, 0.1);
+  border-left: 2px solid rgb(200, 200, 255);
+}
+
+[data-theme='dark'] div[data-rehype-pretty-code-fragment] [data-highlighted-line] {
+  background-color: rgba(100, 100, 255, 0.1);
+  border-left: 2px solid rgb(100, 100, 255);
+}
+
+/* Inline code */
+code:not([class*="language-"]) {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+}
+
+[data-theme='dark'] code:not([class*="language-"]) {
+  background-color: rgba(255, 255, 255, 0.1);
+}

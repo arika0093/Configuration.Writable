@@ -1,4 +1,3 @@
-import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
@@ -35,18 +34,32 @@ const config: Config = {
     locales: ['en'],
   },
 
+  markdown: {
+    format: 'mdx',
+    mermaid: false,
+  },
+
   presets: [
     [
       'classic',
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
             'https://github.com/arika0093/Configuration.Writable/tree/main/docs/site/',
-          beforeDefaultRemarkPlugins: [],
-          beforeDefaultRehypePlugins: [],
+          remarkPlugins: [],
+          rehypePlugins: [
+            [
+              require('rehype-pretty-code'),
+              {
+                theme: {
+                  light: 'github-light',
+                  dark: 'dark-plus', // VS Dark theme
+                },
+                keepBackground: false,
+              },
+            ],
+          ],
         },
         blog: false,
         theme: {
@@ -113,11 +126,6 @@ const config: Config = {
         },
       ],
       copyright: `Copyright © ${new Date().getFullYear()} Configuration.Writable. Built with Docusaurus.`,
-    },
-    prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
-      additionalLanguages: ['csharp', 'bash', 'json', 'yaml'],
     },
   } satisfies Preset.ThemeConfig,
 };
