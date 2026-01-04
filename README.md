@@ -523,6 +523,42 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
+### Migration
+Provides a mechanism for automatically migrating old version configuration files to the new version when the structure of the configuration file changes.
+First, prepare a settings class for each version and implement `IVersionedOptionsModel<T>`.
+
+```csharp
+// Version 1
+public partial class UserSettingV1 : IVersionedOptionsModel<UserSettingV1>
+{
+    public int Version { get; set; } = 1;
+    public string Name { get; set; } = "default name";
+}
+
+// Version 2
+public partial class UserSettingV2 : IVersionedOptionsModel<UserSettingV2>
+{
+    public int Version { get; set; } = 2;
+    public List<string> Names { get; set; } = [];
+}
+```
+
+Next, register the migration as follows:
+```csharp
+// register latest version (V2)
+builder.Services.AddWritableOptions<UserSettingV2>(conf => {
+    // and register migration from V1 to V2
+    conf.WithMigration<UserSettingV1, UserSettingV2>(oldSetting => {
+        return new UserSettingV2 {
+            Names = [oldSetting.Name] // migrate Name to Names list
+        };
+    });
+});
+```
+
+That's it. When reading the settings, if an old version configuration file is detected, migration will be performed automatically, and the new version format will be saved the next time you save the settings.
+
+
 ## Advanced Usage
 ### Support NativeAOT
 With a few settings, you can use this library in NativeAOT environments. The following three steps are required:

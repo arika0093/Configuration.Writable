@@ -176,6 +176,8 @@ namespace Configuration.Writable
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration();
         System.IDisposable? OnChange(System.Action<T> listener);
     }
+    public interface IVersionedOptionsModel<T> : Configuration.Writable.IHasVersion, Configuration.Writable.IOptionsModel<T>, IDeepCloneable.IDeepCloneable<T>
+        where T :  class, new () { }
     public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
