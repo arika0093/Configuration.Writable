@@ -128,6 +128,7 @@ Reading and writing settings is performed in the same way as described above in 
 - [Logging](#logging)
 - [SectionName](#sectionname)
 - [Validation](#validation)
+- [Migration](#migration)
 
 ### Configuration Method
 You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
