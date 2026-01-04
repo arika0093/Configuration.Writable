@@ -32,6 +32,10 @@ public partial class UserSetting : IOptionsModel<UserSetting>
 }
 ```
 
+> [!NOTE]
+> By adding `IOptionsModel<T>`, the `DeepClone` method is automatically generated via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).
+> Therefore, you do not need to implement the `DeepClone` method yourself.
+
 ### Simple Application (Without DI)
 If you are not using DI (for example, in WinForms, WPF, console apps, etc.),
 Use `WritableOptions` as the starting point for reading and writing settings.
