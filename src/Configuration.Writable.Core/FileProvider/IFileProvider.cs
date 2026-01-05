@@ -12,13 +12,6 @@ namespace Configuration.Writable.FileProvider;
 public interface IFileProvider
 {
     /// <summary>
-    /// Determines whether a file exists at the specified path.
-    /// </summary>
-    /// <param name="path">The path of the file to check. Can be either an absolute or relative path.</param>
-    /// <returns>true if the file exists; otherwise, false.</returns>
-    bool FileExists(string path);
-
-    /// <summary>
     /// Returns a stream for reading the contents of the specified file path. If the file does not exist, returns null.
     /// </summary>
     /// <param name="path">The path of the file to retrieve. Can be relative or absolute.</param>
@@ -38,6 +31,13 @@ public interface IFileProvider
         ILogger? logger = null,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    /// Determines whether a file exists at the specified path.
+    /// </summary>
+    /// <param name="path">The path of the file to check. Can be either an absolute or relative path.</param>
+    /// <returns>true if the file exists; otherwise, false.</returns>
+    bool FileExists(string path);
 
     /// <summary>
     /// Determines whether a directory exists at the specified path.
