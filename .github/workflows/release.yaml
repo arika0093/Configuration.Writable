@@ -3,8 +3,8 @@
 on:
   workflow_dispatch:
   push:
-    branches:
-      - release/*
+    paths:
+      - 'version.json'
         
 permissions:
   contents: write
