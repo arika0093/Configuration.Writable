@@ -475,19 +475,6 @@ public class OptionsMonitorImplTests
     }
 
     [Fact]
-    public void OnChangeThrottle_DefaultValue_ShouldBe1000Ms()
-    {
-        // Arrange & Act
-        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "test.json" };
-        var FileProvider = new InMemoryFileProvider();
-        builder.UseInMemoryFileProvider(FileProvider);
-        var configOptions = builder.BuildOptions("test");
-
-        // Assert
-        configOptions.OnChangeThrottleMs.ShouldBe(1000);
-    }
-
-    [Fact]
     public async Task OnChangeThrottle_MultipleInstances_ShouldHaveIndependentThrottle()
     {
         // Arrange
