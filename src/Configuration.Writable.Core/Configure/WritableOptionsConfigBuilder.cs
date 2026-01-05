@@ -61,9 +61,9 @@ public record WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
     /// This helps to prevent excessive event firing during rapid changes. <br/>
-    /// Defaults to 1000 ms.
+    /// Defaults to 300 ms.
     /// </summary>
-    public int OnChangeThrottleMs { get; set; } = 1000;
+    public int OnChangeThrottleMs { get; set; } = 300;
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>

@@ -388,7 +388,7 @@ public class MyService(IWritableOptions<UserSetting> options) : IDisposable
 }
 ```
 
-By default, throttling is enabled to suppress high-frequency file changes. Additional changes within 1 second from change detection are ignored by default.  
+By default, throttling is enabled to suppress high-frequency file changes. Additional changes within 300ms from change detection are ignored by default.  
 If you want to change the throttle duration, specify `conf.OnChangeThrottleMs`.
 
 ```csharp
