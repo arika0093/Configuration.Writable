@@ -221,11 +221,13 @@ conf.FormatProvider = new JsonFormatProvider() {
     JsonSerializerOptions = new () {
         // you can customize JsonSerializerOptions as needed
         WriteIndented = true
-        // for source-generation-based serialize/deserialize, set TypeInfoResolver here
-        TypeInfoResolver = SampleSettingSerializerContext.Default,
     },
 };
 
+// if you want to use source generation for JSON serialization, use JsonAotFormatProvider.
+conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+
+// ------
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(SampleSetting))]
 public partial class SampleSettingSerializerContext : JsonSerializerContext;
