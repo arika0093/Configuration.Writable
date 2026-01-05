@@ -223,7 +223,21 @@ conf.UseStandardSaveDirectory("MyAppId")
     .AddFilePath("myconfig");
 ```
 
-If you want to read/write files from multiple locations, you can call `UseXxxDirectory().AddFilePath` multiple times as follows.  
+If you want to read/write files from multiple locations, you can call `UseXxxDirectory().AddFilePath(path)` multiple times as follows.  
+You can following methods to specify the base directory:  
+
+* `UseExecutableDirectory()`: directory where the executable is located (`AppContext.BaseDirectory`).
+* `UseCurrentDirectory()`: current working directory.
+* `UseSpecialFolder(folder)`: special folder specified by `Environment.SpecialFolder`.
+* `UseCustomDirectory(path)`: custom directory specified by `path`.
+* `UseStandardSaveDirectory(appId)`: standard application data directory.
+    * in Windows: `%APPDATA%/appId`
+    * in macOS: `$XDG_CONFIG_HOME/appId` or `~/Library/Application Support/appId`
+    * in Linux: `$XDG_CONFIG_HOME/appId` or `~/.config/appId`
+
+<details>
+<summary>Priority Determination Details</summary>
+
 When multiple locations are specified, the load/save destination is determined on initialization on the following priority order:
 
 1. Explicit priority (descending)
@@ -246,6 +260,11 @@ conf.UseExecutableDirectory()
 // 3: ./third (target directory exists)
 // 4: D:\SpecialFolder\first (target directory/file does not exist)
 ```
+
+</details>
+
+<details>
+<summary>Toggle Save Location Based on Environment</summary>
 
 If you want to toggle between development and production environments, you can use `#if RELEASE` pattern or `builder.Environtment.IsProduction()`.
 
@@ -272,6 +291,8 @@ builder.Services.AddWritableOptions<UserSetting>(conf => {
         .AddFilePath("mysettings");
 });
 ```
+
+</details>
 
 ### FormatProvider
 By default, files are saved in JSON format. If you want to customize the format, specify `conf.FormatProvider` as follows.
