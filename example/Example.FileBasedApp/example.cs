@@ -6,15 +6,18 @@ using Configuration.Writable;
 using Configuration.Writable.FormatProvider;
 
 // initialize
-WritableOptions.Initialize<SampleSetting>(conf => {
+WritableOptions.Initialize<SampleSetting>(conf =>
+{
     conf.UseFile("usersettings.json");
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 });
 
 // get the writable config instance
 var options = WritableOptions.GetOptions<SampleSetting>();
+
 // optionally, you can register change callback
-options.OnChange(newSetting => {
+options.OnChange(newSetting =>
+{
     Console.WriteLine($">> Settings changed! Name: {newSetting.Name}");
 });
 
