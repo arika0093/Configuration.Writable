@@ -11,6 +11,59 @@ Yet another library with features including: type-safe operations, change detect
 * Partial updates to settings make it usable even with [ASP.NET Core](#sectionname).
 * Highly [customizable configuration](#customization) methods, save locations, file formats, validation, logging, and more.
 
+## Quick Start
+Save below [code](./example/Example.FileBasedApp/example.cs) to `example.cs` and run it with `dotnet example.cs` (requires .NET 10 or later).
+
+```csharp
+#!/usr/bin/env dotnet
+#:package Configuration.Writable@*
+
+using System.Text.Json.Serialization;
+using Configuration.Writable;
+using Configuration.Writable.FormatProvider;
+
+// initialize
+WritableOptions.Initialize<SampleSetting>(conf => {
+    conf.UseFile("usersettings.json");
+    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+});
+
+// get the writable config instance
+var options = WritableOptions.GetOptions<SampleSetting>();
+// optionally, you can register change callback
+options.OnChange(newSetting => {
+    Console.WriteLine($">> Settings changed! Name: {newSetting.Name}");
+});
+
+// get values
+Console.WriteLine($"Current Name: {options.CurrentValue.Name}");
+
+// and save to storage
+Console.Write("Enter new name: ");
+var newName = Console.ReadLine() ?? "";
+await options.SaveAsync(setting =>
+{
+    setting.Name = newName;
+});
+
+// announce saved location
+var savedLocation = options.GetOptionsConfiguration().ConfigFilePath;
+Console.WriteLine($"Saved to {savedLocation}");
+
+await Task.Delay(100);
+
+// ------
+// setting class
+public partial class SampleSetting : IOptionsModel<SampleSetting>
+{
+    public string Name { get; set; } = "default name";
+}
+
+// source generation context for System.Text.Json serialization
+[JsonSerializable(typeof(SampleSetting))]
+public partial class SampleSettingSerializerContext : JsonSerializerContext;
+```
+
 ## Usage
 ### Setup
 Install `Configuration.Writable` from NuGet.
