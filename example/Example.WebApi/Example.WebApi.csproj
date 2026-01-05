@@ -11,7 +11,6 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Configuration.Writable.Encrypt\Configuration.Writable.Encrypt.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
   </ItemGroup>
 </Project>
