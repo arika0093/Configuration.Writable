@@ -7,6 +7,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using Microsoft.Extensions.Logging;
+using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -146,14 +147,14 @@ public class XmlFormatProvider : FormatProviderBase
                 if (fileStream != null && fileStream.Length > 0)
                 {
                     existingDoc = XDocument.Load(fileStream);
-                    options.Logger?.LogTrace("Loaded existing XML file for partial update");
+                    options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
                 }
             }
             catch (XmlException ex)
             {
-                options.Logger?.LogWarning(
+                options.Logger?.ZLogWarning(
                     ex,
-                    "Failed to parse existing XML file, will create new file structure"
+                    $"Failed to parse existing XML file, will create new file structure"
                 );
             }
         }
@@ -177,9 +178,8 @@ public class XmlFormatProvider : FormatProviderBase
         if (existingDoc == null || existingDoc.Root == null)
         {
             // No existing file, create new nested structure
-            options.Logger?.LogTrace(
-                "Creating new nested section structure for section: {SectionName}",
-                string.Join(":", parts)
+            options.Logger?.ZLogTrace(
+                $"Creating new nested section structure for section: {string.Join(":", parts)}"
             );
 
             // Build nested XML structure
@@ -200,9 +200,8 @@ public class XmlFormatProvider : FormatProviderBase
         else
         {
             // Merge with existing document
-            options.Logger?.LogTrace(
-                "Merging with existing XML file for section: {SectionName}",
-                string.Join(":", parts)
+            options.Logger?.ZLogTrace(
+                $"Merging with existing XML file for section: {string.Join(":", parts)}"
             );
 
             resultDoc = new XDocument(existingDoc);
@@ -277,7 +276,7 @@ public class XmlFormatProvider : FormatProviderBase
         resultDoc.WriteTo(xmlWriter);
         xmlWriter.Flush();
 
-        options.Logger?.LogTrace("Partial XML serialization completed successfully");
+        options.Logger?.ZLogTrace($"Partial XML serialization completed successfully");
 
         return Encoding.UTF8.GetBytes(resultWriter.ToString());
     }

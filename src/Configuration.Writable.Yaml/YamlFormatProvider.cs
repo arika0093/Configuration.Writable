@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -183,15 +184,15 @@ public class YamlFormatProvider : FormatProviderBase
                         existingDict = Deserializer.Deserialize<Dictionary<string, object>>(
                             yamlContent
                         );
-                        options.Logger?.LogTrace("Loaded existing YAML file for partial update");
+                        options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
                     }
                 }
             }
             catch (Exception ex)
             {
-                options.Logger?.LogWarning(
+                options.Logger?.ZLogWarning(
                     ex,
-                    "Failed to parse existing YAML file, will create new file structure"
+                    $"Failed to parse existing YAML file, will create new file structure"
                 );
             }
         }
@@ -210,9 +211,8 @@ public class YamlFormatProvider : FormatProviderBase
         if (existingDict == null)
         {
             // No existing file, create new nested structure
-            options.Logger?.LogTrace(
-                "Creating new nested section structure for section: {SectionName}",
-                string.Join(":", sections)
+            options.Logger?.ZLogTrace(
+                $"Creating new nested section structure for section: {string.Join(":", sections)}"
             );
 
             var nestedSectionValue = CreateNestedSection(sections, configDict);
@@ -223,9 +223,8 @@ public class YamlFormatProvider : FormatProviderBase
         else
         {
             // Merge with existing document
-            options.Logger?.LogTrace(
-                "Merging with existing YAML file for section: {SectionName}",
-                string.Join(":", sections)
+            options.Logger?.ZLogTrace(
+                $"Merging with existing YAML file for section: {string.Join(":", sections)}"
             );
 
             // Deep copy the existing dictionary to avoid modifying it
@@ -235,7 +234,7 @@ public class YamlFormatProvider : FormatProviderBase
 
         var yamlString = serializer.Serialize(resultDict);
 
-        options.Logger?.LogTrace("Partial YAML serialization completed successfully");
+        options.Logger?.ZLogTrace($"Partial YAML serialization completed successfully");
 
         return Encoding.GetBytes(yamlString);
     }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
+using ZLogger;
 
 namespace Configuration.Writable.FileProvider;
 
@@ -45,10 +46,8 @@ public class CommonFileProvider : IFileProvider, IDisposable
         do
         {
             cancellationToken.ThrowIfCancellationRequested();
-            logger?.LogTrace(
-                "Attempt {RetryCount} to write file: {FilePath}",
-                retryCount + 1,
-                path
+            logger?.ZLogTrace(
+                $"Attempt {retryCount + 1} to write file: {path}"
             );
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -57,9 +56,9 @@ public class CommonFileProvider : IFileProvider, IDisposable
                 var directory = Path.GetDirectoryName(path)!;
                 if (!Directory.Exists(directory))
                 {
-                    logger?.LogTrace("Creating directory: {Directory}", directory);
+                    logger?.ZLogTrace($"Creating directory: {directory}");
                     Directory.CreateDirectory(directory);
-                    logger?.LogTrace("Directory created: {Directory}", directory);
+                    logger?.ZLogTrace($"Directory created: {directory}");
                 }
 
                 // Generate backup file
@@ -68,9 +67,8 @@ public class CommonFileProvider : IFileProvider, IDisposable
                 string temporaryFilePath = GetTemporaryFilePath(path);
                 using (new TemporaryFile(temporaryFilePath))
                 {
-                    logger?.LogDebug(
-                        "Writing to temporary file: {TemporaryFilePath}",
-                        temporaryFilePath
+                    logger?.ZLogDebug(
+                        $"Writing to temporary file: {temporaryFilePath}"
                     );
                     // Write to temporary file first
                     await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken)
@@ -78,12 +76,12 @@ public class CommonFileProvider : IFileProvider, IDisposable
                     // Replace original file
                     if (File.Exists(path))
                     {
-                        logger?.LogDebug("Replacing original file: {FilePath}", path);
+                        logger?.ZLogDebug($"Replacing original file: {path}");
                         File.Replace(temporaryFilePath, path, null);
                     }
                     else
                     {
-                        logger?.LogDebug("Moving temporary file to: {FilePath}", path);
+                        logger?.ZLogDebug($"Moving temporary file to: {path}");
                         File.Move(temporaryFilePath, path);
                     }
                     // Exit if successful
@@ -96,11 +94,9 @@ public class CommonFileProvider : IFileProvider, IDisposable
             }
             catch (Exception ex)
             {
-                logger?.LogWarning(
+                logger?.ZLogWarning(
                     ex,
-                    "Failed to write file on attempt {RetryCount}: {FilePath}",
-                    retryCount + 1,
-                    path
+                    $"Failed to write file on attempt {retryCount + 1}: {path}"
                 );
                 lastException = ex;
                 retryCount++;
@@ -143,13 +139,13 @@ public class CommonFileProvider : IFileProvider, IDisposable
         // if file does not exist, do nothing
         if (!File.Exists(path))
         {
-            logger?.LogTrace("File does not exist, skipping backup: {FilePath}", path);
+            logger?.ZLogTrace($"File does not exist, skipping backup: {path}");
             return;
         }
         // if backup count is 0, do nothing
         if (BackupMaxCount == 0)
         {
-            logger?.LogTrace("BackupMaxCount is 0, skipping backup: {FilePath}", path);
+            logger?.ZLogTrace($"BackupMaxCount is 0, skipping backup: {path}");
             return;
         }
         // delete older backup files
@@ -160,10 +156,8 @@ public class CommonFileProvider : IFileProvider, IDisposable
             .OrderBy(f => f.CreationTimeUtc)
             .ToList();
 
-        logger?.LogTrace(
-            "Found {BackupFileCount} backup files for {FilePath}",
-            backupFilesOrderByCreated.Count,
-            path
+        logger?.ZLogTrace(
+            $"Found {backupFilesOrderByCreated.Count} backup files for {path}"
         );
         if (backupFilesOrderByCreated.Count >= BackupMaxCount)
         {
@@ -171,13 +165,13 @@ public class CommonFileProvider : IFileProvider, IDisposable
             var deleteCount = backupFilesOrderByCreated.Count - BackupMaxCount + 1;
             foreach (var file in backupFilesOrderByCreated.Take(deleteCount))
             {
-                logger?.LogDebug("Deleting old backup file: {BackupFilePath}", file.FullName);
+                logger?.ZLogDebug($"Deleting old backup file: {file.FullName}");
                 file.Delete();
             }
         }
         // create backup file
         var backupFilePath = GetTemporaryFilePath(path) + ".bak";
-        logger?.LogDebug("Creating backup file for: {FilePath}", backupFilePath);
+        logger?.ZLogDebug($"Creating backup file for: {backupFilePath}");
         File.Copy(path, backupFilePath);
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using ZLogger;
 
 namespace Configuration.Writable.Migration;
 
@@ -82,12 +83,8 @@ internal static class MigrationLoaderExtension
             var fromVersion = VersionCache.GetVersion(migration.FromType) ?? 0;
             var toVersion = VersionCache.GetVersion(migration.ToType) ?? 0;
 
-            options.Logger?.LogInformation(
-                "Applying migration from {FromType} (v{FromVersion}) to {ToType} (v{ToVersion})",
-                migration.FromType.Name,
-                fromVersion,
-                migration.ToType.Name,
-                toVersion
+            options.Logger?.ZLogInformation(
+                $"Applying migration from {migration.FromType.Name} (v{fromVersion}) to {migration.ToType.Name} (v{toVersion})"
             );
 
             current = migration.Migrate(current);
