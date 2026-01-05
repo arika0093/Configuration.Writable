@@ -1,7 +1,7 @@
 # Configuration.Writable
 [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) 
 
-A lightweight library that allows for easy saving and referencing of settings, with extensive customization options.
+Yet another library with features including: type-safe operations, change detection, version migration, validation, and more.
 
 ## Features
 * Read and write user settings with type safety.
@@ -519,20 +519,20 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 
 ### Migration
 Provides a mechanism for automatically migrating old version configuration files to the new version when the structure of the configuration file changes.
-First, prepare a settings class for each version and implement `IVersionedOptionsModel<T>`.
+First, prepare a settings class for each version and implement the `Version` property and set the version number as the initial value.
 
 ```csharp
 // Version 1
 public partial class UserSettingV1 : IVersionedOptionsModel<UserSettingV1>
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 1; // add it
     public string Name { get; set; } = "default name";
 }
 
 // Version 2
 public partial class UserSettingV2 : IVersionedOptionsModel<UserSettingV2>
 {
-    public int Version { get; set; } = 2;
+    public int Version { get; set; } = 2; // add it
     public List<string> Names { get; set; } = [];
 }
 ```
