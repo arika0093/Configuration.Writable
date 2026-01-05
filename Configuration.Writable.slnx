@@ -12,13 +12,11 @@
     <Project Path="src/Configuration.Writable/Configuration.Writable.csproj" />
   </Folder>
   <Folder Name="/src/providers/">
-    <Project Path="src/Configuration.Writable.Encrypt/Configuration.Writable.Encrypt.csproj" />
     <Project Path="src/Configuration.Writable.Xml/Configuration.Writable.Xml.csproj" />
     <Project Path="src/Configuration.Writable.Yaml/Configuration.Writable.Yaml.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests/Directory.Build.props" />
-    <Project Path="tests/Configuration.Writable.Encrypt.Tests/Configuration.Writable.Encrypt.Tests.csproj" />
     <Project Path="tests/Configuration.Writable.Tests.PublicApi/Configuration.Writable.Tests.PublicApi.csproj" />
     <Project Path="tests/Configuration.Writable.Tests/Configuration.Writable.Tests.csproj" />
     <Project Path="tests/Configuration.Writable.Xml.Tests/Configuration.Writable.Xml.Tests.csproj" />

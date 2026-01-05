@@ -42,7 +42,4 @@ public class PublicApiCheckTest
 
     [Fact]
     public void Yaml() => PublicApiCheck.Check<YamlFormatProvider>();
-
-    [Fact]
-    public void Encrypt() => PublicApiCheck.Check<EncryptFormatProvider>();
 }
