@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
+using ZLogger;
 
 namespace Configuration.Writable.Tests;
 
-// A simple console logger factory for tests
+// A simple console logger factory for tests using ZLogger
 public static class ConsoleLoggerFactory
 {
     public static ILogger Create(
@@ -12,7 +13,7 @@ public static class ConsoleLoggerFactory
     {
         var loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder.AddConsole().SetMinimumLevel(minLogLevel);
+            builder.AddZLoggerConsole().SetMinimumLevel(minLogLevel);
         });
 
         return loggerFactory.CreateLogger(name);

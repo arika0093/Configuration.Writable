@@ -412,10 +412,10 @@ If you are not using DI, or if you want to override the logging settings, you ca
 
 ```csharp
 // without DI
-// package add Microsoft.Extensions.Logging.Console
+// package add ZLogger
 conf.Logger = LoggerFactory
-    // enable console logging 
-    .Create(builder => builder.AddConsole())
+    // enable console logging with ZLogger
+    .Create(builder => builder.AddZLoggerConsole())
     .CreateLogger("Configuration.Writable");
 
 // with DI

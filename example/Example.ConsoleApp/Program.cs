@@ -32,9 +32,9 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     };
 
     // if you want to use logging, set Logger
-    // required NuGet package: Microsoft.Extensions.Logging.Console
+    // required NuGet package: ZLogger
     // conf.Logger = LoggerFactory
-    //    .Create(builder => builder.AddConsole())
+    //    .Create(builder => builder.AddZLoggerConsole())
     //    .CreateLogger("UserConfig");
 
     // if you want to validate the config before saving, use
