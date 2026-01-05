@@ -12,7 +12,7 @@ Yet another library with features including: type-safe operations, change detect
 * Highly [customizable configuration](#customization) methods, save locations, file formats, validation, logging, and more.
 
 ## Quick Start
-Save below [code](./example/Example.FileBasedApp/example.cs) to `example.cs` and run it with `dotnet example.cs` (requires .NET 10 or later).
+Save below [code](./example/Example.FileBasedApp/example.cs) to `example.cs` and run it with `dotnet run example.cs` (requires .NET 10 or later).
 
 ```csharp
 #!/usr/bin/env dotnet
@@ -62,6 +62,15 @@ public partial class SampleSetting : IOptionsModel<SampleSetting>
 // source generation context for System.Text.Json serialization
 [JsonSerializable(typeof(SampleSetting))]
 public partial class SampleSettingSerializerContext : JsonSerializerContext;
+```
+
+The output will be as follows:
+
+```log
+Current Name: default name
+Enter new name: Alice
+Saved to /path/to/your/current/directory/usersettings.json
+>> Settings changed! Name: Alice
 ```
 
 ## Usage
