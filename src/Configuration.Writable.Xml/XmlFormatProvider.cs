@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.IO;
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,6 +64,63 @@ public class XmlFormatProvider : FormatProviderBase
         {
             var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
             return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+        }
+    }
+
+    /// <inheritdoc />
+    public override async ValueTask<object> LoadConfigurationAsync(
+        Type type,
+        PipeReader reader,
+        System.Collections.Generic.List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Use PipeReader.AsStream for compatibility with XDocument.Load
+        var stream = reader.AsStream(leaveOpen: true);
+#if NET8_0_OR_GREATER
+        var xmlDoc = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken)
+            .ConfigureAwait(false);
+#else
+        var xmlDoc = XDocument.Load(stream);
+#endif
+        var root = xmlDoc.Root;
+
+        if (root == null)
+        {
+            return Activator.CreateInstance(type)!;
+        }
+
+        // Navigate to the section if specified
+        if (sectionNameParts.Count > 0)
+        {
+            var current = root;
+
+            foreach (var section in sectionNameParts)
+            {
+                var element = current.Element(section);
+                if (element != null)
+                {
+                    current = element;
+                }
+                else
+                {
+                    // Section not found, return default instance
+                    return Activator.CreateInstance(type)!;
+                }
+            }
+
+            using var xmlReader = current.CreateReader();
+            var serializer = new XmlSerializer(
+                type,
+                new XmlRootAttribute(current.Name.LocalName)
+            );
+            return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
+        }
+
+        using (var xmlReader = root.CreateReader())
+        {
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
+            return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
         }
     }
 
@@ -146,7 +205,17 @@ public class XmlFormatProvider : FormatProviderBase
                 using var fileStream = options.FileProvider.GetFileStream(options.ConfigFilePath);
                 if (fileStream != null && fileStream.Length > 0)
                 {
+#if NET8_0_OR_GREATER
+                    existingDoc = XDocument.LoadAsync(
+                            fileStream,
+                            LoadOptions.None,
+                            CancellationToken.None
+                        )
+                        .GetAwaiter()
+                        .GetResult();
+#else
                     existingDoc = XDocument.Load(fileStream);
+#endif
                     options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
                 }
             }

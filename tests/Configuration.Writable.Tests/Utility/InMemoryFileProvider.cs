@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -52,6 +53,17 @@ public class InMemoryFileProvider : IFileProvider
             return null;
         }
         return new MemoryStream(content);
+    }
+
+    /// <inheritdoc />
+    public PipeReader? GetFilePipeReader(string path)
+    {
+        var stream = GetFileStream(path);
+        if (stream == null)
+        {
+            return null;
+        }
+        return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
     }
 
     /// <inheritdoc />

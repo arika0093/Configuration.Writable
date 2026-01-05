@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,6 +42,18 @@ public class ZipFileProvider : IFileProvider, IDisposable
             return null;
         }
         return new DisposeStream(entry.Open(), zip.Dispose);
+    }
+
+    /// <inheritdoc/>
+    public PipeReader? GetFilePipeReader(string path)
+    {
+        var stream = GetFileStream(path);
+        if (stream == null)
+        {
+            return null;
+        }
+        // Create a PipeReader from the stream for more efficient reading
+        return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
     }
 
     /// <inheritdoc/>

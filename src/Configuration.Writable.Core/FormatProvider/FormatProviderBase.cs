@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,6 +21,56 @@ public abstract class FormatProviderBase : IFormatProvider
         Stream stream,
         List<string> sectionNameParts
     );
+
+    /// <inheritdoc />
+    public virtual async ValueTask<object> LoadConfigurationAsync(
+        Type type,
+        PipeReader reader,
+        List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Default implementation: read all data from PipeReader into a MemoryStream
+        // Subclasses can override this for more efficient pipeline-based parsing
+        var memoryStream = new MemoryStream();
+        try
+        {
+            while (true)
+            {
+                var result = await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                var buffer = result.Buffer;
+
+                foreach (var segment in buffer)
+                {
+#if NET8_0_OR_GREATER
+                    await memoryStream.WriteAsync(segment, cancellationToken).ConfigureAwait(false);
+#else
+                    await memoryStream
+                        .WriteAsync(segment.ToArray(), 0, segment.Length, cancellationToken)
+                        .ConfigureAwait(false);
+#endif
+                }
+
+                reader.AdvanceTo(buffer.End);
+
+                if (result.IsCompleted)
+                {
+                    break;
+                }
+            }
+
+            memoryStream.Position = 0;
+            return LoadConfiguration(type, memoryStream, sectionNameParts);
+        }
+        finally
+        {
+#if NET8_0_OR_GREATER
+            await memoryStream.DisposeAsync().ConfigureAwait(false);
+#else
+            memoryStream.Dispose();
+#endif
+        }
+    }
 
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(
@@ -48,6 +99,25 @@ public abstract class FormatProviderBase : IFormatProvider
             return Activator.CreateInstance(type)!;
         }
 
+        // Try using PipeReader first for better performance
+        var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
+        if (pipeReader != null)
+        {
+            using (pipeReader as IDisposable)
+            {
+                return LoadConfigurationAsync(
+                    type,
+                    pipeReader,
+                    options.SectionNameParts,
+                    CancellationToken.None
+                )
+                    .AsTask()
+                    .GetAwaiter()
+                    .GetResult();
+            }
+        }
+
+        // Fallback to Stream if PipeReader is not available
         var stream = options.FileProvider.GetFileStream(filePath);
         if (stream == null)
         {
