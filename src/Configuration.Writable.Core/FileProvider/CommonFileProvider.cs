@@ -46,9 +46,7 @@ public class CommonFileProvider : IFileProvider, IDisposable
         do
         {
             cancellationToken.ThrowIfCancellationRequested();
-            logger?.ZLogTrace(
-                $"Attempt {retryCount + 1} to write file: {path}"
-            );
+            logger?.ZLogTrace($"Attempt {retryCount + 1} to write file: {path}");
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
@@ -67,9 +65,7 @@ public class CommonFileProvider : IFileProvider, IDisposable
                 string temporaryFilePath = GetTemporaryFilePath(path);
                 using (new TemporaryFile(temporaryFilePath))
                 {
-                    logger?.ZLogDebug(
-                        $"Writing to temporary file: {temporaryFilePath}"
-                    );
+                    logger?.ZLogDebug($"Writing to temporary file: {temporaryFilePath}");
                     // Write to temporary file first
                     await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken)
                         .ConfigureAwait(false);
@@ -156,9 +152,7 @@ public class CommonFileProvider : IFileProvider, IDisposable
             .OrderBy(f => f.CreationTimeUtc)
             .ToList();
 
-        logger?.ZLogTrace(
-            $"Found {backupFilesOrderByCreated.Count} backup files for {path}"
-        );
+        logger?.ZLogTrace($"Found {backupFilesOrderByCreated.Count} backup files for {path}");
         if (backupFilesOrderByCreated.Count >= BackupMaxCount)
         {
             // delete oldest files
