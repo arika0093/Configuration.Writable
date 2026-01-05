@@ -76,7 +76,8 @@ public class XmlFormatProvider : FormatProviderBase
     )
     {
         // Use PipeReader.AsStream for compatibility with XDocument.Load
-        var stream = reader.AsStream(leaveOpen: true);
+        // The stream owns the PipeReader when leaveOpen is false
+        using var stream = reader.AsStream(leaveOpen: false);
 #if NET8_0_OR_GREATER
         var xmlDoc = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken)
             .ConfigureAwait(false);

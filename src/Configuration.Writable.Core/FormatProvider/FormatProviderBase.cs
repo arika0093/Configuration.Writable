@@ -101,9 +101,11 @@ public abstract class FormatProviderBase : IFormatProvider
 
         // Try using PipeReader first for better performance
         var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
-        if (pipeReader != null)
+        // PipeReader.Create returns a type that implements IDisposable
+        // We use synchronous disposal here since we're in a sync method
+        if (pipeReader is IDisposable disposable)
         {
-            using (pipeReader as IDisposable)
+            using (disposable)
             {
                 return LoadConfigurationAsync(
                     type,

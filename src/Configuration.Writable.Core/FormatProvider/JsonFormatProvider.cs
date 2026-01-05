@@ -82,11 +82,9 @@ public class JsonFormatProvider : FormatProviderBase
     )
     {
         // Use JsonDocument.ParseAsync for efficient pipeline-based parsing
-        var jsonDocument = await JsonDocument.ParseAsync(
-                PipeReaderAsStream(reader),
-                default,
-                cancellationToken
-            )
+        // The stream owns the PipeReader when leaveOpen is false
+        using var stream = reader.AsStream(leaveOpen: false);
+        var jsonDocument = await JsonDocument.ParseAsync(stream, default, cancellationToken)
             .ConfigureAwait(false);
         var root = jsonDocument.RootElement;
 
@@ -107,14 +105,6 @@ public class JsonFormatProvider : FormatProviderBase
 
         return JsonSerializer.Deserialize(root.GetRawText(), type, JsonSerializerOptions)
             ?? Activator.CreateInstance(type)!;
-    }
-
-    /// <summary>
-    /// Wraps a PipeReader as a Stream for compatibility with JsonDocument.ParseAsync
-    /// </summary>
-    private static Stream PipeReaderAsStream(PipeReader reader)
-    {
-        return reader.AsStream(leaveOpen: true);
     }
 
     /// <inheritdoc />

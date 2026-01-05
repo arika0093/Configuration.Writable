@@ -123,8 +123,13 @@ public class YamlFormatProvider : FormatProviderBase
     )
     {
         // Use PipeReader.AsStream for compatibility with StreamReader
-        var stream = reader.AsStream(leaveOpen: true);
+        // The stream owns the PipeReader when leaveOpen is false
+        var stream = reader.AsStream(leaveOpen: false);
+#if NETSTANDARD2_0
         using var streamReader = new StreamReader(stream, Encoding);
+#else
+        using var streamReader = new StreamReader(stream, Encoding, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+#endif
 
 #if NET8_0_OR_GREATER
         var yamlContent = await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);

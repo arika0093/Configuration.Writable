@@ -77,7 +77,7 @@ internal static class JsonWriterHelper
         serializeAction(writer, config);
         writer.Flush();
 
-        var bytes = bufferWriter.WrittenMemory;
+        var bytes = bufferWriter.WrittenMemory.ToArray();
 
         logger?.Log(
             LogLevel.Trace,
@@ -169,7 +169,7 @@ internal static class JsonWriterHelper
         }
 
         writer.Flush();
-        var bytes = bufferWriter.WrittenMemory;
+        var bytes = bufferWriter.WrittenMemory.ToArray();
 
         logger?.Log(
             LogLevel.Trace,
