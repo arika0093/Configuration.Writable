@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using ZLogger;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
@@ -152,7 +153,7 @@ internal sealed class WritableOptionsImpl<T>(
             }
         }
 
-        options.Logger?.LogDebug("Saving configuration to {FilePath}", options.ConfigFilePath);
+        options.Logger?.ZLogDebug($"Saving configuration to {options.ConfigFilePath}");
 
         // Save to file
         await options
@@ -163,7 +164,7 @@ internal sealed class WritableOptionsImpl<T>(
         optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
-        options.Logger?.LogInformation("Configuration saved successfully to {FileName}", fileName);
+        options.Logger?.ZLogInformation($"Configuration saved successfully to {fileName}");
     }
 
     /// <summary>

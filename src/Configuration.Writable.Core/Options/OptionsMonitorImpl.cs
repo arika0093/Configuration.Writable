@@ -6,6 +6,7 @@ using System.Threading;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ZLogger;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
@@ -260,18 +261,14 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         )
         {
             // Still in throttle period, ignore this change
-            options.Logger?.LogDebug(
-                "Configuration file change detected but ignored due to throttle: {FileName} ({ChangeType})",
-                fileName,
-                args.ChangeType
+            options.Logger?.ZLogDebug(
+                $"Configuration file change detected but ignored due to throttle: {fileName} ({args.ChangeType})"
             );
             return;
         }
 
-        options.Logger?.LogInformation(
-            "Configuration file change detected: {FileName} ({ChangeType})",
-            fileName,
-            args.ChangeType
+        options.Logger?.ZLogInformation(
+            $"Configuration file change detected: {fileName} ({args.ChangeType})"
         );
 
         // Reload and notify listeners with retry logic for file access conflicts
