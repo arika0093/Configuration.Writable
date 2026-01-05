@@ -34,24 +34,14 @@ public class ZipFileProvider : IFileProvider, IDisposable
     }
 
     /// <inheritdoc/>
-    public Stream? GetFileStream(string path)
+    public PipeReader? GetFilePipeReader(string path)
     {
         var zip = GetZipEntry(path, out var entry);
         if (zip == null || entry == null)
         {
             return null;
         }
-        return new DisposeStream(entry.Open(), zip.Dispose);
-    }
-
-    /// <inheritdoc/>
-    public PipeReader? GetFilePipeReader(string path)
-    {
-        var stream = GetFileStream(path);
-        if (stream == null)
-        {
-            return null;
-        }
+        var stream = new DisposeStream(entry.Open(), zip.Dispose);
         // Create a PipeReader from the stream for more efficient reading
         return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
     }

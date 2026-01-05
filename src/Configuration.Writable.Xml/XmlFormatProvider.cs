@@ -22,52 +22,6 @@ public class XmlFormatProvider : FormatProviderBase
     public override string FileExtension => "xml";
 
     /// <inheritdoc />
-    public override object LoadConfiguration(
-        Type type,
-        Stream stream,
-        System.Collections.Generic.List<string> sectionNameParts
-    )
-    {
-        var xmlDoc = XDocument.Load(stream);
-        var root = xmlDoc.Root;
-
-        if (root == null)
-        {
-            return Activator.CreateInstance(type)!;
-        }
-
-        // Navigate to the section if specified
-        if (sectionNameParts.Count > 0)
-        {
-            var current = root;
-
-            foreach (var section in sectionNameParts)
-            {
-                var element = current.Element(section);
-                if (element != null)
-                {
-                    current = element;
-                }
-                else
-                {
-                    // Section not found, return default instance
-                    return Activator.CreateInstance(type)!;
-                }
-            }
-
-            using var reader = current.CreateReader();
-            var serializer = new XmlSerializer(type, new XmlRootAttribute(current.Name.LocalName));
-            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
-        }
-
-        using (var reader = root.CreateReader())
-        {
-            var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
-            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
-        }
-    }
-
-    /// <inheritdoc />
     public override async ValueTask<object> LoadConfigurationAsync(
         Type type,
         PipeReader reader,
@@ -198,26 +152,30 @@ public class XmlFormatProvider : FormatProviderBase
         var parts = options.SectionNameParts;
         XDocument? existingDoc = null;
 
-        // Try to read existing file
+        // Try to read existing file using PipeReader
         if (options.FileProvider.FileExists(options.ConfigFilePath))
         {
             try
             {
-                using var fileStream = options.FileProvider.GetFileStream(options.ConfigFilePath);
-                if (fileStream != null && fileStream.Length > 0)
+                var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+                if (pipeReader != null)
                 {
+                    using var stream = pipeReader.AsStream(leaveOpen: false);
+                    if (stream.Length > 0)
+                    {
 #if NET8_0_OR_GREATER
-                    existingDoc = XDocument.LoadAsync(
-                            fileStream,
-                            LoadOptions.None,
-                            CancellationToken.None
-                        )
-                        .GetAwaiter()
-                        .GetResult();
+                        existingDoc = XDocument.LoadAsync(
+                                stream,
+                                LoadOptions.None,
+                                CancellationToken.None
+                            )
+                            .GetAwaiter()
+                            .GetResult();
 #else
-                    existingDoc = XDocument.Load(fileStream);
+                        existingDoc = XDocument.Load(stream);
 #endif
-                    options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
+                        options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
+                    }
                 }
             }
             catch (XmlException ex)

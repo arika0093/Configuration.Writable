@@ -2,7 +2,6 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.IO.Pipelines;
 using System.Text;
 using System.Text.Json;
@@ -35,39 +34,6 @@ public class JsonFormatProvider : FormatProviderBase
 
     /// <inheritdoc />
     public override string FileExtension => "json";
-
-    /// <inheritdoc />
-#if NET
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
-#endif
-    public override object LoadConfiguration(
-        Type type,
-        Stream stream,
-        List<string> sectionNameParts
-    )
-    {
-        var jsonDocument = JsonDocument.Parse(stream);
-        var root = jsonDocument.RootElement;
-
-        // Navigate to the section if specified
-        if (sectionNameParts.Count > 0)
-        {
-            if (JsonWriterHelper.TryNavigateToSection(root, sectionNameParts, out var current))
-            {
-                return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
-                    ?? Activator.CreateInstance(type)!;
-            }
-            else
-            {
-                // Section not found, return default instance
-                return Activator.CreateInstance(type)!;
-            }
-        }
-
-        return JsonSerializer.Deserialize(root.GetRawText(), type, JsonSerializerOptions)
-            ?? Activator.CreateInstance(type)!;
-    }
 
     /// <inheritdoc />
 #if NET

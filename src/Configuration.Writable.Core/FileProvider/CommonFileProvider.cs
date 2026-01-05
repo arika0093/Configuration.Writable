@@ -199,7 +199,7 @@ public class CommonFileProvider : IFileProvider, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual Stream? GetFileStream(string path)
+    public virtual PipeReader? GetFilePipeReader(string path)
     {
         var normalizedPath = Path.GetFullPath(path);
         if (!File.Exists(normalizedPath))
@@ -207,7 +207,7 @@ public class CommonFileProvider : IFileProvider, IDisposable
             return null;
         }
         // Use FileShare.ReadWrite to allow concurrent access from FileSystemWatcher
-        return new FileStream(
+        var stream = new FileStream(
             normalizedPath,
             FileMode.Open,
             FileAccess.Read,
@@ -215,16 +215,6 @@ public class CommonFileProvider : IFileProvider, IDisposable
             bufferSize: 4096,
             useAsync: false
         );
-    }
-
-    /// <inheritdoc />
-    public virtual PipeReader? GetFilePipeReader(string path)
-    {
-        var stream = GetFileStream(path);
-        if (stream == null)
-        {
-            return null;
-        }
         // Create a PipeReader from the stream for more efficient reading
         return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
     }

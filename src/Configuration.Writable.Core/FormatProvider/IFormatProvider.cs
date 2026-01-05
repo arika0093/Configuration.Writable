@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,22 +36,7 @@ public interface IFormatProvider
         where T : class, new();
 
     /// <summary>
-    /// Loads configuration from a stream and deserializes it to the specified type.
-    /// This is a non-generic version required for migration support.
-    /// </summary>
-    /// <param name="type">The type of the configuration object to load.</param>
-    /// <param name="stream">The stream containing the configuration data.</param>
-    /// <param name="sectionNameParts">The parts of the section name split by ':' and '__' for hierarchical navigation.</param>
-    /// <returns>The deserialized configuration object.</returns>
-    object LoadConfiguration(
-        Type type,
-        Stream stream,
-        System.Collections.Generic.List<string> sectionNameParts
-    );
-
-    /// <summary>
     /// Loads configuration from a PipeReader and deserializes it to the specified type.
-    /// This method is more efficient than LoadConfiguration with Stream for sequential reading operations.
     /// </summary>
     /// <param name="type">The type of the configuration object to load.</param>
     /// <param name="reader">The PipeReader containing the configuration data.</param>

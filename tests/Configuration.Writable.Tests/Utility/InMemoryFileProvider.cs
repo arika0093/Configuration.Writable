@@ -41,28 +41,15 @@ public class InMemoryFileProvider : IFileProvider
         return _files.ContainsKey(normalizedPath);
     }
 
-    /// <summary>
-    /// Returns a stream for reading the contents of the specified file path. If the file does not exist, returns null.
-    /// </summary>
-    /// <param name="path">The path of the file to retrieve. Can be relative or absolute.</param>
-    public Stream? GetFileStream(string path)
+    /// <inheritdoc />
+    public PipeReader? GetFilePipeReader(string path)
     {
         var normalizedPath = Path.GetFullPath(path);
         if (!_files.TryGetValue(normalizedPath, out var content))
         {
             return null;
         }
-        return new MemoryStream(content);
-    }
-
-    /// <inheritdoc />
-    public PipeReader? GetFilePipeReader(string path)
-    {
-        var stream = GetFileStream(path);
-        if (stream == null)
-        {
-            return null;
-        }
+        var stream = new MemoryStream(content);
         return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
     }
 

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.IO.Pipelines;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -70,16 +70,20 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
     }
 
     /// <inheritdoc />
-    public override object LoadConfiguration(
+    public override async ValueTask<object> LoadConfigurationAsync(
         Type type,
-        Stream stream,
-        List<string> sectionNameParts
+        PipeReader reader,
+        List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
     )
     {
         var options = GetEffectiveOptions();
         var jsonTypeInfo = options.GetTypeInfo(type);
 
-        var jsonDocument = JsonDocument.Parse(stream);
+        // Use JsonDocument.ParseAsync for efficient pipeline-based parsing
+        using var stream = reader.AsStream(leaveOpen: false);
+        var jsonDocument = await JsonDocument.ParseAsync(stream, default, cancellationToken)
+            .ConfigureAwait(false);
         var root = jsonDocument.RootElement;
 
         // Navigate to the section if specified

@@ -43,78 +43,6 @@ public class YamlFormatProvider : FormatProviderBase
     public override string FileExtension => "yaml";
 
     /// <inheritdoc />
-    public override object LoadConfiguration(
-        Type type,
-        Stream stream,
-        List<string> sectionNameParts
-    )
-    {
-        using var reader = new StreamReader(stream, Encoding);
-        var yamlContent = reader.ReadToEnd();
-
-        string targetYamlContent = yamlContent;
-
-        // Navigate to the section if specified
-        if (sectionNameParts.Count > 0)
-        {
-            var data = Deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
-            if (data == null)
-            {
-                return Activator.CreateInstance(type)!;
-            }
-
-            object? current = data;
-            foreach (var section in sectionNameParts)
-            {
-                if (current is Dictionary<string, object> dict)
-                {
-                    if (dict.TryGetValue(section, out var value))
-                    {
-                        current = value;
-                    }
-                    else
-                    {
-                        return Activator.CreateInstance(type)!;
-                    }
-                }
-                else
-                {
-                    return Activator.CreateInstance(type)!;
-                }
-            }
-
-            // Serialize the section back to YAML
-            targetYamlContent = Serializer.Serialize(current);
-        }
-
-        // Deserialize YAML directly to the target type
-        // Use CamelCaseNamingConvention to match serialization
-        var plainDeserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
-
-        try
-        {
-            var result = plainDeserializer.Deserialize(targetYamlContent, type);
-            return result ?? Activator.CreateInstance(type)!;
-        }
-        catch (Exception)
-        {
-            // If plain deserialization fails, try with the configured deserializer
-            try
-            {
-                var result = Deserializer.Deserialize(targetYamlContent, type);
-                return result ?? Activator.CreateInstance(type)!;
-            }
-            catch
-            {
-                return Activator.CreateInstance(type)!;
-            }
-        }
-    }
-
-    /// <inheritdoc />
     public override async ValueTask<object> LoadConfigurationAsync(
         Type type,
         PipeReader reader,
@@ -255,23 +183,27 @@ public class YamlFormatProvider : FormatProviderBase
         var sections = options.SectionNameParts;
         Dictionary<string, object>? existingDict = null;
 
-        // Try to read existing file
+        // Try to read existing file using PipeReader
         if (options.FileProvider.FileExists(options.ConfigFilePath))
         {
             try
             {
-                using var fileStream = options.FileProvider.GetFileStream(options.ConfigFilePath);
-                if (fileStream != null && fileStream.Length > 0)
+                var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+                if (pipeReader != null)
                 {
-                    using var reader = new StreamReader(fileStream, Encoding);
-                    var yamlContent = reader.ReadToEnd();
-
-                    if (!string.IsNullOrWhiteSpace(yamlContent))
+                    using var stream = pipeReader.AsStream(leaveOpen: false);
+                    if (stream.Length > 0)
                     {
-                        existingDict = Deserializer.Deserialize<Dictionary<string, object>>(
-                            yamlContent
-                        );
-                        options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
+                        using var reader = new StreamReader(stream, Encoding);
+                        var yamlContent = reader.ReadToEnd();
+
+                        if (!string.IsNullOrWhiteSpace(yamlContent))
+                        {
+                            existingDict = Deserializer.Deserialize<Dictionary<string, object>>(
+                                yamlContent
+                            );
+                            options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
+                        }
                     }
                 }
             }
