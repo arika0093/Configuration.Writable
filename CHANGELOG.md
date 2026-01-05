@@ -1,3 +1,35 @@
+## [0.2.0] - 2026-01-05
+
+### 🚀 Features
+
+- Add Example.WebApi project with configuration and Swagger integration
+- Add new solution file Configuration.Writable.slnx with project structure
+- Add support for JSON serialization using JsonAotFormatProvider in configuration
+
+### 🐛 Bug Fixes
+
+- Update push trigger to only activate on changes to version.json
+
+### 🚜 Refactor
+
+- Update configuration file path method to UseFile for consistency
+
+### 📚 Documentation
+
+- Improve README structure and clarify usage sections
+- Update NativeAOT usage instructions for clarity and accuracy
+- Add Advanced Usage section for NativeAOT support in README
+- Remove proposal for JsonAotFormatProvider from documentation
+- Add note about automatic DeepClone method generation in UserSetting example
+- Add migration instructions for versioned configuration files
+- Update CLAUDE.md to streamline testing instructions and remove outdated sections
+- Update README.md to clarify library features and migration instructions
+- Add quick start guide and example for Configuration.Writable
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.1.12
+- Update version to 0.2.0 in version.json
 ## [0.1.12] - 2026-01-01
 
 ### 🚀 Features
