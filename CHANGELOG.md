@@ -1,3 +1,23 @@
+## [0.2.1] - 2026-01-05
+
+### 🐛 Bug Fixes
+
+- Update default throttle duration for change events from 1000ms to 300ms
+- Update version from 0.2.0 to 0.2.1.0 in version.json
+
+### 🚜 Refactor
+
+- Reorder FileExists method documentation in IFileProvider interface
+- Update comments for clarity in example code
+
+### 📚 Documentation
+
+- Update quick start instructions and add example output
+- Enhance README with additional methods for specifying base directory and save location details
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.2.0
 ## [0.2.0] - 2026-01-05
 
 ### 🚀 Features
