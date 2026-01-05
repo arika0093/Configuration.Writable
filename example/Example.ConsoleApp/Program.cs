@@ -32,7 +32,6 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     };
 
     // if you want to use logging, set Logger
-    // required NuGet package: ZLogger
     // conf.Logger = LoggerFactory
     //    .Create(builder => builder.AddZLoggerConsole())
     //    .CreateLogger("UserConfig");

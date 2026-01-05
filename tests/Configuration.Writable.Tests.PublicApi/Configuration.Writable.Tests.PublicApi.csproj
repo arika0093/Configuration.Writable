@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Configuration.Writable.Encrypt\Configuration.Writable.Encrypt.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable.Xml\Configuration.Writable.Xml.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable.Yaml\Configuration.Writable.Yaml.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
