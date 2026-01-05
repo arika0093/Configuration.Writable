@@ -122,11 +122,8 @@ internal static class JsonWriterHelper
                 if (pipeReader != null)
                 {
                     using var stream = pipeReader.AsStream(leaveOpen: false);
-                    if (stream.Length > 0)
-                    {
-                        existingDocument = JsonDocument.Parse(stream);
-                        logger?.Log(LogLevel.Trace, "Loaded existing JSON file for partial update");
-                    }
+                    existingDocument = JsonDocument.Parse(stream);
+                    logger?.Log(LogLevel.Trace, "Loaded existing JSON file for partial update");
                 }
             }
             catch (JsonException ex)

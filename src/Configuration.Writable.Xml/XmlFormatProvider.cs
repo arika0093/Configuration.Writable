@@ -161,21 +161,18 @@ public class XmlFormatProvider : FormatProviderBase
                 if (pipeReader != null)
                 {
                     using var stream = pipeReader.AsStream(leaveOpen: false);
-                    if (stream.Length > 0)
-                    {
 #if NET8_0_OR_GREATER
-                        existingDoc = XDocument.LoadAsync(
-                                stream,
-                                LoadOptions.None,
-                                CancellationToken.None
-                            )
-                            .GetAwaiter()
-                            .GetResult();
+                    existingDoc = XDocument.LoadAsync(
+                            stream,
+                            LoadOptions.None,
+                            CancellationToken.None
+                        )
+                        .GetAwaiter()
+                        .GetResult();
 #else
-                        existingDoc = XDocument.Load(stream);
+                    existingDoc = XDocument.Load(stream);
 #endif
-                        options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
-                    }
+                    options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
                 }
             }
             catch (XmlException ex)

@@ -58,23 +58,25 @@ public abstract class FormatProviderBase : IFormatProvider
 
         // PipeReader.Create returns a type that implements IDisposable
         // We use synchronous disposal here since we're in a sync method
-        if (pipeReader is IDisposable disposable)
+        try
         {
-            using (disposable)
+            return LoadConfigurationAsync(
+                type,
+                pipeReader,
+                options.SectionNameParts,
+                CancellationToken.None
+            )
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+        }
+        finally
+        {
+            if (pipeReader is IDisposable disposable)
             {
-                return LoadConfigurationAsync(
-                    type,
-                    pipeReader,
-                    options.SectionNameParts,
-                    CancellationToken.None
-                )
-                    .AsTask()
-                    .GetAwaiter()
-                    .GetResult();
+                disposable.Dispose();
             }
         }
-
-        return Activator.CreateInstance(type)!;
     }
 
     /// <summary>

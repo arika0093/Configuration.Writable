@@ -192,18 +192,15 @@ public class YamlFormatProvider : FormatProviderBase
                 if (pipeReader != null)
                 {
                     using var stream = pipeReader.AsStream(leaveOpen: false);
-                    if (stream.Length > 0)
-                    {
-                        using var reader = new StreamReader(stream, Encoding);
-                        var yamlContent = reader.ReadToEnd();
+                    using var reader = new StreamReader(stream, Encoding);
+                    var yamlContent = reader.ReadToEnd();
 
-                        if (!string.IsNullOrWhiteSpace(yamlContent))
-                        {
-                            existingDict = Deserializer.Deserialize<Dictionary<string, object>>(
-                                yamlContent
-                            );
-                            options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
-                        }
+                    if (!string.IsNullOrWhiteSpace(yamlContent))
+                    {
+                        existingDict = Deserializer.Deserialize<Dictionary<string, object>>(
+                            yamlContent
+                        );
+                        options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
                     }
                 }
             }
