@@ -174,7 +174,7 @@ public class ZipFileProviderTests
     }
 
     [Fact]
-    public async Task GetFileStream_WhenEntryExists_ShouldReturnStream()
+    public async Task GetFilePipeReader_WhenEntryExists_ShouldReturnPipeReader()
     {
         using var testFile = new TemporaryFile();
         using var provider = new ZipFileProvider();
@@ -182,32 +182,33 @@ public class ZipFileProviderTests
 
         await provider.SaveToFileAsync(testFile.FilePath, content);
 
-        using var stream = provider.GetFileStream(testFile.FilePath);
-        stream.ShouldNotBeNull();
+        var pipeReader = provider.GetFilePipeReader(testFile.FilePath);
+        pipeReader.ShouldNotBeNull();
 
+        using var stream = pipeReader.AsStream(leaveOpen: false);
         using var reader = new StreamReader(stream);
         var readContent = await reader.ReadToEndAsync();
         readContent.ShouldBe("Test content");
     }
 
     [Fact]
-    public void GetFileStream_WhenEntryDoesNotExist_ShouldReturnNull()
+    public void GetFilePipeReader_WhenEntryDoesNotExist_ShouldReturnNull()
     {
         using var testFile = new TemporaryFile();
         using var provider = new ZipFileProvider();
 
-        var stream = provider.GetFileStream(testFile.FilePath);
-        stream.ShouldBeNull();
+        var pipeReader = provider.GetFilePipeReader(testFile.FilePath);
+        pipeReader.ShouldBeNull();
     }
 
     [Fact]
-    public void GetFileStream_WhenZipFileDoesNotExist_ShouldReturnNull()
+    public void GetFilePipeReader_WhenZipFileDoesNotExist_ShouldReturnNull()
     {
         var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "test.json");
         using var provider = new ZipFileProvider();
 
-        var stream = provider.GetFileStream(testPath);
-        stream.ShouldBeNull();
+        var pipeReader = provider.GetFilePipeReader(testPath);
+        pipeReader.ShouldBeNull();
     }
 
     [Fact]
@@ -277,7 +278,7 @@ public class ZipFileProviderTests
     }
 
     [Fact]
-    public async Task GetFileStream_AfterDispose_ShouldStillWork()
+    public async Task GetFilePipeReader_AfterDispose_ShouldStillWork()
     {
         using var testFile = new TemporaryFile();
         using var provider = new ZipFileProvider();
@@ -285,15 +286,22 @@ public class ZipFileProviderTests
 
         await provider.SaveToFileAsync(testFile.FilePath, content);
 
-        using var stream = provider.GetFileStream(testFile.FilePath);
-        stream.ShouldNotBeNull();
+        var pipeReader = provider.GetFilePipeReader(testFile.FilePath);
+        pipeReader.ShouldNotBeNull();
 
-        // Dispose the stream
-        stream.Dispose();
+        // Dispose the pipe reader (if it's IDisposable)
+        if (pipeReader is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
 
-        // Should be able to get a new stream
-        using var stream2 = provider.GetFileStream(testFile.FilePath);
-        stream2.ShouldNotBeNull();
+        // Should be able to get a new pipe reader
+        var pipeReader2 = provider.GetFilePipeReader(testFile.FilePath);
+        pipeReader2.ShouldNotBeNull();
+        if (pipeReader2 is IDisposable disposable2)
+        {
+            disposable2.Dispose();
+        }
     }
 
     [Fact]
@@ -369,7 +377,7 @@ public class ZipFileProviderTests
     }
 
     [Fact]
-    public async Task GetFileStream_WithEntriesDirectory_ShouldReturnStream()
+    public async Task GetFilePipeReader_WithEntriesDirectory_ShouldReturnPipeReader()
     {
         using var testFile = new TemporaryFile();
         using var provider = new ZipFileProvider { EntriesDirectory = "configs" };
@@ -377,7 +385,10 @@ public class ZipFileProviderTests
 
         await provider.SaveToFileAsync(testFile.FilePath, content);
 
-        using var stream = provider.GetFileStream(testFile.FilePath);
+        var pipeReader = provider.GetFilePipeReader(testFile.FilePath);
+        pipeReader.ShouldNotBeNull();
+
+        using var stream = pipeReader.AsStream(leaveOpen: false);
         stream.ShouldNotBeNull();
 
         using var reader = new StreamReader(stream);

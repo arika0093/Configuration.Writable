@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.IO;
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,13 +22,22 @@ public class XmlFormatProvider : FormatProviderBase
     public override string FileExtension => "xml";
 
     /// <inheritdoc />
-    public override object LoadConfiguration(
+    public override async ValueTask<object> LoadConfigurationAsync(
         Type type,
-        Stream stream,
-        System.Collections.Generic.List<string> sectionNameParts
+        PipeReader reader,
+        System.Collections.Generic.List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
     )
     {
+        // Use PipeReader.AsStream for compatibility with XDocument.Load
+        // The stream owns the PipeReader when leaveOpen is false
+        using var stream = reader.AsStream(leaveOpen: false);
+#if NET8_0_OR_GREATER
+        var xmlDoc = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken)
+            .ConfigureAwait(false);
+#else
         var xmlDoc = XDocument.Load(stream);
+#endif
         var root = xmlDoc.Root;
 
         if (root == null)
@@ -53,15 +64,18 @@ public class XmlFormatProvider : FormatProviderBase
                 }
             }
 
-            using var reader = current.CreateReader();
-            var serializer = new XmlSerializer(type, new XmlRootAttribute(current.Name.LocalName));
-            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+            using var xmlReader = current.CreateReader();
+            var serializer = new XmlSerializer(
+                type,
+                new XmlRootAttribute(current.Name.LocalName)
+            );
+            return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
         }
 
-        using (var reader = root.CreateReader())
+        using (var xmlReader = root.CreateReader())
         {
             var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
-            return serializer.Deserialize(reader) ?? Activator.CreateInstance(type)!;
+            return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
         }
     }
 
@@ -138,15 +152,26 @@ public class XmlFormatProvider : FormatProviderBase
         var parts = options.SectionNameParts;
         XDocument? existingDoc = null;
 
-        // Try to read existing file
+        // Try to read existing file using PipeReader
         if (options.FileProvider.FileExists(options.ConfigFilePath))
         {
             try
             {
-                using var fileStream = options.FileProvider.GetFileStream(options.ConfigFilePath);
-                if (fileStream != null && fileStream.Length > 0)
+                var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+                if (pipeReader != null)
                 {
-                    existingDoc = XDocument.Load(fileStream);
+                    using var stream = pipeReader.AsStream(leaveOpen: false);
+#if NET8_0_OR_GREATER
+                    existingDoc = XDocument.LoadAsync(
+                            stream,
+                            LoadOptions.None,
+                            CancellationToken.None
+                        )
+                        .GetAwaiter()
+                        .GetResult();
+#else
+                    existingDoc = XDocument.Load(stream);
+#endif
                     options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
                 }
             }

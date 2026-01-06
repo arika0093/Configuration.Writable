@@ -1,7 +1,8 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
+using System.IO.Pipelines;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -39,13 +40,18 @@ public class JsonFormatProvider : FormatProviderBase
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
-    public override object LoadConfiguration(
+    public override async ValueTask<object> LoadConfigurationAsync(
         Type type,
-        Stream stream,
-        List<string> sectionNameParts
+        PipeReader reader,
+        List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
     )
     {
-        var jsonDocument = JsonDocument.Parse(stream);
+        // Use JsonDocument.ParseAsync for efficient pipeline-based parsing
+        // The stream owns the PipeReader when leaveOpen is false
+        using var stream = reader.AsStream(leaveOpen: false);
+        var jsonDocument = await JsonDocument.ParseAsync(stream, default, cancellationToken)
+            .ConfigureAwait(false);
         var root = jsonDocument.RootElement;
 
         // Navigate to the section if specified

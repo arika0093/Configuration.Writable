@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -69,12 +70,14 @@ internal static class JsonWriterHelper
     {
         logger?.Log(LogLevel.Trace, "Serializing configuration directly without section nesting");
 
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream, writerOptions);
+        // Use ArrayBufferWriter for better memory efficiency
+        var bufferWriter = new ArrayBufferWriter<byte>();
+        using var writer = new Utf8JsonWriter(bufferWriter, writerOptions);
 
         serializeAction(writer, config);
         writer.Flush();
-        var bytes = stream.ToArray();
+
+        var bytes = bufferWriter.WrittenMemory.ToArray();
 
         logger?.Log(
             LogLevel.Trace,
@@ -110,15 +113,16 @@ internal static class JsonWriterHelper
     {
         JsonDocument? existingDocument = null;
 
-        // Try to read existing file
+        // Try to read existing file using PipeReader
         if (fileProvider.FileExists(configFilePath))
         {
             try
             {
-                using var fileStream = fileProvider.GetFileStream(configFilePath);
-                if (fileStream != null && fileStream.Length > 0)
+                var pipeReader = fileProvider.GetFilePipeReader(configFilePath);
+                if (pipeReader != null)
                 {
-                    existingDocument = JsonDocument.Parse(fileStream);
+                    using var stream = pipeReader.AsStream(leaveOpen: false);
+                    existingDocument = JsonDocument.Parse(stream);
                     logger?.Log(LogLevel.Trace, "Loaded existing JSON file for partial update");
                 }
             }
@@ -132,8 +136,9 @@ internal static class JsonWriterHelper
             }
         }
 
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream, writerOptions);
+        // Use ArrayBufferWriter for better memory efficiency
+        var bufferWriter = new ArrayBufferWriter<byte>();
+        using var writer = new Utf8JsonWriter(bufferWriter, writerOptions);
 
         if (existingDocument != null)
         {
@@ -165,7 +170,7 @@ internal static class JsonWriterHelper
         }
 
         writer.Flush();
-        var bytes = stream.ToArray();
+        var bytes = bufferWriter.WrittenMemory.ToArray();
 
         logger?.Log(
             LogLevel.Trace,

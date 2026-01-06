@@ -8,7 +8,7 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public YamlDotNet.Serialization.ISerializer Serializer { get; init; }
-        public override object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts) { }
+        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }

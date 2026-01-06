@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -12,11 +12,11 @@ namespace Configuration.Writable.FileProvider;
 public interface IFileProvider
 {
     /// <summary>
-    /// Returns a stream for reading the contents of the specified file path. If the file does not exist, returns null.
+    /// Returns a PipeReader for reading the contents of the specified file path. If the file does not exist, returns null.
     /// </summary>
     /// <param name="path">The path of the file to retrieve. Can be relative or absolute.</param>
-    /// <returns>A stream containing the file contents, or null if the file does not exist.</returns>
-    Stream? GetFileStream(string path);
+    /// <returns>A PipeReader containing the file contents, or null if the file does not exist.</returns>
+    PipeReader? GetFilePipeReader(string path);
 
     /// <summary>
     /// Asynchronously saves the specified content to a file at the given path.

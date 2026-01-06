@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,17 +36,18 @@ public interface IFormatProvider
         where T : class, new();
 
     /// <summary>
-    /// Loads configuration from a stream and deserializes it to the specified type.
-    /// This is a non-generic version required for migration support.
+    /// Loads configuration from a PipeReader and deserializes it to the specified type.
     /// </summary>
     /// <param name="type">The type of the configuration object to load.</param>
-    /// <param name="stream">The stream containing the configuration data.</param>
+    /// <param name="reader">The PipeReader containing the configuration data.</param>
     /// <param name="sectionNameParts">The parts of the section name split by ':' and '__' for hierarchical navigation.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the load operation.</param>
     /// <returns>The deserialized configuration object.</returns>
-    object LoadConfiguration(
+    ValueTask<object> LoadConfigurationAsync(
         Type type,
-        Stream stream,
-        System.Collections.Generic.List<string> sectionNameParts
+        PipeReader reader,
+        System.Collections.Generic.List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
     );
 
     /// <summary>

@@ -1,6 +1,8 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -41,14 +43,27 @@ public class YamlFormatProvider : FormatProviderBase
     public override string FileExtension => "yaml";
 
     /// <inheritdoc />
-    public override object LoadConfiguration(
+    public override async ValueTask<object> LoadConfigurationAsync(
         Type type,
-        Stream stream,
-        List<string> sectionNameParts
+        PipeReader reader,
+        List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
     )
     {
-        using var reader = new StreamReader(stream, Encoding);
-        var yamlContent = reader.ReadToEnd();
+        // Use PipeReader.AsStream for compatibility with StreamReader
+        // The stream owns the PipeReader when leaveOpen is false
+        var stream = reader.AsStream(leaveOpen: false);
+#if NETSTANDARD2_0
+        using var streamReader = new StreamReader(stream, Encoding);
+#else
+        using var streamReader = new StreamReader(stream, Encoding, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+#endif
+
+#if NET8_0_OR_GREATER
+        var yamlContent = await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+#else
+        var yamlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
+#endif
 
         string targetYamlContent = yamlContent;
 
@@ -168,15 +183,16 @@ public class YamlFormatProvider : FormatProviderBase
         var sections = options.SectionNameParts;
         Dictionary<string, object>? existingDict = null;
 
-        // Try to read existing file
+        // Try to read existing file using PipeReader
         if (options.FileProvider.FileExists(options.ConfigFilePath))
         {
             try
             {
-                using var fileStream = options.FileProvider.GetFileStream(options.ConfigFilePath);
-                if (fileStream != null && fileStream.Length > 0)
+                var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+                if (pipeReader != null)
                 {
-                    using var reader = new StreamReader(fileStream, Encoding);
+                    using var stream = pipeReader.AsStream(leaveOpen: false);
+                    using var reader = new StreamReader(stream, Encoding);
                     var yamlContent = reader.ReadToEnd();
 
                     if (!string.IsNullOrWhiteSpace(yamlContent))

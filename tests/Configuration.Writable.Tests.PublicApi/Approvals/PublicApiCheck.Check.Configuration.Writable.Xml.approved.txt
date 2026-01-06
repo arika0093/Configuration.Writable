@@ -5,7 +5,7 @@ namespace Configuration.Writable.FormatProvider
     {
         public XmlFormatProvider() { }
         public override string FileExtension { get; }
-        public override object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts) { }
+        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }

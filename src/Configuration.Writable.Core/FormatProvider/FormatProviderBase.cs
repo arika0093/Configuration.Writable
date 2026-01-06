@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,10 +15,11 @@ public abstract class FormatProviderBase : IFormatProvider
     public abstract string FileExtension { get; }
 
     /// <inheritdoc />
-    public abstract object LoadConfiguration(
+    public abstract ValueTask<object> LoadConfigurationAsync(
         Type type,
-        Stream stream,
-        List<string> sectionNameParts
+        PipeReader reader,
+        List<string> sectionNameParts,
+        CancellationToken cancellationToken = default
     );
 
     /// <inheritdoc />
@@ -48,15 +49,33 @@ public abstract class FormatProviderBase : IFormatProvider
             return Activator.CreateInstance(type)!;
         }
 
-        var stream = options.FileProvider.GetFileStream(filePath);
-        if (stream == null)
+        // Use PipeReader for reading
+        var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
+        if (pipeReader == null)
         {
             return Activator.CreateInstance(type)!;
         }
 
-        using (stream)
+        // PipeReader.Create returns a type that implements IDisposable
+        // We use synchronous disposal here since we're in a sync method
+        try
         {
-            return LoadConfiguration(type, stream, options.SectionNameParts);
+            return LoadConfigurationAsync(
+                type,
+                pipeReader,
+                options.SectionNameParts,
+                CancellationToken.None
+            )
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+        }
+        finally
+        {
+            if (pipeReader is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
         }
     }
 

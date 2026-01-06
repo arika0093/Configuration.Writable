@@ -259,6 +259,7 @@
           "Microsoft.Extensions.Logging.Abstractions": "[10.*, )",
           "Microsoft.Extensions.Options": "[10.*, )",
           "System.ComponentModel.Annotations": "[5.*, )",
+          "System.IO.Pipelines": "[10.*, )",
           "System.Text.Json": "[10.*, )",
           "ZLogger": "[2.*, )"
         }
@@ -455,6 +456,11 @@
         "resolved": "8.0.0",
         "contentHash": "ne1843evDugl0md7Fjzy6QjJrzsjh46ZKbhf8GwBXb5f/gw97J4bxMs0NQKifDuThh/f0bZ0e62NPl1jzTuRqA=="
       },
+      "System.IO.Pipelines": {
+        "type": "Transitive",
+        "resolved": "10.0.1",
+        "contentHash": "26LbFXHKd7PmRnWlkjnYgmjd5B6HYVG+1MpTO25BdxTJnx6D0O16JPAC/S4YBqjtt4YpfGj1QO/Ss6SPMGEGQw=="
+      },
       "Utf8StringInterpolation": {
         "type": "Transitive",
         "resolved": "1.3.1",
@@ -476,6 +482,7 @@
           "IDeepCloneable": "[*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.*, )",
           "Microsoft.Extensions.Options": "[10.*, )",
+          "System.IO.Pipelines": "[10.*, )",
           "ZLogger": "[2.*, )"
         }
       }
@@ -566,6 +573,11 @@
         "resolved": "8.0.0",
         "contentHash": "ne1843evDugl0md7Fjzy6QjJrzsjh46ZKbhf8GwBXb5f/gw97J4bxMs0NQKifDuThh/f0bZ0e62NPl1jzTuRqA=="
       },
+      "System.IO.Pipelines": {
+        "type": "Transitive",
+        "resolved": "10.0.1",
+        "contentHash": "26LbFXHKd7PmRnWlkjnYgmjd5B6HYVG+1MpTO25BdxTJnx6D0O16JPAC/S4YBqjtt4YpfGj1QO/Ss6SPMGEGQw=="
+      },
       "Utf8StringInterpolation": {
         "type": "Transitive",
         "resolved": "1.3.1",
@@ -587,6 +599,7 @@
           "IDeepCloneable": "[*, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.*, )",
           "Microsoft.Extensions.Options": "[10.*, )",
+          "System.IO.Pipelines": "[10.*, )",
           "ZLogger": "[2.*, )"
         }
       }

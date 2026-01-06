@@ -63,7 +63,7 @@ namespace Configuration.Writable.FileProvider
         protected virtual void Dispose(bool disposing) { }
         public virtual bool FileExists(string path) { }
         protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
-        public virtual System.IO.Stream? GetFileStream(string path) { }
+        public virtual System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
         protected virtual string GetTemporaryFilePath(string path) { }
         public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
         protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
@@ -74,7 +74,7 @@ namespace Configuration.Writable.FileProvider
         bool CanWriteToFile(string path);
         bool DirectoryExists(string path);
         bool FileExists(string path);
-        System.IO.Stream? GetFileStream(string path);
+        System.IO.Pipelines.PipeReader? GetFilePipeReader(string path);
         System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default);
     }
     public class ZipFileProvider : Configuration.Writable.FileProvider.IFileProvider, System.IDisposable
@@ -88,7 +88,7 @@ namespace Configuration.Writable.FileProvider
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
         public bool FileExists(string path) { }
-        public System.IO.Stream? GetFileStream(string path) { }
+        public System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
         public System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
     }
 }
@@ -98,11 +98,11 @@ namespace Configuration.Writable.FormatProvider
     {
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
-        public abstract object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts);
         public T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
         public object LoadConfiguration<T>(System.Type type, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new () { }
+        public abstract System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
         protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
@@ -110,11 +110,11 @@ namespace Configuration.Writable.FormatProvider
     public interface IFormatProvider
     {
         string FileExtension { get; }
-        object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts);
         T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
         object LoadConfiguration<T>(System.Type type, Configuration.Writable.WritableOptionsConfiguration<T> options)
             where T :  class, new ();
+        System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
@@ -124,7 +124,7 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; init; }
-        public override object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts) { }
+        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
@@ -136,7 +136,7 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
-        public override object LoadConfiguration(System.Type type, System.IO.Stream stream, System.Collections.Generic.List<string> sectionNameParts) { }
+        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -40,18 +41,16 @@ public class InMemoryFileProvider : IFileProvider
         return _files.ContainsKey(normalizedPath);
     }
 
-    /// <summary>
-    /// Returns a stream for reading the contents of the specified file path. If the file does not exist, returns null.
-    /// </summary>
-    /// <param name="path">The path of the file to retrieve. Can be relative or absolute.</param>
-    public Stream? GetFileStream(string path)
+    /// <inheritdoc />
+    public PipeReader? GetFilePipeReader(string path)
     {
         var normalizedPath = Path.GetFullPath(path);
         if (!_files.TryGetValue(normalizedPath, out var content))
         {
             return null;
         }
-        return new MemoryStream(content);
+        var stream = new MemoryStream(content);
+        return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
     }
 
     /// <inheritdoc />
