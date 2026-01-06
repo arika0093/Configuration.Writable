@@ -1,3 +1,14 @@
+## [0.3.0] - 2026-01-06
+
+### 🐛 Bug Fixes
+
+- Remove obsolete project reference to Configuration.Writable.Encrypt
+- Remove obsolete test for default throttle value
+- Update version from 0.2.1.0 to 0.3.0.0 in version.json
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.2.1
 ## [0.2.1] - 2026-01-05
 
 ### 🐛 Bug Fixes
