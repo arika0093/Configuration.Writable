@@ -82,7 +82,8 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
 
         // Use JsonDocument.ParseAsync for efficient pipeline-based parsing
         using var stream = reader.AsStream(leaveOpen: false);
-        var jsonDocument = await JsonDocument.ParseAsync(stream, default, cancellationToken)
+        var jsonDocument = await JsonDocument
+            .ParseAsync(stream, default, cancellationToken)
             .ConfigureAwait(false);
         var root = jsonDocument.RootElement;
 

@@ -56,11 +56,18 @@ public class YamlFormatProvider : FormatProviderBase
 #if NETSTANDARD2_0
         using var streamReader = new StreamReader(stream, Encoding);
 #else
-        using var streamReader = new StreamReader(stream, Encoding, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+        using var streamReader = new StreamReader(
+            stream,
+            Encoding,
+            detectEncodingFromByteOrderMarks: true,
+            leaveOpen: false
+        );
 #endif
 
 #if NET8_0_OR_GREATER
-        var yamlContent = await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        var yamlContent = await streamReader
+            .ReadToEndAsync(cancellationToken)
+            .ConfigureAwait(false);
 #else
         var yamlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
 #endif

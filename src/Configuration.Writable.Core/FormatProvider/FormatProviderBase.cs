@@ -61,11 +61,11 @@ public abstract class FormatProviderBase : IFormatProvider
         try
         {
             return LoadConfigurationAsync(
-                type,
-                pipeReader,
-                options.SectionNameParts,
-                CancellationToken.None
-            )
+                    type,
+                    pipeReader,
+                    options.SectionNameParts,
+                    CancellationToken.None
+                )
                 .AsTask()
                 .GetAwaiter()
                 .GetResult();

@@ -33,7 +33,8 @@ public class XmlFormatProvider : FormatProviderBase
         // The stream owns the PipeReader when leaveOpen is false
         using var stream = reader.AsStream(leaveOpen: false);
 #if NET8_0_OR_GREATER
-        var xmlDoc = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken)
+        var xmlDoc = await XDocument
+            .LoadAsync(stream, LoadOptions.None, cancellationToken)
             .ConfigureAwait(false);
 #else
         var xmlDoc = XDocument.Load(stream);
@@ -65,10 +66,7 @@ public class XmlFormatProvider : FormatProviderBase
             }
 
             using var xmlReader = current.CreateReader();
-            var serializer = new XmlSerializer(
-                type,
-                new XmlRootAttribute(current.Name.LocalName)
-            );
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(current.Name.LocalName));
             return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
         }
 
@@ -162,11 +160,8 @@ public class XmlFormatProvider : FormatProviderBase
                 {
                     using var stream = pipeReader.AsStream(leaveOpen: false);
 #if NET8_0_OR_GREATER
-                    existingDoc = XDocument.LoadAsync(
-                            stream,
-                            LoadOptions.None,
-                            CancellationToken.None
-                        )
+                    existingDoc = XDocument
+                        .LoadAsync(stream, LoadOptions.None, CancellationToken.None)
                         .GetAwaiter()
                         .GetResult();
 #else

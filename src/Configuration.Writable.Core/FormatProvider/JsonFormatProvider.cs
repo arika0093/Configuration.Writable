@@ -50,7 +50,8 @@ public class JsonFormatProvider : FormatProviderBase
         // Use JsonDocument.ParseAsync for efficient pipeline-based parsing
         // The stream owns the PipeReader when leaveOpen is false
         using var stream = reader.AsStream(leaveOpen: false);
-        var jsonDocument = await JsonDocument.ParseAsync(stream, default, cancellationToken)
+        var jsonDocument = await JsonDocument
+            .ParseAsync(stream, default, cancellationToken)
             .ConfigureAwait(false);
         var root = jsonDocument.RootElement;
 
