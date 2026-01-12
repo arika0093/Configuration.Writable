@@ -4,9 +4,9 @@
     ".NETStandard,Version=v2.0": {
       "IDeepCloneable.Generator.Source": {
         "type": "Direct",
-        "requested": "[0.0.26, )",
-        "resolved": "0.0.26",
-        "contentHash": "OOQVb7fEvz+4McRU78RRHqXV7uqI8L/a1WCfTQp5RbgTfmJEYgjg8HoXscurGfeLmZZjvqn1Uu204/+ay6iJIg=="
+        "requested": "[*, )",
+        "resolved": "0.0.27",
+        "contentHash": "tjXmiottTRelSi8wEB4JLnqcVgHV0oeXP/8xGyW5qzuwDmvVo4mx6Pbv2q0enr4eNkYrsCggczwPwQDHUQmnxw=="
       },
       "Microsoft.CodeAnalysis.Analyzers": {
         "type": "Direct",
