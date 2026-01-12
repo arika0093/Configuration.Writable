@@ -13,11 +13,6 @@
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
     <PackageReference Include="System.Text.Json" Version="10.*" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-    <Reference Include="System.IO.Compression" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
-    <PackageReference Include="System.Text.Json" Version="10.*" />
-  </ItemGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
