@@ -1,20 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <RootNamespace>Configuration.Writable</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="IDeepCloneable" Version="*" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.*" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
     <PackageReference Include="ZLogger" Version="2.*" />
     <PackageReference Include="System.IO.Pipelines" Version="10.*" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
-    <PackageReference Include="System.Text.Json" Version="10.*" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-    <Reference Include="System.IO.Compression" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
     <PackageReference Include="System.Text.Json" Version="10.*" />
   </ItemGroup>

@@ -6,7 +6,8 @@ using Microsoft.Extensions.Options;
 
 namespace Example.WebApi;
 
-public partial class SampleSetting : IOptionsModel<SampleSetting>
+[OptionsModel]
+public partial class SampleSetting
 {
     [Required]
     [MinLength(3)]

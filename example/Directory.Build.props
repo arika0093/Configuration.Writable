@@ -4,4 +4,11 @@
     <IsPackable>false</IsPackable>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
+    <ProjectReference Include="..\..\src\Configuration.Writable.Generator\Configuration.Writable.Generator.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

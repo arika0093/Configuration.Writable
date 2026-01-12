@@ -55,7 +55,8 @@ await Task.Delay(100);
 
 // ------
 // setting class
-public partial class SampleSetting : IOptionsModel<SampleSetting>
+[OptionsModel]
+public partial class SampleSetting
 {
     public string Name { get; set; } = "default name";
 }
@@ -87,8 +88,9 @@ Then, prepare a class (`UserSetting`) in advance that you want to read and write
 ```csharp
 using Configuration.Writable;
 
-// add IOptionsModel and mark as partial class
-public partial class UserSetting : IOptionsModel<UserSetting>
+// add [OptionsModel] and mark as partial class
+[OptionsModel]
+public partial class UserSetting
 {
     public string Name { get; set; } = "default name";
     public int Age { get; set; } = 20;
@@ -96,8 +98,7 @@ public partial class UserSetting : IOptionsModel<UserSetting>
 ```
 
 > [!NOTE]
-> By adding `IOptionsModel<T>`, the `DeepClone` method is automatically generated via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).
-> Therefore, you do not need to implement the `DeepClone` method yourself.
+> By adding `[OptionsModel]`, the `DeepClone` method is automatically generated via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).
 
 ### Simple Application (Without DI)
 If you are not using DI (for example, in WinForms, WPF, console apps, etc.),
@@ -606,14 +607,16 @@ First, prepare a settings class for each version and implement the `Version` pro
 
 ```csharp
 // Version 1
-public partial class UserSettingV1 : IVersionedOptionsModel<UserSettingV1>
+[OptionsModel]
+public partial class UserSettingV1 : IHasVersion
 {
     public int Version { get; set; } = 1; // add it
     public string Name { get; set; } = "default name";
 }
 
 // Version 2
-public partial class UserSettingV2 : IVersionedOptionsModel<UserSettingV2>
+[OptionsModel]
+public partial class UserSettingV2 : IHasVersion
 {
     public int Version { get; set; } = 2; // add it
     public List<string> Names { get; set; } = [];

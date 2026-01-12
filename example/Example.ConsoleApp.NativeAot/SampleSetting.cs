@@ -6,7 +6,8 @@ using Microsoft.Extensions.Options;
 
 namespace Example.ConsoleApp.NativeAot;
 
-public partial class SampleSetting : IOptionsModel<SampleSetting>
+[OptionsModel]
+public partial class SampleSetting
 {
     [Required]
     [MinLength(3)]

@@ -1,0 +1,13 @@
+{
+    "$schema": "https://json.schemastore.org/launchsettings.json",
+    "profiles": {
+        "Debug:Tests": {
+            "commandName": "DebugRoslynComponent",
+            "targetProject": "../../tests/Configuration.Writable.Tests/Configuration.Writable.Tests.csproj"
+        },
+        "Debug:Example.ConsoleApp": {
+            "commandName": "DebugRoslynComponent",
+            "targetProject": "../../example/Example.ConsoleApp/Example.ConsoleApp.csproj"
+        }
+    }
+}
