@@ -33,7 +33,4 @@
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
-  <ItemGroup>
-    <EditorConfigFiles Remove="C:\ark\program\oss\Configuration.Writable\src\Configuration.Writable.Generator\.editorconfig" />
-  </ItemGroup>
 </Project>
