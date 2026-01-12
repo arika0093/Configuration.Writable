@@ -3,7 +3,8 @@ using Configuration.Writable;
 
 namespace Example.ConsoleApp;
 
-public partial class SampleSetting : IOptionsModel<SampleSetting>
+[OptionsModel]
+public partial class SampleSetting
 {
     [Required]
     [MinLength(3)]

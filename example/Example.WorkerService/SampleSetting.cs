@@ -3,7 +3,8 @@ using Configuration.Writable;
 
 namespace Example.WorkerService;
 
-public partial class SampleSetting : IOptionsModel<SampleSetting>
+[OptionsModel]
+public partial class SampleSetting
 {
     public string? Name { get; set; }
     public DateTime LastUpdatedAt { get; set; } = DateTime.Now;

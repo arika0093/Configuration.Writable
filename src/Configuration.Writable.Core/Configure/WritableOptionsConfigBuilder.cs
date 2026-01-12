@@ -6,10 +6,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Configuration.Writable.Abstractions;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
-using IDeepCloneable;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
