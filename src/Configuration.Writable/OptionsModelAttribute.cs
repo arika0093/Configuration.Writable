@@ -10,4 +10,4 @@ namespace Configuration.Writable;
     Inherited = false,
     AllowMultiple = false
 )]
-public class OptionsModelAttribute : Attribute;
+public sealed class OptionsModelAttribute : Attribute;
