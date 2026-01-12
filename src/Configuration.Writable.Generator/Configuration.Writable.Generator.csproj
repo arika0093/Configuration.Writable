@@ -20,7 +20,7 @@
     />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="IDeepCloneable.Generator.Source" Version="0.0.26">
+    <PackageReference Include="IDeepCloneable.Generator.Source" Version="*">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
