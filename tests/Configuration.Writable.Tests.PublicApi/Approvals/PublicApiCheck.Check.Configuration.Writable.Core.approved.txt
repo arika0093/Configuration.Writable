@@ -1,4 +1,11 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
+namespace Configuration.Writable.Abstractions
+{
+    public interface IDeepCloneable<out T>
+    {
+        T DeepClone();
+    }
+}
 namespace Configuration.Writable.Configure
 {
     public interface ILocationBuilder
@@ -147,8 +154,6 @@ namespace Configuration.Writable
     {
         int Version { get; set; }
     }
-    public interface IOptionsModel<T> : IDeepCloneable.IDeepCloneable<T>
-        where T :  class, new () { }
     public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
@@ -176,8 +181,6 @@ namespace Configuration.Writable
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration();
         System.IDisposable? OnChange(System.Action<T> listener);
     }
-    public interface IVersionedOptionsModel<T> : Configuration.Writable.IHasVersion, Configuration.Writable.IOptionsModel<T>, IDeepCloneable.IDeepCloneable<T>
-        where T :  class, new () { }
     public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
