@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishAot>true</PublishAot>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
