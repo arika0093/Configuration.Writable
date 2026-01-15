@@ -1,3 +1,12 @@
+## [0.4.0] - 2026-01-15
+
+### 🐛 Bug Fixes
+
+- Update project references and paths in Configuration.Writable.csproj
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.3.0
 ## [0.3.0] - 2026-01-06
 
 ### 🐛 Bug Fixes
