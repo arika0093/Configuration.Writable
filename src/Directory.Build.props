@@ -2,7 +2,6 @@
   <PropertyGroup>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <PackageDescription>Yet another library with features including: type-safe operations, change detection, version migration, validation, and more.</PackageDescription>
     <PackageProjectUrl>https://arika0093.github.io/Configuration.Writable</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arika0093/Configuration.Writable</RepositoryUrl>

@@ -42,7 +42,7 @@ jobs:
         run: dotnet tool install --global dotnet-test-rerun
 
       - name: Restore dependencies
-        run: dotnet restore --locked-mode
+        run: dotnet restore
 
       - name: Build
         run: dotnet build --no-restore
