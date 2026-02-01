@@ -13,7 +13,12 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="$(OutputPath)\Configuration.Writable.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None
+      Include="$(OutputPath)\Configuration.Writable.Generator.dll"
+      Pack="true"
+      PackagePath="analyzers/dotnet/cs"
+      Visible="false"
+    />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="IDeepCloneable.Generator.Source" Version="0.1.0">
