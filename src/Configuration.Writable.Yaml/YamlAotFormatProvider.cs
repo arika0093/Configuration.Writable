@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -37,9 +38,27 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
     // Private lock object for thread-safe modifications to YamlSerializer.DefaultOptions
     private static readonly object _yamlSerializerLock = new object();
     
-    // Cached reflection method infos for performance
-    private static MethodInfo? _cachedSerializeMethod;
-    private static MethodInfo? _cachedDeserializeMethod;
+    // Cached reflection method infos for performance - initialized in static constructor
+    private static readonly MethodInfo? _cachedSerializeMethod;
+    private static readonly MethodInfo? _cachedDeserializeMethod;
+
+    /// <summary>
+    /// Static constructor to initialize cached reflection method infos.
+    /// </summary>
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "Reflection is required to call generic methods with runtime types")]
+    [SuppressMessage("Minor Code Smell", "S3963:\"static\" fields should be initialized inline", Justification = "Reflection initialization requires try-catch logic that cannot be done inline")]
+    static YamlAotFormatProvider()
+    {
+        try
+        {
+            _cachedSerializeMethod = typeof(YamlAotFormatProvider).GetMethod(nameof(SerializeYaml), BindingFlags.NonPublic | BindingFlags.Instance);
+            _cachedDeserializeMethod = typeof(YamlAotFormatProvider).GetMethod(nameof(DeserializeYaml), BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ReadOnlyMemory<byte>) }, null);
+        }
+        catch
+        {
+            // If reflection fails, methods will remain null and fallback logic will handle it
+        }
+    }
 
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
@@ -136,7 +155,6 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
             else
             {
                 // For other types, we need to use reflection to get the actual type and serialize
-                _cachedSerializeMethod ??= GetType().GetMethod(nameof(SerializeYaml), BindingFlags.NonPublic | BindingFlags.Instance);
                 if (_cachedSerializeMethod != null)
                 {
                     var genericMethod = _cachedSerializeMethod.MakeGenericMethod(current.GetType());
@@ -213,7 +231,6 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
     private object? DeserializeYaml(ReadOnlyMemory<byte> yamlBytes, Type type)
     {
         // Use cached reflection to call the generic DeserializeYaml<T> method
-        _cachedDeserializeMethod ??= GetType().GetMethod(nameof(DeserializeYaml), BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ReadOnlyMemory<byte>) }, null);
         if (_cachedDeserializeMethod != null)
         {
             var genericMethod = _cachedDeserializeMethod.MakeGenericMethod(type);
