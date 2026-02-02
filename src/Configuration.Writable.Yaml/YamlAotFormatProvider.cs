@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -103,6 +104,17 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
                             return Activator.CreateInstance(type)!;
                         }
                     }
+                    else if (current is Dictionary<object, object> objDict)
+                    {
+                        if (objDict.TryGetValue(section, out var value))
+                        {
+                            current = value;
+                        }
+                        else
+                        {
+                            return Activator.CreateInstance(type)!;
+                        }
+                    }
                     else
                     {
                         return Activator.CreateInstance(type)!;
@@ -139,19 +151,35 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
     /// </summary>
     private static object? DeserializeYaml(ReadOnlyMemory<byte> yamlBytes, Type type)
     {
-        var method = typeof(YamlSerializer).GetMethod("Deserialize", new[] { typeof(ReadOnlyMemory<byte>), typeof(YamlSerializerOptions) });
-        if (method == null)
+        // Find the Deserialize<T>(ReadOnlyMemory<byte>) method
+        var methods = typeof(YamlSerializer).GetMethods(BindingFlags.Public | BindingFlags.Static);
+        var deserializeMethod = methods.FirstOrDefault(m =>
+            m.Name == "Deserialize" &&
+            m.IsGenericMethodDefinition &&
+            m.GetParameters().Length == 1 &&
+            m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
+        );
+
+        if (deserializeMethod != null)
         {
-            // Fallback: try method without options parameter
-            method = typeof(YamlSerializer).GetMethod("Deserialize", new[] { typeof(ReadOnlyMemory<byte>) });
+            var genericMethod = deserializeMethod.MakeGenericMethod(type);
+            return genericMethod.Invoke(null, new object[] { yamlBytes });
         }
-        
-        if (method != null)
+
+        // Fallback: try with options parameter
+        deserializeMethod = methods.FirstOrDefault(m =>
+            m.Name == "Deserialize" &&
+            m.IsGenericMethodDefinition &&
+            m.GetParameters().Length == 2 &&
+            m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
+        );
+
+        if (deserializeMethod != null)
         {
-            var genericMethod = method.MakeGenericMethod(type);
+            var genericMethod = deserializeMethod.MakeGenericMethod(type);
             return genericMethod.Invoke(null, new object?[] { yamlBytes, null });
         }
-        
+
         return null;
     }
 

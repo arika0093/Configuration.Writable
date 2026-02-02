@@ -16,8 +16,9 @@ namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
 /// AOT-compatible writable configuration implementation for XML files.
-/// This provider allows users to supply XmlSerializer instances to support Native AOT scenarios
-/// where reflection-based serialization is limited.
+/// This provider uses XmlSerializer with dynamically created root attributes for deserialization.
+/// For serialization, it uses the provided serializer factory to support AOT scenarios
+/// where reflection is used at runtime to create XmlSerializer instances.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -27,7 +28,8 @@ namespace Configuration.Writable.FormatProvider;
 /// </remarks>
 /// <param name="serializerFactory">
 /// A factory function that creates XmlSerializer instances for a given type.
-/// This allows users to provide pre-configured XmlSerializer instances compatible with AOT.
+/// This is used for serialization operations. For AOT compatibility, users should
+/// provide pre-created XmlSerializer instances or use generated serializers.
 /// </param>
 /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerFactory"/> is null.</exception>
 public class XmlAotFormatProvider(Func<Type, XmlSerializer> serializerFactory) : FormatProviderBase
@@ -82,14 +84,15 @@ public class XmlAotFormatProvider(Func<Type, XmlSerializer> serializerFactory) :
                 }
             }
 
+            // Create a serializer with the root attribute set to the current element name
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(current.Name.LocalName));
             using var xmlReader = current.CreateReader();
-            var serializer = _serializerFactory(type);
             return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
         }
 
         using (var xmlReader = root.CreateReader())
         {
-            var serializer = _serializerFactory(type);
+            var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
             return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
         }
     }
@@ -299,22 +302,25 @@ public class XmlAotFormatProvider(Func<Type, XmlSerializer> serializerFactory) :
             }
         }
 
-        // Write result to string
-        using var resultWriter = new StringWriter();
-        using var xmlWriter = XmlWriter.Create(
-            resultWriter,
+        // Write result to memory stream with UTF-8 encoding
+        using var resultStream = new MemoryStream();
+        using (var xmlWriter = XmlWriter.Create(
+            resultStream,
             new XmlWriterSettings
             {
                 Indent = true,
                 Encoding = Encoding.UTF8,
                 OmitXmlDeclaration = false,
+                CloseOutput = false,
             }
-        );
-        resultDoc.WriteTo(xmlWriter);
-        xmlWriter.Flush();
+        ))
+        {
+            resultDoc.WriteTo(xmlWriter);
+            xmlWriter.Flush();
+        }
 
         options.Logger?.ZLogTrace($"Partial XML serialization completed successfully");
 
-        return Encoding.UTF8.GetBytes(resultWriter.ToString());
+        return resultStream.ToArray();
     }
 }
