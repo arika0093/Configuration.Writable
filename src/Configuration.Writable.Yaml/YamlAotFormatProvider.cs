@@ -50,98 +50,152 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
         CancellationToken cancellationToken = default
     )
     {
-        // Set the options for this operation
-        var previousOptions = YamlSerializer.DefaultOptions;
-        YamlSerializer.DefaultOptions = _serializerOptions;
-        
-        try
-        {
-            // Use PipeReader.AsStream for compatibility with StreamReader
-            // The stream owns the PipeReader when leaveOpen is false
-            var stream = reader.AsStream(leaveOpen: false);
+        // Use PipeReader.AsStream for compatibility with StreamReader
+        // The stream owns the PipeReader when leaveOpen is false
+        var stream = reader.AsStream(leaveOpen: false);
 #if NETSTANDARD2_0
-            using var streamReader = new StreamReader(stream, Encoding);
+        using var streamReader = new StreamReader(stream, Encoding);
 #else
-            using var streamReader = new StreamReader(
-                stream,
-                Encoding,
-                detectEncodingFromByteOrderMarks: true,
-                leaveOpen: false
-            );
+        using var streamReader = new StreamReader(
+            stream,
+            Encoding,
+            detectEncodingFromByteOrderMarks: true,
+            leaveOpen: false
+        );
 #endif
 
 #if NET8_0_OR_GREATER
-            var yamlContent = await streamReader
-                .ReadToEndAsync(cancellationToken)
-                .ConfigureAwait(false);
+        var yamlContent = await streamReader
+            .ReadToEndAsync(cancellationToken)
+            .ConfigureAwait(false);
 #else
-            var yamlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
+        var yamlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
 #endif
 
-            var yamlUtf8Bytes = Encoding.GetBytes(yamlContent);
+        var yamlUtf8Bytes = Encoding.GetBytes(yamlContent);
 
-            // Navigate to the section if specified
-            if (sectionNameParts.Count > 0)
+        // Navigate to the section if specified
+        if (sectionNameParts.Count > 0)
+        {
+            // First deserialize to dynamic object to navigate sections
+            var data = DeserializeYaml<Dictionary<string, object>>(yamlUtf8Bytes);
+            if (data == null)
             {
-                // First deserialize to dynamic object to navigate sections
-                var data = YamlSerializer.Deserialize<Dictionary<string, object>>(yamlUtf8Bytes);
-                if (data == null)
-                {
-                    return Activator.CreateInstance(type)!;
-                }
+                return Activator.CreateInstance(type)!;
+            }
 
-                object? current = data;
-                foreach (var section in sectionNameParts)
+            object? current = data;
+            foreach (var section in sectionNameParts)
+            {
+                if (current is Dictionary<string, object> dict)
                 {
-                    if (current is Dictionary<string, object> dict)
+                    if (dict.TryGetValue(section, out var value))
                     {
-                        if (dict.TryGetValue(section, out var value))
-                        {
-                            current = value;
-                        }
-                        else
-                        {
-                            return Activator.CreateInstance(type)!;
-                        }
-                    }
-                    else if (current is Dictionary<object, object> objDict)
-                    {
-                        if (objDict.TryGetValue(section, out var value))
-                        {
-                            current = value;
-                        }
-                        else
-                        {
-                            return Activator.CreateInstance(type)!;
-                        }
+                        current = value;
                     }
                     else
                     {
                         return Activator.CreateInstance(type)!;
                     }
                 }
-
-                // Serialize the section back to YAML and deserialize to target type
-                var sectionYamlBytes = YamlSerializer.Serialize(current);
-                var result = DeserializeYaml(sectionYamlBytes, type);
-                return result ?? Activator.CreateInstance(type)!;
+                else if (current is Dictionary<object, object> objDict)
+                {
+                    if (objDict.TryGetValue(section, out var value))
+                    {
+                        current = value;
+                    }
+                    else
+                    {
+                        return Activator.CreateInstance(type)!;
+                    }
+                }
+                else
+                {
+                    return Activator.CreateInstance(type)!;
+                }
             }
 
-            // Deserialize YAML directly to the target type
+            // Serialize the section back to YAML and deserialize to target type
+            // We use dynamic dispatch because current is object and we need to call SerializeYaml<T>
+            ReadOnlyMemory<byte> sectionYamlBytes;
+            if (current is Dictionary<string, object> dictCurrent)
+            {
+                sectionYamlBytes = SerializeYaml<Dictionary<string, object>>(dictCurrent);
+            }
+            else if (current is Dictionary<object, object> objDictCurrent)
+            {
+                sectionYamlBytes = SerializeYaml<Dictionary<object, object>>(objDictCurrent);
+            }
+            else
+            {
+                // For other types, we need to use reflection to get the actual type and serialize
+                var serializeMethod = GetType().GetMethod(nameof(SerializeYaml), BindingFlags.NonPublic | BindingFlags.Instance);
+                if (serializeMethod != null)
+                {
+                    var genericMethod = serializeMethod.MakeGenericMethod(current.GetType());
+                    sectionYamlBytes = (ReadOnlyMemory<byte>)genericMethod.Invoke(this, new[] { current })!;
+                }
+                else
+                {
+                    return Activator.CreateInstance(type)!;
+                }
+            }
+            
+            var result = DeserializeYaml(sectionYamlBytes, type);
+            return result ?? Activator.CreateInstance(type)!;
+        }
+
+        // Deserialize YAML directly to the target type
+        try
+        {
+            var result = DeserializeYaml(yamlUtf8Bytes, type);
+            return result ?? Activator.CreateInstance(type)!;
+        }
+        catch (Exception)
+        {
+            return Activator.CreateInstance(type)!;
+        }
+    }
+
+    /// <summary>
+    /// Serializes an object to YAML bytes using the configured options.
+    /// Note: Uses lock on YamlSerializer type for thread-safety when modifying DefaultOptions.
+    /// </summary>
+    private ReadOnlyMemory<byte> SerializeYaml<T>(T value)
+    {
+        lock (typeof(YamlSerializer))
+        {
+            var previousOptions = YamlSerializer.DefaultOptions;
             try
             {
-                var result = DeserializeYaml(yamlUtf8Bytes, type);
-                return result ?? Activator.CreateInstance(type)!;
+                YamlSerializer.DefaultOptions = _serializerOptions;
+                return YamlSerializer.Serialize(value);
             }
-            catch (Exception)
+            finally
             {
-                return Activator.CreateInstance(type)!;
+                YamlSerializer.DefaultOptions = previousOptions;
             }
         }
-        finally
+    }
+
+    /// <summary>
+    /// Deserializes YAML bytes to the specified type using the configured options.
+    /// Note: Uses lock on YamlSerializer type for thread-safety when modifying DefaultOptions.
+    /// </summary>
+    private T? DeserializeYaml<T>(ReadOnlyMemory<byte> yamlBytes)
+    {
+        lock (typeof(YamlSerializer))
         {
-            // Restore previous options
-            YamlSerializer.DefaultOptions = previousOptions;
+            var previousOptions = YamlSerializer.DefaultOptions;
+            try
+            {
+                YamlSerializer.DefaultOptions = _serializerOptions;
+                return YamlSerializer.Deserialize<T>(yamlBytes);
+            }
+            finally
+            {
+                YamlSerializer.DefaultOptions = previousOptions;
+            }
         }
     }
 
@@ -149,35 +203,14 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
     /// Deserializes YAML bytes to the specified type using reflection.
     /// This is necessary because VYaml requires generic type parameters at compile time.
     /// </summary>
-    private static object? DeserializeYaml(ReadOnlyMemory<byte> yamlBytes, Type type)
+    private object? DeserializeYaml(ReadOnlyMemory<byte> yamlBytes, Type type)
     {
-        // Find the Deserialize<T>(ReadOnlyMemory<byte>) method
-        var methods = typeof(YamlSerializer).GetMethods(BindingFlags.Public | BindingFlags.Static);
-        var deserializeMethod = methods.FirstOrDefault(m =>
-            m.Name == "Deserialize" &&
-            m.IsGenericMethodDefinition &&
-            m.GetParameters().Length == 1 &&
-            m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
-        );
-
-        if (deserializeMethod != null)
+        // Use reflection to call the generic DeserializeYaml<T> method
+        var method = GetType().GetMethod(nameof(DeserializeYaml), BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ReadOnlyMemory<byte>) }, null);
+        if (method != null)
         {
-            var genericMethod = deserializeMethod.MakeGenericMethod(type);
-            return genericMethod.Invoke(null, new object[] { yamlBytes });
-        }
-
-        // Fallback: try with options parameter
-        deserializeMethod = methods.FirstOrDefault(m =>
-            m.Name == "Deserialize" &&
-            m.IsGenericMethodDefinition &&
-            m.GetParameters().Length == 2 &&
-            m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
-        );
-
-        if (deserializeMethod != null)
-        {
-            var genericMethod = deserializeMethod.MakeGenericMethod(type);
-            return genericMethod.Invoke(null, new object?[] { yamlBytes, null });
+            var genericMethod = method.MakeGenericMethod(type);
+            return genericMethod.Invoke(this, new object[] { yamlBytes });
         }
 
         return null;
@@ -212,34 +245,21 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
     {
         var sections = options.SectionNameParts;
 
-        // Set the options for this operation
-        var previousOptions = YamlSerializer.DefaultOptions;
-        YamlSerializer.DefaultOptions = _serializerOptions;
-
-        try
+        if (sections.Count == 0)
         {
-            if (sections.Count == 0)
-            {
-                // No section name, serialize directly (full file overwrite)
-                options.Logger?.Log(
-                    LogLevel.Trace,
-                    "Serializing configuration of type {ConfigType} to YAML using VYaml AOT provider",
-                    typeof(T).Name
-                );
+            // No section name, serialize directly (full file overwrite)
+            options.Logger?.Log(
+                LogLevel.Trace,
+                "Serializing configuration of type {ConfigType} to YAML using VYaml AOT provider",
+                typeof(T).Name
+            );
 
-                var yamlBytes = YamlSerializer.Serialize(config);
-                return yamlBytes;
-            }
-            else
-            {
-                // Section specified - use partial write (merge with existing file)
-                return GetPartialSaveContents(config, options);
-            }
+            return SerializeYaml<T>(config);
         }
-        finally
+        else
         {
-            // Restore previous options
-            YamlSerializer.DefaultOptions = previousOptions;
+            // Section specified - use partial write (merge with existing file)
+            return GetPartialSaveContents(config, options);
         }
     }
 
@@ -271,9 +291,7 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
                     if (!string.IsNullOrWhiteSpace(yamlContent))
                     {
                         var existingYamlBytes = Encoding.GetBytes(yamlContent);
-                        existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
-                            existingYamlBytes
-                        );
+                        existingDict = DeserializeYaml<Dictionary<string, object>>(existingYamlBytes);
                         options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
                     }
                 }
@@ -288,11 +306,8 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
         }
 
         // Serialize config to dictionary
-        var configYamlBytes = YamlSerializer.Serialize(config);
-        var configDict =
-            YamlSerializer.Deserialize<Dictionary<string, object>>(
-                configYamlBytes
-            ) ?? new Dictionary<string, object>();
+        var configYamlBytes = SerializeYaml<T>(config);
+        var configDict = DeserializeYaml<Dictionary<string, object>>(configYamlBytes) ?? new Dictionary<string, object>();
 
         Dictionary<string, object> resultDict;
 
@@ -320,35 +335,11 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
             MergeSection(resultDict, sections, 0, configDict);
         }
 
-        var yamlBytes = YamlSerializer.Serialize(resultDict);
+        var yamlBytes = SerializeYaml<Dictionary<string, object>>(resultDict);
 
         options.Logger?.ZLogTrace($"Partial YAML serialization completed successfully");
 
         return yamlBytes;
-    }
-
-    /// <summary>
-    /// Creates a nested section structure from a list of section names.
-    /// </summary>
-    private static new object CreateNestedSection(List<string> sections, object value)
-    {
-        if (sections.Count == 0)
-        {
-            return value;
-        }
-
-        var result = new Dictionary<string, object>();
-        var current = result;
-
-        for (int i = 0; i < sections.Count - 1; i++)
-        {
-            var nested = new Dictionary<string, object>();
-            current[sections[i]] = nested;
-            current = nested;
-        }
-
-        current[sections[sections.Count - 1]] = value;
-        return result;
     }
 
     /// <summary>
