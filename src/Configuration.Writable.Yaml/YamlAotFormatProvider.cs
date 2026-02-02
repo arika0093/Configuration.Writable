@@ -34,6 +34,13 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
     private readonly YamlSerializerOptions _serializerOptions =
         serializerOptions ?? throw new ArgumentNullException(nameof(serializerOptions));
 
+    // Private lock object for thread-safe modifications to YamlSerializer.DefaultOptions
+    private static readonly object _yamlSerializerLock = new object();
+    
+    // Cached reflection method infos for performance
+    private static MethodInfo? _cachedSerializeMethod;
+    private static MethodInfo? _cachedDeserializeMethod;
+
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
     /// </summary>
@@ -129,10 +136,10 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
             else
             {
                 // For other types, we need to use reflection to get the actual type and serialize
-                var serializeMethod = GetType().GetMethod(nameof(SerializeYaml), BindingFlags.NonPublic | BindingFlags.Instance);
-                if (serializeMethod != null)
+                _cachedSerializeMethod ??= GetType().GetMethod(nameof(SerializeYaml), BindingFlags.NonPublic | BindingFlags.Instance);
+                if (_cachedSerializeMethod != null)
                 {
-                    var genericMethod = serializeMethod.MakeGenericMethod(current.GetType());
+                    var genericMethod = _cachedSerializeMethod.MakeGenericMethod(current.GetType());
                     sectionYamlBytes = (ReadOnlyMemory<byte>)genericMethod.Invoke(this, new[] { current })!;
                 }
                 else
@@ -159,11 +166,11 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
 
     /// <summary>
     /// Serializes an object to YAML bytes using the configured options.
-    /// Note: Uses lock on YamlSerializer type for thread-safety when modifying DefaultOptions.
+    /// Note: Uses lock on private object for thread-safety when modifying DefaultOptions.
     /// </summary>
     private ReadOnlyMemory<byte> SerializeYaml<T>(T value)
     {
-        lock (typeof(YamlSerializer))
+        lock (_yamlSerializerLock)
         {
             var previousOptions = YamlSerializer.DefaultOptions;
             try
@@ -180,11 +187,11 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
 
     /// <summary>
     /// Deserializes YAML bytes to the specified type using the configured options.
-    /// Note: Uses lock on YamlSerializer type for thread-safety when modifying DefaultOptions.
+    /// Note: Uses lock on private object for thread-safety when modifying DefaultOptions.
     /// </summary>
     private T? DeserializeYaml<T>(ReadOnlyMemory<byte> yamlBytes)
     {
-        lock (typeof(YamlSerializer))
+        lock (_yamlSerializerLock)
         {
             var previousOptions = YamlSerializer.DefaultOptions;
             try
@@ -205,11 +212,11 @@ public class YamlAotFormatProvider(YamlSerializerOptions serializerOptions) : Fo
     /// </summary>
     private object? DeserializeYaml(ReadOnlyMemory<byte> yamlBytes, Type type)
     {
-        // Use reflection to call the generic DeserializeYaml<T> method
-        var method = GetType().GetMethod(nameof(DeserializeYaml), BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ReadOnlyMemory<byte>) }, null);
-        if (method != null)
+        // Use cached reflection to call the generic DeserializeYaml<T> method
+        _cachedDeserializeMethod ??= GetType().GetMethod(nameof(DeserializeYaml), BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ReadOnlyMemory<byte>) }, null);
+        if (_cachedDeserializeMethod != null)
         {
-            var genericMethod = method.MakeGenericMethod(type);
+            var genericMethod = _cachedDeserializeMethod.MakeGenericMethod(type);
             return genericMethod.Invoke(this, new object[] { yamlBytes });
         }
 
