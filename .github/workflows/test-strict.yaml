@@ -34,8 +34,6 @@ jobs:
             10.0.x
             8.0.x
             6.0.x
-          cache: true
-          cache-dependency-path: '**/packages.lock.json'
 
       # https://github.com/joaoopereira/dotnet-test-rerun
       - name: Setup dotnet-rerun
