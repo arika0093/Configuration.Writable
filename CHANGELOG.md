@@ -1,3 +1,8 @@
+## [0.4.1] - 2026-02-02
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.4.0
 ## [0.4.0] - 2026-01-15
 
 ### 🐛 Bug Fixes
