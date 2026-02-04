@@ -1,3 +1,9 @@
+## [0.4.3] - 2026-02-04
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.4.2
+- Remove SonarAnalyzer.CSharp package reference from project files
 ## [0.4.2] - 2026-02-02
 
 ### ⚙️ Miscellaneous Tasks
