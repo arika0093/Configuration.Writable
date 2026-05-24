@@ -312,11 +312,12 @@ public class CommonFileProviderTests
     {
         var writer = new CommonFileProvider();
 
-        // Empty path segment should return false
-        var result = writer.EnsureDirectoryExists("test.json");
+            // Use a non-existent UNC server path that cannot be accessed - this is guaranteed to fail
+            var invalidPath = Path.Combine(@"\\non-existent-server\share\", Guid.NewGuid().ToString("N") + ".json");
+            var result = writer.EnsureDirectoryExists(invalidPath);
 
-        result.ShouldBeFalse();
-    }
+            result.ShouldBeFalse();
+        }
 
     [Fact]
     public void EnsureDirectoryExists_ShouldCreateNestedDirectories()

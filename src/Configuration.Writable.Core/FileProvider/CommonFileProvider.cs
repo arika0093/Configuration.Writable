@@ -276,24 +276,26 @@ public class CommonFileProvider : IFileProvider, IDisposable
         try
         {
             var directory = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(directory))
-            {
-                return false;
-            }
+                    // If no directory is specified (relative filename like "file.json"),
+                    // default to the current directory
+                    if (string.IsNullOrEmpty(directory))
+                    {
+                        directory = Directory.GetCurrentDirectory();
+                    }
 
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
 
-            // Verify write access by creating and deleting a temporary file
-            var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
-            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
-            {
-                // No action needed here as the file will be deleted on close
-            }
-            return true;
-        }
+                    // Verify write access by creating and deleting a temporary file
+                    var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
+                    using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
+                    {
+                        // No action needed here as the file will be deleted on close
+                    }
+                    return true;
+                }
         catch
         {
             return false;
