@@ -312,8 +312,10 @@ public class CommonFileProviderTests
     {
         var writer = new CommonFileProvider();
 
-            // Use a non-existent UNC server path that cannot be accessed - this is guaranteed to fail
-            var invalidPath = Path.Combine(@"\\non-existent-server\share\", Guid.NewGuid().ToString("N") + ".json");
+            // Use a directory name composed entirely of invalid path characters - Directory.CreateDirectory
+                // will fail deterministically on all platforms without network timeouts
+                var invalidDir = new string(Path.GetInvalidPathChars());
+                var invalidPath = Path.Combine(invalidDir, "test.json");
             var result = writer.EnsureDirectoryExists(invalidPath);
 
             result.ShouldBeFalse();

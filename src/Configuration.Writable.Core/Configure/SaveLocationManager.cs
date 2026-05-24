@@ -80,10 +80,11 @@ internal class SaveLocationManager
                         // A directory is considered writable if:
                                                 // 1. It exists and is writable (verified by CanWriteToDirectory), OR
                                                 // 2. The path is relative to the current directory (no explicit directory part)
-                                                //    and the current directory itself is writable
+                                                //    and the current directory itself is writable (use full path to avoid
+                                                //    provider inferring directory from a filename-only argument)
                                                 CanWriteDir = fileProvider.CanWriteToDirectory(p.Path)
                                                     || (string.IsNullOrEmpty(Path.GetDirectoryName(p.Path))
-                                                        && fileProvider.CanWriteToDirectory(".")),
+                                                        && fileProvider.CanWriteToDirectory(Path.GetFullPath("."))),
                     }
             )
             .OrderByDescending(p => p.Priority)
