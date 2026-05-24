@@ -312,14 +312,14 @@ public class CommonFileProviderTests
     {
         var writer = new CommonFileProvider();
 
-            // Use a directory name composed entirely of invalid path characters - Directory.CreateDirectory
-                // will fail deterministically on all platforms without network timeouts
-                var invalidDir = new string(Path.GetInvalidPathChars());
-                var invalidPath = Path.Combine(invalidDir, "test.json");
-            var result = writer.EnsureDirectoryExists(invalidPath);
+        // Use a directory name composed entirely of invalid path characters - Directory.CreateDirectory
+        // will fail deterministically on all platforms without network timeouts
+        var invalidDir = new string(Path.GetInvalidPathChars());
+        var invalidPath = Path.Combine(invalidDir, "test.json");
+        var result = writer.EnsureDirectoryExists(invalidPath);
 
-            result.ShouldBeFalse();
-        }
+        result.ShouldBeFalse();
+    }
 
     [Fact]
     public void EnsureDirectoryExists_ShouldCreateNestedDirectories()
