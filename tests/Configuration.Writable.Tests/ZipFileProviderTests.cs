@@ -395,4 +395,52 @@ public class ZipFileProviderTests
         var readContent = await reader.ReadToEndAsync();
         readContent.ShouldBe("Test content");
     }
+
+    [Fact]
+    public void EnsureDirectoryExists_ShouldCreateDirectoryForZipFile()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var testFilePath = Path.Combine(testDir, "test.json");
+        try
+        {
+            using var provider = new ZipFileProvider();
+
+            Directory.Exists(testDir).ShouldBeFalse();
+
+            var result = provider.EnsureDirectoryExists(testFilePath);
+
+            result.ShouldBeTrue();
+            Directory.Exists(testDir).ShouldBeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                Directory.Delete(testDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void EnsureDirectoryExists_ShouldReturnTrueForExistingDirectory()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var testFilePath = Path.Combine(testDir, "test.json");
+        try
+        {
+            Directory.CreateDirectory(testDir);
+            using var provider = new ZipFileProvider();
+
+            var result = provider.EnsureDirectoryExists(testFilePath);
+
+            result.ShouldBeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                Directory.Delete(testDir, true);
+            }
+        }
+    }
 }

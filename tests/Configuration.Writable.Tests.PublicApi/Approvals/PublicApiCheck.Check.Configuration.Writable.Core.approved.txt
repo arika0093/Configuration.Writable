@@ -68,6 +68,7 @@ namespace Configuration.Writable.FileProvider
         public virtual bool DirectoryExists(string path) { }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
+        public virtual bool EnsureDirectoryExists(string path) { }
         public virtual bool FileExists(string path) { }
         protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
         public virtual System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
@@ -80,6 +81,7 @@ namespace Configuration.Writable.FileProvider
         bool CanWriteToDirectory(string path);
         bool CanWriteToFile(string path);
         bool DirectoryExists(string path);
+        bool EnsureDirectoryExists(string path);
         bool FileExists(string path);
         System.IO.Pipelines.PipeReader? GetFilePipeReader(string path);
         System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default);
@@ -94,6 +96,7 @@ namespace Configuration.Writable.FileProvider
         public bool DirectoryExists(string path) { }
         public void Dispose() { }
         protected virtual void Dispose(bool disposing) { }
+        public bool EnsureDirectoryExists(string path) { }
         public bool FileExists(string path) { }
         public System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
         public System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }

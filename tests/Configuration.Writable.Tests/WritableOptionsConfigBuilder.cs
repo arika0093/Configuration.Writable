@@ -109,4 +109,61 @@ public class WritableOptionsConfigBuilderTests
         var expectedPath = Path.Combine(Directory.GetCurrentDirectory(), "usersettings.json");
         options.BuildOptions("").ConfigFilePath.ShouldBe(expectedPath);
     }
+
+    [Fact]
+    public void UseCustomDirectory_WithNonExistentDirectory_ShouldCreateDirectoryAndResolvePath()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        try
+        {
+            var options = new WritableOptionsConfigBuilder<TestSettings>();
+            options.UseCustomDirectory(testDir).AddFilePath("testsettings");
+
+            Directory.Exists(testDir).ShouldBeFalse();
+
+            // BuildOptions should create the directory if it doesn't exist
+            var configPath = options.BuildOptions("").ConfigFilePath;
+
+            // After BuildOptions, the directory should exist
+            Directory.Exists(testDir).ShouldBeTrue();
+            configPath.ShouldBe(Path.Combine(testDir, "testsettings.json"));
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                Directory.Delete(testDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void UseStandardSaveDirectory_WithNonExistentDirectory_ShouldCreateDirectoryAndResolvePath()
+    {
+        // Use a unique application ID that should not exist
+        var appId = $"ConfigurationWritableTest_{Guid.NewGuid():N}";
+        var expectedDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            appId
+        );
+        try
+        {
+            var options = new WritableOptionsConfigBuilder<TestSettings>();
+            options.UseStandardSaveDirectory(appId).AddFilePath("testsettings");
+
+            // BuildOptions should create the directory if it doesn't exist
+            var configPath = options.BuildOptions("").ConfigFilePath;
+
+            // After BuildOptions, the directory should exist
+            Directory.Exists(expectedDir).ShouldBeTrue();
+            configPath.ShouldBe(Path.Combine(expectedDir, "testsettings.json"));
+        }
+        finally
+        {
+            if (Directory.Exists(expectedDir))
+            {
+                Directory.Delete(expectedDir, true);
+            }
+        }
+    }
 }

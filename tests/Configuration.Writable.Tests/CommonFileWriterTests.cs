@@ -258,4 +258,143 @@ public class CommonFileProviderTests
         var savedContent = await ReadAllBytesCompat(testFile.FilePath);
         savedContent.ShouldBe(largeContent);
     }
+
+    [Fact]
+    public void EnsureDirectoryExists_ShouldCreateDirectoryIfNotExists()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var testFilePath = Path.Combine(testDir, "test.json");
+        try
+        {
+            var writer = new CommonFileProvider();
+
+            Directory.Exists(testDir).ShouldBeFalse();
+
+            var result = writer.EnsureDirectoryExists(testFilePath);
+
+            result.ShouldBeTrue();
+            Directory.Exists(testDir).ShouldBeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                Directory.Delete(testDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void EnsureDirectoryExists_ShouldReturnTrueForExistingDirectory()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var testFilePath = Path.Combine(testDir, "test.json");
+        try
+        {
+            Directory.CreateDirectory(testDir);
+            var writer = new CommonFileProvider();
+
+            var result = writer.EnsureDirectoryExists(testFilePath);
+
+            result.ShouldBeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                Directory.Delete(testDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void EnsureDirectoryExists_ShouldReturnFalseForInvalidPath()
+    {
+        var writer = new CommonFileProvider();
+
+            // Use a directory name composed entirely of invalid path characters - Directory.CreateDirectory
+                // will fail deterministically on all platforms without network timeouts
+                var invalidDir = new string(Path.GetInvalidPathChars());
+                var invalidPath = Path.Combine(invalidDir, "test.json");
+            var result = writer.EnsureDirectoryExists(invalidPath);
+
+            result.ShouldBeFalse();
+        }
+
+    [Fact]
+    public void EnsureDirectoryExists_ShouldCreateNestedDirectories()
+    {
+        var topLevelDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var nestedDir = Path.Combine(topLevelDir, "nested", "deep");
+        var testFilePath = Path.Combine(nestedDir, "test.json");
+        try
+        {
+            var writer = new CommonFileProvider();
+
+            Directory.Exists(nestedDir).ShouldBeFalse();
+
+            var result = writer.EnsureDirectoryExists(testFilePath);
+
+            result.ShouldBeTrue();
+            Directory.Exists(nestedDir).ShouldBeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(topLevelDir))
+            {
+                Directory.Delete(topLevelDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CanWriteToDirectory_ShouldReturnFalseForNonExistentDirectory()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var testFilePath = Path.Combine(testDir, "test.json");
+        try
+        {
+            var writer = new CommonFileProvider();
+
+            // Directory does not exist, so CanWriteToDirectory should return false
+            var result = writer.CanWriteToDirectory(testFilePath);
+
+            result.ShouldBeFalse();
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                Directory.Delete(testDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CanWriteToDirectory_ShouldReturnTrueAfterEnsureDirectoryExists()
+    {
+        var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var testFilePath = Path.Combine(testDir, "test.json");
+        try
+        {
+            var writer = new CommonFileProvider();
+
+            Directory.Exists(testDir).ShouldBeFalse();
+
+            // First ensure directory exists
+            writer.EnsureDirectoryExists(testFilePath).ShouldBeTrue();
+
+            // Now CanWriteToDirectory should return true
+            var result = writer.CanWriteToDirectory(testFilePath);
+
+            result.ShouldBeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                Directory.Delete(testDir, true);
+            }
+        }
+    }
 }

@@ -59,4 +59,12 @@ public interface IFileProvider
     /// <param name="path">The file path whose directory will be checked for write access.</param>
     /// <returns>true if the directory exists and can be written to; otherwise, false.</returns>
     bool CanWriteToDirectory(string path);
+
+    /// <summary>
+    /// Ensures that the directory for the specified file path exists, creating it if necessary,
+    /// and verifies that write access is available.
+    /// </summary>
+    /// <param name="path">The file path whose directory should be ensured to exist.</param>
+    /// <returns>true if the directory exists (or was created) and is writable; otherwise, false.</returns>
+    bool EnsureDirectoryExists(string path);
 }
