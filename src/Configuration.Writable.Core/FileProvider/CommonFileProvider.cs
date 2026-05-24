@@ -271,6 +271,36 @@ public class CommonFileProvider : IFileProvider, IDisposable
     }
 
     /// <inheritdoc />
+    public virtual bool EnsureDirectoryExists(string path)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(path);
+            if (string.IsNullOrEmpty(directory))
+            {
+                return false;
+            }
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Verify write access by creating and deleting a temporary file
+            var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
+            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
+            {
+                // No action needed here as the file will be deleted on close
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);

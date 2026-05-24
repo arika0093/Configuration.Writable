@@ -64,7 +64,7 @@ internal class SaveLocationManager
         // Decide the write destination based on the following priorities
         // 1. Explicit priority (descending)
         // 2. Target file already exists and able to open with write access
-        // 3. Target directory already exists and able to create file
+        // 3. Target directory can be written to (or created if it doesn't exist)
         // 4. Registration order (ascending)
         var targetPath = LocationBuilders
             .SelectMany(p => p.SaveLocationPaths)
@@ -77,7 +77,10 @@ internal class SaveLocationManager
                         p.Priority,
                         Index = i,
                         CanWriteFile = fileProvider.CanWriteToFile(p.Path),
-                        CanWriteDir = fileProvider.CanWriteToDirectory(p.Path),
+                        // A directory is considered writable if it already exists and is writable,
+                        // or if it doesn't exist yet (it will be created later by EnsureDirectoryExists)
+                        CanWriteDir = fileProvider.CanWriteToDirectory(p.Path)
+                            || !fileProvider.DirectoryExists(Path.GetDirectoryName(p.Path) ?? ""),
                     }
             )
             .OrderByDescending(p => p.Priority)
@@ -90,6 +93,15 @@ internal class SaveLocationManager
         {
             throw new InvalidOperationException(
                 "No valid save location could be determined from the configured location providers."
+            );
+        }
+
+        // Ensure the directory for the selected path exists (create if necessary)
+        // and verify write access
+        if (!fileProvider.EnsureDirectoryExists(targetPath.Path))
+        {
+            throw new InvalidOperationException(
+                $"Cannot create or write to the directory for the configured save location: {targetPath.Path}"
             );
         }
 

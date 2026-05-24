@@ -100,6 +100,37 @@ public class ZipFileProvider : IFileProvider, IDisposable
     }
 
     /// <inheritdoc/>
+    public bool EnsureDirectoryExists(string path)
+    {
+        try
+        {
+            var zipPath = GetZipFilePath(path);
+            var directory = Path.GetDirectoryName(zipPath);
+            if (string.IsNullOrEmpty(directory))
+            {
+                return false;
+            }
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Verify write access by creating and deleting a temporary file
+            var testFilePath = Path.Combine(directory, Path.GetRandomFileName());
+            using (File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
+            {
+                // No action needed here as the file will be deleted on close
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task SaveToFileAsync(
         string path,
         ReadOnlyMemory<byte> content,

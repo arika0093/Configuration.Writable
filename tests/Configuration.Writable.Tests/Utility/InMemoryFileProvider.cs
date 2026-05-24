@@ -74,6 +74,13 @@ public class InMemoryFileProvider : IFileProvider
         return true;
     }
 
+    /// <inheritdoc />
+    public bool EnsureDirectoryExists(string path)
+    {
+        // In-memory provider always has directories available
+        return true;
+    }
+
     /// <summary>
     /// Reads the contents of the file at the specified path and returns them as a byte array.
     /// </summary>
