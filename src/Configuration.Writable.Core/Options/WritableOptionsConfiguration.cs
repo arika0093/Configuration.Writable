@@ -12,9 +12,13 @@ namespace Configuration.Writable;
 /// Options for initializing writable configuration.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public record WritableOptionsConfiguration<T>
+public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     where T : class, new()
 {
+    internal WritableOptionsConfiguration()
+    {
+    }
+
     /// <summary>
     /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
