@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Testing;
 
@@ -11,23 +11,17 @@ namespace Configuration.Writable;
 public static class WritableOptions
 {
     // Store instances for different types to ensure singleton behavior per type
-    private static readonly Dictionary<Type, object> _instances = [];
+    private static readonly ConcurrentDictionary<Type, object> _instances = new();
 
     // Cache the service provider to avoid multiple builds
     private static WritableOptionsSimpleInstance<T> GetInternalInstance<T>()
         where T : class, new()
     {
         var type = typeof(T);
-        if (_instances.TryGetValue(type, out var rst))
-        {
-            return (WritableOptionsSimpleInstance<T>)rst;
-        }
-        else
-        {
-            var instance = new WritableOptionsSimpleInstance<T>();
-            _instances[type] = instance;
-            return instance;
-        }
+        return (WritableOptionsSimpleInstance<T>)_instances.GetOrAdd(
+            type,
+            _ => new WritableOptionsSimpleInstance<T>()
+        );
     }
 
     /// <summary>
