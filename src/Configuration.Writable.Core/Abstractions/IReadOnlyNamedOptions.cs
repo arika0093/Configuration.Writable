@@ -30,6 +30,10 @@ public interface IReadOnlyNamedOptions<T> : IReadOnlyOptionsCore<T>
     /// </summary>
     /// <param name="name">The name of the instance to bind to.</param>
     /// <returns>An <see cref="IReadOnlyOptions{T}"/> instance bound to the specified name.</returns>
+    IReadOnlyOptions<T> GetInstance(string name);
+
+    /// <inheritdoc cref="GetInstance"/>
+    [System.Obsolete("Use GetInstance instead.")]
     IReadOnlyOptions<T> GetSpecifiedInstance(string name);
 
     /// <summary>

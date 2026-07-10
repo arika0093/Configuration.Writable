@@ -119,12 +119,22 @@ internal sealed class WritableOptionsImpl<T>(
         optionMonitorInstance.OnChange(listener);
 
     /// <inheritdoc />
-    IWritableOptions<T> IWritableNamedOptions<T>.GetSpecifiedInstance(string name) =>
+    IWritableOptions<T> IWritableNamedOptions<T>.GetInstance(string name) =>
         new WritableOptionsWithNameImpl<T>(this, name);
 
     /// <inheritdoc />
-    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetSpecifiedInstance(string name) =>
+    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetInstance(string name) =>
         new WritableOptionsWithNameImpl<T>(this, name);
+
+    /// <inheritdoc />
+    [System.Obsolete("Use GetInstance instead.")]
+    IWritableOptions<T> IWritableNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        ((IWritableNamedOptions<T>)this).GetInstance(name);
+
+    /// <inheritdoc />
+    [System.Obsolete("Use GetInstance instead.")]
+    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        ((IReadOnlyNamedOptions<T>)this).GetInstance(name);
 
     /// <summary>
     /// Asynchronously saves the specified configuration.

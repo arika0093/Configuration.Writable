@@ -19,6 +19,10 @@ public interface IWritableNamedOptions<T> : IReadOnlyNamedOptions<T>
     /// </summary>
     /// <param name="name">The name of the instance to bind to.</param>
     /// <returns>An <see cref="IWritableOptions{T}"/> instance bound to the specified name.</returns>
+    new IWritableOptions<T> GetInstance(string name);
+
+    /// <inheritdoc cref="GetInstance"/>
+    [System.Obsolete("Use GetInstance instead.")]
     new IWritableOptions<T> GetSpecifiedInstance(string name);
 
     /// <summary>
@@ -38,6 +42,18 @@ public interface IWritableNamedOptions<T> : IReadOnlyNamedOptions<T>
     Task SaveAsync(
         string name,
         Action<T> configUpdater,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Asynchronously updates and saves the configuration using the provided asynchronous updater action.
+    /// </summary>
+    /// <param name="name">The name of the options instance to save.</param>
+    /// <param name="configUpdater">An asynchronous action to update the configuration.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    Task SaveAsync(
+        string name,
+        Func<T, Task> configUpdater,
         CancellationToken cancellationToken = default
     );
 }

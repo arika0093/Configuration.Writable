@@ -205,6 +205,10 @@ internal sealed class WritableOptionsStubWithName<T>(
     /// <inheritdoc/>
     public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
         innerStub.SaveAsync(instanceName, configUpdater, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task SaveAsync(Func<T, Task> configUpdater, CancellationToken cancellationToken = default) =>
+        innerStub.SaveAsync(instanceName, configUpdater, cancellationToken);
 }
 
 /// <summary>
