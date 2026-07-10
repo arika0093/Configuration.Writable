@@ -49,6 +49,11 @@ public record WritableOptionsConfiguration<T>
     public required int OnChangeThrottleMs { get; init; }
 
     /// <summary>
+    /// Gets the throttle duration for change events as a <see cref="TimeSpan"/>.
+    /// </summary>
+    public TimeSpan OnChangeThrottle => TimeSpan.FromMilliseconds(OnChangeThrottleMs);
+
+    /// <summary>
     /// Gets or sets the cloning strategy function to create deep copies of the configuration object.
     /// </summary>
     public required Func<T, T> CloneMethod { get; init; }

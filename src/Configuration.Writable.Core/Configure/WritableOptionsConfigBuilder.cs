@@ -61,12 +61,21 @@ public class WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Gets or sets the throttle duration in milliseconds for change events.
     /// This helps to prevent excessive event firing during rapid changes. <br/>
-    /// Defaults to 300 ms.
+    /// Defaults to 300 ms. Use <see cref="OnChangeThrottle"/> to specify a <see cref="TimeSpan"/>.
     /// </summary>
     public int OnChangeThrottleMs { get; set; } = 300;
 
     /// <summary>
-    /// Indicates whether to automatically register <typeparamref name="T"/> in the DI container. Defaults to false. <br/>
+    /// Gets or sets the throttle duration for change events as a <see cref="TimeSpan"/>.
+    /// </summary>
+    public TimeSpan OnChangeThrottle
+    {
+        get => TimeSpan.FromMilliseconds(OnChangeThrottleMs);
+        set => OnChangeThrottleMs = (int)value.TotalMilliseconds;
+    }
+
+    /// <summary>
+    /// Indicates whether to automatically register <typeparamref name="T"/> as a singleton in the DI container. Defaults to false. <br/>
     /// Enabling this allows you to obtain the instance directly from the DI container,
     /// which is convenient, but automatic value updates are not provided, so be careful with the lifecycle. <br/>
     /// if you specify InstanceName, you can get it with [FromKeyedServices("instance-name")].
