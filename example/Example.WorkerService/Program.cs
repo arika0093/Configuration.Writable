@@ -15,7 +15,7 @@ builder.Services.AddWritableOptions<SampleSetting>(conf =>
     // conf.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
 
     // customize the provider and file writer
-    // you can use Json, Xml, Yaml, Encrypted file, or your original format by implementing IFormatProvider
+    // you can use Json, Xml, Yaml, or your original format by implementing IFormatProvider
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 
     // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0

@@ -98,7 +98,8 @@ public partial class UserSetting
 ```
 
 > [!NOTE]
-> By adding `[OptionsModel]`, the `DeepClone` method is automatically generated via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).
+> `[OptionsModel]` is included in the main `Configuration.Writable` package.
+> By adding it to a `partial class`, the `DeepClone` method is automatically generated via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).
 
 ### Simple Application (Without DI)
 If you are not using DI (for example, in WinForms, WPF, console apps, etc.),
@@ -125,6 +126,10 @@ await options.SaveAsync(setting =>
 });
 // By default, it's saved to ./usersettings.json
 ```
+
+> [!IMPORTANT]
+> Always call `WritableOptions.Initialize<T>()` before `WritableOptions.GetOptions<T>()`.
+> `GetOptions` will throw if the setting has not been initialized.
 
 ### Host Application (With DI)
 If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), register `IReadOnlyOptions<T>` and `IWritableOptions<T>` in the DI container.
@@ -188,7 +193,7 @@ Reading and writing settings is performed in the same way as described above in 
 - [FormatProvider](#formatprovider)
 - [FileProvider](#fileprovider)
 - [Change Detection](#change-detection)
-- [RegisterInstanceToContainer](#registerinstancetocontainer)
+- [RegisterAsSingleton](#registerassingleton)
 - [Logging](#logging)
 - [SectionName](#sectionname)
 - [Validation](#validation)
@@ -340,7 +345,9 @@ Default FileProvider (`CommonFileProvider`) supports the following features:
 * Atomic file writing (write to a temporary file first, then rename it)
 * Thread-safe: uses internal semaphore to ensure safe concurrent access
 
-If you want to change the way files are written, create a class that implements `IFileProvider` and specify it in `conf.FileProvider`.
+If you want to change the way files are written, create a class that implements `IWritableFileProvider` and specify it in `conf.FileProvider`.
+
+> `IFileProvider` is still available as an obsolete alias of `IWritableFileProvider` for backward compatibility.
 
 ```csharp
 using Configuration.Writable.FileProvider;
@@ -390,15 +397,21 @@ public class MyService(IWritableOptions<UserSetting> options) : IDisposable
 ```
 
 By default, throttling is enabled to suppress high-frequency file changes. Additional changes within 300ms from change detection are ignored by default.  
-If you want to change the throttle duration, specify `conf.OnChangeThrottleMs`.
+If you want to change the throttle duration, use `conf.OnChangeThrottle` (preferred) or `conf.OnChangeThrottleMs`.
 
 ```csharp
-conf.OnChangeThrottleMs = 500; // customize to 500ms
-conf.OnChangeThrottleMs = 0;   // disable throttling
+conf.OnChangeThrottle = TimeSpan.FromMilliseconds(500); // customize to 500ms
+conf.OnChangeThrottle = TimeSpan.Zero;                  // disable throttling
+
+// alternatively, you can still use the millisecond-based property
+conf.OnChangeThrottleMs = 500;
+conf.OnChangeThrottleMs = 0;
 ```
 
-### RegisterInstanceToContainer
-If you want to directly reference the settings class, specify `conf.RegisterInstanceToContainer = true`.
+### RegisterAsSingleton
+If you want to directly reference the settings class, specify `conf.RegisterAsSingleton = true`.
+
+> `RegisterInstanceToContainer` is still available as an obsolete alias of `RegisterAsSingleton` for backward compatibility.
 
 > [!NOTE]
 > The dynamic update functionality provided by `IReadOnlyOptions<T>` will no longer be available.
@@ -406,7 +419,7 @@ If you want to directly reference the settings class, specify `conf.RegisterInst
 
 ```csharp
 builder.Services.AddWritableOptions<UserSetting>(conf => {
-    conf.RegisterInstanceToContainer = true;
+    conf.RegisterAsSingleton = true;
 });
 
 // you can use UserSetting directly
@@ -628,7 +641,7 @@ Next, register the migration as follows:
 // register latest version (V2)
 builder.Services.AddWritableOptions<UserSettingV2>(conf => {
     // and register migration from V1 to V2
-    conf.WithMigration<UserSettingV1, UserSettingV2>(oldSetting => {
+    conf.UseMigration<UserSettingV1, UserSettingV2>(oldSetting => {
         return new UserSettingV2 {
             Names = [oldSetting.Name] // migrate Name to Names list
         };
@@ -637,6 +650,24 @@ builder.Services.AddWritableOptions<UserSettingV2>(conf => {
 ```
 
 That's it. When reading the settings, if an old version configuration file is detected, migration will be performed automatically, and the new version format will be saved the next time you save the settings.
+
+If you have an old configuration file that does not have a `Version` property, you can migrate it with `UseMigrationFromNone`:
+
+```csharp
+// old setting without version
+public class UserSettingV0
+{
+    public string Name { get; set; } = "default name";
+}
+
+builder.Services.AddWritableOptions<UserSettingV2>(conf => {
+    conf.UseMigrationFromNone<UserSettingV0, UserSettingV2>(oldSetting => {
+        return new UserSettingV2 {
+            Names = [oldSetting.Name]
+        };
+    });
+});
+```
 
 
 ## Advanced Usage
@@ -697,9 +728,9 @@ public class MyService(IWritableNamedOptions<UserSetting> options)
             setting.Name = "second name";
         });
 
-        // If specifying the name each time is cumbersome, you can also use GetSpecifiedInstance
+        // If specifying the name each time is cumbersome, you can also use GetInstance
         // By doing so, you can handle it in the same way as regular IReadOnlyOptions/IWritableOptions.
-        var firstOptions = options.GetSpecifiedInstance("First");
+        var firstOptions = options.GetInstance("First");
         var firstSetting2 = firstOptions.CurrentValue;
         await firstOptions.SaveAsync(setting => {
             setting.Name = "first name 2";
@@ -723,7 +754,7 @@ public class MyOtherService(
 }
 ```
 
-If `RegisterInstanceToContainer` is enabled, you can access it as follows:
+If `RegisterAsSingleton` is enabled, you can access it as follows:
 
 ```csharp
 public class MyService([FromKeyedService("First")] UserSetting options)
@@ -834,6 +865,33 @@ Here, we describe the main interfaces provided by this library.
 
 <img src="./assets/interfaces.drawio.svg" alt="Interfaces Diagram" width="600"/>
 
+### `IReadOnlyOptions` / `IWritableOptions` (recommended)
+These are the primary interfaces for reading and writing settings. They provide the latest values at the current point in time, and when the configuration file is updated, the latest values are automatically reflected.
+
+* [`IReadOnlyOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyOptions.cs)
+    * A simple read-only options interface that does not support named access.
+    * Use the `.CurrentValue` property to access the current value.
+    * Use the `OnChange(Action<T> listener)` method to monitor changes to the options.
+* [`IWritableOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IWritableOptions.cs)
+    * In addition to `IReadOnlyOptions<T>`, this supports saving settings via `SaveAsync`.
+
+Both interfaces allow you to retrieve configuration options (e.g., file save locations) using the `GetOptionsConfiguration` method.
+
+### `IReadOnlyNamedOptions` / `IWritableNamedOptions`
+Named variants of the above interfaces. Use these when you manage multiple settings of the same type with different `InstanceName` values.
+
+* [`IReadOnlyNamedOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyNamedOptions.cs)
+    * Use the `.Get(name)` method to access named options.
+    * Use the `OnChange(string name, Action<T> listener)` method to monitor changes to specific named options.
+    * Use `GetInstance(name)` to retrieve a pre-specified `IReadOnlyOptions<T>` instance.
+* [`IWritableNamedOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IWritableNamedOptions.cs)
+    * In addition to `IReadOnlyNamedOptions<T>`, this supports saving settings via `SaveAsync(name, ...)`.
+
+> `GetSpecifiedInstance(name)` is still available as an obsolete alias of `GetInstance(name)` for backward compatibility.
+
+<details>
+<summary>Other interfaces (for compatibility)</summary>
+
 ### `IOptions`
 Provides the value at application startup.
 Even if the configuration file is updated later, accessing through this interface will not reflect the changes.  
@@ -855,33 +913,12 @@ Change detection is done by registering a callback with the `OnChange(Action<T, 
 
 This is identical to MS.E.O.'s [`IOptionsMonitor`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
 
-### `IReadOnlyOptions` / `IReadOnlyNamedOptions`
-Provides the latest values at the current point in time. When the configuration file is updated, the latest values are automatically reflected.  
-These are very similar to the `IOptionsMonitor` mentioned above but have been improved for easier use in the following ways. Unless there is a specific reason, it is recommended to use these interfaces.
-
-* [`IReadOnlyOptions`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyOptions.cs)
-    * A simple read-only options interface that does not support named access.
-    * Use the `.CurrentValue` property to access the current value.
-    * Use the `OnChange(Action<T> listener)` method to monitor changes to the options.
-* [`IReadOnlyNamedOptions`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyNamedOptions.cs)
-    * A read-only options interface that supports named access.
-    * Use the `.Get(name)` method to access named options.
-    * Use the `OnChange(string name, Action<T> listener)` method to monitor changes to specific named options.
-    * Use `GetSpecifiedInstance(name)` to retrieve a pre-specified `IReadOnlyOptions` instance.
-* Both interfaces allow you to retrieve configuration options (e.g., file save locations) using the `GetOptionsConfiguration` method.
-
-### `IWritableOptions` / `IWritableNamedOptions`
-In addition to the features of `IReadOnly(Named)Options`, these support saving settings.
-Other than the addition of the `SaveAsync` method, they are the same as the above `IReadOnly(Named)Options`.
-
-### `IReadOnlyOptionsMonitor<T>`
-This interface combines the functionalities of `IReadOnlyOptions`, `IReadOnlyNamedOptions`, and `IOptionsMonitor<T>`.
+### `IReadOnlyOptionsMonitor<T>` / `IWritableOptionsMonitor<T>`
+These interfaces combine the functionalities of `IReadOnlyOptions`, `IReadOnlyNamedOptions`, and `IOptionsMonitor<T>` (and their writable counterparts).
 They are provided mainly to ensure compatibility with codebases that already use `IOptionsMonitor<T>`.  
 Therefore, you typically do not need to use these interfaces explicitly.
 
-### `IWritableOptionsMonitor<T>`
-This interface combines the functionalities of `IWritableOptions`, `IWritableNamedOptions`, and `IOptionsMonitor<T>`.
-Like the above `IReadOnlyOptionsMonitor<T>`, you typically do not need to use these interfaces explicitly.
+</details>
 
 ## License
 This project is licensed under the Apache-2.0 License.
