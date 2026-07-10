@@ -14,7 +14,7 @@ namespace Configuration.Writable.FileProvider;
 /// <summary>
 /// Provides functionality to write data to a file, ensuring thread safety and data integrity.
 /// </summary>
-public class CommonFileProvider : IFileProvider, IDisposable
+public class CommonFileProvider : IWritableFileProvider, IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 

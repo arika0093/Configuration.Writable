@@ -105,7 +105,7 @@ internal static class JsonWriterHelper
         List<string> sections,
         JsonWriterOptions writerOptions,
         JsonSerializeAction<T> serializeAction,
-        IFileProvider fileProvider,
+        IWritableFileProvider fileProvider,
         string configFilePath,
         ILogger? logger
     )

@@ -12,7 +12,7 @@ namespace Configuration.Writable.FileProvider;
 /// <summary>
 /// Provides functionality to write data to a zip file. support multiple file entries.
 /// </summary>
-public class ZipFileProvider : IFileProvider, IDisposable
+public class ZipFileProvider : IWritableFileProvider, IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 

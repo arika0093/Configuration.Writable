@@ -10,10 +10,10 @@ using Microsoft.Extensions.Logging;
 namespace Configuration.Writable.FileProvider;
 
 /// <summary>
-/// Provides an in-memory implementation of the <see cref="IFileProvider"/> interface for managing files and directories without
+/// Provides an in-memory implementation of the <see cref="IWritableFileProvider"/> interface for managing files and directories without
 /// persistent storage. for testing purposes.
 /// </summary>
-public class InMemoryFileProvider : IFileProvider
+public class InMemoryFileProvider : IWritableFileProvider
 {
     private readonly ConcurrentDictionary<string, byte[]> _files = new();
 

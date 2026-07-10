@@ -47,7 +47,7 @@ internal class SaveLocationManager
     /// <returns>The first valid save location path found, or null if none are available.</returns>
     public string Build(
         FormatProvider.IFormatProvider formatProvider,
-        IFileProvider fileProvider,
+        IWritableFileProvider fileProvider,
         string instanceName
     )
     {

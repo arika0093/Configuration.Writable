@@ -43,9 +43,9 @@ public record WritableOptionsConfigBuilder<T>
     public FormatProvider.IFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IFileProvider"/> used to handle the file writing operations override from provider's default.
+    /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations override from provider's default.
     /// </summary>
-    public IFileProvider? FileProvider { get; set; } = null;
+    public IWritableFileProvider? FileProvider { get; set; } = null;
 
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
