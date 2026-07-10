@@ -25,4 +25,11 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T>
     /// <param name="configUpdater">An action to update the configuration.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asynchronously updates and saves the configuration using the provided asynchronous updater action.
+    /// </summary>
+    /// <param name="configUpdater">An asynchronous action to update the configuration.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    Task SaveAsync(Func<T, Task> configUpdater, CancellationToken cancellationToken = default);
 }

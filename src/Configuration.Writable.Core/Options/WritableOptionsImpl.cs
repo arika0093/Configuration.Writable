@@ -83,6 +83,32 @@ internal sealed class WritableOptionsImpl<T>(
     }
 
     /// <inheritdoc />
+    public Task SaveAsync(Func<T, Task> configUpdater, CancellationToken cancellationToken = default) =>
+        SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task SaveAsync(
+        string name,
+        Func<T, Task> configUpdater,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await saveSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            // To avoid inconsistencies that may arise if other operations occur during this operation, protect it with a semaphore.
+            var options = GetOptions(name);
+            var current = Get(name);
+            await configUpdater(current).ConfigureAwait(false);
+            await SaveCoreAsync(current, options, cancellationToken);
+        }
+        finally
+        {
+            saveSemaphore.Release();
+        }
+    }
+
+    /// <inheritdoc />
     public T CurrentValue => optionMonitorInstance.CurrentValue;
 
     /// <inheritdoc />

@@ -152,12 +152,42 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     }
 
     /// <inheritdoc/>
-    IWritableOptions<T> IWritableNamedOptions<T>.GetSpecifiedInstance(string name) =>
+    public Task SaveAsync(Func<T, Task> configUpdater, CancellationToken cancellationToken = default) =>
+        SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
+
+    /// <inheritdoc/>
+    public async Task SaveAsync(
+        string name,
+        Func<T, Task> configUpdater,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var current = Get(name);
+        await configUpdater(current).ConfigureAwait(false);
+        NamedValues[name] = current;
+        foreach (var listener in ChangeListeners.ToList())
+        {
+            listener(current, name);
+        }
+    }
+
+    /// <inheritdoc/>
+    IWritableOptions<T> IWritableNamedOptions<T>.GetInstance(string name) =>
         new WritableOptionsStubWithName<T>(this, name);
 
     /// <inheritdoc/>
-    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetSpecifiedInstance(string name) =>
+    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetInstance(string name) =>
         new WritableOptionsStubWithName<T>(this, name);
+
+    /// <inheritdoc/>
+    [System.Obsolete("Use GetInstance instead.")]
+    IWritableOptions<T> IWritableNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        ((IWritableNamedOptions<T>)this).GetInstance(name);
+
+    /// <inheritdoc/>
+    [System.Obsolete("Use GetInstance instead.")]
+    IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetSpecifiedInstance(string name) =>
+        ((IReadOnlyNamedOptions<T>)this).GetInstance(name);
 
     // A simple disposable action implementation
     private sealed class DisposableAction(Action disposeAction) : IDisposable
