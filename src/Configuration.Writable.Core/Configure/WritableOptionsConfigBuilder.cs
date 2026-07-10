@@ -19,7 +19,7 @@ namespace Configuration.Writable.Configure;
 /// Options for initializing writable configuration.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public record WritableOptionsConfigBuilder<T>
+public class WritableOptionsConfigBuilder<T>
     where T : class, new()
 {
 #if NET
