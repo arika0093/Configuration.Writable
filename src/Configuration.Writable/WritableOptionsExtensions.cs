@@ -106,7 +106,7 @@ public static class WritableOptionsExtensions
         var actualInstanceName = options.InstanceName;
 
         // add T instance
-        if (confBuilder.RegisterInstanceToContainer)
+        if (confBuilder.RegisterAsSingleton)
         {
             if (string.IsNullOrEmpty(actualInstanceName))
             {

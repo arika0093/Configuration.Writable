@@ -71,7 +71,15 @@ public record WritableOptionsConfigBuilder<T>
     /// which is convenient, but automatic value updates are not provided, so be careful with the lifecycle. <br/>
     /// if you specify InstanceName, you can get it with [FromKeyedServices("instance-name")].
     /// </summary>
-    public bool RegisterInstanceToContainer { get; set; } = false;
+    public bool RegisterAsSingleton { get; set; } = false;
+
+    /// <inheritdoc cref="RegisterAsSingleton"/>
+    [System.Obsolete("Use RegisterAsSingleton instead.")]
+    public bool RegisterInstanceToContainer
+    {
+        get => RegisterAsSingleton;
+        set => RegisterAsSingleton = value;
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether validation using data annotation attributes is enabled. Defaults to true. <br/>
