@@ -228,6 +228,28 @@ public class WritableOptionsConfigBuilder<T>
     }
 
     /// <summary>
+    /// Registers a migration step from a configuration without a version (version 0) to a versioned configuration.
+    /// </summary>
+    /// <typeparam name="TSource">The old configuration type without <see cref="IHasVersion"/>. Must have a parameterless constructor.</typeparam>
+    /// <typeparam name="TNew">The new configuration type. Must implement <see cref="IHasVersion"/>.</typeparam>
+    /// <param name="migrator">A function that converts an instance of <typeparamref name="TSource"/> to <typeparamref name="TNew"/>.</param>
+    /// <exception cref="InvalidOperationException">Thrown when <typeparamref name="TNew"/> is not versioned.</exception>
+    public void UseMigrationFromNone<TSource, TNew>(Func<TSource, TNew> migrator)
+        where TSource : class, new()
+        where TNew : class, IHasVersion, new()
+    {
+        var newVersion = VersionCache.GetVersion(typeof(TNew));
+        if (newVersion is null)
+        {
+            throw new InvalidOperationException(
+                $"Target type {typeof(TNew).Name} does not implement IHasVersion correctly."
+            );
+        }
+
+        _migrationSteps.Add(new MigrationStepFromNone<TSource, TNew>(migrator));
+    }
+
+    /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
 #if NET

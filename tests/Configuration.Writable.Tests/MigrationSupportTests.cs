@@ -295,4 +295,39 @@ public class MigrationSupportTests
     {
         public string Name { get; set; } = "";
     }
+
+    [Fact]
+    public async Task LoadWithMigration_ShouldMigrateFromVersionNone_WhenFileHasNoVersion()
+    {
+        // Arrange
+        var fileName = "settings-none.json";
+        var content = """
+            {
+                "Name": "TestName"
+            }
+            """;
+        await _fileProvider.SaveToFileAsync(fileName, Encoding.UTF8.GetBytes(content));
+
+        var builder = new WritableOptionsConfigBuilder<MySettingsV2>
+        {
+            FilePath = fileName,
+            FormatProvider = new JsonFormatProvider(),
+        };
+        builder.FileProvider = _fileProvider;
+        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV2>(v0 =>
+            new MySettingsV2 { Names = [v0.Name] }
+        );
+
+        var options = builder.BuildOptions("");
+        var provider = new JsonFormatProvider();
+
+        // Act
+        var result = provider.LoadWithMigration(options);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Version.ShouldBe(2);
+        result.Names.Length.ShouldBe(1);
+        result.Names[0].ShouldBe("TestName");
+    }
 }

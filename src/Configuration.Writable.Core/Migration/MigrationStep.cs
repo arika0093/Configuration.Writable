@@ -60,3 +60,39 @@ internal sealed class MigrationStep<TOld, TNew> : MigrationStep
         return _migrationFunc(typedOldValue);
     }
 }
+
+/// <summary>
+/// Type-safe migration step from a configuration without a version (version 0) to a versioned configuration.
+/// </summary>
+/// <typeparam name="TSource">The old configuration type without <see cref="IHasVersion"/>.</typeparam>
+/// <typeparam name="TNew">The new configuration type. Must implement <see cref="IHasVersion"/>.</typeparam>
+internal sealed class MigrationStepFromNone<TSource, TNew> : MigrationStep
+    where TSource : class, new()
+    where TNew : class, IHasVersion
+{
+    private readonly Func<TSource, TNew> _migrationFunc;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MigrationStepFromNone{TSource, TNew}"/> class.
+    /// </summary>
+    /// <param name="migrationFunc">The function that performs the migration.</param>
+    public MigrationStepFromNone(Func<TSource, TNew> migrationFunc)
+    {
+        _migrationFunc = migrationFunc;
+        FromType = typeof(TSource);
+        ToType = typeof(TNew);
+    }
+
+    /// <inheritdoc />
+    public override object Migrate(object oldValue)
+    {
+        if (oldValue is not TSource typedOldValue)
+        {
+            throw new InvalidOperationException(
+                $"Expected type {typeof(TSource).Name} but received {oldValue.GetType().Name}"
+            );
+        }
+
+        return _migrationFunc(typedOldValue);
+    }
+}

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
 using ZLogger;
 
@@ -23,30 +24,41 @@ internal static class MigrationLoaderExtension
     )
         where T : class, new()
     {
-        var config = formatProvider.LoadConfiguration<T>(options);
-        // If loaded config doesn't implement IHasVersion (shouldn't happen but be safe), return it
-        if (config is not IHasVersion versionedConfig)
+        // If the target type is not versioned, simply load it directly.
+        var targetVersion = VersionCache.GetVersion(typeof(T));
+        if (targetVersion is null)
         {
-            return config;
+            return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
 
-        // Get version from loaded config
-        var fileVersion = versionedConfig.Version;
+        // Try to read the version declared in the file without binding to a specific model.
+        // A null result means the file does not declare a version field.
+        var fileVersion = (formatProvider as FormatProviderBase)?.TryGetFileVersion(options);
 
-        // Get target version
-        var targetVersion =
-            VersionCache.GetVersion(typeof(T))
-            ?? throw new InvalidOperationException(
-                $"Target type {typeof(T).Name} does not implement IHasVersion correctly."
+        // When the file has no declared version, check for a migration from an unversioned type.
+        if (fileVersion is null)
+        {
+            var fromNoneStep = options.MigrationSteps.FirstOrDefault(s =>
+                VersionCache.GetVersion(s.FromType) is null
             );
 
-        // If file version matches target version, return directly
-        if (fileVersion == targetVersion)
-        {
-            return config;
+            if (fromNoneStep is null)
+            {
+                // No migration from an unversioned type is registered; load as the target type.
+                return (T)formatProvider.LoadConfiguration(typeof(T), options);
+            }
+
+            // Start from the unversioned type and apply the migration chain.
+            return ApplyMigrationChain<T>(formatProvider, options, fromNoneStep.FromType);
         }
 
-        // Build complete migration chain including all types
+        // The file declares a version. If it already matches the target, load directly.
+        if (fileVersion == targetVersion)
+        {
+            return (T)formatProvider.LoadConfiguration(typeof(T), options);
+        }
+
+        // Find the type matching the declared file version.
         HashSet<Type> allTypes = [typeof(T)];
         foreach (var step in options.MigrationSteps)
         {
@@ -54,23 +66,31 @@ internal static class MigrationLoaderExtension
             allTypes.Add(step.ToType);
         }
 
-        // Find the type matching the file version
-        Type? currentType = allTypes.FirstOrDefault(t => VersionCache.GetVersion(t) == fileVersion);
-        if (currentType == null)
+        var currentType = allTypes.FirstOrDefault(t => VersionCache.GetVersion(t) == fileVersion);
+        if (currentType is null)
         {
             throw new InvalidOperationException(
                 $"No type found matching version {fileVersion} in migration chain."
             );
         }
 
-        // Deserialize as the found type
+        return ApplyMigrationChain<T>(formatProvider, options, currentType);
+    }
+
+    private static T ApplyMigrationChain<T>(
+        FormatProvider.IFormatProvider formatProvider,
+        WritableOptionsConfiguration<T> options,
+        Type startingType
+    )
+        where T : class, new()
+    {
+        var currentType = startingType;
         var current = formatProvider.LoadConfiguration(currentType, options);
 
-        // Apply migrations until we reach type T
         while (currentType != typeof(T))
         {
             var migration = options.MigrationSteps.FirstOrDefault(m => m.FromType == currentType);
-            if (migration == null)
+            if (migration is null)
             {
                 throw new InvalidOperationException(
                     $"""
