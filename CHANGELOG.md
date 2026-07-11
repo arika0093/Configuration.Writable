@@ -1,3 +1,38 @@
+## [0.5.0] - 2026-07-11
+
+### 🚀 Features
+
+- Implement EnsureDirectoryExists method to verify and create directories as needed (#84)
+- Enhance Dependabot workflow with dotnet-rerun setup and improved test command
+
+### 🐛 Bug Fixes
+
+- Correct description in README.md for clarity
+
+### 💼 Other
+
+- Add GetInstance and obsolete GetSpecifiedInstance aliases
+- Add async SaveAsync(Func<T>, Task) overload
+- Rename IFileProvider to IWritableFileProvider with obsolete alias
+- Rename RegisterInstanceToContainer to RegisterAsSingleton with obsolete alias
+- Change WritableOptionsConfigBuilder from record to class
+- Add TimeSpan-based OnChangeThrottle property
+- Internalize WritableOptionsConfiguration constructor and expose non-generic configuration interface
+- Make IFormatProvider.LoadConfiguration non-generic and update format providers
+- Support migration from unversioned configuration files
+
+### 🚜 Refactor
+
+- Replace Dictionary with ConcurrentDictionary for thread-safe instance storage
+
+### 📚 Documentation
+
+- Update README and example for new API names and clarity
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.4.3
+- Remove devcontainer configuration file
 ## [0.4.3] - 2026-02-04
 
 ### ⚙️ Miscellaneous Tasks
