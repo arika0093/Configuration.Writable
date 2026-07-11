@@ -80,7 +80,7 @@ public class XmlFormatProvider : FormatProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableOptionsConfiguration<T> options,
+        IWritableOptionsConfiguration options,
         CancellationToken cancellationToken = default
     )
     {
@@ -100,7 +100,7 @@ public class XmlFormatProvider : FormatProviderBase
     /// </summary>
     private static ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        WritableOptionsConfiguration<T> options
+        IWritableOptionsConfiguration options
     )
         where T : class, new()
     {
@@ -143,7 +143,7 @@ public class XmlFormatProvider : FormatProviderBase
     /// </summary>
     private static ReadOnlyMemory<byte> GetPartialSaveContents<T>(
         T config,
-        WritableOptionsConfiguration<T> options
+        IWritableOptionsConfiguration options
     )
         where T : class, new()
     {

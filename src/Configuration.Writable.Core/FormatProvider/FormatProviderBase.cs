@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -25,22 +27,20 @@ public abstract class FormatProviderBase : IFormatProvider
     /// <inheritdoc />
     public abstract Task SaveAsync<T>(
         T config,
-        WritableOptionsConfiguration<T> options,
+        IWritableOptionsConfiguration options,
         CancellationToken cancellationToken = default
     )
         where T : class, new();
 
-    /// <inheritdoc />
-    public T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
-        where T : class, new()
-    {
-        var rst = LoadConfiguration(typeof(T), options)!;
-        return (T)rst;
-    }
+    /// <summary>
+    /// Attempts to read the version declared in the configuration file without fully deserializing it.
+    /// </summary>
+    /// <param name="options">The options that control how the configuration is loaded.</param>
+    /// <returns>The version declared in the file, or <see langword="null"/> if the file does not exist or does not declare a version.</returns>
+    internal virtual int? TryGetFileVersion(IWritableOptionsConfiguration options) => null;
 
     /// <inheritdoc />
-    public object LoadConfiguration<T>(Type type, WritableOptionsConfiguration<T> options)
-        where T : class, new()
+    public object LoadConfiguration(Type type, IWritableOptionsConfiguration options)
     {
         // Check if file exists
         var filePath = options.ConfigFilePath;
@@ -78,6 +78,52 @@ public abstract class FormatProviderBase : IFormatProvider
             }
         }
     }
+
+    /// <summary>
+    /// Loads configuration from a file and deserializes it to the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
+    /// <param name="options">The options that control how the configuration is loaded.</param>
+    /// <returns>The deserialized configuration object.</returns>
+    [Obsolete("Use LoadConfiguration(Type, IWritableOptionsConfiguration) instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public virtual T LoadConfiguration<T>(WritableOptionsConfiguration<T> options)
+        where T : class, new()
+    {
+        var rst = LoadConfiguration(typeof(T), options)!;
+        return (T)rst;
+    }
+
+    /// <summary>
+    /// Loads configuration from a file and deserializes it to the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration object. Must be a reference type.</typeparam>
+    /// <param name="type">The type of the configuration object to load.</param>
+    /// <param name="options">The options that control how the configuration is loaded.</param>
+    /// <returns>The deserialized configuration object.</returns>
+    [Obsolete("Use LoadConfiguration(Type, IWritableOptionsConfiguration) instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public virtual object LoadConfiguration<T>(Type type, WritableOptionsConfiguration<T> options)
+        where T : class, new()
+        => LoadConfiguration(type, (IWritableOptionsConfiguration)options);
+
+    /// <summary>
+    /// Asynchronously saves the specified configuration object to a file.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration object to save. Must be a reference type.</typeparam>
+    /// <param name="config">The configuration object to be saved.</param>
+    /// <param name="options">The options that control how and where the configuration is saved.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the save operation.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    [Obsolete("Use SaveAsync<T>(T, IWritableOptionsConfiguration, CancellationToken) instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public virtual Task SaveAsync<T>(
+        T config,
+        WritableOptionsConfiguration<T> options,
+        CancellationToken cancellationToken = default
+    )
+        where T : class, new()
+        => SaveAsync(config, (IWritableOptionsConfiguration)options, cancellationToken);
 
     /// <summary>
     /// Creates a nested dictionary structure from a section name that supports ':' and '__' as separators.

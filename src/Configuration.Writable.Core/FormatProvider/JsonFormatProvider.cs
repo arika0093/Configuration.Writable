@@ -36,6 +36,52 @@ public class JsonFormatProvider : FormatProviderBase
     public override string FileExtension => "json";
 
     /// <inheritdoc />
+    internal override int? TryGetFileVersion(IWritableOptionsConfiguration options)
+    {
+        var filePath = options.ConfigFilePath;
+        if (!options.FileProvider.FileExists(filePath))
+        {
+            return null;
+        }
+
+        var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
+        if (pipeReader == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var stream = pipeReader.AsStream(leaveOpen: false);
+            using var document = JsonDocument.Parse(stream);
+            var root = document.RootElement;
+
+            if (!JsonWriterHelper.TryNavigateToSection(root, options.SectionNameParts, out var current))
+            {
+                return null;
+            }
+
+            var propertyName = JsonSerializerOptions.PropertyNamingPolicy?.ConvertName("Version") ?? "Version";
+            if (current.ValueKind == JsonValueKind.Object
+                && current.TryGetProperty(propertyName, out var versionElement)
+                && versionElement.ValueKind == JsonValueKind.Number
+                && versionElement.TryGetInt32(out var version))
+            {
+                return version;
+            }
+
+            return null;
+        }
+        finally
+        {
+            if (pipeReader is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+    }
+
+    /// <inheritdoc />
 #if NET
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
@@ -77,7 +123,7 @@ public class JsonFormatProvider : FormatProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableOptionsConfiguration<T> options,
+        IWritableOptionsConfiguration options,
         CancellationToken cancellationToken = default
     )
     {
@@ -101,7 +147,7 @@ public class JsonFormatProvider : FormatProviderBase
 #endif
     private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        WritableOptionsConfiguration<T> options
+        IWritableOptionsConfiguration options
     )
         where T : class, new()
     {

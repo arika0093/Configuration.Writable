@@ -45,6 +45,53 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
     /// <inheritdoc />
     public override string FileExtension => "json";
 
+    /// <inheritdoc />
+    internal override int? TryGetFileVersion(IWritableOptionsConfiguration options)
+    {
+        var filePath = options.ConfigFilePath;
+        if (!options.FileProvider.FileExists(filePath))
+        {
+            return null;
+        }
+
+        var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
+        if (pipeReader == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var serializerOptions = GetEffectiveOptions();
+            using var stream = pipeReader.AsStream(leaveOpen: false);
+            using var document = JsonDocument.Parse(stream);
+            var root = document.RootElement;
+
+            if (!JsonWriterHelper.TryNavigateToSection(root, options.SectionNameParts, out var current))
+            {
+                return null;
+            }
+
+            var propertyName = serializerOptions.PropertyNamingPolicy?.ConvertName("Version") ?? "Version";
+            if (current.ValueKind == JsonValueKind.Object
+                && current.TryGetProperty(propertyName, out var versionElement)
+                && versionElement.ValueKind == JsonValueKind.Number
+                && versionElement.TryGetInt32(out var version))
+            {
+                return version;
+            }
+
+            return null;
+        }
+        finally
+        {
+            if (pipeReader is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+    }
+
     /// <summary>
     /// Gets the effective JsonSerializerOptions, either from the property or derived from the type info resolver.
     /// </summary>
@@ -109,7 +156,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableOptionsConfiguration<T> options,
+        IWritableOptionsConfiguration options,
         CancellationToken cancellationToken = default
     )
     {
@@ -129,7 +176,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
     /// </summary>
     private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        WritableOptionsConfiguration<T> options
+        IWritableOptionsConfiguration options
     )
         where T : class, new()
     {

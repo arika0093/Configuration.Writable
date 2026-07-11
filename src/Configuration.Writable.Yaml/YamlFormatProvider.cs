@@ -137,7 +137,7 @@ public class YamlFormatProvider : FormatProviderBase
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
-        WritableOptionsConfiguration<T> options,
+        IWritableOptionsConfiguration options,
         CancellationToken cancellationToken = default
     )
     {
@@ -157,7 +157,7 @@ public class YamlFormatProvider : FormatProviderBase
     /// </summary>
     private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
-        WritableOptionsConfiguration<T> options
+        IWritableOptionsConfiguration options
     )
         where T : class, new()
     {
@@ -183,7 +183,7 @@ public class YamlFormatProvider : FormatProviderBase
     /// </summary>
     private ReadOnlyMemory<byte> GetPartialSaveContents<T>(
         T config,
-        WritableOptionsConfiguration<T> options
+        IWritableOptionsConfiguration options
     )
         where T : class, new()
     {
