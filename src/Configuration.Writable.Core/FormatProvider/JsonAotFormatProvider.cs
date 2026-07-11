@@ -67,16 +67,25 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
             using var document = JsonDocument.Parse(stream);
             var root = document.RootElement;
 
-            if (!JsonWriterHelper.TryNavigateToSection(root, options.SectionNameParts, out var current))
+            if (
+                !JsonWriterHelper.TryNavigateToSection(
+                    root,
+                    options.SectionNameParts,
+                    out var current
+                )
+            )
             {
                 return null;
             }
 
-            var propertyName = serializerOptions.PropertyNamingPolicy?.ConvertName("Version") ?? "Version";
-            if (current.ValueKind == JsonValueKind.Object
+            var propertyName =
+                serializerOptions.PropertyNamingPolicy?.ConvertName("Version") ?? "Version";
+            if (
+                current.ValueKind == JsonValueKind.Object
                 && current.TryGetProperty(propertyName, out var versionElement)
                 && versionElement.ValueKind == JsonValueKind.Number
-                && versionElement.TryGetInt32(out var version))
+                && versionElement.TryGetInt32(out var version)
+            )
             {
                 return version;
             }
@@ -174,10 +183,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
     /// <summary>
     /// Gets the save contents for the configuration.
     /// </summary>
-    private ReadOnlyMemory<byte> GetSaveContents<T>(
-        T config,
-        IWritableOptionsConfiguration options
-    )
+    private ReadOnlyMemory<byte> GetSaveContents<T>(T config, IWritableOptionsConfiguration options)
         where T : class, new()
     {
         options.Logger?.Log(

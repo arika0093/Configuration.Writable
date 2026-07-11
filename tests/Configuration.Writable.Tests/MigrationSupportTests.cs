@@ -314,9 +314,10 @@ public class MigrationSupportTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
-        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV2>(v0 =>
-            new MySettingsV2 { Names = [v0.Name] }
-        );
+        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV2>(v0 => new MySettingsV2
+        {
+            Names = [v0.Name],
+        });
 
         var options = builder.BuildOptions("");
         var provider = new JsonFormatProvider();

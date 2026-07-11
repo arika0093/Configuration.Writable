@@ -152,8 +152,10 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     }
 
     /// <inheritdoc/>
-    public Task SaveAsync(Func<T, Task> configUpdater, CancellationToken cancellationToken = default) =>
-        SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
+    public Task SaveAsync(
+        Func<T, Task> configUpdater,
+        CancellationToken cancellationToken = default
+    ) => SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc/>
     public async Task SaveAsync(
@@ -237,8 +239,10 @@ internal sealed class WritableOptionsStubWithName<T>(
         innerStub.SaveAsync(instanceName, configUpdater, cancellationToken);
 
     /// <inheritdoc/>
-    public Task SaveAsync(Func<T, Task> configUpdater, CancellationToken cancellationToken = default) =>
-        innerStub.SaveAsync(instanceName, configUpdater, cancellationToken);
+    public Task SaveAsync(
+        Func<T, Task> configUpdater,
+        CancellationToken cancellationToken = default
+    ) => innerStub.SaveAsync(instanceName, configUpdater, cancellationToken);
 }
 
 /// <summary>

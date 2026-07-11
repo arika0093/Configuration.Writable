@@ -56,16 +56,25 @@ public class JsonFormatProvider : FormatProviderBase
             using var document = JsonDocument.Parse(stream);
             var root = document.RootElement;
 
-            if (!JsonWriterHelper.TryNavigateToSection(root, options.SectionNameParts, out var current))
+            if (
+                !JsonWriterHelper.TryNavigateToSection(
+                    root,
+                    options.SectionNameParts,
+                    out var current
+                )
+            )
             {
                 return null;
             }
 
-            var propertyName = JsonSerializerOptions.PropertyNamingPolicy?.ConvertName("Version") ?? "Version";
-            if (current.ValueKind == JsonValueKind.Object
+            var propertyName =
+                JsonSerializerOptions.PropertyNamingPolicy?.ConvertName("Version") ?? "Version";
+            if (
+                current.ValueKind == JsonValueKind.Object
                 && current.TryGetProperty(propertyName, out var versionElement)
                 && versionElement.ValueKind == JsonValueKind.Number
-                && versionElement.TryGetInt32(out var version))
+                && versionElement.TryGetInt32(out var version)
+            )
             {
                 return version;
             }
@@ -145,10 +154,7 @@ public class JsonFormatProvider : FormatProviderBase
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
-    private ReadOnlyMemory<byte> GetSaveContents<T>(
-        T config,
-        IWritableOptionsConfiguration options
-    )
+    private ReadOnlyMemory<byte> GetSaveContents<T>(T config, IWritableOptionsConfiguration options)
         where T : class, new()
     {
         options.Logger?.Log(

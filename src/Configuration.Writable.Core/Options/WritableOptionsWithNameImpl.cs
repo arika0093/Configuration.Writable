@@ -49,6 +49,8 @@ internal sealed class WritableOptionsWithNameImpl<T>(
         innerWritableOptionsInstance.SaveAsync(instanceName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
-    public Task SaveAsync(Func<T, Task> configUpdater, CancellationToken cancellationToken = default) =>
-        innerWritableOptionsInstance.SaveAsync(instanceName, configUpdater, cancellationToken);
+    public Task SaveAsync(
+        Func<T, Task> configUpdater,
+        CancellationToken cancellationToken = default
+    ) => innerWritableOptionsInstance.SaveAsync(instanceName, configUpdater, cancellationToken);
 }

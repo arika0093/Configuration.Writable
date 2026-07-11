@@ -15,9 +15,7 @@ namespace Configuration.Writable;
 public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     where T : class, new()
 {
-    internal WritableOptionsConfiguration()
-    {
-    }
+    internal WritableOptionsConfiguration() { }
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>

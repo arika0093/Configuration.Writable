@@ -18,10 +18,8 @@ public static class WritableOptions
         where T : class, new()
     {
         var type = typeof(T);
-        return (WritableOptionsSimpleInstance<T>)_instances.GetOrAdd(
-            type,
-            _ => new WritableOptionsSimpleInstance<T>()
-        );
+        return (WritableOptionsSimpleInstance<T>)
+            _instances.GetOrAdd(type, _ => new WritableOptionsSimpleInstance<T>());
     }
 
     /// <summary>

@@ -104,8 +104,7 @@ public abstract class FormatProviderBase : IFormatProvider
     [Obsolete("Use LoadConfiguration(Type, IWritableOptionsConfiguration) instead.")]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public virtual object LoadConfiguration<T>(Type type, WritableOptionsConfiguration<T> options)
-        where T : class, new()
-        => LoadConfiguration(type, (IWritableOptionsConfiguration)options);
+        where T : class, new() => LoadConfiguration(type, (IWritableOptionsConfiguration)options);
 
     /// <summary>
     /// Asynchronously saves the specified configuration object to a file.
@@ -122,8 +121,8 @@ public abstract class FormatProviderBase : IFormatProvider
         WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken = default
     )
-        where T : class, new()
-        => SaveAsync(config, (IWritableOptionsConfiguration)options, cancellationToken);
+        where T : class, new() =>
+        SaveAsync(config, (IWritableOptionsConfiguration)options, cancellationToken);
 
     /// <summary>
     /// Creates a nested dictionary structure from a section name that supports ':' and '__' as separators.

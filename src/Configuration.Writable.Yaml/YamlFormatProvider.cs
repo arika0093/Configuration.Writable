@@ -155,10 +155,7 @@ public class YamlFormatProvider : FormatProviderBase
     /// <summary>
     /// Gets the save contents for the configuration.
     /// </summary>
-    private ReadOnlyMemory<byte> GetSaveContents<T>(
-        T config,
-        IWritableOptionsConfiguration options
-    )
+    private ReadOnlyMemory<byte> GetSaveContents<T>(T config, IWritableOptionsConfiguration options)
         where T : class, new()
     {
         var sections = options.SectionNameParts;
