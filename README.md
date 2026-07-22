@@ -857,8 +857,6 @@ Assert.Contains("expected name", json);
 ## Interfaces
 Here, we describe the main interfaces provided by this library.
 
-<img src="./assets/interfaces.drawio.svg" alt="Interfaces Diagram" width="600"/>
-
 ### `IReadOnlyOptions` / `IWritableOptions` (recommended)
 These are the primary interfaces for reading and writing settings. They provide the latest values at the current point in time, and when the configuration file is updated, the latest values are automatically reflected.
 
@@ -909,6 +907,8 @@ This is identical to MS.E.O.'s [`IOptionsMonitor`](https://learn.microsoft.com/e
 These interfaces combine the functionalities of `IReadOnlyOptions`, `IReadOnlyNamedOptions`, and `IOptionsMonitor<T>` (and their writable counterparts).
 They are provided mainly to ensure compatibility with codebases that already use `IOptionsMonitor<T>`.  
 Therefore, you typically do not need to use these interfaces explicitly.
+
+<img src="./assets/interfaces.drawio.svg" alt="Interfaces Diagram" width="600"/>
 
 </details>
 
