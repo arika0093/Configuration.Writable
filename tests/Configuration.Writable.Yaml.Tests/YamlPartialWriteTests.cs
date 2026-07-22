@@ -57,7 +57,9 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>(
+            (System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent)
+        );
 
         result.ShouldNotBeNull();
 
@@ -116,7 +118,9 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>(
+            (System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent)
+        );
 
         result.ShouldNotBeNull();
 
@@ -159,7 +163,9 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>(
+            (System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent)
+        );
 
         result.ShouldNotBeNull();
 
@@ -201,7 +207,9 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>(
+            (System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent)
+        );
 
         result.ShouldNotBeNull();
 
@@ -243,7 +251,9 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>(
+            (System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent)
+        );
 
         result.ShouldNotBeNull();
 

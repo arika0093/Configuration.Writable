@@ -19,15 +19,14 @@ namespace Configuration.Writable.FormatProvider;
 /// </summary>
 public class YamlFormatProvider : FormatProviderBase
 {
-    private static readonly MethodInfo DeserializeMethod =
-        typeof(YamlSerializer)
-            .GetMethods()
-            .First(m =>
-                m.Name == nameof(YamlSerializer.Deserialize)
-                && m.IsGenericMethod
-                && m.GetParameters().Length == 2
-                && m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
-            );
+    private static readonly MethodInfo DeserializeMethod = typeof(YamlSerializer)
+        .GetMethods()
+        .First(m =>
+            m.Name == nameof(YamlSerializer.Deserialize)
+            && m.IsGenericMethod
+            && m.GetParameters().Length == 2
+            && m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
+        );
 
     /// <summary>
     /// Gets or sets the serializer options used for serialization and deserialization.
@@ -122,10 +121,7 @@ public class YamlFormatProvider : FormatProviderBase
                 }
             }
 
-            targetYamlContent = YamlSerializer.SerializeToString(
-                current,
-                SerializerOptions
-            );
+            targetYamlContent = YamlSerializer.SerializeToString(current, SerializerOptions);
         }
 
         try
@@ -233,8 +229,10 @@ public class YamlFormatProvider : FormatProviderBase
         var configYaml = YamlSerializer.SerializeToString(config, SerializerOptions);
         var configYamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(configYaml);
         var configDict =
-            YamlSerializer.Deserialize<Dictionary<string, object>>(configYamlBytes, SerializerOptions)
-            ?? new Dictionary<string, object>();
+            YamlSerializer.Deserialize<Dictionary<string, object>>(
+                configYamlBytes,
+                SerializerOptions
+            ) ?? new Dictionary<string, object>();
 
         Dictionary<string, object> resultDict;
 
