@@ -46,7 +46,7 @@ internal class SaveLocationManager
     /// <param name="fileProvider">The file provider to check file and directory access.</param>
     /// <returns>The first valid save location path found, or null if none are available.</returns>
     public string Build(
-        FormatProvider.IFormatProvider formatProvider,
+        FormatProvider.IWritableFormatProvider formatProvider,
         IWritableFileProvider fileProvider,
         string instanceName
     )

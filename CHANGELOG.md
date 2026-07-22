@@ -8,6 +8,7 @@
 - Drop obsolete `FormatProviderBase.LoadConfiguration<T>(WritableOptionsConfiguration<T>)` overloads (use `LoadConfiguration(Type, IWritableOptionsConfiguration)` instead)
 - Drop obsolete `FormatProviderBase.SaveAsync<T>(T, WritableOptionsConfiguration<T>, CancellationToken)` overload (use `SaveAsync<T>(T, IWritableOptionsConfiguration, CancellationToken)` instead)
 - Drop `OnChangeThrottleMs` property (use `OnChangeThrottle` with `TimeSpan` instead)
+- Rename `IFormatProvider` to `IWritableFormatProvider` to avoid conflict with `System.IFormatProvider`
 
 ## [0.5.0] - 2026-07-11
 

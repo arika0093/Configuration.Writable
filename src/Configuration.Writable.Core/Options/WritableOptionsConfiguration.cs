@@ -18,10 +18,10 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     internal WritableOptionsConfiguration() { }
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
+    /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public required FormatProvider.IFormatProvider FormatProvider { get; init; }
+    public required FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations.

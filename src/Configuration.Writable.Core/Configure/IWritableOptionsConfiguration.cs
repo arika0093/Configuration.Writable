@@ -18,7 +18,7 @@ public interface IWritableOptionsConfiguration
     /// <summary>
     /// The format provider used to serialize and deserialize the configuration.
     /// </summary>
-    IFormatProvider FormatProvider { get; }
+    IWritableFormatProvider FormatProvider { get; }
 
     /// <summary>
     /// The path to the configuration file.

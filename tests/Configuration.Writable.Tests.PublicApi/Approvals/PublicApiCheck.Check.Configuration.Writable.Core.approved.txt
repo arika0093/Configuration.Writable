@@ -25,7 +25,7 @@ namespace Configuration.Writable.Configure
         public WritableOptionsConfigBuilder() { }
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IWritableFileProvider? FileProvider { get; set; }
-        public Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; set; }
+        public Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public System.TimeSpan OnChangeThrottle { get; set; }
         public bool RegisterAsSingleton { get; set; }
@@ -107,7 +107,7 @@ namespace Configuration.Writable.FileProvider
 }
 namespace Configuration.Writable.FormatProvider
 {
-    public abstract class FormatProviderBase : Configuration.Writable.FormatProvider.IFormatProvider
+    public abstract class FormatProviderBase : Configuration.Writable.FormatProvider.IWritableFormatProvider
     {
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
@@ -117,7 +117,7 @@ namespace Configuration.Writable.FormatProvider
             where T :  class, new ();
         protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
     }
-    public interface IFormatProvider
+    public interface IWritableFormatProvider
     {
         string FileExtension { get; }
         object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options);
@@ -204,7 +204,7 @@ namespace Configuration.Writable
     {
         string ConfigFilePath { get; }
         Configuration.Writable.FileProvider.IWritableFileProvider FileProvider { get; }
-        Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; }
+        Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; }
         string InstanceName { get; }
         Microsoft.Extensions.Logging.ILogger? Logger { get; }
         System.TimeSpan OnChangeThrottle { get; }
@@ -229,7 +229,7 @@ namespace Configuration.Writable
         public required System.Func<T, T> CloneMethod { get; init; }
         public required string ConfigFilePath { get; init; }
         public required Configuration.Writable.FileProvider.IWritableFileProvider FileProvider { get; init; }
-        public required Configuration.Writable.FormatProvider.IFormatProvider FormatProvider { get; init; }
+        public required Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required System.TimeSpan OnChangeThrottle { get; init; }

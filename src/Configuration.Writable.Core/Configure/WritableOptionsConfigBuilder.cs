@@ -37,10 +37,10 @@ public class WritableOptionsConfigBuilder<T>
     private readonly List<MigrationStep> _migrationSteps = [];
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
+    /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public FormatProvider.IFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
+    public FormatProvider.IWritableFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations override from provider's default.
@@ -50,7 +50,7 @@ public class WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
-    /// Extension is determined by the <see cref="IFormatProvider"/> so it can be omitted.
+    /// Extension is determined by the <see cref="IWritableFormatProvider"/> so it can be omitted.
     /// </summary>
     public string? FilePath
     {

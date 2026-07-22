@@ -19,7 +19,7 @@ internal static class MigrationLoaderExtension
     /// </summary>
     /// <typeparam name="T">The target configuration type.</typeparam>
     internal static T LoadWithMigration<T>(
-        this FormatProvider.IFormatProvider formatProvider,
+        this FormatProvider.IWritableFormatProvider formatProvider,
         WritableOptionsConfiguration<T> options
     )
         where T : class, new()
@@ -78,7 +78,7 @@ internal static class MigrationLoaderExtension
     }
 
     private static T ApplyMigrationChain<T>(
-        FormatProvider.IFormatProvider formatProvider,
+        FormatProvider.IWritableFormatProvider formatProvider,
         WritableOptionsConfiguration<T> options,
         Type startingType
     )

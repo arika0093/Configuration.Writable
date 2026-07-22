@@ -21,7 +21,7 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     // conf.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
 
     // customize the provider and file writer
-    // you can use Json, Xml, Yaml, or your original format by implementing IFormatProvider
+    // you can use Json, Xml, Yaml, or your original format by implementing IWritableFormatProvider
     conf.FormatProvider = new JsonFormatProvider()
     {
         // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0

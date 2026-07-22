@@ -9,7 +9,7 @@ namespace Configuration.Writable.FormatProvider;
 /// <summary>
 /// Defines a provider for managing writable configurations, including serialization and deserialization of configuration objects.
 /// </summary>
-public interface IFormatProvider
+public interface IWritableFormatProvider
 {
     /// <summary>
     /// Gets the file extension associated with the current file, excluding the leading period (e.g., "txt").
