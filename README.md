@@ -9,6 +9,7 @@ Yet another configuration library with features including: type-safe operations,
 * [Automatic detection](#change-detection) of external changes to configuration files and reflection of the latest settings.
 * Simple API that can be easily used in applications both [with](#host-application-with-di) and [without](#simple-application-without-di) DI.
 * Partial updates to settings make it usable even with [ASP.NET Core](#sectionname).
+* Works with [NativeAOT](#support-nativeaot) environments!
 * Highly [customizable configuration](#customization) methods, save locations, file formats, validation, logging, and more.
 
 ## Quick Start
@@ -347,8 +348,6 @@ Default FileProvider (`CommonFileProvider`) supports the following features:
 
 If you want to change the way files are written, create a class that implements `IWritableFileProvider` and specify it in `conf.FileProvider`.
 
-> `IFileProvider` is still available as an obsolete alias of `IWritableFileProvider` for backward compatibility.
-
 ```csharp
 using Configuration.Writable.FileProvider;
 
@@ -410,8 +409,6 @@ conf.OnChangeThrottleMs = 0;
 
 ### RegisterAsSingleton
 If you want to directly reference the settings class, specify `conf.RegisterAsSingleton = true`.
-
-> `RegisterInstanceToContainer` is still available as an obsolete alias of `RegisterAsSingleton` for backward compatibility.
 
 > [!NOTE]
 > The dynamic update functionality provided by `IReadOnlyOptions<T>` will no longer be available.
@@ -886,8 +883,6 @@ Named variants of the above interfaces. Use these when you manage multiple setti
     * Use `GetInstance(name)` to retrieve a pre-specified `IReadOnlyOptions<T>` instance.
 * [`IWritableNamedOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IWritableNamedOptions.cs)
     * In addition to `IReadOnlyNamedOptions<T>`, this supports saving settings via `SaveAsync(name, ...)`.
-
-> `GetSpecifiedInstance(name)` is still available as an obsolete alias of `GetInstance(name)` for backward compatibility.
 
 <details>
 <summary>Other interfaces (for compatibility)</summary>
