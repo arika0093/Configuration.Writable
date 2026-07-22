@@ -4,10 +4,9 @@ namespace Configuration.Writable.FormatProvider
     public class YamlFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase
     {
         public YamlFormatProvider() { }
-        public YamlDotNet.Serialization.IDeserializer Deserializer { get; init; }
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
-        public YamlDotNet.Serialization.ISerializer Serializer { get; init; }
+        public VYaml.Serialization.YamlSerializerOptions SerializerOptions { get; init; }
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }

@@ -4,8 +4,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using VYaml.Serialization;
+
+// AppSettings and UserSettings are in TestModels.cs
 
 namespace Configuration.Writable.Yaml.Tests;
 
@@ -16,18 +17,6 @@ namespace Configuration.Writable.Yaml.Tests;
 public class YamlPartialWriteTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
-
-    public class AppSettings
-    {
-        public string Name { get; set; } = "MyApp";
-        public int Version { get; set; } = 1;
-    }
-
-    public class UserSettings
-    {
-        public string Theme { get; set; } = "dark";
-        public bool Notifications { get; set; } = true;
-    }
 
     [Fact]
     public async Task PartialWrite_WithExistingFile_ShouldPreserveOtherSections()
@@ -68,10 +57,7 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-        var result = deserializer.Deserialize<Dictionary<string, object>>(resultContent);
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
 
         result.ShouldNotBeNull();
 
@@ -85,7 +71,7 @@ public class YamlPartialWriteTests
         var userSettings = result["userSettings"] as Dictionary<object, object>;
         userSettings.ShouldNotBeNull();
         userSettings["theme"].ShouldBe("light");
-        userSettings["notifications"].ToString().ShouldBe("false");
+        userSettings["notifications"].ToString().ToLowerInvariant().ShouldBe("false");
 
         // Verify otherSection was preserved
         var otherSection = result["otherSection"] as Dictionary<object, object>;
@@ -130,10 +116,7 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-        var result = deserializer.Deserialize<Dictionary<string, object>>(resultContent);
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
 
         result.ShouldNotBeNull();
 
@@ -176,10 +159,7 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-        var result = deserializer.Deserialize<Dictionary<string, object>>(resultContent);
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
 
         result.ShouldNotBeNull();
 
@@ -221,10 +201,7 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-        var result = deserializer.Deserialize<Dictionary<string, object>>(resultContent);
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
 
         result.ShouldNotBeNull();
 
@@ -266,10 +243,7 @@ public class YamlPartialWriteTests
 
         // Assert
         var resultContent = _fileProvider.ReadAllText(testFileName);
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-        var result = deserializer.Deserialize<Dictionary<string, object>>(resultContent);
+        var result = YamlSerializer.Deserialize<Dictionary<string, object>>((System.ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(resultContent));
 
         result.ShouldNotBeNull();
 

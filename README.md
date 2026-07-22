@@ -331,10 +331,11 @@ Currently, the following providers are available:
 |------------------------------|---------------------------|------------------------------|-----------|
 | [JsonFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable/Provider/JsonFormatProvider.cs) | save in JSON format.     | Built-in | ✅️ |
 | [XmlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/XmlFormatProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  | ❌️ |
-| [YamlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/YamlFormatProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  | ❌️ |
+| [YamlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/YamlFormatProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  | ✅️ |
 
 ```csharp
 // use Yaml format (you need to install Configuration.Writable.Yaml package)
+// YAML provider uses VYaml and supports NativeAOT when types are annotated with [YamlObject].
 conf.FormatProvider = new YamlFormatProvider();
 ```
 
@@ -690,6 +691,38 @@ conf.WithValidator<SampleSettingValidator>();
 ```
 
 For more details, please refer to the [Example.ConsoleApp.NativeAOT](./example/Example.ConsoleApp.NativeAot/) project.
+
+### YAML with NativeAOT
+The YAML provider (`YamlFormatProvider`) uses [VYaml](https://github.com/hadashiA/VYaml), which provides source-generated serializers. To use it in NativeAOT environments:
+
+1. Annotate your settings class with `[YamlObject]` (from `VYaml.Annotations`)
+2. Call the generated `__RegisterVYamlFormatter()` method at startup to ensure formatters are not trimmed
+3. Use `YamlFormatProvider` as usual
+
+```csharp
+using VYaml.Annotations;
+
+// 1. annotate with [YamlObject]
+[OptionsModel]
+[YamlObject]
+public partial class SampleSetting
+{
+    public string Name { get; set; } = "";
+    public DateTime LastUpdatedAt { get; set; }
+}
+
+// -----
+// 2. register VYaml formatter at startup (required for NativeAOT)
+SampleSetting.__RegisterVYamlFormatter();
+
+// 3. use YamlFormatProvider
+WritableOptions.Initialize<SampleSetting>(conf => {
+    conf.UseFile("./config/mysettings");
+    conf.FormatProvider = new YamlFormatProvider();
+});
+```
+
+For more details, please refer to the [Example.ConsoleApp.Yaml](./example/Example.ConsoleApp.Yaml/) project.
 
 ### InstanceName
 If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.

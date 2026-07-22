@@ -35,24 +35,7 @@ public class YamlOutputFormatStabilityTests
         return File.ReadAllText(path);
     }
 
-    public class TestConfiguration
-    {
-        public string StringValue { get; set; } = "TestString";
-        public int IntValue { get; set; } = 42;
-        public double DoubleValue { get; set; } = 3.14159;
-        public bool BoolValue { get; set; } = true;
-        public string[] ArrayValue { get; set; } = ["item1", "item2", "item3"];
-        public DateTime DateTimeValue { get; set; } =
-            new DateTime(2023, 12, 25, 10, 30, 45, DateTimeKind.Utc);
-        public NestedConfiguration Nested { get; set; } = new();
-    }
-
-    public class NestedConfiguration
-    {
-        public string Description { get; set; } = "Nested description";
-        public decimal Price { get; set; } = 99.99m;
-        public bool IsActive { get; set; } = false;
-    }
+    // TestConfiguration and NestedConfiguration are in TestModels.cs
 
     [Fact]
     public async Task YamlProvider_OutputFormat_ShouldBeStable()

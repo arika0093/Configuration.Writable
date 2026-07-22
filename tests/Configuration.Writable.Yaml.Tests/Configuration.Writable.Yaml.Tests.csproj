@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="VYaml" Version="1.*" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Configuration.Writable.Yaml\Configuration.Writable.Yaml.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
     <ProjectReference Include="..\Configuration.Writable.Tests\Configuration.Writable.Tests.csproj" />

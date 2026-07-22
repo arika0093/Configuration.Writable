@@ -4,7 +4,7 @@
     <RootNamespace>Configuration.Writable.FormatProvider</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="YamlDotNet" Version="*" />
+    <PackageReference Include="VYaml" Version="1.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Configuration.Writable.Core\Configuration.Writable.Core.csproj" />

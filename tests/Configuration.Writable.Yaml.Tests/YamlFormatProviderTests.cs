@@ -9,21 +9,6 @@ public class YamlFormatProviderTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    public class TestSettings
-    {
-        public string Name { get; set; } = "default";
-        public int Value { get; set; } = 42;
-        public bool IsEnabled { get; set; } = true;
-        public string[] Items { get; set; } = ["item1", "item2"];
-        public NestedSettings Nested { get; set; } = new();
-    }
-
-    public class NestedSettings
-    {
-        public string Description { get; set; } = "nested_default";
-        public double Price { get; set; } = 19.99;
-    }
-
     [Fact]
     public void YamlFormatProvider_ShouldHaveCorrectFileExtension()
     {

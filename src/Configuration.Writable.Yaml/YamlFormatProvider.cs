@@ -1,38 +1,38 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using VYaml.Serialization;
 using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
-/// Writable configuration implementation for Yaml files.
+/// Writable configuration implementation for Yaml files using VYaml.
+/// This provider is AOT-compatible when user types are annotated with <c>[YamlObject]</c>.
 /// </summary>
 public class YamlFormatProvider : FormatProviderBase
 {
-    /// <summary>
-    /// Gets or sets the serializer used to convert objects to and from a specific format.
-    /// </summary>
-    public ISerializer Serializer { get; init; } =
-        new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
+    private static readonly MethodInfo DeserializeMethod =
+        typeof(YamlSerializer)
+            .GetMethods()
+            .First(m =>
+                m.Name == nameof(YamlSerializer.Deserialize)
+                && m.IsGenericMethod
+                && m.GetParameters().Length == 2
+                && m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
+            );
 
     /// <summary>
-    /// Gets or sets the deserializer used to convert YAML to objects.
+    /// Gets or sets the serializer options used for serialization and deserialization.
     /// </summary>
-    public IDeserializer Deserializer { get; init; } =
-        new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
+    public YamlSerializerOptions SerializerOptions { get; init; } = YamlSerializerOptions.Standard;
 
     /// <summary>
     /// Gets or sets the text encoding used for processing text data.
@@ -50,8 +50,6 @@ public class YamlFormatProvider : FormatProviderBase
         CancellationToken cancellationToken = default
     )
     {
-        // Use PipeReader.AsStream for compatibility with StreamReader
-        // The stream owns the PipeReader when leaveOpen is false
         var stream = reader.AsStream(leaveOpen: false);
 #if NETSTANDARD2_0
         using var streamReader = new StreamReader(stream, Encoding);
@@ -72,12 +70,20 @@ public class YamlFormatProvider : FormatProviderBase
         var yamlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
 #endif
 
+        if (string.IsNullOrWhiteSpace(yamlContent))
+        {
+            return Activator.CreateInstance(type)!;
+        }
+
         string targetYamlContent = yamlContent;
 
-        // Navigate to the section if specified
         if (sectionNameParts.Count > 0)
         {
-            var data = Deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
+            var yamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(yamlContent);
+            var data = YamlSerializer.Deserialize<Dictionary<string, object>>(
+                yamlBytes,
+                SerializerOptions
+            );
             if (data == null)
             {
                 return Activator.CreateInstance(type)!;
@@ -97,40 +103,44 @@ public class YamlFormatProvider : FormatProviderBase
                         return Activator.CreateInstance(type)!;
                     }
                 }
+                else if (current is Dictionary<object, object> objDict)
+                {
+                    // VYaml deserializes nested maps as Dictionary<object, object>
+                    var key = objDict.Keys.FirstOrDefault(k => k?.ToString() == section);
+                    if (key != null && objDict.TryGetValue(key, out var value))
+                    {
+                        current = value;
+                    }
+                    else
+                    {
+                        return Activator.CreateInstance(type)!;
+                    }
+                }
                 else
                 {
                     return Activator.CreateInstance(type)!;
                 }
             }
 
-            // Serialize the section back to YAML
-            targetYamlContent = Serializer.Serialize(current);
+            targetYamlContent = YamlSerializer.SerializeToString(
+                current,
+                SerializerOptions
+            );
         }
-
-        // Deserialize YAML directly to the target type
-        // Use CamelCaseNamingConvention to match serialization
-        var plainDeserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .IgnoreUnmatchedProperties()
-            .Build();
 
         try
         {
-            var result = plainDeserializer.Deserialize(targetYamlContent, type);
+            var targetBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(targetYamlContent);
+            var genericMethod = DeserializeMethod.MakeGenericMethod(type);
+            var result = genericMethod.Invoke(
+                null,
+                new object[] { targetBytes, SerializerOptions }
+            );
             return result ?? Activator.CreateInstance(type)!;
         }
-        catch (Exception)
+        catch
         {
-            // If plain deserialization fails, try with the configured deserializer
-            try
-            {
-                var result = Deserializer.Deserialize(targetYamlContent, type);
-                return result ?? Activator.CreateInstance(type)!;
-            }
-            catch
-            {
-                return Activator.CreateInstance(type)!;
-            }
+            return Activator.CreateInstance(type)!;
         }
     }
 
@@ -163,8 +173,7 @@ public class YamlFormatProvider : FormatProviderBase
         if (sections.Count == 0)
         {
             // No section name, serialize directly (full file overwrite)
-            var serializer = Serializer;
-            var yamlString = serializer.Serialize(config);
+            var yamlString = YamlSerializer.SerializeToString(config, SerializerOptions);
             return Encoding.GetBytes(yamlString);
         }
         else
@@ -201,8 +210,10 @@ public class YamlFormatProvider : FormatProviderBase
 
                     if (!string.IsNullOrWhiteSpace(yamlContent))
                     {
-                        existingDict = Deserializer.Deserialize<Dictionary<string, object>>(
-                            yamlContent
+                        var yamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(yamlContent);
+                        existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
+                            yamlBytes,
+                            SerializerOptions
                         );
                         options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
                     }
@@ -217,13 +228,12 @@ public class YamlFormatProvider : FormatProviderBase
             }
         }
 
-        var serializer = Serializer;
-        var deserializer = Deserializer;
-
-        // Serialize config to dictionary
-        var configYaml = serializer.Serialize(config);
+        // Serialize config to YAML then deserialize to dictionary
+        // This goes through YAML text to avoid type boxing issues (e.g. decimal)
+        var configYaml = YamlSerializer.SerializeToString(config, SerializerOptions);
+        var configYamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(configYaml);
         var configDict =
-            deserializer.Deserialize<Dictionary<string, object>>(configYaml)
+            YamlSerializer.Deserialize<Dictionary<string, object>>(configYamlBytes, SerializerOptions)
             ?? new Dictionary<string, object>();
 
         Dictionary<string, object> resultDict;
@@ -252,7 +262,7 @@ public class YamlFormatProvider : FormatProviderBase
             MergeSection(resultDict, sections, 0, configDict);
         }
 
-        var yamlString = serializer.Serialize(resultDict);
+        var yamlString = YamlSerializer.SerializeToString(resultDict, SerializerOptions);
 
         options.Logger?.ZLogTrace($"Partial YAML serialization completed successfully");
 
