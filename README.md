@@ -327,11 +327,11 @@ public partial class SampleSettingSerializerContext : JsonSerializerContext;
 If you want to save in other formats, install the required packages and specify the corresponding provider.
 Currently, the following providers are available:
 
-| Provider                     | Description              | NuGet Package                |
-|------------------------------|---------------------------|------------------------------|
-| [JsonFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable/Provider/JsonFormatProvider.cs) | save in JSON format.     | Built-in |
-| [XmlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/XmlFormatProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  |
-| [YamlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/YamlFormatProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  |
+| Provider                     | Description               | NuGet Package                | NativeAOT |
+|------------------------------|---------------------------|------------------------------|-----------|
+| [JsonFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable/Provider/JsonFormatProvider.cs) | save in JSON format.     | Built-in | ✅️ |
+| [XmlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/XmlFormatProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  | ❌️ |
+| [YamlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/YamlFormatProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  | ❌️ |
 
 ```csharp
 // use Yaml format (you need to install Configuration.Writable.Yaml package)
@@ -371,7 +371,7 @@ public class MyService(IWritableOptions<UserSetting> options) : IDisposable
     public void WatchStart()
     {
         // register change callback
-        var disposable = options.OnChange(newSetting => {
+        _disposable = options.OnChange(newSetting => {
             // called when the configuration file is changed externally
             Console.WriteLine($">> Settings changed: Name={newSetting.Name}, Age={newSetting.Age}");
         });
@@ -389,22 +389,19 @@ public class MyService(IWritableOptions<UserSetting> options) : IDisposable
         // this will trigger the OnChange callback
     }
 
-    public void Dispose() => disposable?.Dispose();
+    // on Dispose, unregister the change callback
+    public void Dispose() => _disposable?.Dispose();
 
-    private IDisposable? disposable;
+    private IDisposable? _disposable;
 }
 ```
 
 By default, throttling is enabled to suppress high-frequency file changes. Additional changes within 300ms from change detection are ignored by default.  
-If you want to change the throttle duration, use `conf.OnChangeThrottle` (preferred) or `conf.OnChangeThrottleMs`.
+If you want to change the throttle duration, use `conf.OnChangeThrottle`.
 
 ```csharp
 conf.OnChangeThrottle = TimeSpan.FromMilliseconds(500); // customize to 500ms
 conf.OnChangeThrottle = TimeSpan.Zero;                  // disable throttling
-
-// alternatively, you can still use the millisecond-based property
-conf.OnChangeThrottleMs = 500;
-conf.OnChangeThrottleMs = 0;
 ```
 
 ### RegisterAsSingleton
