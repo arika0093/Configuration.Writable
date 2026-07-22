@@ -21,10 +21,6 @@ public interface IWritableNamedOptions<T> : IReadOnlyNamedOptions<T>
     /// <returns>An <see cref="IWritableOptions{T}"/> instance bound to the specified name.</returns>
     new IWritableOptions<T> GetInstance(string name);
 
-    /// <inheritdoc cref="GetInstance"/>
-    [System.Obsolete("Use GetInstance instead.")]
-    new IWritableOptions<T> GetSpecifiedInstance(string name);
-
     /// <summary>
     /// Asynchronously saves the specified configuration.
     /// </summary>

@@ -1,3 +1,13 @@
+## [Unreleased]
+
+### 💥 Breaking Changes
+
+- Drop obsolete `IFileProvider` interface (use `IWritableFileProvider` instead)
+- Drop obsolete `RegisterInstanceToContainer` property (use `RegisterAsSingleton` instead)
+- Drop obsolete `GetSpecifiedInstance` method from `IReadOnlyNamedOptions` and `IWritableNamedOptions` (use `GetInstance` instead)
+- Drop obsolete `FormatProviderBase.LoadConfiguration<T>(WritableOptionsConfiguration<T>)` overloads (use `LoadConfiguration(Type, IWritableOptionsConfiguration)` instead)
+- Drop obsolete `FormatProviderBase.SaveAsync<T>(T, WritableOptionsConfiguration<T>, CancellationToken)` overload (use `SaveAsync<T>(T, IWritableOptionsConfiguration, CancellationToken)` instead)
+
 ## [0.5.0] - 2026-07-11
 
 ### 🚀 Features

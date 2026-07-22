@@ -32,10 +32,6 @@ public interface IReadOnlyNamedOptions<T> : IReadOnlyOptionsCore<T>
     /// <returns>An <see cref="IReadOnlyOptions{T}"/> instance bound to the specified name.</returns>
     IReadOnlyOptions<T> GetInstance(string name);
 
-    /// <inheritdoc cref="GetInstance"/>
-    [System.Obsolete("Use GetInstance instead.")]
-    IReadOnlyOptions<T> GetSpecifiedInstance(string name);
-
     /// <summary>
     /// Registers a listener to be called whenever a named <typeparamref name="T"/> changes. <br/>
     /// This method behaves similarly to the <see cref="IOptionsMonitor{T}.OnChange"/> method, <br/>

@@ -30,8 +30,6 @@ namespace Configuration.Writable.Configure
         public System.TimeSpan OnChangeThrottle { get; set; }
         public int OnChangeThrottleMs { get; set; }
         public bool RegisterAsSingleton { get; set; }
-        [System.Obsolete("Use RegisterAsSingleton instead.")]
-        public bool RegisterInstanceToContainer { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
         [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
@@ -82,8 +80,6 @@ namespace Configuration.Writable.FileProvider
         public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
         protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
     }
-    [System.Obsolete("Use IWritableFileProvider instead.")]
-    public interface IFileProvider : Configuration.Writable.FileProvider.IWritableFileProvider { }
     public interface IWritableFileProvider
     {
         bool CanWriteToDirectory(string path);
@@ -117,18 +113,9 @@ namespace Configuration.Writable.FormatProvider
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
         public object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options) { }
-        [System.Obsolete("Use LoadConfiguration(Type, IWritableOptionsConfiguration) instead.")]
-        public virtual T LoadConfiguration<T>(Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
-        [System.Obsolete("Use LoadConfiguration(Type, IWritableOptionsConfiguration) instead.")]
-        public virtual object LoadConfiguration<T>(System.Type type, Configuration.Writable.WritableOptionsConfiguration<T> options)
-            where T :  class, new () { }
         public abstract System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
-        [System.Obsolete("Use SaveAsync<T>(T, IWritableOptionsConfiguration, CancellationToken) instead.")]
-        public virtual System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.WritableOptionsConfiguration<T> options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new () { }
         protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
     }
     public interface IFormatProvider
@@ -174,8 +161,6 @@ namespace Configuration.Writable
         T Get(string name);
         Configuration.Writable.IReadOnlyOptions<T> GetInstance(string name);
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
-        [System.Obsolete("Use GetInstance instead.")]
-        Configuration.Writable.IReadOnlyOptions<T> GetSpecifiedInstance(string name);
         System.IDisposable? OnChange(string name, System.Action<T> listener);
     }
     public interface IReadOnlyOptionsCore<T>
@@ -201,8 +186,6 @@ namespace Configuration.Writable
         where T :  class, new ()
     {
         Configuration.Writable.IWritableOptions<T> GetInstance(string name);
-        [System.Obsolete("Use GetInstance instead.")]
-        Configuration.Writable.IWritableOptions<T> GetSpecifiedInstance(string name);
         System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);

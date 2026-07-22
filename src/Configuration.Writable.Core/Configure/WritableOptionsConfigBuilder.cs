@@ -82,14 +82,6 @@ public class WritableOptionsConfigBuilder<T>
     /// </summary>
     public bool RegisterAsSingleton { get; set; } = false;
 
-    /// <inheritdoc cref="RegisterAsSingleton"/>
-    [System.Obsolete("Use RegisterAsSingleton instead.")]
-    public bool RegisterInstanceToContainer
-    {
-        get => RegisterAsSingleton;
-        set => RegisterAsSingleton = value;
-    }
-
     /// <summary>
     /// Gets or sets a value indicating whether validation using data annotation attributes is enabled. Defaults to true. <br/>
     /// If you want to use Source-Generator based validation or custom validation only, set this to false.

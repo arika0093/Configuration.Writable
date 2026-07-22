@@ -227,7 +227,7 @@ public class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public void GetSpecifiedInstance_ShouldReturnBoundInstance()
+    public void GetInstance_ShouldReturnBoundInstance()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();
@@ -256,8 +256,8 @@ public class InstanceNameIntegrationTests
         var namedOptions = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
 
         // Get bound instances
-        var firstOptions = namedOptions.GetSpecifiedInstance("First");
-        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+        var firstOptions = namedOptions.GetInstance("First");
+        var secondOptions = namedOptions.GetInstance("Second");
 
         // Verify they are not null
         firstOptions.ShouldNotBeNull();
@@ -271,7 +271,7 @@ public class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public async Task GetSpecifiedInstance_CurrentValue_ShouldReturnCorrectInstance()
+    public async Task GetInstance_CurrentValue_ShouldReturnCorrectInstance()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();
@@ -304,8 +304,8 @@ public class InstanceNameIntegrationTests
         await namedOptions.SaveAsync("Second", setting => setting.Name = "second value");
 
         // Get bound instances
-        var firstOptions = namedOptions.GetSpecifiedInstance("First");
-        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+        var firstOptions = namedOptions.GetInstance("First");
+        var secondOptions = namedOptions.GetInstance("Second");
 
         // Verify CurrentValue returns the correct instance
         firstOptions.CurrentValue.Name.ShouldBe("first value");
@@ -315,7 +315,7 @@ public class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public async Task GetSpecifiedInstance_SaveAsync_ShouldSaveToCorrectInstance()
+    public async Task GetInstance_SaveAsync_ShouldSaveToCorrectInstance()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();
@@ -344,8 +344,8 @@ public class InstanceNameIntegrationTests
         var namedOptions = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
 
         // Get bound instances
-        var firstOptions = namedOptions.GetSpecifiedInstance("First");
-        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+        var firstOptions = namedOptions.GetInstance("First");
+        var secondOptions = namedOptions.GetInstance("Second");
 
         // Save using bound instances (no need to specify name)
         await firstOptions.SaveAsync(setting =>
@@ -376,7 +376,7 @@ public class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public void GetSpecifiedInstance_GetOptionsConfiguration_ShouldReturnCorrectConfiguration()
+    public void GetInstance_GetOptionsConfiguration_ShouldReturnCorrectConfiguration()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();
@@ -405,8 +405,8 @@ public class InstanceNameIntegrationTests
         var namedOptions = host.Services.GetRequiredService<IWritableNamedOptions<UserSetting>>();
 
         // Get bound instances
-        var firstOptions = namedOptions.GetSpecifiedInstance("First");
-        var secondOptions = namedOptions.GetSpecifiedInstance("Second");
+        var firstOptions = namedOptions.GetInstance("First");
+        var secondOptions = namedOptions.GetInstance("Second");
 
         // Get configurations
         var firstConfig = firstOptions.GetOptionsConfiguration();
