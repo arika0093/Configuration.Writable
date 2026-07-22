@@ -40,7 +40,8 @@ public class WritableOptionsConfigBuilder<T>
     /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public FormatProvider.IWritableFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
+    public FormatProvider.IWritableFormatProvider FormatProvider { get; set; } =
+        new JsonFormatProvider();
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations override from provider's default.
