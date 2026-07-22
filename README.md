@@ -335,8 +335,22 @@ Currently, the following providers are available:
 
 ```csharp
 // use Yaml format (you need to install Configuration.Writable.Yaml package)
-// YAML provider uses VYaml and supports NativeAOT when types are annotated with [YamlObject].
-conf.FormatProvider = new YamlFormatProvider();
+// 1. Register formatters at startup (required for NativeAOT)
+SampleSetting.__RegisterVYamlFormatter();
+// 2. Congigure YamlFormatProvider
+WritableOptions.Initialize<SampleSetting>(conf =>
+{
+    conf.FormatProvider = new YamlFormatProvider();
+    // and you can also specify the file path
+});
+
+// -------
+[OptionsModel, YamlObject] // 3. Annotate with [YamlObject] and mark as partial class
+public partial class SampleSetting
+{
+    public string Name { get; set; } = "";
+    public DateTime LastUpdatedAt { get; set; }
+}
 ```
 
 ### FileProvider
