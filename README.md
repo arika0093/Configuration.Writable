@@ -333,13 +333,15 @@ Currently, the following providers are available:
 | [XmlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/XmlFormatProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  | ❌️ |
 | [YamlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/YamlFormatProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  | ✅️ |
 
+
+For example, if you want to save in YAML format, the code would look like this:
+
 ```csharp
 // use Yaml format (you need to install Configuration.Writable.Yaml package)
 // 1. Register formatters at startup (required for NativeAOT)
 SampleSetting.__RegisterVYamlFormatter();
 // 2. Congigure YamlFormatProvider
-WritableOptions.Initialize<SampleSetting>(conf =>
-{
+builder.Services.AddWritableOptions<UserSetting>(conf => {
     conf.FormatProvider = new YamlFormatProvider();
     // and you can also specify the file path
 });
