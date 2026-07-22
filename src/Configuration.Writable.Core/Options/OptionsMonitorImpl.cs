@@ -256,8 +256,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
         // if enabled throttle, check current status
         if (
-            options.OnChangeThrottleMs > 0
-            && HandleThrottle(instanceName, options.OnChangeThrottleMs)
+            options.OnChangeThrottle > TimeSpan.Zero
+            && HandleThrottle(instanceName, options.OnChangeThrottle)
         )
         {
             // Still in throttle period, ignore this change
@@ -296,7 +296,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Checks if the throttle timer is active for the given instance name
-    private bool HandleThrottle(string instanceName, int throttleMs)
+    private bool HandleThrottle(string instanceName, TimeSpan throttleDuration)
     {
         if (!_dataSources.TryGetValue(instanceName, out var dataSource))
         {
@@ -328,7 +328,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                     }
                 },
                 null,
-                throttleMs,
+                (int)throttleDuration.TotalMilliseconds,
                 Timeout.Infinite
             );
             dataSource.ThrottleTimer = newTimer;

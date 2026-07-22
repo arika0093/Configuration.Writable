@@ -59,20 +59,11 @@ public class WritableOptionsConfigBuilder<T>
     }
 
     /// <summary>
-    /// Gets or sets the throttle duration in milliseconds for change events.
+    /// Gets or sets the throttle duration for change events.
     /// This helps to prevent excessive event firing during rapid changes. <br/>
-    /// Defaults to 300 ms. Use <see cref="OnChangeThrottle"/> to specify a <see cref="TimeSpan"/>.
+    /// Defaults to 300 ms.
     /// </summary>
-    public int OnChangeThrottleMs { get; set; } = 300;
-
-    /// <summary>
-    /// Gets or sets the throttle duration for change events as a <see cref="TimeSpan"/>.
-    /// </summary>
-    public TimeSpan OnChangeThrottle
-    {
-        get => TimeSpan.FromMilliseconds(OnChangeThrottleMs);
-        set => OnChangeThrottleMs = (int)value.TotalMilliseconds;
-    }
+    public TimeSpan OnChangeThrottle { get; set; } = TimeSpan.FromMilliseconds(300);
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> as a singleton in the DI container. Defaults to false. <br/>
@@ -268,7 +259,7 @@ public class WritableOptionsConfigBuilder<T>
             ConfigFilePath = configFilePath,
             InstanceName = instanceName,
             SectionNameParts = sectionNamePart,
-            OnChangeThrottleMs = OnChangeThrottleMs,
+            OnChangeThrottle = OnChangeThrottle,
             CloneMethod = _cloneMethod!,
             Logger = Logger,
             Validator = validator,

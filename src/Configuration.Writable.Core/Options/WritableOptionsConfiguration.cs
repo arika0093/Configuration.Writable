@@ -45,15 +45,10 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     public required List<string> SectionNameParts { get; init; }
 
     /// <summary>
-    /// Gets or sets the throttle duration in milliseconds for change events.
+    /// Gets the throttle duration for change events.
     /// This helps to prevent excessive event firing during rapid changes.
     /// </summary>
-    public required int OnChangeThrottleMs { get; init; }
-
-    /// <summary>
-    /// Gets the throttle duration for change events as a <see cref="TimeSpan"/>.
-    /// </summary>
-    public TimeSpan OnChangeThrottle => TimeSpan.FromMilliseconds(OnChangeThrottleMs);
+    public required TimeSpan OnChangeThrottle { get; init; }
 
     /// <summary>
     /// Gets or sets the cloning strategy function to create deep copies of the configuration object.

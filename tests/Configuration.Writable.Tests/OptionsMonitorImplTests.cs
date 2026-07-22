@@ -448,13 +448,13 @@ public class OptionsMonitorImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            OnChangeThrottleMs = 0, // Disable throttling
+            OnChangeThrottle = TimeSpan.Zero, // Disable throttling
         };
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         // Assert
-        configOptions.OnChangeThrottleMs.ShouldBe(0);
+        configOptions.OnChangeThrottle.ShouldBe(TimeSpan.Zero);
     }
 
     [Fact]
@@ -464,14 +464,14 @@ public class OptionsMonitorImplTests
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            OnChangeThrottleMs = 2000,
+            OnChangeThrottle = TimeSpan.FromSeconds(2),
         };
         var FileProvider = new InMemoryFileProvider();
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions("test");
 
         // Assert
-        configOptions.OnChangeThrottleMs.ShouldBe(2000);
+        configOptions.OnChangeThrottle.ShouldBe(TimeSpan.FromSeconds(2));
     }
 
     [Fact]
@@ -483,7 +483,7 @@ public class OptionsMonitorImplTests
         var builder1 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test1.json",
-            OnChangeThrottleMs = 500,
+            OnChangeThrottle = TimeSpan.FromMilliseconds(500),
         };
         builder1.UseInMemoryFileProvider(FileProvider);
         var configOptions1 = builder1.BuildOptions("instance1");
@@ -491,7 +491,7 @@ public class OptionsMonitorImplTests
         var builder2 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test2.json",
-            OnChangeThrottleMs = 1500,
+            OnChangeThrottle = TimeSpan.FromMilliseconds(1500),
         };
         builder2.UseInMemoryFileProvider(FileProvider);
         var configOptions2 = builder2.BuildOptions("instance2");
@@ -509,7 +509,7 @@ public class OptionsMonitorImplTests
         await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
 
         // Assert
-        configOptions1.OnChangeThrottleMs.ShouldBe(500);
-        configOptions2.OnChangeThrottleMs.ShouldBe(1500);
+        configOptions1.OnChangeThrottle.ShouldBe(TimeSpan.FromMilliseconds(500));
+        configOptions2.OnChangeThrottle.ShouldBe(TimeSpan.FromMilliseconds(1500));
     }
 }

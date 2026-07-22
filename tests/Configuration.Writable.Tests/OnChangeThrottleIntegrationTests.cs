@@ -52,7 +52,7 @@ public class OnChangeThrottleIntegrationTests : IDisposable
         instance.Initialize(options =>
         {
             options.FilePath = testFilePath;
-            options.OnChangeThrottleMs = 500; // 500ms throttle
+            options.OnChangeThrottle = TimeSpan.FromMilliseconds(500); // 500ms throttle
         });
 
         var config = instance.GetOptions();

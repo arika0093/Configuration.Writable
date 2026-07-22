@@ -36,9 +36,9 @@ public interface IWritableOptionsConfiguration
     List<string> SectionNameParts { get; }
 
     /// <summary>
-    /// The throttle duration in milliseconds for change notifications.
+    /// The throttle duration for change notifications.
     /// </summary>
-    int OnChangeThrottleMs { get; }
+    System.TimeSpan OnChangeThrottle { get; }
 
     /// <summary>
     /// An optional logger for diagnostics.
