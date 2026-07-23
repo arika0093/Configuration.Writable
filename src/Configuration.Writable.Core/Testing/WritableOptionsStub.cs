@@ -24,6 +24,7 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     /// A list of change listeners that have been registered.
     /// </summary>
     public List<Action<T, string?>> ChangeListeners { get; } = [];
+    private List<Action<Exception, string?>> ReloadFailureListeners { get; } = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableOptionsStub{T}"/> class.
@@ -89,6 +90,13 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     {
         ChangeListeners.Add(listener);
         return new DisposableAction(() => ChangeListeners.Remove(listener));
+    }
+
+    /// <inheritdoc/>
+    public IDisposable? OnReloadFailed(Action<Exception, string?> listener)
+    {
+        ReloadFailureListeners.Add(listener);
+        return new DisposableAction(() => ReloadFailureListeners.Remove(listener));
     }
 
     /// <inheritdoc/>

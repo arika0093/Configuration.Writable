@@ -73,6 +73,19 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     /// <inheritdoc />
+    public IDisposable? OnReloadFailed(Action<Exception, string?> listener)
+    {
+        foreach (var instanceName in GetInstanceNames())
+        {
+            if (_dataSources.TryGetValue(instanceName, out var dataSource))
+            {
+                dataSource.AddFailureListener(listener);
+            }
+        }
+        return new ReloadFailureTrackerDisposable(this, listener);
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         // remove all options
@@ -108,13 +121,22 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// </summary>
     /// <param name="instanceName">The name of the instance to update.</param>
     /// <param name="value">The new value to cache.</param>
-    internal void UpdateCache(string instanceName, T value)
+    /// <param name="fingerprint">The fingerprint associated with the cached value.</param>
+    internal void UpdateCache(
+        string instanceName,
+        T value,
+        ConfigurationFileFingerprint? fingerprint = null
+    )
     {
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
             dataSource.Cache = value;
+            dataSource.Fingerprint = fingerprint;
         }
     }
+
+    internal ConfigurationFileFingerprint? GetFingerprint(string instanceName) =>
+        _dataSources.TryGetValue(instanceName, out var dataSource) ? dataSource.Fingerprint : null;
 
     /// <summary>
     /// Clears the cached value for the specified instance name.
@@ -150,10 +172,14 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         var opt = _optionsRegistry.Get(instanceName);
         // Load the initial value
-        var initialValue = LoadConfigurationFromProvider(instanceName);
-        var defaultValue = opt.CloneMethod(initialValue);
+        var initial = LoadConfigurationFromProvider(instanceName);
+        var defaultValue = opt.CloneMethod(initial.Value);
         // Create data source with initial value as both cache and default
-        var dataSource = new OptionsMonitorDataSource(initialValue, defaultValue);
+        var dataSource = new OptionsMonitorDataSource(
+            initial.Value,
+            defaultValue,
+            initial.Fingerprint
+        );
         _dataSources[instanceName] = dataSource;
         // Setup file watcher
         SetupFileWatcher(opt, dataSource);
@@ -162,24 +188,26 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     // Loads configuration from the provider and updates the cache.
     private T LoadConfiguration(string instanceName)
     {
-        var value = LoadConfigurationFromProvider(instanceName);
+        var loaded = LoadConfigurationFromProvider(instanceName);
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
             // Don't notify listeners during explicit load, only file change events should notify
-            dataSource.Cache = value;
+            dataSource.Cache = loaded.Value;
+            dataSource.Fingerprint = loaded.Fingerprint;
         }
-        return value;
+        return loaded.Value;
     }
 
     // Loads configuration from the provider without updating cache
-    private T LoadConfigurationFromProvider(string instanceName)
+    private LoadedConfiguration LoadConfigurationFromProvider(string instanceName)
     {
         var options = _optionsRegistry.Get(instanceName);
         _semaphore.Wait();
         try
         {
             // Use the provider to load configuration (provider will check file existence via its FileProvider)
-            return options.FormatProvider.LoadWithMigration<T>(options);
+            var value = options.FormatProvider.LoadWithMigration<T>(options);
+            return new LoadedConfiguration(value, ConfigurationFileFingerprint.Capture(options));
         }
         finally
         {
@@ -230,12 +258,24 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             watcher.Created += (sender, args) => OnFileChanged(options.InstanceName, args);
             watcher.Deleted += (sender, args) => OnFileChanged(options.InstanceName, args);
             watcher.Renamed += (sender, args) => OnFileChanged(options.InstanceName, args);
+            watcher.Error += (sender, args) => OnWatcherError(options.InstanceName, args);
 
             dataSource.Watcher = watcher;
         }
-        catch
+        catch (IOException ex)
         {
-            // If file watching is not supported, continue without it
+            options.Logger?.ZLogWarning(
+                ex,
+                $"Configuration file watcher could not be started: {fileName}"
+            );
+            dataSource.Watcher = null;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            options.Logger?.ZLogWarning(
+                ex,
+                $"Configuration file watcher could not be started: {fileName}"
+            );
             dataSource.Watcher = null;
         }
     }
@@ -243,12 +283,22 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     // Called when the configuration file changes
     private void OnFileChanged(string instanceName, FileSystemEventArgs args)
     {
-        // show log
         var options = _optionsRegistry.Get(instanceName);
         if (options.ConfigFilePath != args.FullPath)
         {
             // Ignore changes to other files in the same directory
             // e.g. temporary file (foobar.json~ABCDEF.TMP)
+            return;
+        }
+
+        if (!options.FileProvider.FileExists(options.ConfigFilePath))
+        {
+            var exception = new FileNotFoundException(
+                $"Configuration file was deleted: {options.ConfigFilePath}",
+                options.ConfigFilePath
+            );
+            options.Logger?.LogError(exception, "Configuration file was deleted.");
+            NotifyReloadFailure(instanceName, exception);
             return;
         }
 
@@ -270,6 +320,26 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         );
 
         ReloadAndNotify(instanceName);
+    }
+
+    private void OnWatcherError(string instanceName, ErrorEventArgs args)
+    {
+        var exception = args.GetException();
+        var options = _optionsRegistry.Get(instanceName);
+        options.Logger?.ZLogWarning(
+            exception,
+            $"Configuration file watcher failed and will be recreated: {options.ConfigFilePath}"
+        );
+        NotifyReloadFailure(instanceName, exception);
+
+        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            return;
+        }
+
+        dataSource.Watcher?.Dispose();
+        dataSource.Watcher = null;
+        SetupFileWatcher(options, dataSource);
     }
 
     // Delays reload until changes have stopped for the configured duration.
@@ -330,22 +400,32 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             var newValue = LoadConfigurationWithRetry(instanceName);
             NotifyListeners(instanceName, newValue);
         }
-        catch (IOException)
+        catch (IOException ex)
         {
-            // Clear cache because next Get() will try to reload
-            if (_dataSources.TryGetValue(instanceName, out var dataSource))
-            {
-                // Force reload on next access by loading from file
-                try
-                {
-                    dataSource.Cache = LoadConfigurationFromProvider(instanceName);
-                }
-                catch
-                {
-                    // If reload fails, keep the old cached value
-                }
-            }
+            HandleReloadFailure(instanceName, ex);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            HandleReloadFailure(instanceName, ex);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            HandleReloadFailure(instanceName, ex);
+        }
+        catch (FormatException ex)
+        {
+            HandleReloadFailure(instanceName, ex);
+        }
+    }
+
+    private void HandleReloadFailure(string instanceName, Exception exception)
+    {
+        var options = _optionsRegistry.Get(instanceName);
+        options.Logger?.ZLogError(
+            exception,
+            $"Configuration reload failed; the last valid value will be retained: {options.ConfigFilePath}"
+        );
+        NotifyReloadFailure(instanceName, exception);
     }
 
     // Loads configuration with retry logic for file access conflicts
@@ -379,6 +459,17 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
     }
 
+    private void NotifyReloadFailure(string instanceName, Exception exception)
+    {
+        if (_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            foreach (var listener in dataSource.GetFailureListenersSnapshot())
+            {
+                listener(exception, instanceName);
+            }
+        }
+    }
+
     // Disposable to unregister a listener
     private sealed class ChangeTrackerDisposable : IDisposable
     {
@@ -406,21 +497,57 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
     }
 
+    private sealed class ReloadFailureTrackerDisposable : IDisposable
+    {
+        private readonly OptionsMonitorImpl<T> _monitor;
+        private readonly Action<Exception, string?> _listener;
+        private bool _disposed;
+
+        public ReloadFailureTrackerDisposable(
+            OptionsMonitorImpl<T> monitor,
+            Action<Exception, string?> listener
+        )
+        {
+            _monitor = monitor;
+            _listener = listener;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            foreach (var dataSource in _monitor._dataSources.Values)
+            {
+                dataSource.RemoveFailureListener(_listener);
+            }
+
+            _disposed = true;
+        }
+    }
+
     // Data container for each monitored options instance
     private sealed class OptionsMonitorDataSource : IDisposable
     {
         public T Cache { get; set; }
         public T DefaultValue { get; set; }
+        public ConfigurationFileFingerprint? Fingerprint { get; set; }
         public List<Action<T, string?>> Listeners { get; } = [];
+        public List<Action<Exception, string?>> FailureListeners { get; } = [];
         private object ListenersLock { get; } = new();
         public FileSystemWatcher? Watcher { get; set; }
         public Timer? DebounceTimer { get; set; }
         public bool HasPendingDebouncedChange { get; set; }
 
-        public OptionsMonitorDataSource(T cache, T defaultValue)
+        public OptionsMonitorDataSource(
+            T cache,
+            T defaultValue,
+            ConfigurationFileFingerprint? fingerprint
+        )
         {
             Cache = cache;
             DefaultValue = defaultValue;
+            Fingerprint = fingerprint;
         }
 
         public void AddListener(Action<T, string?> listener)
@@ -439,6 +566,22 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
         }
 
+        public void AddFailureListener(Action<Exception, string?> listener)
+        {
+            lock (ListenersLock)
+            {
+                FailureListeners.Add(listener);
+            }
+        }
+
+        public void RemoveFailureListener(Action<Exception, string?> listener)
+        {
+            lock (ListenersLock)
+            {
+                FailureListeners.Remove(listener);
+            }
+        }
+
         public Action<T, string?>[] GetListenersSnapshot()
         {
             lock (ListenersLock)
@@ -447,10 +590,24 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
         }
 
+        public Action<Exception, string?>[] GetFailureListenersSnapshot()
+        {
+            lock (ListenersLock)
+            {
+                return [.. FailureListeners];
+            }
+        }
+
         public void Dispose()
         {
             Watcher?.Dispose();
             DebounceTimer?.Dispose();
         }
+    }
+
+    private sealed class LoadedConfiguration(T value, ConfigurationFileFingerprint? fingerprint)
+    {
+        internal T Value { get; } = value;
+        internal ConfigurationFileFingerprint? Fingerprint { get; } = fingerprint;
     }
 }

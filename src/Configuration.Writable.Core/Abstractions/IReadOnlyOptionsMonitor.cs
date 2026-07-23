@@ -21,4 +21,12 @@ public interface IReadOnlyOptionsMonitor<T>
 
     /// <inheritdoc cref="IReadOnlyOptionsCore{T}.OnChange" />
     new IDisposable? OnChange(Action<T, string?> listener);
+
+    /// <summary>
+    /// Registers a listener to be called when a configuration reload fails.
+    /// The last successfully loaded value remains available after a failure.
+    /// </summary>
+    /// <param name="listener">The action to invoke with the failure and options instance name.</param>
+    /// <returns>An <see cref="IDisposable"/> which should be disposed to stop listening for failures.</returns>
+    IDisposable? OnReloadFailed(Action<Exception, string?> listener);
 }

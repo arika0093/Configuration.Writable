@@ -8,6 +8,16 @@ namespace Configuration.Writable.Abstractions
 }
 namespace Configuration.Writable.Configure
 {
+    public sealed class ConfigurationConflictException : System.InvalidOperationException
+    {
+        public ConfigurationConflictException(string configFilePath) { }
+        public string ConfigFilePath { get; }
+    }
+    public enum ConfigurationConflictResolution
+    {
+        FailOnConflict = 0,
+        LastWriteWins = 1,
+    }
     public interface ILocationBuilder
     {
         System.Collections.Generic.IEnumerable<Configuration.Writable.Configure.LocationPathInfo> SaveLocationPaths { get; }
@@ -23,6 +33,7 @@ namespace Configuration.Writable.Configure
         where T :  class, new ()
     {
         public WritableOptionsConfigBuilder() { }
+        public Configuration.Writable.Configure.ConfigurationConflictResolution ConflictResolution { get; set; }
         public string? FilePath { get; set; }
         public Configuration.Writable.FileProvider.IWritableFileProvider? FileProvider { get; set; }
         public Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; set; }
@@ -77,6 +88,7 @@ namespace Configuration.Writable.FileProvider
         public virtual System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
         protected virtual string GetTemporaryFilePath(string path) { }
         public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public virtual bool TryRestoreLatestBackup(string path, Microsoft.Extensions.Logging.ILogger? logger = null) { }
         protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
     }
     public interface IWritableFileProvider
@@ -173,6 +185,7 @@ namespace Configuration.Writable
         new T CurrentValue { get; }
         new T Get(string name);
         new System.IDisposable? OnChange(System.Action<T, string?> listener);
+        System.IDisposable? OnReloadFailed(System.Action<System.Exception, string?> listener);
     }
     public interface IReadOnlyOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
@@ -228,6 +241,7 @@ namespace Configuration.Writable
     {
         public required System.Func<T, T> CloneMethod { get; init; }
         public required string ConfigFilePath { get; init; }
+        public Configuration.Writable.Configure.ConfigurationConflictResolution ConflictResolution { get; init; }
         public required Configuration.Writable.FileProvider.IWritableFileProvider FileProvider { get; init; }
         public required Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
@@ -279,6 +293,7 @@ namespace Configuration.Writable.Testing
         public System.IDisposable? OnChange(System.Action<T> listener) { }
         public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
         public System.IDisposable? OnChange(string name, System.Action<T> listener) { }
+        public System.IDisposable? OnReloadFailed(System.Action<System.Exception, string?> listener) { }
         public System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default) { }
