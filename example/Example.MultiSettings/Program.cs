@@ -4,7 +4,6 @@
 WritableOptions.Initialize<UserSetting>(conf =>
 {
     conf.UseFile("usersettings");
-    // use common file provider with zip file
     conf.SectionName = "UserSettings";
 });
 WritableOptions.Initialize<UserSecretSetting>(conf =>
