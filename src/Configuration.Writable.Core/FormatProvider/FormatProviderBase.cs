@@ -4,6 +4,7 @@ using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
+using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -40,6 +41,32 @@ public abstract class FormatProviderBase : IWritableFormatProvider
 
     /// <inheritdoc />
     public object LoadConfiguration(Type type, IWritableOptionsConfiguration options)
+    {
+        if (
+            !options.FileProvider.FileExists(options.ConfigFilePath)
+            && options.FileProvider is CommonFileProvider missingFileProvider
+        )
+        {
+            missingFileProvider.TryRestoreLatestBackup(options.ConfigFilePath, options.Logger);
+        }
+
+        try
+        {
+            return LoadConfigurationCore(type, options);
+        }
+        catch (Exception)
+            when (options.FileProvider is CommonFileProvider recoverableFileProvider
+                && recoverableFileProvider.TryRestoreLatestBackup(
+                    options.ConfigFilePath,
+                    options.Logger
+                )
+            )
+        {
+            return LoadConfigurationCore(type, options);
+        }
+    }
+
+    private object LoadConfigurationCore(Type type, IWritableOptionsConfiguration options)
     {
         var filePath = options.ConfigFilePath;
         var pipeReader = options.FileProvider.GetFilePipeReader(filePath);

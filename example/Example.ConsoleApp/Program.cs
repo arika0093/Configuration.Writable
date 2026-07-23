@@ -24,7 +24,7 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     // you can use Json, Xml, Yaml, or your original format by implementing IWritableFormatProvider
     conf.FormatProvider = new JsonFormatProvider()
     {
-        // if you want to keep backup files, use CommonFileProvider with BackupMaxCount > 0
+        // One backup is kept by default. Set a custom count when needed.
         // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
 
         // customize JsonSerializerOptions

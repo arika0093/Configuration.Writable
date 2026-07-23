@@ -1,5 +1,6 @@
 ﻿#pragma warning disable S1751 // Loops with at most one iteration should be refactored
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -19,9 +20,9 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     /// <summary>
-    /// Gets or sets the maximum number of backup files to keep. Defaults to 0.
+    /// Gets or sets the maximum number of backup files to keep. Defaults to 1.
     /// </summary>
-    public virtual int BackupMaxCount { get; set; } = 0;
+    public virtual int BackupMaxCount { get; set; } = 1;
 
     /// <summary>
     /// The maximum number of retry attempts when a file write operation fails due to an exception. Defaults to 3.
@@ -149,11 +150,8 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
             return;
         }
         // delete older backup files
-        var backupFilesOrderByCreated = Directory
-            .GetFiles(Path.GetDirectoryName(path)!, "*.bak")
-            .Select(f => new FileInfo(f))
-            .Where(f => f.Name.StartsWith(Path.GetFileNameWithoutExtension(path)))
-            .OrderBy(f => f.CreationTimeUtc)
+        var backupFilesOrderByCreated = GetBackupFiles(path)
+            .OrderBy(file => file.CreationTimeUtc)
             .ToList();
 
         logger?.ZLogTrace($"Found {backupFilesOrderByCreated.Count} backup files for {path}");
@@ -171,6 +169,20 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
         var backupFilePath = GetTemporaryFilePath(path) + ".bak";
         logger?.ZLogDebug($"Creating backup file for: {backupFilePath}");
         File.Copy(path, backupFilePath);
+    }
+
+    private static IEnumerable<FileInfo> GetBackupFiles(string path)
+    {
+        var directory = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+        {
+            return [];
+        }
+
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+        var extension = Path.GetExtension(path);
+        var backupPattern = $"{fileNameWithoutExtension}_*{extension}.bak";
+        return Directory.GetFiles(directory, backupPattern).Select(file => new FileInfo(file));
     }
 
     /// <summary>
@@ -239,6 +251,58 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
         );
         // Create a PipeReader from the stream for more efficient reading
         return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
+    }
+
+    /// <summary>
+    /// Restores the most recent backup for a configuration file.
+    /// </summary>
+    /// <param name="path">The path of the configuration file to restore.</param>
+    /// <param name="logger">An optional logger for restoration diagnostics.</param>
+    /// <returns><see langword="true"/> when a backup was restored; otherwise <see langword="false"/>.</returns>
+    public virtual bool TryRestoreLatestBackup(string path, ILogger? logger = null)
+    {
+        var backupFilePath = GetBackupFiles(path)
+            .OrderByDescending(file => file.CreationTimeUtc)
+            .Select(file => file.FullName)
+            .FirstOrDefault();
+        if (backupFilePath == null)
+        {
+            return false;
+        }
+
+        var temporaryFilePath = GetTemporaryFilePath(path);
+        try
+        {
+            File.Copy(backupFilePath, temporaryFilePath);
+            if (File.Exists(path))
+            {
+                var corruptFilePath = $"{path}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+                File.Replace(temporaryFilePath, path, corruptFilePath);
+            }
+            else
+            {
+                File.Move(temporaryFilePath, path);
+            }
+            logger?.ZLogWarning($"Restored configuration from backup: {backupFilePath}");
+            return true;
+        }
+        catch (IOException ex)
+        {
+            logger?.ZLogError(ex, $"Failed to restore configuration backup: {backupFilePath}");
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger?.ZLogError(ex, $"Failed to restore configuration backup: {backupFilePath}");
+            return false;
+        }
+        finally
+        {
+            if (File.Exists(temporaryFilePath))
+            {
+                File.Delete(temporaryFilePath);
+            }
+        }
     }
 
     /// <inheritdoc />

@@ -364,7 +364,7 @@ For more details, please refer to the [Example.ConsoleApp.Yaml](./example/Exampl
 Default FileProvider (`CommonFileProvider`) supports the following features:
 
 * Automatically retry when file access fails (default is max 3 times, wait 100ms each)
-* Create backup files rotated by timestamp (default is disabled)
+* Create 1 backup by default; configure `BackupMaxCount = 0` to disable backups
 * Atomic file writing (write to a temporary file first, then rename it)
 * Thread-safe: uses internal semaphore to ensure safe concurrent access
 
@@ -397,6 +397,11 @@ public class MyService(IWritableOptions<UserSetting> options) : IDisposable
             // called when the configuration file is changed externally
             Console.WriteLine($">> Settings changed: Name={newSetting.Name}, Age={newSetting.Age}");
         });
+
+        // you can also register a callback for reload failures
+        // options.OnReloadFailed(ex => {
+        //     Console.WriteLine($">> Settings reload failed: {ex.Message}");
+        // });
     }
 
     public async Task UpdateAsync()

@@ -122,6 +122,24 @@ public class CommonFileProviderTests
     }
 
     [Fact]
+    public async Task TryRestoreLatestBackup_ShouldRestoreDeletedFile()
+    {
+        using var testFile = new TemporaryFile();
+        var writer = new CommonFileProvider();
+        var originalContent = Encoding.UTF8.GetBytes("Original content");
+        var newContent = Encoding.UTF8.GetBytes("New content");
+
+        await writer.SaveToFileAsync(testFile.FilePath, originalContent);
+        await writer.SaveToFileAsync(testFile.FilePath, newContent);
+        File.Delete(testFile.FilePath);
+
+        writer.TryRestoreLatestBackup(testFile.FilePath).ShouldBeTrue();
+
+        var restoredContent = await ReadAllBytesCompat(testFile.FilePath);
+        restoredContent.ShouldBe(originalContent);
+    }
+
+    [Fact]
     public async Task SaveToFileAsync_WithBackupMaxCount_ShouldLimitBackupFiles()
     {
         var directoryPath = Path.GetTempPath();
