@@ -4,7 +4,7 @@ using Configuration.Writable.FormatProvider;
 using Example.WebApi;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.SwaggerUI;
+using NSwag.AspNetCore;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
@@ -25,14 +25,13 @@ builder.Services.ConfigureHttpJsonOptions(options =>
         SampleSettingSerializerContext.Default
     );
 });
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApiDocument();
 
 var app = builder.Build();
-app.MapOpenApi();
-app.UseSwaggerUI(options =>
+app.UseOpenApi();
+app.UseSwaggerUi(options =>
 {
-    options.SwaggerEndpoint("/openapi/v1.json", "v1");
-    options.RoutePrefix = "";
+    options.Path = "";
 });
 
 var configApi = app.MapGroup("/config");

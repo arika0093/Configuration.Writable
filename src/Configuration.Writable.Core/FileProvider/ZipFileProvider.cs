@@ -219,7 +219,13 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
 
         if (File.Exists(sourceZipPath))
         {
+#if NET10_0_OR_GREATER
+            using var sourceArchive = await ZipFile
+                .OpenReadAsync(sourceZipPath, cancellationToken)
+                .ConfigureAwait(false);
+#else
             using var sourceArchive = ZipFile.OpenRead(sourceZipPath);
+#endif
             foreach (var sourceEntry in sourceArchive.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -238,8 +244,17 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
                     CompressionLevel.Optimal
                 );
                 destinationEntry.LastWriteTime = sourceEntry.LastWriteTime;
+#if NET10_0_OR_GREATER
+                using var sourceStream = await sourceEntry
+                    .OpenAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                using var destinationEntryStream = await destinationEntry
+                    .OpenAsync(cancellationToken)
+                    .ConfigureAwait(false);
+#else
                 using var sourceStream = sourceEntry.Open();
                 using var destinationEntryStream = destinationEntry.Open();
+#endif
                 await sourceStream
                     .CopyToAsync(destinationEntryStream, 81920, cancellationToken)
                     .ConfigureAwait(false);
@@ -250,7 +265,13 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
             replacementEntryPath,
             CompressionLevel.Optimal
         );
+#if NET10_0_OR_GREATER
+        using var replacementStream = await replacementEntry
+            .OpenAsync(cancellationToken)
+            .ConfigureAwait(false);
+#else
         using var replacementStream = replacementEntry.Open();
+#endif
 #if NET8_0_OR_GREATER
         await replacementStream
             .WriteAsync(replacementContent, cancellationToken)

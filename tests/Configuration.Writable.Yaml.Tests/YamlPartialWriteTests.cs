@@ -75,7 +75,7 @@ public class YamlPartialWriteTests
         var userSettings = result["userSettings"] as Dictionary<object, object>;
         userSettings.ShouldNotBeNull();
         userSettings["theme"].ShouldBe("light");
-        userSettings["notifications"].ToString().ToLowerInvariant().ShouldBe("false");
+        userSettings["notifications"].ToString()?.ToLowerInvariant().ShouldBe("false");
 
         // Verify otherSection was preserved
         var otherSection = result["otherSection"] as Dictionary<object, object>;

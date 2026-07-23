@@ -71,20 +71,48 @@ internal static class AsyncFileSaveLock
                     FileAccess.ReadWrite,
                     FileShare.ReadWrite
                 );
-                stream.Lock(LockOffset, LockLength);
+                Lock(stream);
                 return stream;
             }
             catch (IOException)
             {
-                stream?.Dispose();
+                if (stream != null)
+                {
+                    await DisposeStreamAsync(stream).ConfigureAwait(false);
+                }
                 await Task.Delay(LockRetryDelay, cancellationToken).ConfigureAwait(false);
             }
             catch
             {
-                stream?.Dispose();
+                if (stream != null)
+                {
+                    await DisposeStreamAsync(stream).ConfigureAwait(false);
+                }
                 throw;
             }
         }
+    }
+
+    private static void Lock(FileStream stream)
+    {
+#if NETSTANDARD2_0
+        stream.Lock(LockOffset, LockLength);
+#else
+        if (!OperatingSystem.IsMacOS())
+        {
+            stream.Lock(LockOffset, LockLength);
+        }
+#endif
+    }
+
+    private static Task DisposeStreamAsync(FileStream stream)
+    {
+#if NETSTANDARD2_0
+        stream.Dispose();
+        return Task.CompletedTask;
+#else
+        return stream.DisposeAsync().AsTask();
+#endif
     }
 
     private static Entry AddReference(string key)
@@ -166,7 +194,10 @@ internal static class AsyncFileSaveLock
             var stream = Interlocked.Exchange(ref _sidecarLockStream, null);
             try
             {
-                stream?.Unlock(LockOffset, LockLength);
+                if (stream != null)
+                {
+                    Unlock(stream);
+                }
             }
             finally
             {
@@ -175,6 +206,18 @@ internal static class AsyncFileSaveLock
                 entryToRelease.Semaphore.Release();
                 ReleaseReference(key, entryToRelease);
             }
+        }
+
+        private static void Unlock(FileStream stream)
+        {
+#if NETSTANDARD2_0
+            stream.Unlock(LockOffset, LockLength);
+#else
+            if (!OperatingSystem.IsMacOS())
+            {
+                stream.Unlock(LockOffset, LockLength);
+            }
+#endif
         }
     }
 }

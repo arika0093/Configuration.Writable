@@ -1,5 +1,8 @@
 ﻿<Project>
   <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <MSBuildTreatAllWarningsAsErrors>true</MSBuildTreatAllWarningsAsErrors>
+    <RestoreTreatWarningsAsErrors>true</RestoreTreatWarningsAsErrors>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <PackageDescription>Yet another library with features including: type-safe operations, change detection, version migration, validation, and more.</PackageDescription>

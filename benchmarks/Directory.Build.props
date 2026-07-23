@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <MSBuildTreatAllWarningsAsErrors>true</MSBuildTreatAllWarningsAsErrors>
+    <RestoreTreatWarningsAsErrors>true</RestoreTreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

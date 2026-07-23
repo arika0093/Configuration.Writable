@@ -93,13 +93,6 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     }
 
     /// <inheritdoc/>
-    public IDisposable? OnReloadFailed(Action<Exception, string?> listener)
-    {
-        ReloadFailureListeners.Add(listener);
-        return new DisposableAction(() => ReloadFailureListeners.Remove(listener));
-    }
-
-    /// <inheritdoc/>
     public IDisposable? OnChange(Action<T> listener) =>
         OnChange(
             (t, changedName) =>
@@ -122,6 +115,13 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
                 }
             }
         );
+
+    /// <inheritdoc/>
+    public IDisposable? OnReloadFailed(Action<Exception, string?> listener)
+    {
+        ReloadFailureListeners.Add(listener);
+        return new DisposableAction(() => ReloadFailureListeners.Remove(listener));
+    }
 
     /// <inheritdoc/>
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
