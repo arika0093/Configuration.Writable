@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageReference Include="Configuration.Writable" Version="0.5.0" Aliases="PublishedPackage" />
-    <PackageReference Include="Configuration.Writable.Xml" Version="0.5.0" Aliases="PublishedXmlPackage" />
-    <PackageReference Include="Configuration.Writable.Yaml" Version="0.5.0" Aliases="PublishedYamlPackage" />
-    <PackageReference Include="VYaml" Version="1.4.0" />
+    <PackageReference Include="BenchmarkDotNet" Version="*" />
+    <PackageReference Include="Configuration.Writable" Version="*" Aliases="PublishedPackage" />
+    <PackageReference Include="Configuration.Writable.Xml" Version="*" Aliases="PublishedXmlPackage" />
+    <PackageReference Include="Configuration.Writable.Yaml" Version="*" Aliases="PublishedYamlPackage" />
+    <PackageReference Include="VYaml" Version="*" />
     <ProjectReference
       Include="../../src/Configuration.Writable/Configuration.Writable.csproj"
       ReferenceOutputAssembly="false"
