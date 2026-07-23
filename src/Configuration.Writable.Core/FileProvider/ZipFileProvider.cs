@@ -154,46 +154,112 @@ public class ZipFileProvider : IWritableFileProvider, IDisposable
                 Directory.CreateDirectory(directory);
             }
 
-            // Create the zip file if it doesn't exist
-            if (!File.Exists(zipPath))
-            {
-#if NET10_0_OR_GREATER
-                using var createZip = await ZipFile
-                    .OpenAsync(zipPath, ZipArchiveMode.Create, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-#else
-                using var createZip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
-#endif
-            }
-
-#if NET10_0_OR_GREATER
-            using var zip = await ZipFile
-                .OpenAsync(zipPath, ZipArchiveMode.Update, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-#else
-            using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Update);
-#endif
             var entryPath = GetZipInnerEntryPath(path);
-            var entry = zip.GetEntry(entryPath);
-            entry?.Delete();
-            entry = zip.CreateEntry(entryPath, CompressionLevel.Optimal);
-#if NET10_0_OR_GREATER
-            using var entryStream = await entry.OpenAsync(cancellationToken);
-#else
-            using var entryStream = entry.Open();
-#endif
-#if NET8_0_OR_GREATER
-            await entryStream.WriteAsync(content, cancellationToken).ConfigureAwait(false);
-#else
-            await entryStream
-                .WriteAsync(content.ToArray(), 0, content.Length, cancellationToken)
-                .ConfigureAwait(false);
-#endif
+            var temporaryZipPath = $"{zipPath}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                await CreateUpdatedArchiveAsync(
+                        zipPath,
+                        temporaryZipPath,
+                        entryPath,
+                        content,
+                        cancellationToken
+                    )
+                    .ConfigureAwait(false);
+
+                if (File.Exists(zipPath))
+                {
+                    File.Replace(temporaryZipPath, zipPath, null);
+                }
+                else
+                {
+                    File.Move(temporaryZipPath, zipPath);
+                }
+            }
+            finally
+            {
+                if (File.Exists(temporaryZipPath))
+                {
+                    File.Delete(temporaryZipPath);
+                }
+            }
         }
         finally
         {
             _semaphore.Release();
         }
+    }
+
+    private static async Task CreateUpdatedArchiveAsync(
+        string sourceZipPath,
+        string destinationZipPath,
+        string replacementEntryPath,
+        ReadOnlyMemory<byte> replacementContent,
+        CancellationToken cancellationToken
+    )
+    {
+        using var destinationStream = new FileStream(
+            destinationZipPath,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize: 4096,
+            FileOptions.Asynchronous | FileOptions.SequentialScan
+        );
+        using var destinationArchive = new ZipArchive(
+            destinationStream,
+            ZipArchiveMode.Create,
+            leaveOpen: true
+        );
+
+        if (File.Exists(sourceZipPath))
+        {
+            using var sourceArchive = ZipFile.OpenRead(sourceZipPath);
+            foreach (var sourceEntry in sourceArchive.Entries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (
+                    sourceEntry.FullName.Equals(
+                        replacementEntryPath,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    continue;
+                }
+
+                var destinationEntry = destinationArchive.CreateEntry(
+                    sourceEntry.FullName,
+                    CompressionLevel.Optimal
+                );
+                destinationEntry.LastWriteTime = sourceEntry.LastWriteTime;
+                using var sourceStream = sourceEntry.Open();
+                using var destinationEntryStream = destinationEntry.Open();
+                await sourceStream
+                    .CopyToAsync(destinationEntryStream, 81920, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        var replacementEntry = destinationArchive.CreateEntry(
+            replacementEntryPath,
+            CompressionLevel.Optimal
+        );
+        using var replacementStream = replacementEntry.Open();
+#if NET8_0_OR_GREATER
+        await replacementStream
+            .WriteAsync(replacementContent, cancellationToken)
+            .ConfigureAwait(false);
+#else
+        await replacementStream
+            .WriteAsync(
+                replacementContent.ToArray(),
+                0,
+                replacementContent.Length,
+                cancellationToken
+            )
+            .ConfigureAwait(false);
+#endif
     }
 
     // Gets the full path to the zip file based on the original file path.
