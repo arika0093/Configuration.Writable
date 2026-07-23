@@ -77,7 +77,7 @@ internal static class JsonWriterHelper
         serializeAction(writer, config);
         writer.Flush();
 
-        var bytes = bufferWriter.WrittenMemory.ToArray();
+        var bytes = bufferWriter.WrittenMemory;
 
         logger?.Log(
             LogLevel.Trace,
@@ -114,26 +114,23 @@ internal static class JsonWriterHelper
         JsonDocument? existingDocument = null;
 
         // Try to read existing file using PipeReader
-        if (fileProvider.FileExists(configFilePath))
+        try
         {
-            try
+            var pipeReader = fileProvider.GetFilePipeReader(configFilePath);
+            if (pipeReader != null)
             {
-                var pipeReader = fileProvider.GetFilePipeReader(configFilePath);
-                if (pipeReader != null)
-                {
-                    using var stream = pipeReader.AsStream(leaveOpen: false);
-                    existingDocument = JsonDocument.Parse(stream);
-                    logger?.Log(LogLevel.Trace, "Loaded existing JSON file for partial update");
-                }
+                using var stream = pipeReader.AsStream(leaveOpen: false);
+                existingDocument = JsonDocument.Parse(stream);
+                logger?.Log(LogLevel.Trace, "Loaded existing JSON file for partial update");
             }
-            catch (JsonException ex)
-            {
-                logger?.Log(
-                    LogLevel.Warning,
-                    ex,
-                    "Failed to parse existing JSON file, will create new file structure"
-                );
-            }
+        }
+        catch (JsonException ex)
+        {
+            logger?.Log(
+                LogLevel.Warning,
+                ex,
+                "Failed to parse existing JSON file, will create new file structure"
+            );
         }
 
         // Use ArrayBufferWriter for better memory efficiency
@@ -170,7 +167,7 @@ internal static class JsonWriterHelper
         }
 
         writer.Flush();
-        var bytes = bufferWriter.WrittenMemory.ToArray();
+        var bytes = bufferWriter.WrittenMemory;
 
         logger?.Log(
             LogLevel.Trace,

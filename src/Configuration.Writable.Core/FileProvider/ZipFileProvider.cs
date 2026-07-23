@@ -226,6 +226,11 @@ public class ZipFileProvider : IWritableFileProvider, IDisposable
         entry = zip.Entries.FirstOrDefault(e =>
             e.FullName.Equals(entryPath, StringComparison.OrdinalIgnoreCase)
         );
+        if (entry == null)
+        {
+            zip.Dispose();
+            return null;
+        }
         return zip;
     }
 

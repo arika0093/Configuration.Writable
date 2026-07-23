@@ -193,35 +193,32 @@ public class YamlFormatProvider : FormatProviderBase
         Dictionary<string, object>? existingDict = null;
 
         // Try to read existing file using PipeReader
-        if (options.FileProvider.FileExists(options.ConfigFilePath))
+        try
         {
-            try
+            var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+            if (pipeReader != null)
             {
-                var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
-                if (pipeReader != null)
-                {
-                    using var stream = pipeReader.AsStream(leaveOpen: false);
-                    using var reader = new StreamReader(stream, Encoding);
-                    var yamlContent = reader.ReadToEnd();
+                using var stream = pipeReader.AsStream(leaveOpen: false);
+                using var reader = new StreamReader(stream, Encoding);
+                var yamlContent = reader.ReadToEnd();
 
-                    if (!string.IsNullOrWhiteSpace(yamlContent))
-                    {
-                        var yamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(yamlContent);
-                        existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
-                            yamlBytes,
-                            SerializerOptions
-                        );
-                        options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
-                    }
+                if (!string.IsNullOrWhiteSpace(yamlContent))
+                {
+                    var yamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(yamlContent);
+                    existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
+                        yamlBytes,
+                        SerializerOptions
+                    );
+                    options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
                 }
             }
-            catch (Exception ex)
-            {
-                options.Logger?.ZLogWarning(
-                    ex,
-                    $"Failed to parse existing YAML file, will create new file structure"
-                );
-            }
+        }
+        catch (Exception ex)
+        {
+            options.Logger?.ZLogWarning(
+                ex,
+                $"Failed to parse existing YAML file, will create new file structure"
+            );
         }
 
         // Serialize config to YAML then deserialize to dictionary
@@ -255,8 +252,7 @@ public class YamlFormatProvider : FormatProviderBase
                 $"Merging with existing YAML file for section: {string.Join(":", sections)}"
             );
 
-            // Deep copy the existing dictionary to avoid modifying it
-            resultDict = DeepCopyDictionary(existingDict);
+            resultDict = existingDict;
             MergeSection(resultDict, sections, 0, configDict);
         }
 

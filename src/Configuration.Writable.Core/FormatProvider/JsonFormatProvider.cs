@@ -39,11 +39,6 @@ public class JsonFormatProvider : FormatProviderBase
     internal override int? TryGetFileVersion(IWritableOptionsConfiguration options)
     {
         var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return null;
-        }
-
         var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
         if (pipeReader == null)
         {
@@ -105,27 +100,26 @@ public class JsonFormatProvider : FormatProviderBase
         // Use JsonDocument.ParseAsync for efficient pipeline-based parsing
         // The stream owns the PipeReader when leaveOpen is false
         using var stream = reader.AsStream(leaveOpen: false);
-        var jsonDocument = await JsonDocument
-            .ParseAsync(stream, default, cancellationToken)
-            .ConfigureAwait(false);
-        var root = jsonDocument.RootElement;
-
-        // Navigate to the section if specified
-        if (sectionNameParts.Count > 0)
+        if (sectionNameParts.Count == 0)
         {
-            if (JsonWriterHelper.TryNavigateToSection(root, sectionNameParts, out var current))
-            {
-                return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
-                    ?? Activator.CreateInstance(type)!;
-            }
-            else
-            {
-                // Section not found, return default instance
-                return Activator.CreateInstance(type)!;
-            }
+            return await JsonSerializer
+                    .DeserializeAsync(stream, type, JsonSerializerOptions, cancellationToken)
+                    .ConfigureAwait(false) ?? Activator.CreateInstance(type)!;
         }
 
-        return JsonSerializer.Deserialize(root.GetRawText(), type, JsonSerializerOptions)
+        using var jsonDocument = await JsonDocument
+            .ParseAsync(stream, default, cancellationToken)
+            .ConfigureAwait(false);
+        if (!JsonWriterHelper.TryNavigateToSection(
+                jsonDocument.RootElement,
+                sectionNameParts,
+                out var current
+            ))
+        {
+            return Activator.CreateInstance(type)!;
+        }
+
+        return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
             ?? Activator.CreateInstance(type)!;
     }
 

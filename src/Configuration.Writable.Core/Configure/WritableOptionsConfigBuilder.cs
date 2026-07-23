@@ -120,7 +120,7 @@ public class WritableOptionsConfigBuilder<T>
     {
         _cloneMethod = value =>
         {
-            var json = JsonSerializer.Serialize(value);
+            var json = JsonSerializer.SerializeToUtf8Bytes(value);
             return JsonSerializer.Deserialize<T>(json)!;
         };
     }
@@ -134,7 +134,7 @@ public class WritableOptionsConfigBuilder<T>
     {
         _cloneMethod = value =>
         {
-            var json = JsonSerializer.Serialize(value, jsonTypeInfo);
+            var json = JsonSerializer.SerializeToUtf8Bytes(value, jsonTypeInfo);
             return JsonSerializer.Deserialize<T>(json, jsonTypeInfo)!;
         };
     }

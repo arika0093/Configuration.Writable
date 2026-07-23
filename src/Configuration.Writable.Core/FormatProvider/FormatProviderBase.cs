@@ -41,14 +41,7 @@ public abstract class FormatProviderBase : IWritableFormatProvider
     /// <inheritdoc />
     public object LoadConfiguration(Type type, IWritableOptionsConfiguration options)
     {
-        // Check if file exists
         var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return Activator.CreateInstance(type)!;
-        }
-
-        // Use PipeReader for reading
         var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
         if (pipeReader == null)
         {

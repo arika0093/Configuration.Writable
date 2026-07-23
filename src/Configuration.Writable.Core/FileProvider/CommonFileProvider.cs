@@ -48,6 +48,7 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
             logger?.ZLogTrace($"Attempt {retryCount + 1} to write file: {path}");
+            var shouldRetry = false;
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
@@ -97,13 +98,15 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
                 );
                 lastException = ex;
                 retryCount++;
-                // Wait delay before retrying
-                var delayMs = RetryDelay(retryCount);
-                await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
+                shouldRetry = retryCount < MaxRetryCount;
             }
             finally
             {
                 _semaphore.Release();
+            }
+            if (shouldRetry)
+            {
+                await Task.Delay(RetryDelay(retryCount), cancellationToken).ConfigureAwait(false);
             }
         } while (retryCount < MaxRetryCount);
         throw lastException;
@@ -185,11 +188,30 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
 #if NET9_0_OR_GREATER
         return File.WriteAllBytesAsync(path, content, cancellationToken);
 #elif NET
-        return File.WriteAllBytesAsync(path, content.ToArray(), cancellationToken);
+        return WriteContentToFileWithStreamAsync(path, content, cancellationToken);
 #else
         return Task.Run(() => File.WriteAllBytes(path, content.ToArray()), cancellationToken);
 #endif
     }
+
+#if NET8_0_OR_GREATER && !NET9_0_OR_GREATER
+    private static async Task WriteContentToFileWithStreamAsync(
+        string path,
+        ReadOnlyMemory<byte> content,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var stream = new FileStream(
+            path,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize: 4096,
+            FileOptions.Asynchronous | FileOptions.SequentialScan
+        );
+        await stream.WriteAsync(content, cancellationToken).ConfigureAwait(false);
+    }
+#endif
 
     /// <inheritdoc />
     public virtual bool FileExists(string path)
@@ -213,7 +235,7 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
             FileAccess.Read,
             FileShare.ReadWrite,
             bufferSize: 4096,
-            useAsync: false
+            FileOptions.Asynchronous | FileOptions.SequentialScan
         );
         // Create a PipeReader from the stream for more efficient reading
         return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));

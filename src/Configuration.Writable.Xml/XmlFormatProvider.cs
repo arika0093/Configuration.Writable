@@ -18,6 +18,12 @@ namespace Configuration.Writable.FormatProvider;
 /// </summary>
 public class XmlFormatProvider : FormatProviderBase
 {
+    private static class SerializerCache<T>
+        where T : class, new()
+    {
+        internal static readonly XmlSerializer Instance = new(typeof(T));
+    }
+
     /// <inheritdoc />
     public override string FileExtension => "xml";
 
@@ -114,7 +120,7 @@ public class XmlFormatProvider : FormatProviderBase
 
         // No section name - create full XML with <configuration> wrapper
         // Serialize the configuration to XML
-        var serializer = new XmlSerializer(typeof(T));
+        var serializer = SerializerCache<T>.Instance;
         using var sw = new StringWriter();
         serializer.Serialize(sw, config);
         var xmlDocument = new XmlDocument();
@@ -151,36 +157,33 @@ public class XmlFormatProvider : FormatProviderBase
         XDocument? existingDoc = null;
 
         // Try to read existing file using PipeReader
-        if (options.FileProvider.FileExists(options.ConfigFilePath))
+        try
         {
-            try
+            var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+            if (pipeReader != null)
             {
-                var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
-                if (pipeReader != null)
-                {
-                    using var stream = pipeReader.AsStream(leaveOpen: false);
+                using var stream = pipeReader.AsStream(leaveOpen: false);
 #if NET8_0_OR_GREATER
-                    existingDoc = XDocument
-                        .LoadAsync(stream, LoadOptions.None, CancellationToken.None)
-                        .GetAwaiter()
-                        .GetResult();
+                existingDoc = XDocument
+                    .LoadAsync(stream, LoadOptions.None, CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
 #else
-                    existingDoc = XDocument.Load(stream);
+                existingDoc = XDocument.Load(stream);
 #endif
-                    options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
-                }
+                options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
             }
-            catch (XmlException ex)
-            {
-                options.Logger?.ZLogWarning(
-                    ex,
-                    $"Failed to parse existing XML file, will create new file structure"
-                );
-            }
+        }
+        catch (XmlException ex)
+        {
+            options.Logger?.ZLogWarning(
+                ex,
+                $"Failed to parse existing XML file, will create new file structure"
+            );
         }
 
         // Serialize the configuration to XML
-        var serializer = new XmlSerializer(typeof(T));
+        var serializer = SerializerCache<T>.Instance;
         using var sw = new StringWriter();
         serializer.Serialize(sw, config);
         var configXmlDoc = new XmlDocument();
@@ -224,7 +227,7 @@ public class XmlFormatProvider : FormatProviderBase
                 $"Merging with existing XML file for section: {string.Join(":", parts)}"
             );
 
-            resultDoc = new XDocument(existingDoc);
+            resultDoc = existingDoc;
             var root = resultDoc.Root;
 
             if (root == null)

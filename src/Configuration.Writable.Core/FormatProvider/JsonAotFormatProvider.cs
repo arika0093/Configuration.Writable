@@ -30,6 +30,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
 {
     private readonly IJsonTypeInfoResolver _typeInfoResolver =
         typeInfoResolver ?? throw new ArgumentNullException(nameof(typeInfoResolver));
+    private JsonSerializerOptions? _effectiveOptions;
 
     /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.
@@ -49,11 +50,6 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
     internal override int? TryGetFileVersion(IWritableOptionsConfiguration options)
     {
         var filePath = options.ConfigFilePath;
-        if (!options.FileProvider.FileExists(filePath))
-        {
-            return null;
-        }
-
         var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
         if (pipeReader == null)
         {
@@ -106,19 +102,24 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
     /// </summary>
     private JsonSerializerOptions GetEffectiveOptions()
     {
+        if (_effectiveOptions != null)
+        {
+            return _effectiveOptions;
+        }
+
         if (JsonSerializerOptions != null)
         {
-            return JsonSerializerOptions;
+            return _effectiveOptions = JsonSerializerOptions;
         }
 
         // If the resolver is a JsonSerializerContext, use its options
         if (_typeInfoResolver is JsonSerializerContext context)
         {
-            return context.Options;
+            return _effectiveOptions = context.Options;
         }
 
         // Fallback: create options with the resolver
-        return new JsonSerializerOptions
+        return _effectiveOptions = new JsonSerializerOptions
         {
             TypeInfoResolver = _typeInfoResolver,
             WriteIndented = false,
@@ -138,27 +139,26 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
 
         // Use JsonDocument.ParseAsync for efficient pipeline-based parsing
         using var stream = reader.AsStream(leaveOpen: false);
-        var jsonDocument = await JsonDocument
-            .ParseAsync(stream, default, cancellationToken)
-            .ConfigureAwait(false);
-        var root = jsonDocument.RootElement;
-
-        // Navigate to the section if specified
-        if (sectionNameParts.Count > 0)
+        if (sectionNameParts.Count == 0)
         {
-            if (JsonWriterHelper.TryNavigateToSection(root, sectionNameParts, out var current))
-            {
-                return JsonSerializer.Deserialize(current.GetRawText(), jsonTypeInfo)
-                    ?? Activator.CreateInstance(type)!;
-            }
-            else
-            {
-                // Section not found, return default instance
-                return Activator.CreateInstance(type)!;
-            }
+            return await JsonSerializer
+                    .DeserializeAsync(stream, jsonTypeInfo, cancellationToken)
+                    .ConfigureAwait(false) ?? Activator.CreateInstance(type)!;
         }
 
-        return JsonSerializer.Deserialize(root.GetRawText(), jsonTypeInfo)
+        using var jsonDocument = await JsonDocument
+            .ParseAsync(stream, default, cancellationToken)
+            .ConfigureAwait(false);
+        if (!JsonWriterHelper.TryNavigateToSection(
+                jsonDocument.RootElement,
+                sectionNameParts,
+                out var current
+            ))
+        {
+            return Activator.CreateInstance(type)!;
+        }
+
+        return JsonSerializer.Deserialize(current.GetRawText(), jsonTypeInfo)
             ?? Activator.CreateInstance(type)!;
     }
 
