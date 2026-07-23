@@ -183,10 +183,7 @@ public class YamlPartialWriteTests
     {
         const string testFileName = "malformed-partial.yaml";
         const string malformedContent = "appSettings: [unterminated";
-        await _fileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(malformedContent)
-        );
+        await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(malformedContent));
 
         var provider = new YamlFormatProvider();
         var builder = new WritableOptionsConfigBuilder<AppSettings>

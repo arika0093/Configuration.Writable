@@ -113,7 +113,10 @@ public class YamlFormatProvider : FormatProviderBase
                 type,
                 static type => DeserializeMethod.MakeGenericMethod(type)
             );
-            var result = genericMethod.Invoke(null, new object[] { targetBytes, SerializerOptions });
+            var result = genericMethod.Invoke(
+                null,
+                new object[] { targetBytes, SerializerOptions }
+            );
             return result ?? Activator.CreateInstance(type)!;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

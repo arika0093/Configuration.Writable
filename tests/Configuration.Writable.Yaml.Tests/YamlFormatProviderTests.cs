@@ -173,10 +173,7 @@ public class YamlFormatProviderTests
     {
         const string testFileName = "malformed.yaml";
         const string malformedContent = "name: [unterminated";
-        await _FileProvider.SaveToFileAsync(
-            testFileName,
-            Encoding.UTF8.GetBytes(malformedContent)
-        );
+        await _FileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(malformedContent));
 
         var instance = new WritableOptionsSimpleInstance<TestSettings>();
         instance.Initialize(options =>

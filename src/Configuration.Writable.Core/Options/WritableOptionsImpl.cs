@@ -158,7 +158,9 @@ internal sealed class WritableOptionsImpl<T>(
 
             if (options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict)
             {
-                var expectedFingerprint = optionMonitorInstance.GetFingerprint(options.InstanceName);
+                var expectedFingerprint = optionMonitorInstance.GetFingerprint(
+                    options.InstanceName
+                );
                 var currentFingerprint = ConfigurationFileFingerprint.Capture(options);
                 if (
                     expectedFingerprint != null

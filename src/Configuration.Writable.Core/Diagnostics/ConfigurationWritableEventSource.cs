@@ -27,7 +27,8 @@ internal sealed class ConfigurationWritableEventSource : EventSource
     internal void ConflictDetected() => ConflictDetectedEvent();
 
     [Event(1, Level = EventLevel.Informational)]
-    private void SaveSucceededEvent(double durationMilliseconds) => WriteEvent(1, durationMilliseconds);
+    private void SaveSucceededEvent(double durationMilliseconds) =>
+        WriteEvent(1, durationMilliseconds);
 
     [Event(2, Level = EventLevel.Warning)]
     private void SaveFailedEvent() => WriteEvent(2);

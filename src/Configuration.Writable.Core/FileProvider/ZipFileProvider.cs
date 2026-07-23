@@ -146,8 +146,8 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
         try
         {
             var zipPath = GetZipFilePath(path);
-            using var archiveLock = await Configuration.Writable.AsyncFileSaveLock
-                .AcquireAsync(zipPath, cancellationToken)
+            using var archiveLock = await Configuration
+                .Writable.AsyncFileSaveLock.AcquireAsync(zipPath, cancellationToken)
                 .ConfigureAwait(false);
 
             // Ensure the directory exists
