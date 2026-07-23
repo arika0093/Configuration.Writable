@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
@@ -49,6 +50,12 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// This delays event firing until rapid changes have stopped.
     /// </summary>
     public required TimeSpan OnChangeDebounce { get; init; }
+
+    /// <summary>
+    /// Gets how saves handle changes made to the configuration file after it was loaded.
+    /// </summary>
+    public ConfigurationConflictResolution ConflictResolution { get; init; } =
+        ConfigurationConflictResolution.FailOnConflict;
 
     /// <summary>
     /// Gets or sets the cloning strategy function to create deep copies of the configuration object.

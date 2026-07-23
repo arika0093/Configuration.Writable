@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-#if NET
-using System.Runtime.CompilerServices;
-#endif
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.Abstractions;
@@ -15,6 +12,10 @@ using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+#if NET
+using System.Runtime.CompilerServices;
+#endif
+
 
 namespace Configuration.Writable.Configure;
 
@@ -35,6 +36,7 @@ public class WritableOptionsConfigBuilder<T>
 
     private const string DefaultSectionName = "";
     private Func<T, T>? _cloneMethod = null;
+    private bool _usesDefaultJsonCloneFallback;
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly SaveLocationManager _saveLocationManager = new();
     private readonly List<MigrationStep> _migrationSteps = [];
@@ -96,6 +98,13 @@ public class WritableOptionsConfigBuilder<T>
     public ILogger? Logger { get; set; }
 
     /// <summary>
+    /// Gets or sets how saves handle changes made to the configuration file after it was loaded.
+    /// Defaults to <see cref="ConfigurationConflictResolution.FailOnConflict"/>.
+    /// </summary>
+    public ConfigurationConflictResolution ConflictResolution { get; set; } =
+        ConfigurationConflictResolution.FailOnConflict;
+
+    /// <summary>
     /// Get or sets the name of the configuration section. <br/>
     /// You can use ":" or "__" to specify nested sections, e.g. "Parent:Child". <br/>
     /// If empty that means the root of the configuration file.
@@ -115,6 +124,7 @@ public class WritableOptionsConfigBuilder<T>
         else
         {
             UseJsonCloneStrategy();
+            _usesDefaultJsonCloneFallback = true;
         }
     }
 
@@ -127,6 +137,7 @@ public class WritableOptionsConfigBuilder<T>
 #endif
     public void UseJsonCloneStrategy()
     {
+        _usesDefaultJsonCloneFallback = false;
         _cloneMethod = value =>
         {
             var json = JsonSerializer.SerializeToUtf8Bytes(value);
@@ -141,6 +152,7 @@ public class WritableOptionsConfigBuilder<T>
     /// <param name="jsonTypeInfo">The JsonTypeInfo to use for serialization and deserialization.</param>
     public void UseJsonCloneStrategy(JsonTypeInfo<T> jsonTypeInfo)
     {
+        _usesDefaultJsonCloneFallback = false;
         _cloneMethod = value =>
         {
             var json = JsonSerializer.SerializeToUtf8Bytes(value, jsonTypeInfo);
@@ -154,6 +166,7 @@ public class WritableOptionsConfigBuilder<T>
     /// <param name="cloneStrategy">A function that defines the cloning strategy.</param>
     public void UseCustomCloneStrategy(Func<T, T> cloneStrategy)
     {
+        _usesDefaultJsonCloneFallback = false;
         _cloneMethod = cloneStrategy;
     }
 
@@ -262,6 +275,19 @@ public class WritableOptionsConfigBuilder<T>
         {
             UseDefaultCloneStrategy();
         }
+        if (_usesDefaultJsonCloneFallback)
+        {
+            const string message =
+                "Configuration.Writable is using JSON serialization as the default clone strategy. Configure a custom clone strategy for better performance and NativeAOT compatibility.";
+            if (Logger != null)
+            {
+                Logger.LogWarning(message);
+            }
+            else
+            {
+                Console.Error.WriteLine(message);
+            }
+        }
 
         return new WritableOptionsConfiguration<T>
         {
@@ -271,6 +297,7 @@ public class WritableOptionsConfigBuilder<T>
             InstanceName = instanceName,
             SectionNameParts = sectionNamePart,
             OnChangeDebounce = OnChangeDebounce,
+            ConflictResolution = ConflictResolution,
             CloneMethod = _cloneMethod!,
             Logger = Logger,
             Validator = validator,

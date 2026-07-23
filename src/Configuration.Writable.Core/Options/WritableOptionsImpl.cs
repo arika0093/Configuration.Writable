@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.Configure;
 using Microsoft.Extensions.Logging;
 using ZLogger;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -24,9 +25,6 @@ internal sealed class WritableOptionsImpl<T>(
 ) : IWritableOptionsMonitor<T>
     where T : class, new()
 {
-    // To ensure data integrity
-    private readonly SemaphoreSlim saveSemaphore = new(1, 1);
-
     /// <inheritdoc />
     public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
         GetOptions(MEOptions.DefaultName);
@@ -36,28 +34,18 @@ internal sealed class WritableOptionsImpl<T>(
 
     /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
-        SaveCoreAsync(newConfig, GetOptions(MEOptions.DefaultName), cancellationToken);
+        SaveAsync(MEOptions.DefaultName, newConfig, cancellationToken);
 
     /// <inheritdoc />
     public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
         SaveAsync(MEOptions.DefaultName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SaveAsync(
-        string name,
-        T newConfig,
-        CancellationToken cancellationToken = default
-    )
+    public Task SaveAsync(string name, T newConfig, CancellationToken cancellationToken = default)
     {
-        await saveSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            await SaveCoreAsync(newConfig, GetOptions(name), cancellationToken);
-        }
-        finally
-        {
-            saveSemaphore.Release();
-        }
+        var options = GetOptions(name);
+        var configToSave = options.CloneMethod(newConfig);
+        return SaveClonedAsync(configToSave, options, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -67,19 +55,8 @@ internal sealed class WritableOptionsImpl<T>(
         CancellationToken cancellationToken = default
     )
     {
-        await saveSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            // To avoid inconsistencies that may arise if other operations occur during this operation, protect it with a semaphore.
-            var options = GetOptions(name);
-            var current = Get(name);
-            configUpdater(current);
-            await SaveCoreAsync(current, options, cancellationToken);
-        }
-        finally
-        {
-            saveSemaphore.Release();
-        }
+        var options = GetOptions(name);
+        await UpdateAndSaveAsync(options, configUpdater, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -95,19 +72,8 @@ internal sealed class WritableOptionsImpl<T>(
         CancellationToken cancellationToken = default
     )
     {
-        await saveSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            // To avoid inconsistencies that may arise if other operations occur during this operation, protect it with a semaphore.
-            var options = GetOptions(name);
-            var current = Get(name);
-            await configUpdater(current).ConfigureAwait(false);
-            await SaveCoreAsync(current, options, cancellationToken);
-        }
-        finally
-        {
-            saveSemaphore.Release();
-        }
+        var options = GetOptions(name);
+        await UpdateAndSaveAsync(options, configUpdater, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -147,6 +113,10 @@ internal sealed class WritableOptionsImpl<T>(
         optionMonitorInstance.OnChange(listener);
 
     /// <inheritdoc />
+    public IDisposable? OnReloadFailed(Action<Exception, string?> listener) =>
+        optionMonitorInstance.OnReloadFailed(listener);
+
+    /// <inheritdoc />
     IWritableOptions<T> IWritableNamedOptions<T>.GetInstance(string name) =>
         new WritableOptionsWithNameImpl<T>(this, name);
 
@@ -181,6 +151,20 @@ internal sealed class WritableOptionsImpl<T>(
             }
         }
 
+        if (options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict)
+        {
+            var expectedFingerprint = optionMonitorInstance.GetFingerprint(options.InstanceName);
+            var currentFingerprint = ConfigurationFileFingerprint.Capture(options);
+            if (
+                expectedFingerprint != null
+                && currentFingerprint != null
+                && !expectedFingerprint.Equals(currentFingerprint)
+            )
+            {
+                throw new ConfigurationConflictException(options.ConfigFilePath);
+            }
+        }
+
         options.Logger?.ZLogDebug($"Saving configuration to {options.ConfigFilePath}");
 
         // Save to file
@@ -189,7 +173,12 @@ internal sealed class WritableOptionsImpl<T>(
             .ConfigureAwait(false);
 
         // Update the monitor's cache (FileSystemWatcher will notify listeners)
-        optionMonitorInstance.UpdateCache(options.InstanceName, newConfig);
+        var publishedConfig = options.CloneMethod(newConfig);
+        optionMonitorInstance.UpdateCache(
+            options.InstanceName,
+            publishedConfig,
+            ConfigurationFileFingerprint.Capture(options)
+        );
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
         options.Logger?.ZLogInformation($"Configuration saved successfully to {fileName}");
@@ -203,4 +192,44 @@ internal sealed class WritableOptionsImpl<T>(
     /// <exception cref="InvalidOperationException">Thrown if multiple configuration options with the specified name are found, or if no configuration option with
     /// the specified name exists.</exception>
     private WritableOptionsConfiguration<T> GetOptions(string name) => registryInstance.Get(name);
+
+    private async Task SaveClonedAsync(
+        T configToSave,
+        WritableOptionsConfiguration<T> options,
+        CancellationToken cancellationToken
+    )
+    {
+        using var fileLock = await AsyncFileSaveLock
+            .AcquireAsync(options.ConfigFilePath, cancellationToken)
+            .ConfigureAwait(false);
+        await SaveCoreAsync(configToSave, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task UpdateAndSaveAsync(
+        WritableOptionsConfiguration<T> options,
+        Action<T> configUpdater,
+        CancellationToken cancellationToken
+    )
+    {
+        using var fileLock = await AsyncFileSaveLock
+            .AcquireAsync(options.ConfigFilePath, cancellationToken)
+            .ConfigureAwait(false);
+        var configToSave = options.CloneMethod(Get(options.InstanceName));
+        configUpdater(configToSave);
+        await SaveCoreAsync(configToSave, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task UpdateAndSaveAsync(
+        WritableOptionsConfiguration<T> options,
+        Func<T, Task> configUpdater,
+        CancellationToken cancellationToken
+    )
+    {
+        using var fileLock = await AsyncFileSaveLock
+            .AcquireAsync(options.ConfigFilePath, cancellationToken)
+            .ConfigureAwait(false);
+        var configToSave = options.CloneMethod(Get(options.InstanceName));
+        await configUpdater(configToSave).ConfigureAwait(false);
+        await SaveCoreAsync(configToSave, options, cancellationToken).ConfigureAwait(false);
+    }
 }
