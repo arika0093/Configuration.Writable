@@ -27,7 +27,7 @@ namespace Configuration.Writable.Configure
         public Configuration.Writable.FileProvider.IWritableFileProvider? FileProvider { get; set; }
         public Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
-        public System.TimeSpan OnChangeThrottle { get; set; }
+        public System.TimeSpan OnChangeDebounce { get; set; }
         public bool RegisterAsSingleton { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
@@ -207,7 +207,7 @@ namespace Configuration.Writable
         Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; }
         string InstanceName { get; }
         Microsoft.Extensions.Logging.ILogger? Logger { get; }
-        System.TimeSpan OnChangeThrottle { get; }
+        System.TimeSpan OnChangeDebounce { get; }
         System.Collections.Generic.List<string> SectionNameParts { get; }
     }
     public interface IWritableOptionsMonitor<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptionsMonitor<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
@@ -232,7 +232,7 @@ namespace Configuration.Writable
         public required Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
-        public required System.TimeSpan OnChangeThrottle { get; init; }
+        public required System.TimeSpan OnChangeDebounce { get; init; }
         public required System.Collections.Generic.List<string> SectionNameParts { get; init; }
         public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }
     }

@@ -60,11 +60,11 @@ public class WritableOptionsConfigBuilder<T>
     }
 
     /// <summary>
-    /// Gets or sets the throttle duration for change events.
-    /// This helps to prevent excessive event firing during rapid changes. <br/>
+    /// Gets or sets the debounce duration for change events.
+    /// This delays event firing until rapid changes have stopped. <br/>
     /// Defaults to 300 ms.
     /// </summary>
-    public TimeSpan OnChangeThrottle { get; set; } = TimeSpan.FromMilliseconds(300);
+    public TimeSpan OnChangeDebounce { get; set; } = TimeSpan.FromMilliseconds(300);
 
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> as a singleton in the DI container. Defaults to false. <br/>
@@ -261,7 +261,7 @@ public class WritableOptionsConfigBuilder<T>
             ConfigFilePath = configFilePath,
             InstanceName = instanceName,
             SectionNameParts = sectionNamePart,
-            OnChangeThrottle = OnChangeThrottle,
+            OnChangeDebounce = OnChangeDebounce,
             CloneMethod = _cloneMethod!,
             Logger = Logger,
             Validator = validator,

@@ -409,14 +409,14 @@ public class OptionsMonitorImplTests
     }
 
     [Fact]
-    public void OnChangeThrottle_WithDefaultThrottle_ShouldReceiveOnlyFirstChange()
+    public void OnChangeDebounce_WithDefaultDebounce_ShouldReceiveOnlyFirstChange()
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            // Default throttle is 1000ms
+            // Default debounce is 300ms
         };
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
@@ -441,41 +441,41 @@ public class OptionsMonitorImplTests
     }
 
     [Fact]
-    public void OnChangeThrottle_WithZeroThrottle_ShouldDisableThrottling()
+    public void OnChangeDebounce_WithZeroDebounce_ShouldDisableDebouncing()
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            OnChangeThrottle = TimeSpan.Zero, // Disable throttling
+            OnChangeDebounce = TimeSpan.Zero, // Disable debouncing
         };
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         // Assert
-        configOptions.OnChangeThrottle.ShouldBe(TimeSpan.Zero);
+        configOptions.OnChangeDebounce.ShouldBe(TimeSpan.Zero);
     }
 
     [Fact]
-    public void OnChangeThrottle_Configuration_ShouldBeStoredCorrectly()
+    public void OnChangeDebounce_Configuration_ShouldBeStoredCorrectly()
     {
         // Arrange & Act
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
-            OnChangeThrottle = TimeSpan.FromSeconds(2),
+            OnChangeDebounce = TimeSpan.FromSeconds(2),
         };
         var FileProvider = new InMemoryFileProvider();
         builder.UseInMemoryFileProvider(FileProvider);
         var configOptions = builder.BuildOptions("test");
 
         // Assert
-        configOptions.OnChangeThrottle.ShouldBe(TimeSpan.FromSeconds(2));
+        configOptions.OnChangeDebounce.ShouldBe(TimeSpan.FromSeconds(2));
     }
 
     [Fact]
-    public async Task OnChangeThrottle_MultipleInstances_ShouldHaveIndependentThrottle()
+    public async Task OnChangeDebounce_MultipleInstances_ShouldHaveIndependentDebounce()
     {
         // Arrange
         var FileProvider = new InMemoryFileProvider();
@@ -483,7 +483,7 @@ public class OptionsMonitorImplTests
         var builder1 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test1.json",
-            OnChangeThrottle = TimeSpan.FromMilliseconds(500),
+            OnChangeDebounce = TimeSpan.FromMilliseconds(500),
         };
         builder1.UseInMemoryFileProvider(FileProvider);
         var configOptions1 = builder1.BuildOptions("instance1");
@@ -491,7 +491,7 @@ public class OptionsMonitorImplTests
         var builder2 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test2.json",
-            OnChangeThrottle = TimeSpan.FromMilliseconds(1500),
+            OnChangeDebounce = TimeSpan.FromMilliseconds(1500),
         };
         builder2.UseInMemoryFileProvider(FileProvider);
         var configOptions2 = builder2.BuildOptions("instance2");
@@ -509,7 +509,7 @@ public class OptionsMonitorImplTests
         await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
 
         // Assert
-        configOptions1.OnChangeThrottle.ShouldBe(TimeSpan.FromMilliseconds(500));
-        configOptions2.OnChangeThrottle.ShouldBe(TimeSpan.FromMilliseconds(1500));
+        configOptions1.OnChangeDebounce.ShouldBe(TimeSpan.FromMilliseconds(500));
+        configOptions2.OnChangeDebounce.ShouldBe(TimeSpan.FromMilliseconds(1500));
     }
 }

@@ -547,13 +547,13 @@ public class WritableOptionsSimpleInstanceTests
             });
 
             // Act - Save multiple times with sufficient delay between saves
-            // Note: Default throttle is 1000ms, so we need longer delays
+            // Note: The debounce delay is 300ms, so we need longer delays.
             await option.SaveAsync(settings => settings.Name = "first");
-            await Task.Delay(1200); // Wait for FileSystemWatcher + throttle
+            await Task.Delay(1200); // Wait for FileSystemWatcher + debounce
             await option.SaveAsync(settings => settings.Name = "second");
-            await Task.Delay(1200); // Wait for FileSystemWatcher + throttle
+            await Task.Delay(1200); // Wait for FileSystemWatcher + debounce
             await option.SaveAsync(settings => settings.Name = "third");
-            await Task.Delay(1200); // Wait for FileSystemWatcher + throttle
+            await Task.Delay(1200); // Wait for FileSystemWatcher + debounce
 
             // Assert
             receivedValues.Count.ShouldBeGreaterThanOrEqualTo(3);

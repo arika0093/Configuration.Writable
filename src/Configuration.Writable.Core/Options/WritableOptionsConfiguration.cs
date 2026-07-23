@@ -45,10 +45,10 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     public required List<string> SectionNameParts { get; init; }
 
     /// <summary>
-    /// Gets the throttle duration for change events.
-    /// This helps to prevent excessive event firing during rapid changes.
+    /// Gets the debounce duration for change events.
+    /// This delays event firing until rapid changes have stopped.
     /// </summary>
-    public required TimeSpan OnChangeThrottle { get; init; }
+    public required TimeSpan OnChangeDebounce { get; init; }
 
     /// <summary>
     /// Gets or sets the cloning strategy function to create deep copies of the configuration object.

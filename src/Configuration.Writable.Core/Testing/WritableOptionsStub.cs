@@ -80,7 +80,7 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
             FormatProvider = null!, // no need for format provider in stub
             CloneMethod = t => t, // no need for cloning in stub
             FileProvider = new CommonFileProvider(),
-            OnChangeThrottle = TimeSpan.FromSeconds(1),
+            OnChangeDebounce = TimeSpan.FromSeconds(1),
         };
     }
 

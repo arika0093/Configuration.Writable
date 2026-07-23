@@ -22,9 +22,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly ConcurrentDictionary<string, OptionsMonitorDataSource> _dataSources = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 #if NET9_0_OR_GREATER
-    private readonly Lock _throttleTimersLock = new();
+    private readonly Lock _debounceTimersLock = new();
 #else
-    private readonly object _throttleTimersLock = new();
+    private readonly object _debounceTimersLock = new();
 #endif
 
     public OptionsMonitorImpl(IWritableOptionsConfigRegistry<T> optionsRegistry)
@@ -255,8 +255,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         var fileName = Path.GetFileName(options.ConfigFilePath);
 
         if (
-            options.OnChangeThrottle > TimeSpan.Zero
-            && !DebounceReload(instanceName, options.OnChangeThrottle)
+            options.OnChangeDebounce > TimeSpan.Zero
+            && !DebounceReload(instanceName, options.OnChangeDebounce)
         )
         {
             options.Logger?.ZLogDebug(
@@ -280,23 +280,23 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             return false;
         }
 
-        lock (_throttleTimersLock)
+        lock (_debounceTimersLock)
         {
-            if (dataSource.ThrottleTimer == null)
+            if (dataSource.DebounceTimer == null)
             {
-                dataSource.ThrottleTimer = new Timer(
+                dataSource.DebounceTimer = new Timer(
                     _ => OnDebounceTimerElapsed(instanceName),
                     null,
                     Timeout.Infinite,
                     Timeout.Infinite
                 );
                 dataSource.HasPendingDebouncedChange = false;
-                dataSource.ThrottleTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
+                dataSource.DebounceTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
                 return true;
             }
 
             dataSource.HasPendingDebouncedChange = true;
-            dataSource.ThrottleTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
+            dataSource.DebounceTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
             return false;
         }
     }
@@ -308,10 +308,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             return;
         }
 
-        lock (_throttleTimersLock)
+        lock (_debounceTimersLock)
         {
-            dataSource.ThrottleTimer?.Dispose();
-            dataSource.ThrottleTimer = null;
+            dataSource.DebounceTimer?.Dispose();
+            dataSource.DebounceTimer = null;
             if (!dataSource.HasPendingDebouncedChange)
             {
                 return;
@@ -414,7 +414,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public List<Action<T, string?>> Listeners { get; } = [];
         private object ListenersLock { get; } = new();
         public FileSystemWatcher? Watcher { get; set; }
-        public Timer? ThrottleTimer { get; set; }
+        public Timer? DebounceTimer { get; set; }
         public bool HasPendingDebouncedChange { get; set; }
 
         public OptionsMonitorDataSource(T cache, T defaultValue)
@@ -450,7 +450,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public void Dispose()
         {
             Watcher?.Dispose();
-            ThrottleTimer?.Dispose();
+            DebounceTimer?.Dispose();
         }
     }
 }

@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 namespace Configuration.Writable.Tests;
 
 /// <summary>
-/// Integration tests for OnChange throttle functionality using actual file system.
+/// Integration tests for OnChange debounce functionality using actual file system.
 /// </summary>
-public class OnChangeThrottleIntegrationTests : IDisposable
+public class OnChangeDebounceIntegrationTests : IDisposable
 {
     private readonly string _testDirectory;
 
-    public OnChangeThrottleIntegrationTests()
+    public OnChangeDebounceIntegrationTests()
     {
-        _testDirectory = Path.Combine(Path.GetTempPath(), $"ThrottleTests_{Guid.NewGuid():N}");
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"DebounceTests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testDirectory);
     }
 
@@ -43,16 +43,16 @@ public class OnChangeThrottleIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task OnChangeThrottle_RapidFileChanges_ShouldThrottleNotifications()
+    public async Task OnChangeDebounce_RapidFileChanges_ShouldDebounceNotifications()
     {
         // Arrange
-        var testFilePath = Path.Combine(_testDirectory, "throttle_test.json");
+        var testFilePath = Path.Combine(_testDirectory, "debounce_test.json");
         var instance = new WritableOptionsSimpleInstance<TestSettings>();
 
         instance.Initialize(options =>
         {
             options.FilePath = testFilePath;
-            options.OnChangeThrottle = TimeSpan.FromMilliseconds(500); // 500ms throttle
+            options.OnChangeDebounce = TimeSpan.FromMilliseconds(500); // 500ms debounce
         });
 
         var config = instance.GetOptions();
@@ -91,7 +91,7 @@ public class OnChangeThrottleIntegrationTests : IDisposable
             Thread.Sleep(50); // Small delay between writes
         }
 
-        // Wait for throttle period + buffer
+        // Wait for debounce period + buffer
         Thread.Sleep(700);
 
         // Assert - Debouncing coalesces rapid changes and delivers the final file contents.

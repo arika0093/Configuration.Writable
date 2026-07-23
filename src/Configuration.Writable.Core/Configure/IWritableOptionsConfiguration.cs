@@ -36,9 +36,9 @@ public interface IWritableOptionsConfiguration
     List<string> SectionNameParts { get; }
 
     /// <summary>
-    /// The throttle duration for change notifications.
+    /// The debounce duration for change notifications.
     /// </summary>
-    System.TimeSpan OnChangeThrottle { get; }
+    System.TimeSpan OnChangeDebounce { get; }
 
     /// <summary>
     /// An optional logger for diagnostics.

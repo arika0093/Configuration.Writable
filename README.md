@@ -418,12 +418,12 @@ public class MyService(IWritableOptions<UserSetting> options) : IDisposable
 }
 ```
 
-By default, throttling is enabled to suppress high-frequency file changes. Additional changes within 300ms from change detection are ignored by default.  
-If you want to change the throttle duration, use `conf.OnChangeThrottle`.
+By default, debouncing is enabled to coalesce high-frequency file changes. Notifications are delayed until changes have stopped for 300ms.
+If you want to change the debounce duration, use `conf.OnChangeDebounce`.
 
 ```csharp
-conf.OnChangeThrottle = TimeSpan.FromMilliseconds(500); // customize to 500ms
-conf.OnChangeThrottle = TimeSpan.Zero;                  // disable throttling
+conf.OnChangeDebounce = TimeSpan.FromMilliseconds(500); // customize to 500ms
+conf.OnChangeDebounce = TimeSpan.Zero;                  // disable debouncing
 ```
 
 ### RegisterAsSingleton
