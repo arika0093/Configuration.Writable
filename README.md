@@ -333,27 +333,32 @@ Currently, the following providers are available:
 | [XmlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Xml/XmlFormatProvider.cs)  | save in XML format.      | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Xml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Xml/)  | ❌️ |
 | [YamlFormatProvider](https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Yaml/YamlFormatProvider.cs) | save in YAML format.     | [![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable.Yaml?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable.Yaml/)  | ✅️ |
 
+#### YAML
 
-For example, if you want to save in YAML format, the code would look like this:
+To read and write YAML, you need to use [VYaml](https://github.com/hadashiA/VYaml). Therefore, you need to add `[YamlObject]` to your settings class.
 
 ```csharp
-// use Yaml format (you need to install Configuration.Writable.Yaml package)
-// 1. Register formatters at startup (required for NativeAOT)
-SampleSetting.__RegisterVYamlFormatter();
-// 2. Congigure YamlFormatProvider
-builder.Services.AddWritableOptions<UserSetting>(conf => {
-    conf.FormatProvider = new YamlFormatProvider();
-    // and you can also specify the file path
-});
-
-// -------
-[OptionsModel, YamlObject] // 3. Annotate with [YamlObject] and mark as partial class
+[OptionsModel, YamlObject] // add [YamlObject] and mark as partial class
 public partial class SampleSetting
 {
     public string Name { get; set; } = "";
     public DateTime LastUpdatedAt { get; set; }
 }
 ```
+
+and following code to configure the YAML format provider.
+
+```csharp
+// 1. Register formatters at startup (required for NativeAOT)
+SampleSetting.__RegisterVYamlFormatter();
+// 2. Congigure YamlFormatProvider
+builder.Services.AddWritableOptions<SampleSetting>(conf => {
+    conf.FormatProvider = new YamlFormatProvider();
+    // and you can also specify the file path
+});
+```
+
+For more details, please refer to the [Example.ConsoleApp.Yaml](./example/Example.ConsoleApp.Yaml/) project.
 
 ### FileProvider
 Default FileProvider (`CommonFileProvider`) supports the following features:
@@ -542,6 +547,8 @@ builder.Services.AddWritableOptions<UserSettingB>(conf => {
 });
 ```
 
+For more details, please refer to the [Example.WebApi](./example/Example.WebApi/) project.
+
 ### Validation
 By default, validation using `DataAnnotations` is enabled.
 If validation fails, an `OptionsValidationException` is thrown and the settings are not saved.
@@ -707,38 +714,6 @@ conf.WithValidator<SampleSettingValidator>();
 ```
 
 For more details, please refer to the [Example.ConsoleApp.NativeAOT](./example/Example.ConsoleApp.NativeAot/) project.
-
-### YAML with NativeAOT
-The YAML provider (`YamlFormatProvider`) uses [VYaml](https://github.com/hadashiA/VYaml), which provides source-generated serializers. To use it in NativeAOT environments:
-
-1. Annotate your settings class with `[YamlObject]` (from `VYaml.Annotations`)
-2. Call the generated `__RegisterVYamlFormatter()` method at startup to ensure formatters are not trimmed
-3. Use `YamlFormatProvider` as usual
-
-```csharp
-using VYaml.Annotations;
-
-// 1. annotate with [YamlObject]
-[OptionsModel]
-[YamlObject]
-public partial class SampleSetting
-{
-    public string Name { get; set; } = "";
-    public DateTime LastUpdatedAt { get; set; }
-}
-
-// -----
-// 2. register VYaml formatter at startup (required for NativeAOT)
-SampleSetting.__RegisterVYamlFormatter();
-
-// 3. use YamlFormatProvider
-WritableOptions.Initialize<SampleSetting>(conf => {
-    conf.UseFile("./config/mysettings");
-    conf.FormatProvider = new YamlFormatProvider();
-});
-```
-
-For more details, please refer to the [Example.ConsoleApp.Yaml](./example/Example.ConsoleApp.Yaml/) project.
 
 ### InstanceName
 If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
