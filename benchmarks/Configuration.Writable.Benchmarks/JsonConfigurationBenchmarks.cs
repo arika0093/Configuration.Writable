@@ -341,7 +341,10 @@ internal sealed class ConfigurationWritableRunner
         _configurationType = configurationType;
     }
 
-    public static ConfigurationWritableRunner CreatePublishedPackage(string filePath, string sectionName) =>
+    public static ConfigurationWritableRunner CreatePublishedPackage(
+        string filePath,
+        string sectionName
+    ) =>
         Create(
             Path.Combine(AppContext.BaseDirectory, "Configuration.Writable.dll"),
             filePath,
@@ -350,7 +353,10 @@ internal sealed class ConfigurationWritableRunner
             null
         );
 
-    public static ConfigurationWritableRunner CreateLocalSource(string filePath, string sectionName) =>
+    public static ConfigurationWritableRunner CreateLocalSource(
+        string filePath,
+        string sectionName
+    ) =>
         Create(
             Path.Combine(AppContext.BaseDirectory, "local", "Configuration.Writable.dll"),
             filePath,
@@ -388,22 +394,20 @@ internal sealed class ConfigurationWritableRunner
     public async Task<long> SaveAsync<T>(T configuration)
         where T : class, new()
     {
-        var task = (Task)_saveAsync
-            .MakeGenericMethod(typeof(T))
-            .Invoke(
-                _formatProvider,
-                [configuration, _optionsConfiguration, CancellationToken.None]
-            )!;
+        var task = (Task)
+            _saveAsync
+                .MakeGenericMethod(typeof(T))
+                .Invoke(
+                    _formatProvider,
+                    [configuration, _optionsConfiguration, CancellationToken.None]
+                )!;
 
         await task.ConfigureAwait(false);
         return new FileInfo(_filePath).Length;
     }
 
     public object Load() =>
-        _loadConfiguration.Invoke(
-            _formatProvider,
-            [_configurationType, _optionsConfiguration]
-        )!;
+        _loadConfiguration.Invoke(_formatProvider, [_configurationType, _optionsConfiguration])!;
 
     private static ConfigurationWritableRunner Create(
         string assemblyPath,
@@ -435,9 +439,10 @@ internal sealed class ConfigurationWritableRunner
             "Configuration.Writable.Testing.WritableOptionsSimpleInstance`1",
             throwOnError: true
         )!;
-        var configurationType = sectionName.Length == 0
-            ? fullConfigurationType ?? typeof(BenchmarkConfiguration)
-            : typeof(BenchmarkSection);
+        var configurationType =
+            sectionName.Length == 0
+                ? fullConfigurationType ?? typeof(BenchmarkConfiguration)
+                : typeof(BenchmarkSection);
         var builderType = builderDefinition.MakeGenericType(configurationType);
         var instanceType = instanceDefinition.MakeGenericType(configurationType);
         var instance = Activator.CreateInstance(instanceType)!;
@@ -450,24 +455,29 @@ internal sealed class ConfigurationWritableRunner
         instanceType.GetMethod("Initialize", [configure.GetType()])!.Invoke(instance, [configure]);
 
         var options = instanceType.GetMethod("GetOptions")!.Invoke(instance, null)!;
-        var optionsConfiguration = options.GetType()
+        var optionsConfiguration = options
+            .GetType()
             .GetMethod("GetOptionsConfiguration", Type.EmptyTypes)!
             .Invoke(options, null)!;
-        var configuredFormatProvider = optionsConfiguration.GetType()
+        var configuredFormatProvider = optionsConfiguration
+            .GetType()
             .GetProperty("FormatProvider")!
             .GetValue(optionsConfiguration)!;
         var formatProviderType = configuredFormatProvider.GetType();
-        var saveAsync = formatProviderType.GetMethods()
-            .First(
-                method =>
-                    method.Name == "SaveAsync"
-                    && method.IsGenericMethodDefinition
-                    && method.GetGenericArguments().Length == 1
-                    && method.GetParameters().Length == 3
+        var saveAsync = formatProviderType
+            .GetMethods()
+            .First(method =>
+                method.Name == "SaveAsync"
+                && method.IsGenericMethodDefinition
+                && method.GetGenericArguments().Length == 1
+                && method.GetParameters().Length == 3
             );
         var loadConfiguration = formatProviderType.GetMethod(
             "LoadConfiguration",
-            [typeof(Type), coreAssembly.GetType("Configuration.Writable.IWritableOptionsConfiguration")!]
+            [
+                typeof(Type),
+                coreAssembly.GetType("Configuration.Writable.IWritableOptionsConfiguration")!,
+            ]
         )!;
 
         _ = writableAssembly;
@@ -520,7 +530,8 @@ internal sealed class ConfigurationWritableRunner
         return Expression.Lambda(actionType, Expression.Block(assignments), builder).Compile();
     }
 
-    private sealed class ImplementationLoadContext(string directory) : AssemblyLoadContext(isCollectible: false)
+    private sealed class ImplementationLoadContext(string directory)
+        : AssemblyLoadContext(isCollectible: false)
     {
         protected override Assembly? Load(AssemblyName assemblyName)
         {
@@ -560,16 +571,13 @@ public sealed partial class BenchmarkSection
             Name = $"section-with-{itemCount}-items",
             Items = Enumerable
                 .Range(0, itemCount)
-                .Select(
-                    index =>
-                        new BenchmarkItem
-                        {
-                            Id = index,
-                            Name = $"setting-{index:D4}",
-                            Value = $"value-{index:D4}-{new string('x', 48)}",
-                            Enabled = index % 2 == 0,
-                        }
-                )
+                .Select(index => new BenchmarkItem
+                {
+                    Id = index,
+                    Name = $"setting-{index:D4}",
+                    Value = $"value-{index:D4}-{new string('x', 48)}",
+                    Enabled = index % 2 == 0,
+                })
                 .ToList(),
         };
 }
@@ -689,7 +697,9 @@ internal static class ConfigurationChecksum
         configuration switch
         {
             BenchmarkConfiguration full => full.Version + full.Name.Length + full.Sections.Count,
-            ProviderBenchmarkConfiguration full => full.Version + full.Name.Length + full.Sections.Count,
+            ProviderBenchmarkConfiguration full => full.Version
+                + full.Name.Length
+                + full.Sections.Count,
             BenchmarkSection section => section.Name.Length + section.Items.Count,
             _ => throw new InvalidOperationException(
                 $"Unexpected configuration type '{configuration.GetType().FullName}'."

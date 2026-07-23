@@ -10,8 +10,16 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="*" />
     <PackageReference Include="Configuration.Writable" Version="*" Aliases="PublishedPackage" />
-    <PackageReference Include="Configuration.Writable.Xml" Version="*" Aliases="PublishedXmlPackage" />
-    <PackageReference Include="Configuration.Writable.Yaml" Version="*" Aliases="PublishedYamlPackage" />
+    <PackageReference
+      Include="Configuration.Writable.Xml"
+      Version="*"
+      Aliases="PublishedXmlPackage"
+    />
+    <PackageReference
+      Include="Configuration.Writable.Yaml"
+      Version="*"
+      Aliases="PublishedYamlPackage"
+    />
     <PackageReference Include="VYaml" Version="*" />
     <ProjectReference
       Include="../../src/Configuration.Writable/Configuration.Writable.csproj"
@@ -41,6 +49,10 @@
       <_LocalImplementation Include="../../src/Configuration.Writable.Xml/bin/$(Configuration)/$(TargetFramework)/*.dll" />
       <_LocalImplementation Include="../../src/Configuration.Writable.Yaml/bin/$(Configuration)/$(TargetFramework)/*.dll" />
     </ItemGroup>
-    <Copy SourceFiles="@(_LocalImplementation)" DestinationFolder="$(OutDir)local/" SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(_LocalImplementation)"
+      DestinationFolder="$(OutDir)local/"
+      SkipUnchangedFiles="true"
+    />
   </Target>
 </Project>

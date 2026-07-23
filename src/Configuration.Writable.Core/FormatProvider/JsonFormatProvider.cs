@@ -104,17 +104,20 @@ public class JsonFormatProvider : FormatProviderBase
         {
             return await JsonSerializer
                     .DeserializeAsync(stream, type, JsonSerializerOptions, cancellationToken)
-                    .ConfigureAwait(false) ?? Activator.CreateInstance(type)!;
+                    .ConfigureAwait(false)
+                ?? Activator.CreateInstance(type)!;
         }
 
         using var jsonDocument = await JsonDocument
             .ParseAsync(stream, default, cancellationToken)
             .ConfigureAwait(false);
-        if (!JsonWriterHelper.TryNavigateToSection(
+        if (
+            !JsonWriterHelper.TryNavigateToSection(
                 jsonDocument.RootElement,
                 sectionNameParts,
                 out var current
-            ))
+            )
+        )
         {
             return Activator.CreateInstance(type)!;
         }

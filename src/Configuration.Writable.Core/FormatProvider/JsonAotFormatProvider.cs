@@ -143,17 +143,20 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver) : For
         {
             return await JsonSerializer
                     .DeserializeAsync(stream, jsonTypeInfo, cancellationToken)
-                    .ConfigureAwait(false) ?? Activator.CreateInstance(type)!;
+                    .ConfigureAwait(false)
+                ?? Activator.CreateInstance(type)!;
         }
 
         using var jsonDocument = await JsonDocument
             .ParseAsync(stream, default, cancellationToken)
             .ConfigureAwait(false);
-        if (!JsonWriterHelper.TryNavigateToSection(
+        if (
+            !JsonWriterHelper.TryNavigateToSection(
                 jsonDocument.RootElement,
                 sectionNameParts,
                 out var current
-            ))
+            )
+        )
         {
             return Activator.CreateInstance(type)!;
         }
