@@ -72,4 +72,9 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// The migrations are applied in the order they are defined (e.g., V1 -> V2 -> V3).
     /// </summary>
     internal List<MigrationStep> MigrationSteps { get; init; } = [];
+
+    /// <summary>
+    /// Gets the migration lookups computed when these options were built.
+    /// </summary>
+    internal MigrationLookup? MigrationLookup { get; init; }
 }

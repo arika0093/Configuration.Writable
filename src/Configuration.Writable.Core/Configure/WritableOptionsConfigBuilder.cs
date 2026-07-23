@@ -245,6 +245,7 @@ public class WritableOptionsConfigBuilder<T>
         var fileProvider = FileProvider ?? new CommonFileProvider();
         var configFilePath = _saveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
+        var migrationSteps = new List<MigrationStep>(_migrationSteps);
         var sectionNamePart = SectionName
             .Split([":", "__"], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
@@ -264,7 +265,9 @@ public class WritableOptionsConfigBuilder<T>
             CloneMethod = _cloneMethod!,
             Logger = Logger,
             Validator = validator,
-            MigrationSteps = [.. _migrationSteps],
+            MigrationSteps = migrationSteps,
+            MigrationLookup =
+                migrationSteps.Count == 0 ? null : new MigrationLookup(typeof(T), migrationSteps),
         };
     }
 

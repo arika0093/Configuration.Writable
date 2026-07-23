@@ -94,9 +94,13 @@ public class OnChangeThrottleIntegrationTests : IDisposable
         // Wait for throttle period + buffer
         Thread.Sleep(700);
 
-        // Assert - Should have received significantly fewer changes than the number of writes
-        // due to throttling (exact count may vary due to timing, but should be <= 2)
+        // Assert - Debouncing coalesces rapid changes and delivers the final file contents.
         var changesAfterRapidWrites = changeCount - initialChangeCount;
         changesAfterRapidWrites.ShouldBeLessThanOrEqualTo(2);
+        lock (receivedValues)
+        {
+            receivedValues[^1].Name.ShouldBe("change5");
+            receivedValues[^1].Value.ShouldBe(5);
+        }
     }
 }

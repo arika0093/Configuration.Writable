@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipelines;
@@ -27,6 +28,7 @@ public class YamlFormatProvider : FormatProviderBase
             && m.GetParameters().Length == 2
             && m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
         );
+    private static readonly ConcurrentDictionary<Type, MethodInfo> DeserializeMethods = new();
 
     /// <summary>
     /// Gets or sets the serializer options used for serialization and deserialization.
@@ -49,36 +51,17 @@ public class YamlFormatProvider : FormatProviderBase
         CancellationToken cancellationToken = default
     )
     {
-        var stream = reader.AsStream(leaveOpen: false);
-#if NETSTANDARD2_0
-        using var streamReader = new StreamReader(stream, Encoding);
-#else
-        using var streamReader = new StreamReader(
-            stream,
-            Encoding,
-            detectEncodingFromByteOrderMarks: true,
-            leaveOpen: false
-        );
-#endif
-
-#if NET8_0_OR_GREATER
-        var yamlContent = await streamReader
-            .ReadToEndAsync(cancellationToken)
-            .ConfigureAwait(false);
-#else
-        var yamlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
-#endif
-
-        if (string.IsNullOrWhiteSpace(yamlContent))
+        using var stream = reader.AsStream(leaveOpen: false);
+        var yamlBytes = await ReadYamlBytesAsync(stream, cancellationToken).ConfigureAwait(false);
+        if (IsEmptyOrWhiteSpace(yamlBytes.Span))
         {
             return Activator.CreateInstance(type)!;
         }
 
-        string targetYamlContent = yamlContent;
+        var targetBytes = yamlBytes;
 
         if (sectionNameParts.Count > 0)
         {
-            var yamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(yamlContent);
             var data = YamlSerializer.Deserialize<Dictionary<string, object>>(
                 yamlBytes,
                 SerializerOptions
@@ -105,8 +88,7 @@ public class YamlFormatProvider : FormatProviderBase
                 else if (current is Dictionary<object, object> objDict)
                 {
                     // VYaml deserializes nested maps as Dictionary<object, object>
-                    var key = objDict.Keys.FirstOrDefault(k => k?.ToString() == section);
-                    if (key != null && objDict.TryGetValue(key, out var value))
+                    if (TryGetSectionValue(objDict, section, out var value))
                     {
                         current = value;
                     }
@@ -121,13 +103,15 @@ public class YamlFormatProvider : FormatProviderBase
                 }
             }
 
-            targetYamlContent = YamlSerializer.SerializeToString(current, SerializerOptions);
+            targetBytes = YamlSerializer.Serialize(current, SerializerOptions);
         }
 
         try
         {
-            var targetBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(targetYamlContent);
-            var genericMethod = DeserializeMethod.MakeGenericMethod(type);
+            var genericMethod = DeserializeMethods.GetOrAdd(
+                type,
+                static type => DeserializeMethod.MakeGenericMethod(type)
+            );
             var result = genericMethod.Invoke(
                 null,
                 new object[] { targetBytes, SerializerOptions }
@@ -140,6 +124,114 @@ public class YamlFormatProvider : FormatProviderBase
         }
     }
 
+    private static bool TryGetSectionValue(
+        Dictionary<object, object> dictionary,
+        string section,
+        out object? value
+    )
+    {
+        if (dictionary.TryGetValue(section, out value))
+        {
+            return true;
+        }
+
+        using var enumerator = dictionary.GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            var item = enumerator.Current;
+            if (
+                item.Key is not string
+                && string.Equals(item.Key?.ToString(), section, StringComparison.Ordinal)
+            )
+            {
+                value = item.Value;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
+    }
+
+    private async ValueTask<ReadOnlyMemory<byte>> ReadYamlBytesAsync(
+        Stream stream,
+        CancellationToken cancellationToken
+    )
+    {
+        if (Encoding.CodePage == Encoding.UTF8.CodePage)
+        {
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
+            var yamlBytes = buffer.ToArray();
+            if (!HasNonUtf8Bom(yamlBytes))
+            {
+                return yamlBytes;
+            }
+
+            using var encodedStream = new MemoryStream(yamlBytes, writable: false);
+            return await ReadEncodedYamlBytesAsync(encodedStream, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return await ReadEncodedYamlBytesAsync(stream, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async ValueTask<ReadOnlyMemory<byte>> ReadEncodedYamlBytesAsync(
+        Stream stream,
+        CancellationToken cancellationToken
+    )
+    {
+#if NETSTANDARD2_0
+        _ = cancellationToken;
+        using var streamReader = new StreamReader(stream, Encoding);
+#else
+        using var streamReader = new StreamReader(
+            stream,
+            Encoding,
+            detectEncodingFromByteOrderMarks: true,
+            leaveOpen: false
+        );
+#endif
+
+#if NET8_0_OR_GREATER
+        var yamlContent = await streamReader
+            .ReadToEndAsync(cancellationToken)
+            .ConfigureAwait(false);
+#else
+        var yamlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
+#endif
+        return Encoding.UTF8.GetBytes(yamlContent);
+    }
+
+    private static bool HasNonUtf8Bom(ReadOnlySpan<byte> yaml)
+    {
+        return yaml.Length >= 2
+            && (
+                (yaml[0] == 0xff && yaml[1] == 0xfe)
+                || (yaml[0] == 0xfe && yaml[1] == 0xff)
+                || (
+                    yaml.Length >= 4
+                    && yaml[0] == 0x00
+                    && yaml[1] == 0x00
+                    && yaml[2] == 0xfe
+                    && yaml[3] == 0xff
+                )
+            );
+    }
+
+    private static bool IsEmptyOrWhiteSpace(ReadOnlySpan<byte> yaml)
+    {
+        foreach (var value in yaml)
+        {
+            if (value is not ((byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n'))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /// <inheritdoc />
     public override async Task SaveAsync<T>(
         T config,
@@ -147,7 +239,8 @@ public class YamlFormatProvider : FormatProviderBase
         CancellationToken cancellationToken = default
     )
     {
-        var contents = GetSaveContents(config, options);
+        var contents = await GetSaveContentsAsync(config, options, cancellationToken)
+            .ConfigureAwait(false);
         await options
             .FileProvider.SaveToFileAsync(
                 options.ConfigFilePath,
@@ -161,7 +254,11 @@ public class YamlFormatProvider : FormatProviderBase
     /// <summary>
     /// Gets the save contents for the configuration.
     /// </summary>
-    private ReadOnlyMemory<byte> GetSaveContents<T>(T config, IWritableOptionsConfiguration options)
+    private ValueTask<ReadOnlyMemory<byte>> GetSaveContentsAsync<T>(
+        T config,
+        IWritableOptionsConfiguration options,
+        CancellationToken cancellationToken
+    )
         where T : class, new()
     {
         var sections = options.SectionNameParts;
@@ -169,23 +266,21 @@ public class YamlFormatProvider : FormatProviderBase
         if (sections.Count == 0)
         {
             // No section name, serialize directly (full file overwrite)
-            var yamlString = YamlSerializer.SerializeToString(config, SerializerOptions);
-            return Encoding.GetBytes(yamlString);
+            return new ValueTask<ReadOnlyMemory<byte>>(SerializeForFile(config));
         }
-        else
-        {
-            // Section specified - use partial write (merge with existing file)
-            return GetPartialSaveContents(config, options);
-        }
+
+        // Section specified - use partial write (merge with existing file)
+        return GetPartialSaveContentsAsync(config, options, cancellationToken);
     }
 
     /// <summary>
     /// Gets the save contents for partial write (when SectionName is specified).
     /// Reads existing file and merges the new configuration into the specified section.
     /// </summary>
-    private ReadOnlyMemory<byte> GetPartialSaveContents<T>(
+    private async ValueTask<ReadOnlyMemory<byte>> GetPartialSaveContentsAsync<T>(
         T config,
-        IWritableOptionsConfiguration options
+        IWritableOptionsConfiguration options,
+        CancellationToken cancellationToken
     )
         where T : class, new()
     {
@@ -199,12 +294,11 @@ public class YamlFormatProvider : FormatProviderBase
             if (pipeReader != null)
             {
                 using var stream = pipeReader.AsStream(leaveOpen: false);
-                using var reader = new StreamReader(stream, Encoding);
-                var yamlContent = reader.ReadToEnd();
+                var yamlBytes = await ReadYamlBytesAsync(stream, cancellationToken)
+                    .ConfigureAwait(false);
 
-                if (!string.IsNullOrWhiteSpace(yamlContent))
+                if (!IsEmptyOrWhiteSpace(yamlBytes.Span))
                 {
-                    var yamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(yamlContent);
                     existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
                         yamlBytes,
                         SerializerOptions
@@ -212,6 +306,10 @@ public class YamlFormatProvider : FormatProviderBase
                     options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
                 }
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -222,9 +320,8 @@ public class YamlFormatProvider : FormatProviderBase
         }
 
         // Serialize config to YAML then deserialize to dictionary
-        // This goes through YAML text to avoid type boxing issues (e.g. decimal)
-        var configYaml = YamlSerializer.SerializeToString(config, SerializerOptions);
-        var configYamlBytes = (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes(configYaml);
+        // This goes through YAML to avoid type boxing issues (e.g. decimal)
+        var configYamlBytes = YamlSerializer.Serialize(config, SerializerOptions);
         var configDict =
             YamlSerializer.Deserialize<Dictionary<string, object>>(
                 configYamlBytes,
@@ -256,11 +353,25 @@ public class YamlFormatProvider : FormatProviderBase
             MergeSection(resultDict, sections, 0, configDict);
         }
 
-        var yamlString = YamlSerializer.SerializeToString(resultDict, SerializerOptions);
-
         options.Logger?.ZLogTrace($"Partial YAML serialization completed successfully");
 
-        return Encoding.GetBytes(yamlString);
+        return SerializeForFile(resultDict);
+    }
+
+    private ReadOnlyMemory<byte> SerializeForFile<T>(T value)
+    {
+        var utf8Bytes = YamlSerializer.Serialize(value, SerializerOptions);
+        if (Encoding.CodePage == Encoding.UTF8.CodePage)
+        {
+            return utf8Bytes;
+        }
+
+#if NETSTANDARD2_0
+        var yaml = Encoding.UTF8.GetString(utf8Bytes.ToArray());
+#else
+        var yaml = Encoding.UTF8.GetString(utf8Bytes.Span);
+#endif
+        return Encoding.GetBytes(yaml);
     }
 
     /// <summary>

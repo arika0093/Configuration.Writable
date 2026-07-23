@@ -226,6 +226,41 @@ public class YamlPartialWriteTests
     }
 
     [Fact]
+    public async Task PartialWrite_WithNonUtf8Encoding_ShouldPreserveOtherSections()
+    {
+        const string testFileName = "utf16_partial.yaml";
+        const string initialContent = """
+            appSettings:
+              name: OldApp
+              version: 0
+            preserved:
+              value: Keep
+            """;
+        await _fileProvider.SaveToFileAsync(
+            testFileName,
+            Encoding.Unicode.GetBytes(initialContent)
+        );
+
+        var instance = new WritableOptionsSimpleInstance<AppSettings>();
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.SectionName = "appSettings";
+            options.FormatProvider = new YamlFormatProvider { Encoding = Encoding.Unicode };
+            options.UseInMemoryFileProvider(_fileProvider);
+        });
+
+        await instance
+            .GetOptions()
+            .SaveAsync(new AppSettings { Name = "UpdatedUtf16App", Version = 7 });
+
+        var resultContent = Encoding.Unicode.GetString(_fileProvider.ReadAllBytes(testFileName));
+        resultContent.ShouldContain("UpdatedUtf16App");
+        resultContent.ShouldContain("preserved:");
+        resultContent.ShouldContain("Keep");
+    }
+
+    [Fact]
     public async Task FullWrite_NoSectionName_ShouldWriteDirectly()
     {
         // Arrange - No existing file

@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Configuration.Writable.FormatProvider;
-using Microsoft.Extensions.Logging;
 using ZLogger;
 
 namespace Configuration.Writable.Migration;
@@ -24,8 +20,12 @@ internal static class MigrationLoaderExtension
     )
         where T : class, new()
     {
+        var migrationLookup = options.MigrationLookup;
+
         // If the target type is not versioned, simply load it directly.
-        var targetVersion = VersionCache.GetVersion(typeof(T));
+        var targetVersion = migrationLookup is null
+            ? VersionCache.GetVersion(typeof(T))
+            : migrationLookup.TargetVersion;
         if (targetVersion is null)
         {
             return (T)formatProvider.LoadConfiguration(typeof(T), options);
@@ -38,9 +38,7 @@ internal static class MigrationLoaderExtension
         // When the file has no declared version, check for a migration from an unversioned type.
         if (fileVersion is null)
         {
-            var fromNoneStep = options.MigrationSteps.FirstOrDefault(s =>
-                VersionCache.GetVersion(s.FromType) is null
-            );
+            var fromNoneStep = migrationLookup?.FromNoneStep;
 
             if (fromNoneStep is null)
             {
@@ -49,7 +47,12 @@ internal static class MigrationLoaderExtension
             }
 
             // Start from the unversioned type and apply the migration chain.
-            return ApplyMigrationChain<T>(formatProvider, options, fromNoneStep.FromType);
+            return ApplyMigrationChain<T>(
+                formatProvider,
+                options,
+                migrationLookup!,
+                fromNoneStep.FromType
+            );
         }
 
         // The file declares a version. If it already matches the target, load directly.
@@ -59,27 +62,23 @@ internal static class MigrationLoaderExtension
         }
 
         // Find the type matching the declared file version.
-        HashSet<Type> allTypes = [typeof(T)];
-        foreach (var step in options.MigrationSteps)
-        {
-            allTypes.Add(step.FromType);
-            allTypes.Add(step.ToType);
-        }
-
-        var currentType = allTypes.FirstOrDefault(t => VersionCache.GetVersion(t) == fileVersion);
-        if (currentType is null)
+        if (
+            migrationLookup is null
+            || !migrationLookup.TryGetType(fileVersion.Value, out var currentType)
+        )
         {
             throw new InvalidOperationException(
                 $"No type found matching version {fileVersion} in migration chain."
             );
         }
 
-        return ApplyMigrationChain<T>(formatProvider, options, currentType);
+        return ApplyMigrationChain<T>(formatProvider, options, migrationLookup, currentType);
     }
 
     private static T ApplyMigrationChain<T>(
         FormatProvider.IWritableFormatProvider formatProvider,
         WritableOptionsConfiguration<T> options,
+        MigrationLookup migrationLookup,
         Type startingType
     )
         where T : class, new()
@@ -89,8 +88,7 @@ internal static class MigrationLoaderExtension
 
         while (currentType != typeof(T))
         {
-            var migration = options.MigrationSteps.FirstOrDefault(m => m.FromType == currentType);
-            if (migration is null)
+            if (!migrationLookup.TryGetMigration(currentType, out var migration))
             {
                 throw new InvalidOperationException(
                     $"""
@@ -100,8 +98,8 @@ internal static class MigrationLoaderExtension
                 );
             }
 
-            var fromVersion = VersionCache.GetVersion(migration.FromType) ?? 0;
-            var toVersion = VersionCache.GetVersion(migration.ToType) ?? 0;
+            var fromVersion = migrationLookup.GetVersion(migration.FromType) ?? 0;
+            var toVersion = migrationLookup.GetVersion(migration.ToType) ?? 0;
 
             options.Logger?.ZLogInformation(
                 $"Applying migration from {migration.FromType.Name} (v{fromVersion}) to {migration.ToType.Name} (v{toVersion})"

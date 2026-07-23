@@ -66,7 +66,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             if (_dataSources.TryGetValue(instanceName, out var dataSource))
             {
-                dataSource.Listeners.Add(listener);
+                dataSource.AddListener(listener);
             }
         }
         return new ChangeTrackerDisposable(this, listener);
@@ -254,15 +254,13 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
 
-        // if enabled throttle, check current status
         if (
             options.OnChangeThrottle > TimeSpan.Zero
-            && HandleThrottle(instanceName, options.OnChangeThrottle)
+            && !DebounceReload(instanceName, options.OnChangeThrottle)
         )
         {
-            // Still in throttle period, ignore this change
             options.Logger?.ZLogDebug(
-                $"Configuration file change detected but ignored due to throttle: {fileName} ({args.ChangeType})"
+                $"Configuration file change detected and queued for debounce: {fileName} ({args.ChangeType})"
             );
             return;
         }
@@ -271,7 +269,62 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             $"Configuration file change detected: {fileName} ({args.ChangeType})"
         );
 
-        // Reload and notify listeners with retry logic for file access conflicts
+        ReloadAndNotify(instanceName);
+    }
+
+    // Delays reload until changes have stopped for the configured duration.
+    private bool DebounceReload(string instanceName, TimeSpan debounceDuration)
+    {
+        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            return false;
+        }
+
+        lock (_throttleTimersLock)
+        {
+            if (dataSource.ThrottleTimer == null)
+            {
+                dataSource.ThrottleTimer = new Timer(
+                    _ => OnDebounceTimerElapsed(instanceName),
+                    null,
+                    Timeout.Infinite,
+                    Timeout.Infinite
+                );
+                dataSource.HasPendingDebouncedChange = false;
+                dataSource.ThrottleTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
+                return true;
+            }
+
+            dataSource.HasPendingDebouncedChange = true;
+            dataSource.ThrottleTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
+            return false;
+        }
+    }
+
+    private void OnDebounceTimerElapsed(string instanceName)
+    {
+        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            return;
+        }
+
+        lock (_throttleTimersLock)
+        {
+            dataSource.ThrottleTimer?.Dispose();
+            dataSource.ThrottleTimer = null;
+            if (!dataSource.HasPendingDebouncedChange)
+            {
+                return;
+            }
+            dataSource.HasPendingDebouncedChange = false;
+        }
+
+        ReloadAndNotify(instanceName);
+    }
+
+    // Reloads configuration and notifies listeners with retry logic for file access conflicts.
+    private void ReloadAndNotify(string instanceName)
+    {
         try
         {
             var newValue = LoadConfigurationWithRetry(instanceName);
@@ -292,47 +345,6 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                     // If reload fails, keep the old cached value
                 }
             }
-        }
-    }
-
-    // Checks if the throttle timer is active for the given instance name
-    private bool HandleThrottle(string instanceName, TimeSpan throttleDuration)
-    {
-        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
-        {
-            return false;
-        }
-
-        lock (_throttleTimersLock)
-        {
-            if (dataSource.ThrottleTimer != null)
-            {
-                // Timer is active, so we are in throttle period
-                return true;
-            }
-            // Set a timer that will disable itself after the specified time has elapsed
-            var newTimer = new Timer(
-                _ =>
-                {
-                    // Dispose and remove the timer after throttle period
-                    lock (_throttleTimersLock)
-                    {
-                        if (
-                            _dataSources.TryGetValue(instanceName, out var ds)
-                            && ds.ThrottleTimer != null
-                        )
-                        {
-                            ds.ThrottleTimer.Dispose();
-                            ds.ThrottleTimer = null;
-                        }
-                    }
-                },
-                null,
-                (int)throttleDuration.TotalMilliseconds,
-                Timeout.Infinite
-            );
-            dataSource.ThrottleTimer = newTimer;
-            return false;
         }
     }
 
@@ -360,7 +372,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
-            foreach (var listener in dataSource.Listeners)
+            foreach (var listener in dataSource.GetListenersSnapshot())
             {
                 listener(value, instanceName);
             }
@@ -385,17 +397,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             if (_disposed)
                 return;
 
-            _monitor._semaphore.Wait();
-            try
+            foreach (var dataSource in _monitor._dataSources.Values)
             {
-                foreach (var dataSource in _monitor._dataSources.Values)
-                {
-                    dataSource.Listeners.Remove(_listener);
-                }
-            }
-            finally
-            {
-                _monitor._semaphore.Release();
+                dataSource.RemoveListener(_listener);
             }
 
             _disposed = true;
@@ -408,13 +412,39 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public T Cache { get; set; }
         public T DefaultValue { get; set; }
         public List<Action<T, string?>> Listeners { get; } = [];
+        private object ListenersLock { get; } = new();
         public FileSystemWatcher? Watcher { get; set; }
         public Timer? ThrottleTimer { get; set; }
+        public bool HasPendingDebouncedChange { get; set; }
 
         public OptionsMonitorDataSource(T cache, T defaultValue)
         {
             Cache = cache;
             DefaultValue = defaultValue;
+        }
+
+        public void AddListener(Action<T, string?> listener)
+        {
+            lock (ListenersLock)
+            {
+                Listeners.Add(listener);
+            }
+        }
+
+        public void RemoveListener(Action<T, string?> listener)
+        {
+            lock (ListenersLock)
+            {
+                Listeners.Remove(listener);
+            }
+        }
+
+        public Action<T, string?>[] GetListenersSnapshot()
+        {
+            lock (ListenersLock)
+            {
+                return [.. Listeners];
+            }
         }
 
         public void Dispose()

@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
@@ -93,6 +94,77 @@ public class YamlFormatProviderTests
         loadedSettings.Items.ShouldBe(["yaml_persist1", "yaml_persist2"]);
         loadedSettings.Nested.Description.ShouldBe("nested_persist");
         loadedSettings.Nested.Price.ShouldBe(123.45);
+    }
+
+    [Fact]
+    public async Task LoadAndSave_WithNonUtf8Encoding_ShouldPreserveData()
+    {
+        const string testFileName = "utf16_config.yaml";
+        var provider = new YamlFormatProvider { Encoding = Encoding.Unicode };
+        var instance = new WritableOptionsSimpleInstance<TestSettings>();
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.FormatProvider = provider;
+            options.UseInMemoryFileProvider(_FileProvider);
+        });
+
+        var option = instance.GetOptions();
+        await option.SaveAsync(
+            new TestSettings
+            {
+                Name = "utf16_yaml",
+                Value = 321,
+                Nested = new NestedSettings { Description = "encoded", Price = 12.5 },
+            }
+        );
+
+        var fileContent = Encoding.Unicode.GetString(_FileProvider.ReadAllBytes(testFileName));
+        fileContent.ShouldContain("utf16_yaml");
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.FormatProvider = provider;
+            options.UseInMemoryFileProvider(_FileProvider);
+        });
+
+        var loadedSettings = instance.GetOptions().CurrentValue;
+        loadedSettings.Name.ShouldBe("utf16_yaml");
+        loadedSettings.Value.ShouldBe(321);
+        loadedSettings.Nested.Description.ShouldBe("encoded");
+        loadedSettings.Nested.Price.ShouldBe(12.5);
+    }
+
+    [Fact]
+    public async Task Load_WithDefaultEncoding_ShouldHonorUtf16ByteOrderMark()
+    {
+        const string testFileName = "utf16_bom_config.yaml";
+        const string yaml = """
+            name: bom_yaml
+            value: 654
+            isEnabled: true
+            """;
+        var preamble = Encoding.Unicode.GetPreamble();
+        var content = Encoding.Unicode.GetBytes(yaml);
+        var bytes = new byte[preamble.Length + content.Length];
+        preamble.CopyTo(bytes, 0);
+        content.CopyTo(bytes, preamble.Length);
+        await _FileProvider.SaveToFileAsync(testFileName, bytes);
+
+        var instance = new WritableOptionsSimpleInstance<TestSettings>();
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.FormatProvider = new YamlFormatProvider();
+            options.UseInMemoryFileProvider(_FileProvider);
+        });
+
+        var loadedSettings = instance.GetOptions().CurrentValue;
+        loadedSettings.Name.ShouldBe("bom_yaml");
+        loadedSettings.Value.ShouldBe(654);
+        loadedSettings.IsEnabled.ShouldBeTrue();
     }
 
     [Fact]

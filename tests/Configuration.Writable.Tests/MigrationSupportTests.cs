@@ -95,6 +95,35 @@ public class MigrationSupportTests
     }
 
     [Fact]
+    public void BuildOptions_ShouldCacheMigrationLookups()
+    {
+        // Arrange
+        var builder = new WritableOptionsConfigBuilder<MySettingsV2>();
+        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV1>(v0 => new MySettingsV1
+        {
+            Name = v0.Name,
+        });
+        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
+        {
+            Names = [v1.Name],
+        });
+
+        // Act
+        var options = builder.BuildOptions("");
+
+        // Assert
+        options.MigrationLookup.ShouldNotBeNull();
+        var lookup = options.MigrationLookup;
+        lookup.TargetVersion.ShouldBe(2);
+        lookup.FromNoneStep.ShouldNotBeNull();
+        lookup.FromNoneStep.FromType.ShouldBe(typeof(SettingsWithoutVersion));
+        lookup.TryGetType(1, out var versionOneType).ShouldBeTrue();
+        versionOneType.ShouldBe(typeof(MySettingsV1));
+        lookup.TryGetMigration(typeof(MySettingsV1), out var migration).ShouldBeTrue();
+        migration.ToType.ShouldBe(typeof(MySettingsV2));
+    }
+
+    [Fact]
     public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenVersionMatches()
     {
         // Arrange
