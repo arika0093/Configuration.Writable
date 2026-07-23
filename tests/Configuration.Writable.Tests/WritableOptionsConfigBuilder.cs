@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Configuration.Writable.Configure;
 
@@ -36,6 +37,14 @@ public class WritableOptionsConfigBuilderTests
         var options = new WritableOptionsConfigBuilder<TestSettings>();
 
         options.SectionName.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void UseDataAnnotationsValidation_WithDefaultSettings_ShouldMatchDynamicCodeSupport()
+    {
+        var options = new WritableOptionsConfigBuilder<TestSettings>();
+
+        options.UseDataAnnotationsValidation.ShouldBe(RuntimeFeature.IsDynamicCodeSupported);
     }
 
     [Fact]

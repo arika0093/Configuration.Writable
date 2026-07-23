@@ -18,9 +18,8 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     // JsonAotFormatProvider is the recommended provider for NativeAOT scenarios
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 
-    // If use DataAnnotation validation with Source Generators,
-    // see SampleSettingValidator class in this project and comment out below code.
-    conf.UseDataAnnotationsValidation = false;
+    // use a custom validator to validate the config instance before saving
+    // (built-in DataAnnotations validation is disabled when building for NativeAOT)
     conf.WithValidator<SampleSettingValidator>();
 });
 

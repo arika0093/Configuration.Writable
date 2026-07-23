@@ -14,7 +14,6 @@ builder.Services.AddWritableOptions<SampleSetting>(conf =>
     conf.UseFile("appsettings.json");
     conf.SectionName = "MySetting";
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
-    conf.UseDataAnnotationsValidation = false;
     conf.WithValidator<SampleSettingValidator>();
 });
 

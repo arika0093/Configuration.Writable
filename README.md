@@ -690,10 +690,11 @@ builder.Services.AddWritableOptions<UserSettingV2>(conf => {
 
 ## Advanced Usage
 ### Support NativeAOT
-With a few settings, you can use this library in NativeAOT environments. The following three steps are required:
+With a few settings, you can use this library in NativeAOT environments. The following two steps are required:
 1. Prepare a `JsonSerializerContext` and `OptionsValidator`
 2. Use `JsonAotFormatProvider` instead of `JsonFormatProvider`
-3. Disable the built-in validation and use a Source Generator-based validator
+
+DataAnnotations validation is disabled automatically in NativeAOT. Use a source-generator-based validator when validation is required.
 
 ```csharp
 // 1. prepare JsonSerializerContext and OptionsValidator
@@ -708,8 +709,8 @@ public partial class SampleSettingValidator : IValidateOptions<SampleSetting>;
 // 2. use JsonAotFormatProvider
 conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 
-// 3. disable built-in validation and use source-generator-based validator
-conf.UseDataAnnotationsValidation = false;
+// DataAnnotations validation is disabled automatically in NativeAOT.
+// Use a source-generator-based validator when validation is required.
 conf.WithValidator<SampleSettingValidator>();
 ```
 

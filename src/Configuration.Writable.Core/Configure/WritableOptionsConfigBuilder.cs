@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+#if NET
+using System.Runtime.CompilerServices;
+#endif
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.Abstractions;
@@ -27,7 +30,7 @@ public class WritableOptionsConfigBuilder<T>
         "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
 
     private const string AotAnnotationsReason =
-        "Data Annotations validation may not be compatible with NativeAOT. You can disable it by setting UseDataAnnotationsValidation to false.";
+        "Data Annotations validation is disabled by default when dynamic code is not supported.";
 #endif
 
     private const string DefaultSectionName = "";
@@ -75,10 +78,16 @@ public class WritableOptionsConfigBuilder<T>
     public bool RegisterAsSingleton { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets a value indicating whether validation using data annotation attributes is enabled. Defaults to true. <br/>
+    /// Gets or sets a value indicating whether validation using data annotation attributes is enabled.
+    /// Defaults to true when dynamic code is supported; otherwise false, including NativeAOT. <br/>
     /// If you want to use Source-Generator based validation or custom validation only, set this to false.
     /// </summary>
-    public bool UseDataAnnotationsValidation { get; set; } = true;
+    public bool UseDataAnnotationsValidation { get; set; } =
+#if NET
+        RuntimeFeature.IsDynamicCodeSupported;
+#else
+        true;
+#endif
 
     /// <summary>
     /// Gets or sets the logger for configuration operations. Defaults to null. <br/>
