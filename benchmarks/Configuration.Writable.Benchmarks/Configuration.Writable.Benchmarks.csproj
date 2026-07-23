@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="Configuration.Writable" Version="0.5.0" Aliases="PublishedPackage" />
+    <PackageReference Include="Configuration.Writable.Xml" Version="0.5.0" Aliases="PublishedXmlPackage" />
+    <PackageReference Include="Configuration.Writable.Yaml" Version="0.5.0" Aliases="PublishedYamlPackage" />
+    <PackageReference Include="VYaml" Version="1.4.0" />
+    <ProjectReference
+      Include="../../src/Configuration.Writable/Configuration.Writable.csproj"
+      ReferenceOutputAssembly="false"
+    />
+    <ProjectReference
+      Include="../../src/Configuration.Writable.Xml/Configuration.Writable.Xml.csproj"
+      ReferenceOutputAssembly="false"
+    />
+    <ProjectReference
+      Include="../../src/Configuration.Writable.Yaml/Configuration.Writable.Yaml.csproj"
+      ReferenceOutputAssembly="false"
+    />
+  </ItemGroup>
+
+  <Target Name="CopyLocalConfigurationWritable" AfterTargets="Build">
+    <MSBuild
+      Projects="
+        ../../src/Configuration.Writable/Configuration.Writable.csproj;
+        ../../src/Configuration.Writable.Xml/Configuration.Writable.Xml.csproj;
+        ../../src/Configuration.Writable.Yaml/Configuration.Writable.Yaml.csproj"
+      Targets="Build"
+      Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)"
+    />
+    <ItemGroup>
+      <_LocalImplementation Include="../../src/Configuration.Writable/bin/$(Configuration)/$(TargetFramework)/*.dll" />
+      <_LocalImplementation Include="../../src/Configuration.Writable.Xml/bin/$(Configuration)/$(TargetFramework)/*.dll" />
+      <_LocalImplementation Include="../../src/Configuration.Writable.Yaml/bin/$(Configuration)/$(TargetFramework)/*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_LocalImplementation)" DestinationFolder="$(OutDir)local/" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

@@ -12,3 +12,5 @@ tests/**/*.received.txt
 tests/**/*.approved.txt.bak
 # Log report file
 .trx
+# BenchmarkDotNet Artifacts
+BenchmarkDotNet.Artifacts/

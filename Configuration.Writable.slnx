@@ -20,6 +20,9 @@
     <Project Path="src/Configuration.Writable.Xml/Configuration.Writable.Xml.csproj" />
     <Project Path="src/Configuration.Writable.Yaml/Configuration.Writable.Yaml.csproj" />
   </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Configuration.Writable.Benchmarks/Configuration.Writable.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <File Path="tests/Directory.Build.props" />
     <Project Path="tests/Configuration.Writable.Tests.PublicApi/Configuration.Writable.Tests.PublicApi.csproj" />
