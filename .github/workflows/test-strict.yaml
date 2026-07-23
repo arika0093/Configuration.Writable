@@ -1,6 +1,7 @@
 name: .NET Build and Test (More Platforms)
 
 on:
+  workflow_call:
   workflow_dispatch:
   push:
     branches:
