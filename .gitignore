@@ -11,6 +11,6 @@ riderModule.iml
 tests/**/*.received.txt
 tests/**/*.approved.txt.bak
 # Log report file
-.trx
+*.trx
 # BenchmarkDotNet Artifacts
 BenchmarkDotNet.Artifacts/
