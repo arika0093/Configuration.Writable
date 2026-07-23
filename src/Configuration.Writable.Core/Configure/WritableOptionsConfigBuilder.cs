@@ -16,7 +16,6 @@ using Microsoft.Extensions.Options;
 using System.Runtime.CompilerServices;
 #endif
 
-
 namespace Configuration.Writable.Configure;
 
 /// <summary>
