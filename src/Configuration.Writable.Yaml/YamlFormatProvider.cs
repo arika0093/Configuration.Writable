@@ -51,76 +51,78 @@ public class YamlFormatProvider : FormatProviderBase
         CancellationToken cancellationToken = default
     )
     {
-        using var stream = reader.AsStream(leaveOpen: false);
-        var yamlBytes = await ReadYamlBytesAsync(stream, cancellationToken).ConfigureAwait(false);
-        if (IsEmptyOrWhiteSpace(yamlBytes.Span))
+        try
         {
-            return Activator.CreateInstance(type)!;
-        }
-
-        var targetBytes = yamlBytes;
-
-        if (sectionNameParts.Count > 0)
-        {
-            var data = YamlSerializer.Deserialize<Dictionary<string, object>>(
-                yamlBytes,
-                SerializerOptions
-            );
-            if (data == null)
+            using var stream = reader.AsStream(leaveOpen: false);
+            var yamlBytes = await ReadYamlBytesAsync(stream, cancellationToken)
+                .ConfigureAwait(false);
+            if (IsEmptyOrWhiteSpace(yamlBytes.Span))
             {
                 return Activator.CreateInstance(type)!;
             }
 
-            object? current = data;
-            foreach (var section in sectionNameParts)
+            var targetBytes = yamlBytes;
+
+            if (sectionNameParts.Count > 0)
             {
-                if (current is Dictionary<string, object> dict)
-                {
-                    if (dict.TryGetValue(section, out var value))
-                    {
-                        current = value;
-                    }
-                    else
-                    {
-                        return Activator.CreateInstance(type)!;
-                    }
-                }
-                else if (current is Dictionary<object, object> objDict)
-                {
-                    // VYaml deserializes nested maps as Dictionary<object, object>
-                    if (TryGetSectionValue(objDict, section, out var value))
-                    {
-                        current = value;
-                    }
-                    else
-                    {
-                        return Activator.CreateInstance(type)!;
-                    }
-                }
-                else
+                var data = YamlSerializer.Deserialize<Dictionary<string, object>>(
+                    yamlBytes,
+                    SerializerOptions
+                );
+                if (data == null)
                 {
                     return Activator.CreateInstance(type)!;
                 }
+
+                object? current = data;
+                foreach (var section in sectionNameParts)
+                {
+                    if (current is Dictionary<string, object> dict)
+                    {
+                        if (dict.TryGetValue(section, out var value))
+                        {
+                            current = value;
+                        }
+                        else
+                        {
+                            return Activator.CreateInstance(type)!;
+                        }
+                    }
+                    else if (current is Dictionary<object, object> objDict)
+                    {
+                        // VYaml deserializes nested maps as Dictionary<object, object>
+                        if (TryGetSectionValue(objDict, section, out var value))
+                        {
+                            current = value;
+                        }
+                        else
+                        {
+                            return Activator.CreateInstance(type)!;
+                        }
+                    }
+                    else
+                    {
+                        return Activator.CreateInstance(type)!;
+                    }
+                }
+
+                targetBytes = YamlSerializer.Serialize(current, SerializerOptions);
             }
 
-            targetBytes = YamlSerializer.Serialize(current, SerializerOptions);
-        }
-
-        try
-        {
             var genericMethod = DeserializeMethods.GetOrAdd(
                 type,
                 static type => DeserializeMethod.MakeGenericMethod(type)
             );
-            var result = genericMethod.Invoke(
-                null,
-                new object[] { targetBytes, SerializerOptions }
-            );
+            var result = genericMethod.Invoke(null, new object[] { targetBytes, SerializerOptions });
             return result ?? Activator.CreateInstance(type)!;
         }
-        catch
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            return Activator.CreateInstance(type)!;
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new FormatException("Failed to deserialize YAML configuration.", ex);
         }
     }
 
@@ -287,36 +289,23 @@ public class YamlFormatProvider : FormatProviderBase
         var sections = options.SectionNameParts;
         Dictionary<string, object>? existingDict = null;
 
-        // Try to read existing file using PipeReader
-        try
+        // A malformed existing file must never be replaced with a new partial document.
+        // Propagating the parse error preserves the original file for recovery.
+        var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+        if (pipeReader != null)
         {
-            var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
-            if (pipeReader != null)
-            {
-                using var stream = pipeReader.AsStream(leaveOpen: false);
-                var yamlBytes = await ReadYamlBytesAsync(stream, cancellationToken)
-                    .ConfigureAwait(false);
+            using var stream = pipeReader.AsStream(leaveOpen: false);
+            var yamlBytes = await ReadYamlBytesAsync(stream, cancellationToken)
+                .ConfigureAwait(false);
 
-                if (!IsEmptyOrWhiteSpace(yamlBytes.Span))
-                {
-                    existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
-                        yamlBytes,
-                        SerializerOptions
-                    );
-                    options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
-                }
+            if (!IsEmptyOrWhiteSpace(yamlBytes.Span))
+            {
+                existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
+                    yamlBytes,
+                    SerializerOptions
+                );
+                options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
             }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            options.Logger?.ZLogWarning(
-                ex,
-                $"Failed to parse existing YAML file, will create new file structure"
-            );
         }
 
         // Serialize config to YAML then deserialize to dictionary

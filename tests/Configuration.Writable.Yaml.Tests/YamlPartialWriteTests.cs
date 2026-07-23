@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using VYaml.Serialization;
@@ -174,6 +176,33 @@ public class YamlPartialWriteTests
         appSettings.ShouldNotBeNull();
         appSettings["name"].ShouldBe("BrandNewApp");
         appSettings["version"].ToString().ShouldBe("1");
+    }
+
+    [Fact]
+    public async Task PartialWrite_WithMalformedExistingFile_ShouldNotOverwriteIt()
+    {
+        const string testFileName = "malformed-partial.yaml";
+        const string malformedContent = "appSettings: [unterminated";
+        await _fileProvider.SaveToFileAsync(
+            testFileName,
+            Encoding.UTF8.GetBytes(malformedContent)
+        );
+
+        var provider = new YamlFormatProvider();
+        var builder = new WritableOptionsConfigBuilder<AppSettings>
+        {
+            FilePath = testFileName,
+            SectionName = "appSettings",
+            FormatProvider = provider,
+            FileProvider = _fileProvider,
+        };
+        var options = builder.BuildOptions("");
+
+        await Should.ThrowAsync<Exception>(() =>
+            provider.SaveAsync(new AppSettings { Name = "MustNotBeWritten", Version = 1 }, options)
+        );
+
+        _fileProvider.ReadAllText(testFileName).ShouldBe(malformedContent);
     }
 
     [Fact]

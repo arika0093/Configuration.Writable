@@ -1,4 +1,5 @@
-﻿using System.IO;
+using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
@@ -165,6 +166,28 @@ public class YamlFormatProviderTests
         loadedSettings.Name.ShouldBe("bom_yaml");
         loadedSettings.Value.ShouldBe(654);
         loadedSettings.IsEnabled.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetOptions_WithMalformedYaml_ShouldThrowInsteadOfReturningDefaults()
+    {
+        const string testFileName = "malformed.yaml";
+        const string malformedContent = "name: [unterminated";
+        await _FileProvider.SaveToFileAsync(
+            testFileName,
+            Encoding.UTF8.GetBytes(malformedContent)
+        );
+
+        var instance = new WritableOptionsSimpleInstance<TestSettings>();
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.FormatProvider = new YamlFormatProvider();
+            options.UseInMemoryFileProvider(_FileProvider);
+        });
+
+        Should.Throw<FormatException>(() => instance.GetOptions());
+        _FileProvider.ReadAllText(testFileName).ShouldBe(malformedContent);
     }
 
     [Fact]

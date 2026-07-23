@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
@@ -225,6 +226,32 @@ public class OptionsMonitorImplTests
 
         // Assert
         changeCount.ShouldBe(0);
+    }
+
+    [Fact]
+    public void OnChange_RegisteredBeforeDynamicInstance_AddsListenerToNewInstance()
+    {
+        var fileProvider = new InMemoryFileProvider();
+        var initialOptions = CreateConfigOptions("initial.json", "initial", fileProvider);
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([initialOptions]);
+        var monitor = new OptionsMonitorImpl<TestSettings>(registry);
+        string? notifiedInstance = null;
+
+        monitor.OnChange((_, instanceName) => notifiedInstance = instanceName);
+        registry.TryAdd(
+            "added",
+            options =>
+            {
+                options.FilePath = "added.json";
+                options.UseInMemoryFileProvider(fileProvider);
+            }
+        );
+
+        typeof(OptionsMonitorImpl<TestSettings>)
+            .GetMethod("NotifyListeners", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(monitor, ["added", new TestSettings()]);
+
+        notifiedInstance.ShouldBe("added");
     }
 
     [Fact]

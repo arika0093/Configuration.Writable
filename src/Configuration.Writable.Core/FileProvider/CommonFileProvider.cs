@@ -15,7 +15,7 @@ namespace Configuration.Writable.FileProvider;
 /// <summary>
 /// Provides functionality to write data to a file, ensuring thread safety and data integrity.
 /// </summary>
-public class CommonFileProvider : IWritableFileProvider, IDisposable
+public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -231,6 +231,8 @@ public class CommonFileProvider : IWritableFileProvider, IDisposable
         var normalizedPath = Path.GetFullPath(path);
         return File.Exists(normalizedPath);
     }
+
+    string IPhysicalFileProvider.GetPhysicalFilePath(string path) => Path.GetFullPath(path);
 
     /// <inheritdoc />
     public virtual PipeReader? GetFilePipeReader(string path)

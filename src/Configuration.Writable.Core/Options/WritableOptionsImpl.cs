@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
+using Configuration.Writable.Diagnostics;
 using Microsoft.Extensions.Logging;
 using ZLogger;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -137,51 +139,62 @@ internal sealed class WritableOptionsImpl<T>(
         CancellationToken cancellationToken = default
     )
     {
-        // Validate configuration if a validator is provided
-        if (options.Validator != null)
+        var stopwatch = Stopwatch.StartNew();
+        try
         {
-            var validationResult = options.Validator(newConfig);
-            if (validationResult.Failed)
+            // Validate configuration if a validator is provided
+            if (options.Validator != null)
             {
-                throw new Microsoft.Extensions.Options.OptionsValidationException(
-                    options.InstanceName,
-                    typeof(T),
-                    validationResult.Failures
-                );
+                var validationResult = options.Validator(newConfig);
+                if (validationResult.Failed)
+                {
+                    throw new Microsoft.Extensions.Options.OptionsValidationException(
+                        options.InstanceName,
+                        typeof(T),
+                        validationResult.Failures
+                    );
+                }
             }
-        }
 
-        if (options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict)
+            if (options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict)
+            {
+                var expectedFingerprint = optionMonitorInstance.GetFingerprint(options.InstanceName);
+                var currentFingerprint = ConfigurationFileFingerprint.Capture(options);
+                if (
+                    expectedFingerprint != null
+                    && currentFingerprint != null
+                    && !expectedFingerprint.Equals(currentFingerprint)
+                )
+                {
+                    ConfigurationWritableEventSource.Log.ConflictDetected();
+                    throw new ConfigurationConflictException(options.ConfigFilePath);
+                }
+            }
+
+            options.Logger?.ZLogDebug($"Saving configuration to {options.ConfigFilePath}");
+
+            // Save to file
+            await options
+                .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
+                .ConfigureAwait(false);
+
+            // Update the monitor's cache (FileSystemWatcher will notify listeners)
+            var publishedConfig = options.CloneMethod(newConfig);
+            optionMonitorInstance.UpdateCache(
+                options.InstanceName,
+                publishedConfig,
+                ConfigurationFileFingerprint.Capture(options)
+            );
+
+            var fileName = Path.GetFileName(options.ConfigFilePath);
+            options.Logger?.ZLogInformation($"Configuration saved successfully to {fileName}");
+            ConfigurationWritableEventSource.Log.SaveSucceeded(stopwatch.Elapsed.TotalMilliseconds);
+        }
+        catch
         {
-            var expectedFingerprint = optionMonitorInstance.GetFingerprint(options.InstanceName);
-            var currentFingerprint = ConfigurationFileFingerprint.Capture(options);
-            if (
-                expectedFingerprint != null
-                && currentFingerprint != null
-                && !expectedFingerprint.Equals(currentFingerprint)
-            )
-            {
-                throw new ConfigurationConflictException(options.ConfigFilePath);
-            }
+            ConfigurationWritableEventSource.Log.SaveFailed();
+            throw;
         }
-
-        options.Logger?.ZLogDebug($"Saving configuration to {options.ConfigFilePath}");
-
-        // Save to file
-        await options
-            .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
-            .ConfigureAwait(false);
-
-        // Update the monitor's cache (FileSystemWatcher will notify listeners)
-        var publishedConfig = options.CloneMethod(newConfig);
-        optionMonitorInstance.UpdateCache(
-            options.InstanceName,
-            publishedConfig,
-            ConfigurationFileFingerprint.Capture(options)
-        );
-
-        var fileName = Path.GetFileName(options.ConfigFilePath);
-        options.Logger?.ZLogInformation($"Configuration saved successfully to {fileName}");
     }
 
     /// <summary>

@@ -12,7 +12,7 @@ namespace Configuration.Writable.FileProvider;
 /// <summary>
 /// Provides functionality to write data to a zip file. support multiple file entries.
 /// </summary>
-public class ZipFileProvider : IWritableFileProvider, IDisposable
+public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -146,6 +146,9 @@ public class ZipFileProvider : IWritableFileProvider, IDisposable
         try
         {
             var zipPath = GetZipFilePath(path);
+            using var archiveLock = await Configuration.Writable.AsyncFileSaveLock
+                .AcquireAsync(zipPath, cancellationToken)
+                .ConfigureAwait(false);
 
             // Ensure the directory exists
             var directory = Path.GetDirectoryName(zipPath);
@@ -166,6 +169,8 @@ public class ZipFileProvider : IWritableFileProvider, IDisposable
                         cancellationToken
                     )
                     .ConfigureAwait(false);
+
+                cancellationToken.ThrowIfCancellationRequested();
 
                 if (File.Exists(zipPath))
                 {
@@ -269,6 +274,9 @@ public class ZipFileProvider : IWritableFileProvider, IDisposable
         var directory = Path.GetDirectoryName(originalPath) ?? string.Empty;
         return Path.Combine(directory, ZipFileName);
     }
+
+    string IPhysicalFileProvider.GetPhysicalFilePath(string path) =>
+        Path.GetFullPath(GetZipFilePath(path));
 
     // Gets the path of the zip file for the given original file path.
     private string GetZipInnerEntryPath(string originalPath)

@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using Configuration.Writable.Diagnostics;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,6 +23,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly IWritableOptionsConfigRegistry<T> _optionsRegistry;
     private readonly ConcurrentDictionary<string, OptionsMonitorDataSource> _dataSources = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly object _listenersLock = new();
+    private readonly List<Action<T, string?>> _listeners = [];
+    private readonly List<Action<Exception, string?>> _failureListeners = [];
+    private static readonly TimeSpan MaxWatcherRecoveryDelay = TimeSpan.FromSeconds(30);
 #if NET9_0_OR_GREATER
     private readonly Lock _debounceTimersLock = new();
 #else
@@ -62,9 +68,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener)
     {
-        foreach (var instanceName in GetInstanceNames())
+        lock (_listenersLock)
         {
-            if (_dataSources.TryGetValue(instanceName, out var dataSource))
+            _listeners.Add(listener);
+            foreach (var dataSource in _dataSources.Values)
             {
                 dataSource.AddListener(listener);
             }
@@ -75,9 +82,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <inheritdoc />
     public IDisposable? OnReloadFailed(Action<Exception, string?> listener)
     {
-        foreach (var instanceName in GetInstanceNames())
+        lock (_listenersLock)
         {
-            if (_dataSources.TryGetValue(instanceName, out var dataSource))
+            _failureListeners.Add(listener);
+            foreach (var dataSource in _dataSources.Values)
             {
                 dataSource.AddFailureListener(listener);
             }
@@ -155,8 +163,27 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Called when new options are added to the registry.
-    private void OnOptionsAdded(WritableOptionsConfiguration<T> options) =>
+    private void OnOptionsAdded(WritableOptionsConfiguration<T> options)
+    {
         InitializeOptions(options.InstanceName);
+        if (!_dataSources.TryGetValue(options.InstanceName, out var dataSource))
+        {
+            return;
+        }
+
+        lock (_listenersLock)
+        {
+            foreach (var listener in _listeners)
+            {
+                dataSource.AddListener(listener);
+            }
+
+            foreach (var listener in _failureListeners)
+            {
+                dataSource.AddFailureListener(listener);
+            }
+        }
+    }
 
     // Called when options are removed from the registry.
     private void OnOptionsRemoved(string instanceName)
@@ -216,19 +243,19 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Sets up a FileSystemWatcher to monitor changes to the configuration file.
-    private void SetupFileWatcher(
+    private bool SetupFileWatcher(
         WritableOptionsConfiguration<T> options,
         OptionsMonitorDataSource dataSource
     )
     {
-        var filePath = options.ConfigFilePath;
+        var filePath = GetWatchPath(options);
         var directory = Path.GetDirectoryName(filePath);
         var fileName = Path.GetFileName(filePath);
 
         if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName))
         {
             dataSource.Watcher = null;
-            return;
+            return false;
         }
 
         // Create directory if it doesn't exist
@@ -238,11 +265,14 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             {
                 Directory.CreateDirectory(directory);
             }
-            catch
+            catch (Exception ex)
             {
-                // If we can't create the directory, we can't watch it
+                options.Logger?.ZLogWarning(
+                    ex,
+                    $"Configuration directory could not be created for watcher: {directory}"
+                );
                 dataSource.Watcher = null;
-                return;
+                return false;
             }
         }
 
@@ -261,6 +291,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             watcher.Error += (sender, args) => OnWatcherError(options.InstanceName, args);
 
             dataSource.Watcher = watcher;
+            dataSource.WatcherRecoveryAttempts = 0;
+            dataSource.WatcherRecoveryTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            return true;
         }
         catch (IOException ex)
         {
@@ -269,6 +302,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 $"Configuration file watcher could not be started: {fileName}"
             );
             dataSource.Watcher = null;
+            return false;
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -277,6 +311,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 $"Configuration file watcher could not be started: {fileName}"
             );
             dataSource.Watcher = null;
+            return false;
         }
     }
 
@@ -284,7 +319,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private void OnFileChanged(string instanceName, FileSystemEventArgs args)
     {
         var options = _optionsRegistry.Get(instanceName);
-        if (options.ConfigFilePath != args.FullPath)
+        if (!string.Equals(GetWatchPath(options), args.FullPath, GetPathComparison()))
         {
             // Ignore changes to other files in the same directory
             // e.g. temporary file (foobar.json~ABCDEF.TMP)
@@ -322,6 +357,16 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         ReloadAndNotify(instanceName);
     }
 
+    private static string GetWatchPath(WritableOptionsConfiguration<T> options) =>
+        options.FileProvider is IPhysicalFileProvider physicalFileProvider
+            ? physicalFileProvider.GetPhysicalFilePath(options.ConfigFilePath)
+            : options.ConfigFilePath;
+
+    private static StringComparison GetPathComparison() =>
+        Path.DirectorySeparatorChar == '\\'
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
     private void OnWatcherError(string instanceName, ErrorEventArgs args)
     {
         var exception = args.GetException();
@@ -339,7 +384,40 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
         dataSource.Watcher?.Dispose();
         dataSource.Watcher = null;
-        SetupFileWatcher(options, dataSource);
+        if (!SetupFileWatcher(options, dataSource))
+        {
+            ScheduleWatcherRecovery(instanceName, dataSource);
+        }
+    }
+
+    private void ScheduleWatcherRecovery(string instanceName, OptionsMonitorDataSource dataSource)
+    {
+        var attempt = ++dataSource.WatcherRecoveryAttempts;
+        var delayMilliseconds = Math.Min(
+            1000 * (1 << Math.Min(attempt - 1, 5)),
+            (int)MaxWatcherRecoveryDelay.TotalMilliseconds
+        );
+        dataSource.WatcherRecoveryTimer ??= new Timer(
+            _ => RecoverWatcher(instanceName),
+            null,
+            Timeout.Infinite,
+            Timeout.Infinite
+        );
+        dataSource.WatcherRecoveryTimer.Change(delayMilliseconds, Timeout.Infinite);
+    }
+
+    private void RecoverWatcher(string instanceName)
+    {
+        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
+        {
+            return;
+        }
+
+        var options = _optionsRegistry.Get(instanceName);
+        if (!SetupFileWatcher(options, dataSource))
+        {
+            ScheduleWatcherRecovery(instanceName, dataSource);
+        }
     }
 
     // Delays reload until changes have stopped for the configured duration.
@@ -420,6 +498,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
     private void HandleReloadFailure(string instanceName, Exception exception)
     {
+        ConfigurationWritableEventSource.Log.ReloadFailed();
         var options = _optionsRegistry.Get(instanceName);
         options.Logger?.ZLogError(
             exception,
@@ -454,7 +533,18 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             foreach (var listener in dataSource.GetListenersSnapshot())
             {
-                listener(value, instanceName);
+                try
+                {
+                    listener(value, instanceName);
+                }
+                catch (Exception ex)
+                {
+                    var options = _optionsRegistry.Get(instanceName);
+                    options.Logger?.ZLogError(
+                        ex,
+                        $"Configuration change listener failed: {options.ConfigFilePath}"
+                    );
+                }
             }
         }
     }
@@ -465,7 +555,18 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             foreach (var listener in dataSource.GetFailureListenersSnapshot())
             {
-                listener(exception, instanceName);
+                try
+                {
+                    listener(exception, instanceName);
+                }
+                catch (Exception listenerException)
+                {
+                    var options = _optionsRegistry.Get(instanceName);
+                    options.Logger?.ZLogError(
+                        listenerException,
+                        $"Configuration reload failure listener failed: {options.ConfigFilePath}"
+                    );
+                }
             }
         }
     }
@@ -488,9 +589,13 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             if (_disposed)
                 return;
 
-            foreach (var dataSource in _monitor._dataSources.Values)
+            lock (_monitor._listenersLock)
             {
-                dataSource.RemoveListener(_listener);
+                _monitor._listeners.Remove(_listener);
+                foreach (var dataSource in _monitor._dataSources.Values)
+                {
+                    dataSource.RemoveListener(_listener);
+                }
             }
 
             _disposed = true;
@@ -517,9 +622,13 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             if (_disposed)
                 return;
 
-            foreach (var dataSource in _monitor._dataSources.Values)
+            lock (_monitor._listenersLock)
             {
-                dataSource.RemoveFailureListener(_listener);
+                _monitor._failureListeners.Remove(_listener);
+                foreach (var dataSource in _monitor._dataSources.Values)
+                {
+                    dataSource.RemoveFailureListener(_listener);
+                }
             }
 
             _disposed = true;
@@ -537,6 +646,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         private object ListenersLock { get; } = new();
         public FileSystemWatcher? Watcher { get; set; }
         public Timer? DebounceTimer { get; set; }
+        public Timer? WatcherRecoveryTimer { get; set; }
+        public int WatcherRecoveryAttempts { get; set; }
         public bool HasPendingDebouncedChange { get; set; }
 
         public OptionsMonitorDataSource(
@@ -602,6 +713,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             Watcher?.Dispose();
             DebounceTimer?.Dispose();
+            WatcherRecoveryTimer?.Dispose();
         }
     }
 

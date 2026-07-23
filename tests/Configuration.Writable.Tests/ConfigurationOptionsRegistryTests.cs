@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
 
@@ -104,6 +105,31 @@ public class ConfigurationOptionsRegistryTests
         result.ShouldBeFalse();
         var option = registry.Get("existing");
         option.ConfigFilePath.ShouldContain("existing.json"); // Should not be changed
+    }
+
+    [Fact]
+    public void TryAdd_ConcurrentRequestsForSameInstance_AddsOnlyOnce()
+    {
+        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var results = new bool[32];
+
+        Parallel.For(
+            0,
+            results.Length,
+            index =>
+            {
+                results[index] = registry.TryAdd(
+                    "shared",
+                    options =>
+                    {
+                        options.FilePath = "shared.json";
+                    }
+                );
+            }
+        );
+
+        results.Count(result => result).ShouldBe(1);
+        registry.GetInstanceNames().ShouldBe(["shared"]);
     }
 
     [Fact]

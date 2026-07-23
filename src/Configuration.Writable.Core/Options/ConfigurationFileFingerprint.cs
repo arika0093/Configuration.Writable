@@ -27,14 +27,14 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
 
     internal static ConfigurationFileFingerprint? Capture(IWritableOptionsConfiguration options)
     {
-        if (!(options.FileProvider is CommonFileProvider))
+        if (!(options.FileProvider is IPhysicalFileProvider physicalFileProvider))
         {
             return null;
         }
 
         try
         {
-            var path = Path.GetFullPath(options.ConfigFilePath);
+            var path = physicalFileProvider.GetPhysicalFilePath(options.ConfigFilePath);
             if (!File.Exists(path))
             {
                 return new ConfigurationFileFingerprint(false, 0, 0, null);

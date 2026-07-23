@@ -214,8 +214,8 @@ public class ZipFileProviderTests
     [Fact]
     public async Task SaveToFileAsync_ConcurrentWrites_ShouldBeThreadSafe()
     {
-        using var testDir = new TemporaryFile(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        var directory = Path.GetDirectoryName(testDir.FilePath)!;
+        using var testDir = new TemporaryFile(Guid.NewGuid().ToString("N"), "marker");
+        var directory = testDir.DirectoryPath;
         Directory.CreateDirectory(directory);
 
         using var provider = new ZipFileProvider();
@@ -234,6 +234,50 @@ public class ZipFileProviderTests
 
         using var zip = ZipFile.OpenRead(zipPath);
         zip.Entries.Count.ShouldBe(10);
+    }
+
+    [Fact]
+    public async Task SaveToFileAsync_ConcurrentProviderInstances_ShouldPreserveBothEntries()
+    {
+        using var testDir = new TemporaryFile(Guid.NewGuid().ToString("N"), "marker");
+        var directory = testDir.DirectoryPath;
+        Directory.CreateDirectory(directory);
+
+        using var firstProvider = new ZipFileProvider();
+        using var secondProvider = new ZipFileProvider();
+        using var barrier = new Barrier(2);
+        var firstFilePath = Path.Combine(directory, "first.json");
+        var secondFilePath = Path.Combine(directory, "second.json");
+        var firstContent = Encoding.UTF8.GetBytes("First configuration");
+        var secondContent = Encoding.UTF8.GetBytes("Second configuration");
+
+        var writes = new[]
+        {
+            Task.Run(async () =>
+            {
+                barrier.SignalAndWait();
+                await firstProvider.SaveToFileAsync(firstFilePath, firstContent);
+            }),
+            Task.Run(async () =>
+            {
+                barrier.SignalAndWait();
+                await secondProvider.SaveToFileAsync(secondFilePath, secondContent);
+            }),
+        };
+
+        await Task.WhenAll(writes);
+
+        var zipPath = Path.Combine(directory, "config.zip");
+        using var zip = ZipFile.OpenRead(zipPath);
+        var firstEntry = zip.GetEntry(Path.GetFileName(firstFilePath));
+        var secondEntry = zip.GetEntry(Path.GetFileName(secondFilePath));
+        firstEntry.ShouldNotBeNull();
+        secondEntry.ShouldNotBeNull();
+
+        using var firstReader = new StreamReader(firstEntry.Open());
+        using var secondReader = new StreamReader(secondEntry.Open());
+        (await firstReader.ReadToEndAsync()).ShouldBe("First configuration");
+        (await secondReader.ReadToEndAsync()).ShouldBe("Second configuration");
     }
 
     [Fact]

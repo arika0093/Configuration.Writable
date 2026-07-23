@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Configuration.Writable.Configure;
@@ -12,9 +13,12 @@ internal class WritableOptionsConfigRegistryImpl<T>(
 {
     // Map of instance names to their corresponding writable configuration options
     // If multiple configurations have the same InstanceName, the last one wins (consistent with DI container behavior)
-    private readonly Dictionary<string, WritableOptionsConfiguration<T>> _optionsMap = options
-        .GroupBy(conf => conf.InstanceName)
-        .ToDictionary(g => g.Key, g => g.Last());
+    private readonly ConcurrentDictionary<string, WritableOptionsConfiguration<T>> _optionsMap =
+        new(
+            options
+                .GroupBy(conf => conf.InstanceName)
+                .ToDictionary(g => g.Key, g => g.Last())
+        );
 
     /// <inheritdoc />
     public event Action<WritableOptionsConfiguration<T>> OnAdded = delegate { };
@@ -33,7 +37,7 @@ internal class WritableOptionsConfigRegistryImpl<T>(
     }
 
     /// <inheritdoc />
-    public IEnumerable<string> GetInstanceNames() => _optionsMap.Keys;
+    public IEnumerable<string> GetInstanceNames() => _optionsMap.Keys.ToArray();
 
     /// <inheritdoc />
     public bool TryAdd(string instanceName, Action<WritableOptionsConfigBuilder<T>> configure)
@@ -41,28 +45,18 @@ internal class WritableOptionsConfigRegistryImpl<T>(
         var optionsBuilder = new WritableOptionsConfigBuilder<T>();
         configure(optionsBuilder);
         var option = optionsBuilder.BuildOptions(instanceName);
-#if NET
-        var rst = _optionsMap.TryAdd(instanceName, option);
-#else
-        if (_optionsMap.ContainsKey(instanceName))
-        {
-            // already exists
-            return false;
-        }
-        _optionsMap[instanceName] = option;
-        var rst = true;
-#endif
-        if (rst)
+        if (_optionsMap.TryAdd(instanceName, option))
         {
             OnAdded(option);
+            return true;
         }
-        return rst;
+        return false;
     }
 
     /// <inheritdoc />
     public bool TryRemove(string instanceName)
     {
-        if (_optionsMap.Remove(instanceName))
+        if (_optionsMap.TryRemove(instanceName, out _))
         {
             OnRemoved(instanceName);
             return true;
