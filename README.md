@@ -1,5 +1,5 @@
 # Configuration.Writable
-[![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Test&style=flat-square) 
+[![NuGet Version](https://img.shields.io/nuget/v/Configuration.Writable?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Configuration.Writable/) ![GitHub Actions Testing Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/test.yaml?branch=main&label=Testing&style=flat-square) ![GitHub Actions Release Status](https://img.shields.io/github/actions/workflow/status/arika0093/Configuration.Writable/release.yaml?branch=main&label=Release&style=flat-square) 
 
 Yet another configuration library with features including: type-safe operations, change detection, version migration, validation, and more.
 
