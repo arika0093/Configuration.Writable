@@ -270,10 +270,7 @@ public class WritableOptionsConfigBuilder<T>
         var sectionNamePart = SectionName
             .Split([":", "__"], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
-        if (_cloneMethod == null)
-        {
-            UseDefaultCloneStrategy();
-        }
+        var cloneMethod = GetCloneMethod();
         if (_usesDefaultJsonCloneFallback)
         {
             const string message =
@@ -297,13 +294,24 @@ public class WritableOptionsConfigBuilder<T>
             SectionNameParts = sectionNamePart,
             OnChangeDebounce = OnChangeDebounce,
             ConflictResolution = ConflictResolution,
-            CloneMethod = _cloneMethod!,
+            CloneMethod = cloneMethod,
             Logger = Logger,
             Validator = validator,
             MigrationSteps = migrationSteps,
             MigrationLookup =
                 migrationSteps.Count == 0 ? null : new MigrationLookup(typeof(T), migrationSteps),
         };
+    }
+
+    private Func<T, T> GetCloneMethod()
+    {
+        if (_cloneMethod == null)
+        {
+            UseDefaultCloneStrategy();
+        }
+
+        return _cloneMethod
+            ?? throw new InvalidOperationException("The clone strategy could not be initialized.");
     }
 
     /// <summary>

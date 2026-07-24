@@ -1,3 +1,4 @@
+#pragma warning disable S8969 // Dictionary TryGetValue out parameters require null-forgiving operators on supported target frameworks.
 using System;
 using System.Collections.Generic;
 

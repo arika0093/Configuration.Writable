@@ -27,11 +27,14 @@ internal sealed class ProfiledWritableOptions<T>(
         get
         {
             var activeProfileName = catalogOptions.CurrentValue.ActiveProfileName;
-            if (string.IsNullOrWhiteSpace(activeProfileName))
+            if (activeProfileName == null)
             {
                 return DefaultProfile;
             }
-            return activeProfileName!;
+
+            return string.IsNullOrWhiteSpace(activeProfileName)
+                ? DefaultProfile
+                : activeProfileName;
         }
     }
 
