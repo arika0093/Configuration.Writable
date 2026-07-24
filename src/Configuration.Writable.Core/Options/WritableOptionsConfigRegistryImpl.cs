@@ -41,9 +41,15 @@ internal class WritableOptionsConfigRegistryImpl<T>(
         var optionsBuilder = new WritableOptionsConfigBuilder<T>();
         configure(optionsBuilder);
         var option = optionsBuilder.BuildOptions(instanceName);
-        if (_optionsMap.TryAdd(instanceName, option))
+        return TryAdd(option);
+    }
+
+    /// <inheritdoc />
+    public bool TryAdd(WritableOptionsConfiguration<T> configuration)
+    {
+        if (_optionsMap.TryAdd(configuration.InstanceName, configuration))
         {
-            OnAdded(option);
+            OnAdded(configuration);
             return true;
         }
         return false;

@@ -18,6 +18,13 @@ public interface IWritableOptionsConfigRegistry<T>
     bool TryAdd(string instanceName, Action<WritableOptionsConfigBuilder<T>> configure);
 
     /// <summary>
+    /// Attempts to add a pre-built writable configuration option.
+    /// </summary>
+    /// <param name="configuration">The configuration option to add.</param>
+    /// <returns><see langword="true"/> if the configuration was added; otherwise, <see langword="false"/>.</returns>
+    bool TryAdd(WritableOptionsConfiguration<T> configuration);
+
+    /// <summary>
     /// Attempts to remove the writable configuration options with the specified instance name.
     /// </summary>
     /// <param name="instanceName"></param>

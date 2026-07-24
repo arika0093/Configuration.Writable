@@ -198,7 +198,6 @@ Reading and writing settings is performed in the same way as described above in 
 - [Logging](#logging)
 - [SectionName](#sectionname)
 - [Validation](#validation)
-- [Migration](#migration)
 
 ### Configuration Method
 You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
@@ -637,7 +636,102 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
-### Migration
+## Utility APIs
+### Edit Settings Before Saving
+Use `BeginConfigure` when a settings screen needs to apply several changes together. The
+session is in-memory until `CommitAsync` is called; discard the session to abandon changes.
+Use `Update` for edits so `IsChanged` accurately reflects whether the session was modified.
+
+```csharp
+var session = options.BeginConfigure();
+
+// Temporarily update the draft.
+session.Update(setting =>
+{
+    setting.Name = "new name";
+    setting.Age = 30;
+});
+
+// Get the updated value.
+Console.WriteLine(session.CurrentValue.Name);
+
+// Reset selected values to the values loaded when the session began.
+session.ResetToLoaded((draft, loaded) => draft.Name = loaded.Name);
+
+// Reset selected values, or the complete draft, to `new UserSetting()`.
+session.ResetToDefault((draft, defaults) => draft.Name = defaults.Name);
+session.ResetToDefault();
+
+// Restore the complete draft to the value loaded when the session began.
+session.ResetToLoaded();
+
+// Save the changes when they are ready. To discard them, simply do not commit.
+await session.CommitAsync();
+```
+
+### Profiles
+Profile names and the active profile are persisted in `ProfileCatalog`; each profile is
+stored below `Profiles:{name}` in the same file. The configured default profile is available
+immediately and is persisted on its first save.
+
+```csharp
+builder.Services.AddProfiledWritableOptions<UserSetting>(conf =>
+{
+    conf.UseFile("usersettings.json");
+    conf.SectionName = "MySettings";
+    conf.DefaultProfile = "default"; // The profile initially set as active
+});
+
+public class ProfileService(IProfiledWritableOptions<UserSetting> profiles)
+{
+    public async Task SwitchToWorkAsync()
+    {
+        // Read and save the active profile.
+        var name = profiles.CurrentValue.Name;
+        await profiles.SaveAsync(setting => setting.Name = "my settings");
+
+        // Create a new profile by copying an existing profile.
+        await profiles.CreateProfileAsync("Work", copyFrom: profiles.DefaultProfile);
+        // Make it active.
+        await profiles.SetActiveProfileAsync("Work");
+        Console.WriteLine($"Current Profile: {profiles.ActiveProfileName}");
+
+        // This reads and updates the Work profile.
+        var newName = profiles.CurrentValue.Name;
+
+        // Save a specific profile.
+        await profiles.GetProfile("Work").SaveAsync(setting =>
+        {
+            setting.Name = "Work settings";
+        });
+    }
+}
+```
+
+The resulting JSON is structured as follows:
+
+```jsonc
+{
+  "MySettings": {
+    // The available profiles, used internally for lookup.
+    "ProfileCatalog": {
+      "ActiveProfileName": "Work",
+      "ProfileNames": ["default", "Work"]
+    },
+    "Profiles": {
+      // The settings for each profile.
+      "default": {
+        "Name": "default settings"
+      },
+      "Work": {
+        "Name": "Work settings"
+      }
+    }
+  }
+}
+```
+
+### Migrating Existing Configurations
 Provides a mechanism for automatically migrating old version configuration files to the new version when the structure of the configuration file changes.
 First, prepare a settings class for each version and implement the `Version` property and set the version number as the initial value.
 
@@ -692,7 +786,6 @@ builder.Services.AddWritableOptions<UserSettingV2>(conf => {
 });
 ```
 
-
 ## Advanced Usage
 ### Support NativeAOT
 With a few settings, you can use this library in NativeAOT environments. The following two steps are required:
@@ -721,6 +814,21 @@ conf.WithValidator<SampleSettingValidator>();
 
 For more details, please refer to the [Example.ConsoleApp.NativeAOT](./example/Example.ConsoleApp.NativeAot/) project.
 
+### Clone Strategy
+To improve performance, the configuration file is not read every time. Instead, it is loaded and stored as an internal cache when a change event is detected.
+To prevent direct editing of this cache, a deep copy is created and provided to the user each time it is retrieved or saved.
+
+By default, deep copying of the settings class is supported via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).
+This is sufficient for most cases, but if you want to use a different cloning method, you can customize it with `conf.UseCustomCloneStrategy`.
+
+```csharp
+conf.UseCustomCloneStrategy(original => {
+    // Any custom cloning library can be used
+    return original.DeepClone();
+});
+```
+
+## Low-level APIs
 ### InstanceName
 If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
 
@@ -834,21 +942,8 @@ public class MyService(IWritableNamedOptions<UserSetting> options)
 }
 ```
 
-### CloneStrategy
-To improve performance, the configuration file is not read every time. Instead, it is loaded and stored as an internal cache when a change event is detected.  
-To prevent direct editing of this cache, a deep copy is created and provided to the user each time it is retrieved or saved.
-
-By default, deep copying of the settings class is supported via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).  
-This is sufficient for most cases, but if you want to use a different cloning method, you can customize it with `conf.UseCustomCloneStrategy`.
-
-```csharp
-conf.UseCustomCloneStrategy(original => {
-    // Any custom cloning library can be used
-    return original.DeepClone();
-});
-```
-
 ## Testing
+### Using a Mock
 If you simply want to obtain `IReadOnlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 
 ```csharp
@@ -865,6 +960,27 @@ yourService.DoSomething();
 Assert.Equal("expected name", settingValue.Name);
 ```
 
+Use `ProfiledOptionsStub` when testing services that depend on
+`IProfiledReadOnlyOptions<T>` or `IProfiledWritableOptions<T>`.
+
+```csharp
+using Configuration.Writable.Testing;
+
+var profiles = ProfiledOptionsStub.Create(
+    new UserSetting { Name = "Personal settings" },
+    defaultProfile: "Personal"
+);
+await profiles.CreateProfileAsync("Work", copyFrom: "Personal");
+await profiles.SetActiveProfileAsync("Work");
+
+var yourService = new YourService(profiles);
+await yourService.UpdateAsync();
+
+Assert.Equal("expected name", profiles.CurrentValue.Name);
+Assert.Equal("Personal settings", profiles.GetProfile("Personal").CurrentValue.Name);
+```
+
+### Reading and Writing Actual Files
 If you want to perform tests that actually involve writing to the file system, use `WritableOptionsSimpleInstance`.
 
 ```csharp
