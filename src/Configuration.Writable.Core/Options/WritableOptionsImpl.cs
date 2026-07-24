@@ -35,6 +35,21 @@ internal sealed class WritableOptionsImpl<T>(
     public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name) => GetOptions(name);
 
     /// <inheritdoc />
+    public ConfigureSession<T> BeginConfigure() => BeginConfigure(MEOptions.DefaultName);
+
+    /// <inheritdoc />
+    public ConfigureSession<T> BeginConfigure(string name)
+    {
+        var options = GetOptions(name);
+        return new ConfigureSession<T>(
+            optionMonitorInstance.Get(name),
+            new T(),
+            options.CloneMethod,
+            (value, cancellationToken) => SaveAsync(name, value, cancellationToken)
+        );
+    }
+
+    /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
         SaveAsync(MEOptions.DefaultName, newConfig, cancellationToken);
 

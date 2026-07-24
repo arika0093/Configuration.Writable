@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
@@ -124,6 +125,18 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     }
 
     /// <inheritdoc/>
+    public ConfigureSession<T> BeginConfigure() => BeginConfigure(MEOptions.DefaultName);
+
+    /// <inheritdoc/>
+    public ConfigureSession<T> BeginConfigure(string name) =>
+        new(
+            Get(name),
+            new T(),
+            Clone,
+            (value, cancellationToken) => SaveAsync(name, value, cancellationToken)
+        );
+
+    /// <inheritdoc/>
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
         SaveAsync(MEOptions.DefaultName, newConfig, cancellationToken);
 
@@ -189,6 +202,9 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     IReadOnlyOptions<T> IReadOnlyNamedOptions<T>.GetInstance(string name) =>
         new WritableOptionsStubWithName<T>(this, name);
 
+    private static T Clone(T value) =>
+        JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value))!;
+
     // A simple disposable action implementation
     private sealed class DisposableAction(Action disposeAction) : IDisposable
     {
@@ -227,6 +243,9 @@ internal sealed class WritableOptionsStubWithName<T>(
 
     /// <inheritdoc/>
     public IDisposable? OnChange(Action<T> listener) => innerStub.OnChange(instanceName, listener);
+
+    /// <inheritdoc/>
+    public ConfigureSession<T> BeginConfigure() => innerStub.BeginConfigure(instanceName);
 
     /// <inheritdoc/>
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>

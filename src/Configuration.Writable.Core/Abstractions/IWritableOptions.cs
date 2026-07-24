@@ -13,6 +13,12 @@ public interface IWritableOptions<T> : IReadOnlyOptions<T>
     where T : class, new()
 {
     /// <summary>
+    /// Begins an in-memory configuration editing session.
+    /// </summary>
+    /// <returns>A session initialized with the current configuration value.</returns>
+    ConfigureSession<T> BeginConfigure();
+
+    /// <summary>
     /// Asynchronously saves the specified configuration.
     /// </summary>
     /// <param name="newConfig">The new configuration to save.</param>

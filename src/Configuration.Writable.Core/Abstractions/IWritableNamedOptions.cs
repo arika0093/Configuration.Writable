@@ -13,6 +13,13 @@ public interface IWritableNamedOptions<T> : IReadOnlyNamedOptions<T>
     where T : class, new()
 {
     /// <summary>
+    /// Begins an in-memory configuration editing session for the specified options instance.
+    /// </summary>
+    /// <param name="name">The name of the options instance to edit.</param>
+    /// <returns>A session initialized with the current configuration value.</returns>
+    ConfigureSession<T> BeginConfigure(string name);
+
+    /// <summary>
     /// Retrieves a writable options instance bound to the specified instanceName.
     /// This allows you to work with named instances using the same API as regular <see cref="IWritableOptions{T}"/>,
     /// without having to specify the name on every operation.

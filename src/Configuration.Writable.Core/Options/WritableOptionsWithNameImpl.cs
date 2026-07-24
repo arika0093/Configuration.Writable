@@ -41,6 +41,10 @@ internal sealed class WritableOptionsWithNameImpl<T>(
         innerWritableOptionsInstance.OnChange(instanceName, listener);
 
     /// <inheritdoc />
+    public ConfigureSession<T> BeginConfigure() =>
+        innerWritableOptionsInstance.BeginConfigure(instanceName);
+
+    /// <inheritdoc />
     public Task SaveAsync(T newConfig, CancellationToken cancellationToken = default) =>
         innerWritableOptionsInstance.SaveAsync(instanceName, newConfig, cancellationToken);
 

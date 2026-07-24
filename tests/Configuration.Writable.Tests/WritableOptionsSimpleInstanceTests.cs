@@ -132,6 +132,58 @@ public class WritableOptionsSimpleInstanceTests
     }
 
     [Fact]
+    public async Task BeginConfigure_ShouldEditAndResetConfiguration()
+    {
+        var testFileName = Path.GetRandomFileName();
+        var instance = new WritableOptionsSimpleInstance<TestSettings>();
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.UseInMemoryFileProvider(_FileProvider);
+        });
+
+        var options = instance.GetOptions();
+        await options.SaveAsync(settings =>
+        {
+            settings.Name = "loaded";
+            settings.Value = 100;
+            settings.IsEnabled = false;
+        });
+
+        var session = options.BeginConfigure();
+        session.Update(settings =>
+        {
+            settings.Name = "draft";
+            settings.Value = 200;
+            settings.IsEnabled = true;
+        });
+        session.IsChanged.ShouldBeTrue();
+        session.ResetToLoaded((draft, loaded) => draft.Name = loaded.Name);
+        session.ResetToDefault((draft, defaults) => draft.IsEnabled = defaults.IsEnabled);
+
+        session.CurrentValue.Name.ShouldBe("loaded");
+        session.CurrentValue.Value.ShouldBe(200);
+        session.CurrentValue.IsEnabled.ShouldBeTrue();
+
+        await session.CommitAsync();
+
+        var saved = options.CurrentValue;
+        saved.Name.ShouldBe("loaded");
+        saved.Value.ShouldBe(200);
+        saved.IsEnabled.ShouldBeTrue();
+
+        session.ResetToDefault();
+
+        session.CurrentValue.Name.ShouldBe("default");
+        session.CurrentValue.Value.ShouldBe(42);
+        session.CurrentValue.IsEnabled.ShouldBeTrue();
+
+        session.ResetToLoaded();
+
+        session.IsChanged.ShouldBeFalse();
+    }
+
+    [Fact]
     public void GetConfigFilePath_ShouldReturnCorrectPath()
     {
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
