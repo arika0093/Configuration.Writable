@@ -321,9 +321,14 @@ public class WritableOptionsConfigBuilder<T>
     public void UseFile(string? path)
     {
         _saveLocationManager.LocationBuilders.Clear();
+        if (path == null)
+        {
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(path))
         {
-            _saveLocationManager.MakeLocationBuilder().AddFilePath(path!);
+            _saveLocationManager.MakeLocationBuilder().AddFilePath(path);
         }
     }
 
