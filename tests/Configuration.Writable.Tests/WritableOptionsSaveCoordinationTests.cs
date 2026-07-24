@@ -75,7 +75,7 @@ public class WritableOptionsSaveCoordinationTests
     }
 
     [Fact]
-    public async Task SaveAsync_HoldsSidecarLockWhileSaving()
+    public async Task SaveAsync_DeletesSidecarLockAfterSaving()
     {
         var provider = new BlockingFormatProvider(expectedSaveCount: 1);
         var path = Path.Combine(AppContext.BaseDirectory, $"sidecar-lock-{Guid.NewGuid():N}.json");
@@ -90,11 +90,11 @@ public class WritableOptionsSaveCoordinationTests
 
             provider.Release();
             await save;
+            File.Exists(path + ".lock").ShouldBeFalse();
         }
         finally
         {
             Dispose(options);
-            File.Delete(path + ".lock");
         }
     }
 

@@ -96,7 +96,12 @@ public class CommonFileProviderTests
         var newContent = Encoding.UTF8.GetBytes("New content");
 
         var directory = Path.GetDirectoryName(testFile.FilePath)!;
-        var backupPattern = $"{testFile.FileName.Split('.')[0]}_*.bak";
+        var backupDirectory = Path.Combine(
+            directory,
+            Path.DirectorySeparatorChar == '\\' ? "backup" : ".backup"
+        );
+        var backupFileName = testFile.FileName.Split('.')[0];
+        var backupPattern = $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
 
         // Create original file
         await writer.SaveToFileAsync(testFile.FilePath, originalContent);
@@ -108,13 +113,19 @@ public class CommonFileProviderTests
         int backupFileCount = 0;
         for (int i = 0; i < 10; i++)
         {
-            var backupFiles = Directory.GetFiles(directory, backupPattern);
+            var backupFiles = Directory.GetFiles(backupDirectory, backupPattern);
             backupFileCount = backupFiles.Length;
             if (backupFileCount >= 1)
                 break;
             await Task.Delay(50);
         }
         backupFileCount.ShouldBeGreaterThanOrEqualTo(1); // in .NET FW, sometime two files created due to timing
+        if (Path.DirectorySeparatorChar == '\\')
+        {
+            (File.GetAttributes(backupDirectory) & FileAttributes.Hidden).ShouldBe(FileAttributes.Hidden);
+            var backupFile = Directory.GetFiles(backupDirectory, backupPattern)[0];
+            (File.GetAttributes(backupFile) & FileAttributes.Hidden).ShouldBe(FileAttributes.Hidden);
+        }
 
         // Verify current file content
         var currentContent = await ReadAllBytesCompat(testFile.FilePath);
@@ -158,9 +169,31 @@ public class CommonFileProviderTests
 
         // Check that backup files are limited (may be slightly more due to timing)
         var directory = Path.GetDirectoryName(testFile.FilePath)!;
-        var backupPattern = $"{testFile.FileName.Split('.')[0]}_*.bak";
-        var backupFiles = Directory.GetFiles(directory, backupPattern);
+        var backupDirectory = Path.Combine(
+            directory,
+            Path.DirectorySeparatorChar == '\\' ? "backup" : ".backup"
+        );
+        var backupFileName = testFile.FileName.Split('.')[0];
+        var backupPattern = $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
+        var backupFiles = Directory.GetFiles(backupDirectory, backupPattern);
         backupFiles.Length.ShouldBeLessThanOrEqualTo(2);
+    }
+
+    [Fact]
+    public async Task SaveToFileAsync_WithBackupDirectory_ShouldSaveBackupsToConfiguredDirectory()
+    {
+        using var testFile = new TemporaryFile();
+        var writer = new CommonFileProvider { BackupDirectory = "/" };
+        var originalContent = Encoding.UTF8.GetBytes("Original content");
+        var newContent = Encoding.UTF8.GetBytes("New content");
+
+        await writer.SaveToFileAsync(testFile.FilePath, originalContent);
+        await writer.SaveToFileAsync(testFile.FilePath, newContent);
+
+        var directory = Path.GetDirectoryName(testFile.FilePath)!;
+        var backupFileName = testFile.FileName.Split('.')[0];
+        var backupPattern = $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
+        Directory.GetFiles(directory, backupPattern).Length.ShouldBe(1);
     }
 
     [Fact]

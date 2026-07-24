@@ -226,6 +226,7 @@ namespace Configuration.Writable.FileProvider
     public class CommonFileProvider : Configuration.Writable.FileProvider.IWritableFileProvider, System.IDisposable
     {
         public CommonFileProvider() { }
+        public virtual string BackupDirectory { get; set; }
         public virtual int BackupMaxCount { get; set; }
         public virtual int MaxRetryCount { get; set; }
         public virtual System.Func<int, int> RetryDelay { get; set; }

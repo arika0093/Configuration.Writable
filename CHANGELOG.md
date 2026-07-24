@@ -10,6 +10,7 @@
 - Drop `OnChangeThrottleMs` property (use `OnChangeDebounce` with `TimeSpan` instead)
 - Rename `OnChangeThrottle` to `OnChangeDebounce`
 - Rename `IFormatProvider` to `IWritableFormatProvider` to avoid conflict with `System.IFormatProvider`
+- Move automatically created backups from the configuration file's directory to the platform-specific hidden backup directory (`.backup/`). Configure `CommonFileProvider.BackupDirectory = "/"` to retain the previous location.
 
 ## [0.5.0] - 2026-07-11
 

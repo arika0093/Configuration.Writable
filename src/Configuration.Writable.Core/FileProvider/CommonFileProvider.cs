@@ -20,9 +20,15 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     /// <summary>
-    /// Gets or sets the maximum number of backup files to keep. Defaults to 1.
+    /// Gets or sets the maximum number of backup files to keep in the backup directory. Defaults to 1.
     /// </summary>
     public virtual int BackupMaxCount { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the backup directory relative to the configuration file. Use "/" to save backups alongside the
+    /// configuration file. Defaults to ".backup".
+    /// </summary>
+    public virtual string BackupDirectory { get; set; } = ".backup";
 
     /// <summary>
     /// The maximum number of retry attempts when a file write operation fails due to an exception. Defaults to 3.
@@ -165,24 +171,66 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
                 file.Delete();
             }
         }
+        var backupDirectory = GetBackupDirectory(path);
+        Directory.CreateDirectory(backupDirectory);
+        SetHiddenOnWindows(backupDirectory);
+
         // create backup file
-        var backupFilePath = GetTemporaryFilePath(path) + ".bak";
+        var backupFilePath = Path.Combine(
+            backupDirectory,
+            GetBackupFileName(path)
+        );
         logger?.ZLogDebug($"Creating backup file for: {backupFilePath}");
         File.Copy(path, backupFilePath);
+        SetHiddenOnWindows(backupFilePath);
     }
 
-    private static IEnumerable<FileInfo> GetBackupFiles(string path)
+    private IEnumerable<FileInfo> GetBackupFiles(string path)
     {
-        var directory = Path.GetDirectoryName(path);
-        if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+        var backupDirectory = GetBackupDirectory(path);
+        if (!Directory.Exists(backupDirectory))
         {
             return [];
         }
 
         var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+        if (Path.DirectorySeparatorChar != '\\')
+        {
+            fileNameWithoutExtension = "." + fileNameWithoutExtension;
+        }
         var extension = Path.GetExtension(path);
         var backupPattern = $"{fileNameWithoutExtension}_*{extension}.bak";
-        return Directory.GetFiles(directory, backupPattern).Select(file => new FileInfo(file));
+        return Directory.GetFiles(backupDirectory, backupPattern).Select(file => new FileInfo(file));
+    }
+
+    private string GetBackupDirectory(string path)
+    {
+        var configurationDirectory = Path.GetDirectoryName(path);
+        configurationDirectory = string.IsNullOrEmpty(configurationDirectory)
+            ? Directory.GetCurrentDirectory()
+            : configurationDirectory;
+        if (BackupDirectory == "/")
+        {
+            return configurationDirectory;
+        }
+
+        return Path.IsPathRooted(BackupDirectory)
+            ? BackupDirectory
+            : Path.Combine(configurationDirectory, BackupDirectory);
+    }
+
+    private string GetBackupFileName(string path)
+    {
+        var backupFileName = Path.GetFileName(GetTemporaryFilePath(path)) + ".bak";
+        return Path.DirectorySeparatorChar == '\\' ? backupFileName : "." + backupFileName;
+    }
+
+    private static void SetHiddenOnWindows(string path)
+    {
+        if (Path.DirectorySeparatorChar == '\\')
+        {
+            File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.Hidden);
+        }
     }
 
     /// <summary>

@@ -363,7 +363,7 @@ For more details, please refer to the [Example.ConsoleApp.Yaml](./example/Exampl
 Default FileProvider (`CommonFileProvider`) supports the following features:
 
 * Automatically retry when file access fails (default is max 3 times, wait 100ms each)
-* Create 1 backup by default; configure `BackupMaxCount = 0` to disable backups
+* Create 1 hidden backup by default; configure `BackupMaxCount = 0` to disable backups
 * Atomic file writing (write to a temporary file first, then rename it)
 * Thread-safe: uses internal semaphore to ensure safe concurrent access
 
@@ -379,6 +379,8 @@ conf.FileProvider = new CommonFileProvider() {
     RetryDelay = (attempt) => 100 * attempt,
     // keep 5 backup files when saving
     BackupMaxCount = 5,
+    // use a custom backup directory; "/" saves beside the configuration file
+    BackupDirectory = "my-backups",
 };
 ```
 

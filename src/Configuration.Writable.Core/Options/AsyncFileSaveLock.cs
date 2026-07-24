@@ -202,10 +202,21 @@ internal static class AsyncFileSaveLock
             finally
             {
                 stream?.Dispose();
-                // Keeping the sidecar prevents concurrent processes from locking different inodes after deletion.
-                entryToRelease.Semaphore.Release();
-                ReleaseReference(key, entryToRelease);
+                try
+                {
+                    DeleteSidecarLockFile(key);
+                }
+                finally
+                {
+                    entryToRelease.Semaphore.Release();
+                    ReleaseReference(key, entryToRelease);
+                }
             }
+        }
+
+        private static void DeleteSidecarLockFile(string configFilePath)
+        {
+            File.Delete(configFilePath + ".lock");
         }
 
         private static void Unlock(FileStream stream)
