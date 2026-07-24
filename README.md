@@ -640,7 +640,7 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 ### Edit Settings Before Saving
 Use `BeginConfigure` when a settings screen needs to apply several changes together. The
 session is in-memory until `CommitAsync` is called; discard the session to abandon changes.
-Use `Update` for edits so `IsChanged` accurately reflects whether the session was modified.
+Use `Update` for edits to the in-memory draft.
 
 ```csharp
 var session = options.BeginConfigure();

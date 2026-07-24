@@ -36,14 +36,6 @@ public sealed class ConfigureSession<T>
     public T CurrentValue { get; private set; }
 
     /// <summary>
-    /// Gets a value indicating whether this session has been edited since it began.
-    /// </summary>
-    /// <remarks>
-    /// Use <see cref="Update"/> to modify <see cref="CurrentValue"/> so this value remains accurate.
-    /// </remarks>
-    public bool IsChanged { get; private set; }
-
-    /// <summary>
     /// Updates the editable configuration value.
     /// </summary>
     /// <param name="updater">An action that updates the editable value.</param>
@@ -54,7 +46,6 @@ public sealed class ConfigureSession<T>
             throw new ArgumentNullException(nameof(updater));
         }
         updater(CurrentValue);
-        IsChanged = true;
     }
 
     /// <summary>
@@ -63,7 +54,6 @@ public sealed class ConfigureSession<T>
     public void ResetToLoaded()
     {
         CurrentValue = _clone(_loadedValue);
-        IsChanged = false;
     }
 
     /// <summary>
@@ -77,7 +67,6 @@ public sealed class ConfigureSession<T>
             throw new ArgumentNullException(nameof(reset));
         }
         reset(CurrentValue, _clone(_loadedValue));
-        IsChanged = true;
     }
 
     /// <summary>
@@ -86,7 +75,6 @@ public sealed class ConfigureSession<T>
     public void ResetToDefault()
     {
         CurrentValue = _clone(_defaultValue);
-        IsChanged = true;
     }
 
     /// <summary>
@@ -100,7 +88,6 @@ public sealed class ConfigureSession<T>
             throw new ArgumentNullException(nameof(reset));
         }
         reset(CurrentValue, _clone(_defaultValue));
-        IsChanged = true;
     }
 
     /// <summary>

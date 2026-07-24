@@ -157,7 +157,6 @@ public class WritableOptionsSimpleInstanceTests
             settings.Value = 200;
             settings.IsEnabled = true;
         });
-        session.IsChanged.ShouldBeTrue();
         session.ResetToLoaded((draft, loaded) => draft.Name = loaded.Name);
         session.ResetToDefault((draft, defaults) => draft.IsEnabled = defaults.IsEnabled);
 
@@ -180,7 +179,6 @@ public class WritableOptionsSimpleInstanceTests
 
         session.ResetToLoaded();
 
-        session.IsChanged.ShouldBeFalse();
     }
 
     [Fact]

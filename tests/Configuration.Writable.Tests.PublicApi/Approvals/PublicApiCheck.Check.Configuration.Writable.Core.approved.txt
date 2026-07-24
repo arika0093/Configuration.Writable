@@ -89,7 +89,6 @@ namespace Configuration.Writable
         where T :  class, new ()
     {
         public T CurrentValue { get; }
-        public bool IsChanged { get; }
         public System.Threading.Tasks.Task CommitAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public void ResetToDefault() { }
         public void ResetToDefault(System.Action<T, T> reset) { }
