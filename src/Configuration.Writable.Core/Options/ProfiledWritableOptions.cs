@@ -31,7 +31,7 @@ internal sealed class ProfiledWritableOptions<T>(
             {
                 return DefaultProfile;
             }
-            return activeProfileName ?? DefaultProfile;
+            return activeProfileName!;
         }
     }
 

@@ -224,7 +224,9 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
                 .OpenReadAsync(sourceZipPath, cancellationToken)
                 .ConfigureAwait(false);
 #else
+#pragma warning disable S6966 // Legacy target frameworks do not provide asynchronous ZipArchive APIs.
             using var sourceArchive = ZipFile.OpenRead(sourceZipPath);
+#pragma warning restore S6966
 #endif
             foreach (var sourceEntry in sourceArchive.Entries)
             {
@@ -252,8 +254,10 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
                     .OpenAsync(cancellationToken)
                     .ConfigureAwait(false);
 #else
+#pragma warning disable S6966 // Legacy target frameworks do not provide asynchronous ZipArchive APIs.
                 using var sourceStream = sourceEntry.Open();
                 using var destinationEntryStream = destinationEntry.Open();
+#pragma warning restore S6966
 #endif
                 await sourceStream
                     .CopyToAsync(destinationEntryStream, 81920, cancellationToken)
@@ -270,7 +274,9 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
             .OpenAsync(cancellationToken)
             .ConfigureAwait(false);
 #else
+#pragma warning disable S6966 // Legacy target frameworks do not provide asynchronous ZipArchive APIs.
         using var replacementStream = replacementEntry.Open();
+#pragma warning restore S6966
 #endif
 #if NET8_0_OR_GREATER
         await replacementStream

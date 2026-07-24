@@ -61,63 +61,10 @@ public class YamlFormatProvider : FormatProviderBase
                 return Activator.CreateInstance(type)!;
             }
 
-            var targetBytes = yamlBytes;
-
-            if (sectionNameParts.Count > 0)
-            {
-                var data = YamlSerializer.Deserialize<Dictionary<string, object>>(
-                    yamlBytes,
-                    SerializerOptions
-                );
-                if (data == null)
-                {
-                    return Activator.CreateInstance(type)!;
-                }
-
-                object? current = data;
-                foreach (var section in sectionNameParts)
-                {
-                    if (current is Dictionary<string, object> dict)
-                    {
-                        if (dict.TryGetValue(section, out var value))
-                        {
-                            current = value;
-                        }
-                        else
-                        {
-                            return Activator.CreateInstance(type)!;
-                        }
-                    }
-                    else if (current is Dictionary<object, object> objDict)
-                    {
-                        // VYaml deserializes nested maps as Dictionary<object, object>
-                        if (TryGetSectionValue(objDict, section, out var value))
-                        {
-                            current = value;
-                        }
-                        else
-                        {
-                            return Activator.CreateInstance(type)!;
-                        }
-                    }
-                    else
-                    {
-                        return Activator.CreateInstance(type)!;
-                    }
-                }
-
-                targetBytes = YamlSerializer.Serialize(current, SerializerOptions);
-            }
-
-            var genericMethod = DeserializeMethods.GetOrAdd(
-                type,
-                static type => DeserializeMethod.MakeGenericMethod(type)
-            );
-            var result = genericMethod.Invoke(
-                null,
-                new object[] { targetBytes, SerializerOptions }
-            );
-            return result ?? Activator.CreateInstance(type)!;
+            var targetBytes = GetSectionBytes(yamlBytes, sectionNameParts);
+            return targetBytes == null
+                ? Activator.CreateInstance(type)!
+                : Deserialize(type, targetBytes.Value);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -127,6 +74,74 @@ public class YamlFormatProvider : FormatProviderBase
         {
             throw new FormatException("Failed to deserialize YAML configuration.", ex);
         }
+    }
+
+    private ReadOnlyMemory<byte>? GetSectionBytes(
+        ReadOnlyMemory<byte> yamlBytes,
+        List<string> sectionNameParts
+    )
+    {
+        if (sectionNameParts.Count == 0)
+        {
+            return yamlBytes;
+        }
+
+        var data = YamlSerializer.Deserialize<Dictionary<string, object>>(
+            yamlBytes,
+            SerializerOptions
+        );
+        if (data == null || !TryGetSectionValue(data, sectionNameParts, out var value))
+        {
+            return null;
+        }
+
+        return YamlSerializer.Serialize(value, SerializerOptions);
+    }
+
+    private object Deserialize(Type type, ReadOnlyMemory<byte> yamlBytes)
+    {
+        var genericMethod = DeserializeMethods.GetOrAdd(
+            type,
+            static type => DeserializeMethod.MakeGenericMethod(type)
+        );
+        var result = genericMethod.Invoke(null, new object[] { yamlBytes, SerializerOptions });
+        return result ?? Activator.CreateInstance(type)!;
+    }
+
+    private static bool TryGetSectionValue(
+        Dictionary<string, object> data,
+        IEnumerable<string> sectionNameParts,
+        out object? value
+    )
+    {
+        object? current = data;
+        foreach (var section in sectionNameParts)
+        {
+            if (!TryGetSectionValue(current, section, out current))
+            {
+                value = null;
+                return false;
+            }
+        }
+
+        value = current;
+        return true;
+    }
+
+    private static bool TryGetSectionValue(object? value, string section, out object? sectionValue)
+    {
+        if (value is Dictionary<string, object> dictionary)
+        {
+            return dictionary.TryGetValue(section, out sectionValue);
+        }
+
+        if (value is Dictionary<object, object> objectDictionary)
+        {
+            return TryGetSectionValue(objectDictionary, section, out sectionValue);
+        }
+
+        sectionValue = null;
+        return false;
     }
 
     private static bool TryGetSectionValue(
