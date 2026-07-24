@@ -22,7 +22,9 @@ public class ProfiledOptionsIntegrationTests
         });
 
         using var host = builder.Build();
-        var profiles = host.Services.GetRequiredService<IProfiledWritableOptions<ProfileSettings>>();
+        var profiles = host.Services.GetRequiredService<
+            IProfiledWritableOptions<ProfileSettings>
+        >();
 
         profiles.ProfileNames.ShouldBe(["default"]);
 

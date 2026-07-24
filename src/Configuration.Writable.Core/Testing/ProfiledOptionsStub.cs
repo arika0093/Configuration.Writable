@@ -26,7 +26,10 @@ public class ProfiledOptionsStub<T> : IProfiledWritableOptions<T>
     {
         if (string.IsNullOrWhiteSpace(defaultProfile))
         {
-            throw new ArgumentException("The default profile name cannot be empty.", nameof(defaultProfile));
+            throw new ArgumentException(
+                "The default profile name cannot be empty.",
+                nameof(defaultProfile)
+            );
         }
 
         DefaultProfile = defaultProfile;
@@ -95,10 +98,8 @@ public class ProfiledOptionsStub<T> : IProfiledWritableOptions<T>
         _options.SaveAsync(ActiveProfileName, newConfig, cancellationToken);
 
     /// <inheritdoc />
-    public Task SaveAsync(
-        Action<T> configUpdater,
-        CancellationToken cancellationToken = default
-    ) => _options.SaveAsync(ActiveProfileName, configUpdater, cancellationToken);
+    public Task SaveAsync(Action<T> configUpdater, CancellationToken cancellationToken = default) =>
+        _options.SaveAsync(ActiveProfileName, configUpdater, cancellationToken);
 
     /// <inheritdoc />
     public Task SaveAsync(
@@ -193,6 +194,9 @@ public static class ProfiledOptionsStub
     /// <param name="defaultValue">The initial value of the default profile.</param>
     /// <param name="defaultProfile">The name of the default profile.</param>
     /// <returns>A profiled options stub.</returns>
-    public static ProfiledOptionsStub<T> Create<T>(T defaultValue, string defaultProfile = "default")
+    public static ProfiledOptionsStub<T> Create<T>(
+        T defaultValue,
+        string defaultProfile = "default"
+    )
         where T : class, new() => new(defaultValue, defaultProfile);
 }

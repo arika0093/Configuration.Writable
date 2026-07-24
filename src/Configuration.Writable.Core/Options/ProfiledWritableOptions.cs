@@ -16,8 +16,11 @@ internal sealed class ProfiledWritableOptions<T>(
 ) : IProfiledWritableOptions<T>
     where T : class, new()
 {
-    private static readonly HashSet<string> ReservedProfileNames =
-        new(StringComparer.Ordinal) { nameof(ProfileCatalog.ActiveProfileName), nameof(ProfileCatalog.ProfileNames) };
+    private static readonly HashSet<string> ReservedProfileNames = new(StringComparer.Ordinal)
+    {
+        nameof(ProfileCatalog.ActiveProfileName),
+        nameof(ProfileCatalog.ProfileNames),
+    };
 
     public string ActiveProfileName
     {
@@ -56,7 +59,8 @@ internal sealed class ProfiledWritableOptions<T>(
     public async Task SaveAsync(T newConfig, CancellationToken cancellationToken = default)
     {
         await EnsureCatalogAsync(cancellationToken).ConfigureAwait(false);
-        await namedOptions.SaveAsync(ActiveProfileName, newConfig, cancellationToken)
+        await namedOptions
+            .SaveAsync(ActiveProfileName, newConfig, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -66,7 +70,8 @@ internal sealed class ProfiledWritableOptions<T>(
     )
     {
         await EnsureCatalogAsync(cancellationToken).ConfigureAwait(false);
-        await namedOptions.SaveAsync(ActiveProfileName, configUpdater, cancellationToken)
+        await namedOptions
+            .SaveAsync(ActiveProfileName, configUpdater, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -76,7 +81,8 @@ internal sealed class ProfiledWritableOptions<T>(
     )
     {
         await EnsureCatalogAsync(cancellationToken).ConfigureAwait(false);
-        await namedOptions.SaveAsync(ActiveProfileName, configUpdater, cancellationToken)
+        await namedOptions
+            .SaveAsync(ActiveProfileName, configUpdater, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -123,7 +129,9 @@ internal sealed class ProfiledWritableOptions<T>(
                 {
                     if (catalog.ProfileNames.Contains(name, StringComparer.Ordinal))
                     {
-                        throw new InvalidOperationException($"The profile '{name}' already exists.");
+                        throw new InvalidOperationException(
+                            $"The profile '{name}' already exists."
+                        );
                     }
 
                     catalog.ProfileNames.Add(name);
@@ -143,10 +151,7 @@ internal sealed class ProfiledWritableOptions<T>(
         }
     }
 
-    public async Task RemoveProfileAsync(
-        string name,
-        CancellationToken cancellationToken = default
-    )
+    public async Task RemoveProfileAsync(string name, CancellationToken cancellationToken = default)
     {
         EnsureProfileExists(name);
         if (string.Equals(name, DefaultProfile, StringComparison.Ordinal))

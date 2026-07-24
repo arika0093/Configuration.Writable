@@ -178,7 +178,6 @@ public class WritableOptionsSimpleInstanceTests
         session.CurrentValue.IsEnabled.ShouldBeTrue();
 
         session.ResetToLoaded();
-
     }
 
     [Fact]
