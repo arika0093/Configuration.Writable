@@ -176,10 +176,7 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
         SetHiddenOnWindows(backupDirectory);
 
         // create backup file
-        var backupFilePath = Path.Combine(
-            backupDirectory,
-            GetBackupFileName(path)
-        );
+        var backupFilePath = Path.Combine(backupDirectory, GetBackupFileName(path));
         logger?.ZLogDebug($"Creating backup file for: {backupFilePath}");
         File.Copy(path, backupFilePath);
         SetHiddenOnWindows(backupFilePath);
@@ -200,7 +197,9 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
         }
         var extension = Path.GetExtension(path);
         var backupPattern = $"{fileNameWithoutExtension}_*{extension}.bak";
-        return Directory.GetFiles(backupDirectory, backupPattern).Select(file => new FileInfo(file));
+        return Directory
+            .GetFiles(backupDirectory, backupPattern)
+            .Select(file => new FileInfo(file));
     }
 
     private string GetBackupDirectory(string path)

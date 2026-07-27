@@ -101,7 +101,8 @@ public class CommonFileProviderTests
             Path.DirectorySeparatorChar == '\\' ? "backup" : ".backup"
         );
         var backupFileName = testFile.FileName.Split('.')[0];
-        var backupPattern = $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
+        var backupPattern =
+            $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
 
         // Create original file
         await writer.SaveToFileAsync(testFile.FilePath, originalContent);
@@ -122,9 +123,13 @@ public class CommonFileProviderTests
         backupFileCount.ShouldBeGreaterThanOrEqualTo(1); // in .NET FW, sometime two files created due to timing
         if (Path.DirectorySeparatorChar == '\\')
         {
-            (File.GetAttributes(backupDirectory) & FileAttributes.Hidden).ShouldBe(FileAttributes.Hidden);
+            (File.GetAttributes(backupDirectory) & FileAttributes.Hidden).ShouldBe(
+                FileAttributes.Hidden
+            );
             var backupFile = Directory.GetFiles(backupDirectory, backupPattern)[0];
-            (File.GetAttributes(backupFile) & FileAttributes.Hidden).ShouldBe(FileAttributes.Hidden);
+            (File.GetAttributes(backupFile) & FileAttributes.Hidden).ShouldBe(
+                FileAttributes.Hidden
+            );
         }
 
         // Verify current file content
@@ -174,7 +179,8 @@ public class CommonFileProviderTests
             Path.DirectorySeparatorChar == '\\' ? "backup" : ".backup"
         );
         var backupFileName = testFile.FileName.Split('.')[0];
-        var backupPattern = $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
+        var backupPattern =
+            $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
         var backupFiles = Directory.GetFiles(backupDirectory, backupPattern);
         backupFiles.Length.ShouldBeLessThanOrEqualTo(2);
     }
@@ -192,7 +198,8 @@ public class CommonFileProviderTests
 
         var directory = Path.GetDirectoryName(testFile.FilePath)!;
         var backupFileName = testFile.FileName.Split('.')[0];
-        var backupPattern = $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
+        var backupPattern =
+            $"{(Path.DirectorySeparatorChar == '\\' ? "" : ".")}{backupFileName}_*.bak";
         Directory.GetFiles(directory, backupPattern).Length.ShouldBe(1);
     }
 
