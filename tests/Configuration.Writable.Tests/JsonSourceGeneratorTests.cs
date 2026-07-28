@@ -2,6 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 
@@ -10,6 +11,7 @@ namespace Configuration.Writable.Tests;
 /// <summary>
 /// Test configuration class with various properties
 /// </summary>
+[OptionsModel]
 public partial class SourceGenTestConfig
 {
     public string Name { get; set; } = "Default Name";
@@ -19,6 +21,7 @@ public partial class SourceGenTestConfig
     public NestedConfig Nested { get; set; } = new();
 }
 
+[OptionsModel]
 public partial class NestedConfig
 {
     public string Description { get; set; } = "Nested description";
@@ -35,6 +38,7 @@ internal partial class SourceGenTestConfigContext : JsonSerializerContext;
 /// <summary>
 /// Test configuration with custom naming policy
 /// </summary>
+[OptionsModel]
 public partial class CamelCaseTestConfig
 {
     public string FirstName { get; set; } = "John";

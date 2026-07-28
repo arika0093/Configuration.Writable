@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
 
-public class OptionsMonitorImplTests
+public partial class OptionsMonitorImplTests
 {
-    public class TestSettings
+    [OptionsModel]
+    public partial class TestSettings
     {
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 42;

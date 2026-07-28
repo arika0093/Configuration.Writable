@@ -1,16 +1,18 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Configuration.Writable.Tests;
 
-public class KeyedServicesIntegrationTests
+public partial class KeyedServicesIntegrationTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    public class AppSettings
+    [OptionsModel]
+    public partial class AppSettings
     {
         public string ApplicationName { get; set; } = "DefaultApp";
         public int Port { get; set; } = 8080;

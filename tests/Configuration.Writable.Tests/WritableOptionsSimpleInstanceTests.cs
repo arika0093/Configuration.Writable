@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable.Tests;
@@ -729,7 +730,8 @@ public class WritableOptionsSimpleInstanceTests
     }
 }
 
-file class TestSettings
+[OptionsModel]
+public partial class TestSettings
 {
     public string Name { get; set; } = "default";
     public int Value { get; set; } = 42;

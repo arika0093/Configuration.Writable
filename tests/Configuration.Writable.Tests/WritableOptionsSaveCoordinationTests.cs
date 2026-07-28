@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
@@ -10,7 +11,7 @@ using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
 
-public class WritableOptionsSaveCoordinationTests
+public partial class WritableOptionsSaveCoordinationTests
 {
     [Fact]
     public async Task SaveAsync_ClonesInputBeforePublishingCache()
@@ -209,12 +210,14 @@ public class WritableOptionsSaveCoordinationTests
 
     private static void Dispose(object options) => (options as IDisposable)?.Dispose();
 
-    private sealed class FirstSettings
+    [OptionsModel]
+    internal partial class FirstSettings
     {
         public string Value { get; set; } = "";
     }
 
-    private sealed class SecondSettings
+    [OptionsModel]
+    internal partial class SecondSettings
     {
         public string Value { get; set; } = "";
     }

@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Configuration.Writable.Tests;
 
-public class InstanceNameIntegrationTests
+public partial class InstanceNameIntegrationTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    public class UserSetting
+    [OptionsModel]
+    public partial class UserSetting
     {
         public string Name { get; set; } = "default name";
         public int Age { get; set; } = 20;

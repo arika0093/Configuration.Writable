@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
@@ -11,7 +12,7 @@ using Xunit;
 
 namespace Configuration.Writable.Tests;
 
-public class MigrationSupportTests
+public partial class MigrationSupportTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
@@ -297,30 +298,35 @@ public class MigrationSupportTests
     }
 
     // Test model classes
-    public class MySettingsV1 : IHasVersion
+    [OptionsModel]
+    public partial class MySettingsV1 : IHasVersion
     {
         public int Version { get; set; } = 1;
         public string Name { get; set; } = "";
     }
 
-    public class MySettingsV2 : IHasVersion
+    [OptionsModel]
+    public partial class MySettingsV2 : IHasVersion
     {
         public int Version { get; set; } = 2;
         public string[] Names { get; set; } = [];
     }
 
-    public class MySettingsV3 : IHasVersion
+    [OptionsModel]
+    public partial class MySettingsV3 : IHasVersion
     {
         public int Version { get; set; } = 3;
         public FooConfig[] Configs { get; set; } = [];
     }
 
-    public class FooConfig
+    [OptionsModel]
+    public partial class FooConfig
     {
         public string Name { get; set; } = "";
     }
 
-    public class SettingsWithoutVersion
+    [OptionsModel]
+    public partial class SettingsWithoutVersion
     {
         public string Name { get; set; } = "";
     }

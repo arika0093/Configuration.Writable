@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 
@@ -12,7 +13,7 @@ namespace Configuration.Writable.Xml.Tests;
 /// These tests verify that XML provider produces exactly the same content as expected,
 /// ensuring complete (not partial) matching for format stability.
 /// </summary>
-public class XmlOutputFormatStabilityTests
+public partial class XmlOutputFormatStabilityTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
@@ -35,7 +36,8 @@ public class XmlOutputFormatStabilityTests
         return File.ReadAllText(path);
     }
 
-    public class TestConfiguration
+    [OptionsModel]
+    public partial class TestConfiguration
     {
         public string StringValue { get; set; } = "TestString";
         public int IntValue { get; set; } = 42;
@@ -47,7 +49,8 @@ public class XmlOutputFormatStabilityTests
         public NestedConfiguration Nested { get; set; } = new();
     }
 
-    public class NestedConfiguration
+    [OptionsModel]
+    public partial class NestedConfiguration
     {
         public string Description { get; set; } = "Nested description";
         public decimal Price { get; set; } = 99.99m;

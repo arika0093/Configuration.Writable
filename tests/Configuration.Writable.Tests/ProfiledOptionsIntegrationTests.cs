@@ -1,12 +1,13 @@
 using System.IO;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Configuration.Writable.Tests;
 
-public class ProfiledOptionsIntegrationTests
+public partial class ProfiledOptionsIntegrationTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
@@ -94,7 +95,8 @@ public class ProfiledOptionsIntegrationTests
         return builder.Build();
     }
 
-    private class ProfileSettings
+    [OptionsModel]
+    internal partial class ProfileSettings
     {
         public string Theme { get; set; } = "System";
         public int FontSize { get; set; } = 10;

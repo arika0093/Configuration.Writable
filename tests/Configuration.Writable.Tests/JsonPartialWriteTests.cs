@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 
@@ -10,17 +11,19 @@ namespace Configuration.Writable.Tests;
 /// Tests for partial write functionality in JsonFormatProvider.
 /// When a SectionName is specified, only that section should be updated while preserving other sections.
 /// </summary>
-public class JsonPartialWriteTests
+public partial class JsonPartialWriteTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    public class AppSettings
+    [OptionsModel]
+    public partial class AppSettings
     {
         public string Name { get; set; } = "MyApp";
         public int Version { get; set; } = 1;
     }
 
-    public class UserSettings
+    [OptionsModel]
+    public partial class UserSettings
     {
         public string Theme { get; set; } = "dark";
         public bool Notifications { get; set; } = true;

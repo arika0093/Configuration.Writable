@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -335,7 +336,8 @@ public class RealisticUsageScenarioTests : IDisposable
 /// Example settings class representing typical user preferences
 /// in a desktop or web application.
 /// </summary>
-file class UserPreferences
+[OptionsModel]
+public partial class UserPreferences
 {
     public string Theme { get; set; } = "Light";
     public int FontSize { get; set; } = 12;

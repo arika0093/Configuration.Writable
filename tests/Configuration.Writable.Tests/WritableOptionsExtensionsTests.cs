@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,31 +9,35 @@ using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
 
-public class WritableOptionsExtensionsTests
+public partial class WritableOptionsExtensionsTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    public class TestSettings
+    [OptionsModel]
+    public partial class TestSettings
     {
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 42;
         public bool IsEnabled { get; set; } = true;
     }
 
-    public class TestSettingsV1 : IHasVersion
+    [OptionsModel]
+    public partial class TestSettingsV1 : IHasVersion
     {
         public int Version { get; set; } = 1;
         public string OldName { get; set; } = "old_default";
     }
 
-    public class TestSettingsV2 : IHasVersion
+    [OptionsModel]
+    public partial class TestSettingsV2 : IHasVersion
     {
         public int Version { get; set; } = 2;
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 42;
     }
 
-    public class ValidatableSettings
+    [OptionsModel]
+    public partial class ValidatableSettings
     {
         public string Name { get; set; } = "default";
         public int Count { get; set; } = 0;

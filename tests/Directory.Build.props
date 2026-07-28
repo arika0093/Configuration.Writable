@@ -42,4 +42,10 @@
     <Using Include="Shouldly" />
     <Using Include="Configuration.Writable.Testing" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Configuration.Writable.Generator\Configuration.Writable.Generator.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

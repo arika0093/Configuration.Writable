@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
 
-public class ConfigurationOptionsRegistryTests
+public partial class ConfigurationOptionsRegistryTests
 {
-    private class TestSettings
+    [OptionsModel]
+    internal partial class TestSettings
     {
         public string Name { get; set; } = string.Empty;
         public int Value { get; set; }

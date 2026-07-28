@@ -2,6 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 
@@ -10,6 +11,7 @@ namespace Configuration.Writable.Tests;
 /// <summary>
 /// Test configuration class for AOT provider tests
 /// </summary>
+[OptionsModel]
 public partial class AotTestConfig
 {
     public string Name { get; set; } = "Default Name";
@@ -19,6 +21,7 @@ public partial class AotTestConfig
     public AotNestedConfig Nested { get; set; } = new();
 }
 
+[OptionsModel]
 public partial class AotNestedConfig
 {
     public string Description { get; set; } = "Nested description";
@@ -36,6 +39,7 @@ internal partial class AotTestConfigContext : JsonSerializerContext;
 /// <summary>
 /// Test configuration with camelCase naming policy
 /// </summary>
+[OptionsModel]
 public partial class AotCamelCaseConfig
 {
     public string FirstName { get; set; } = "John";

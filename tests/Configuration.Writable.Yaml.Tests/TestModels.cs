@@ -1,8 +1,10 @@
 using System;
+using Configuration.Writable;
 using VYaml.Annotations;
 
 namespace Configuration.Writable.Yaml.Tests;
 
+[OptionsModel]
 [YamlObject]
 public partial class TestSettings
 {
@@ -13,6 +15,7 @@ public partial class TestSettings
     public NestedSettings Nested { get; set; } = new();
 }
 
+[OptionsModel]
 [YamlObject]
 public partial class NestedSettings
 {
@@ -20,6 +23,7 @@ public partial class NestedSettings
     public double Price { get; set; } = 19.99;
 }
 
+[OptionsModel]
 [YamlObject]
 public partial class TestConfiguration
 {
@@ -33,6 +37,7 @@ public partial class TestConfiguration
     public NestedConfiguration Nested { get; set; } = new();
 }
 
+[OptionsModel]
 [YamlObject]
 public partial class NestedConfiguration
 {
@@ -41,6 +46,7 @@ public partial class NestedConfiguration
     public bool IsActive { get; set; } = false;
 }
 
+[OptionsModel]
 [YamlObject]
 public partial class AppSettings
 {
@@ -48,6 +54,7 @@ public partial class AppSettings
     public int Version { get; set; } = 1;
 }
 
+[OptionsModel]
 [YamlObject]
 public partial class UserSettings
 {

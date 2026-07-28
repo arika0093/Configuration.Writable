@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,11 +8,12 @@ using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
 
-public class IOptionsIntegrationTests
+public partial class IOptionsIntegrationTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    public class TestSettings
+    [OptionsModel]
+    public partial class TestSettings
     {
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 42;

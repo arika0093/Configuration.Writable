@@ -2,13 +2,15 @@
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Configuration.Writable;
 using Configuration.Writable.Configure;
 
 namespace Configuration.Writable.Tests;
 
-public class WritableOptionsConfigBuilderTests
+public partial class WritableOptionsConfigBuilderTests
 {
-    public class TestSettings
+    [OptionsModel]
+    public partial class TestSettings
     {
         public string Name { get; set; } = "default";
     }

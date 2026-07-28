@@ -2,13 +2,14 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable;
 
 namespace Configuration.Writable.Tests;
 
 /// <summary>
 /// Integration tests for OnChange debounce functionality using actual file system.
 /// </summary>
-public class OnChangeDebounceIntegrationTests : IDisposable
+public partial class OnChangeDebounceIntegrationTests : IDisposable
 {
     private readonly string _testDirectory;
 
@@ -36,7 +37,8 @@ public class OnChangeDebounceIntegrationTests : IDisposable
         }
     }
 
-    public class TestSettings
+    [OptionsModel]
+    public partial class TestSettings
     {
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 0;

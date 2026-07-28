@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Internal;
@@ -14,7 +15,7 @@ namespace Configuration.Writable.Tests;
 /// These tests verify that various classes produce exactly the same content as expected reference files,
 /// ensuring complete (not partial) matching for format stability.
 /// </summary>
-public class OutputFormatStabilityTests
+public partial class OutputFormatStabilityTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
@@ -31,7 +32,8 @@ public class OutputFormatStabilityTests
     /// <summary>
     /// Test configuration class with comprehensive data types for format validation
     /// </summary>
-    public class TestConfiguration
+    [OptionsModel]
+    public partial class TestConfiguration
     {
         public string StringValue { get; set; } = "TestString";
         public int IntValue { get; set; } = 42;
@@ -43,7 +45,8 @@ public class OutputFormatStabilityTests
         public NestedConfiguration Nested { get; set; } = new();
     }
 
-    public class NestedConfiguration
+    [OptionsModel]
+    public partial class NestedConfiguration
     {
         public string Description { get; set; } = "Nested description";
         public decimal Price { get; set; } = 99.99m;

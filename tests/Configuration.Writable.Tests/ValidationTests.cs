@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Configuration.Writable;
 using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Options;
 
@@ -313,7 +314,8 @@ public class ValidationTests
     }
 }
 
-file class ValidatableSettings
+[OptionsModel]
+public partial class ValidatableSettings
 {
     public int MaxConnections { get; set; } = 10;
     public string Email { get; set; } = "";
@@ -341,7 +343,8 @@ file class ValidatableSettingsValidator : IValidateOptions<ValidatableSettings>
     }
 }
 
-file class AnnotatedSettings
+[OptionsModel]
+public partial class AnnotatedSettings
 {
     [Range(1, 1000)]
     public int MaxConnections { get; set; }
