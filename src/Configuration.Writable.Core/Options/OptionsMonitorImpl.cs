@@ -339,11 +339,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
         var fileName = Path.GetFileName(options.ConfigFilePath);
 
-        if (
-            options.OnChangeDebounce > TimeSpan.Zero
-            && !DebounceReload(instanceName, options.OnChangeDebounce)
-        )
+        if (options.OnChangeDebounce > TimeSpan.Zero)
         {
+            DebounceReload(instanceName, options.OnChangeDebounce);
             options.Logger?.ZLogDebug(
                 $"Configuration file change detected and queued for debounce: {fileName} ({args.ChangeType})"
             );
@@ -421,11 +419,11 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Delays reload until changes have stopped for the configured duration.
-    private bool DebounceReload(string instanceName, TimeSpan debounceDuration)
+    private void DebounceReload(string instanceName, TimeSpan debounceDuration)
     {
         if (!_dataSources.TryGetValue(instanceName, out var dataSource))
         {
-            return false;
+            return;
         }
 
         lock (_debounceTimersLock)
@@ -438,14 +436,13 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                     Timeout.Infinite,
                     Timeout.Infinite
                 );
-                dataSource.HasPendingDebouncedChange = false;
+                dataSource.HasPendingDebouncedChange = true;
                 dataSource.DebounceTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
-                return true;
+                return;
             }
 
             dataSource.HasPendingDebouncedChange = true;
             dataSource.DebounceTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
-            return false;
         }
     }
 
