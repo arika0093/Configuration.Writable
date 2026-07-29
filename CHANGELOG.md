@@ -1,17 +1,65 @@
-## [Unreleased]
+## [0.6.0] - 2026-07-29
 
-### 💥 Breaking Changes
+### 🚀 Features
 
-- Drop obsolete `IFileProvider` interface (use `IWritableFileProvider` instead)
-- Drop obsolete `RegisterInstanceToContainer` property (use `RegisterAsSingleton` instead)
-- Drop obsolete `GetSpecifiedInstance` method from `IReadOnlyNamedOptions` and `IWritableNamedOptions` (use `GetInstance` instead)
-- Drop obsolete `FormatProviderBase.LoadConfiguration<T>(WritableOptionsConfiguration<T>)` overloads (use `LoadConfiguration(Type, IWritableOptionsConfiguration)` instead)
-- Drop obsolete `FormatProviderBase.SaveAsync<T>(T, WritableOptionsConfiguration<T>, CancellationToken)` overload (use `SaveAsync<T>(T, IWritableOptionsConfiguration, CancellationToken)` instead)
-- Drop `OnChangeThrottleMs` property (use `OnChangeDebounce` with `TimeSpan` instead)
-- Rename `OnChangeThrottle` to `OnChangeDebounce`
-- Rename `IFormatProvider` to `IWritableFormatProvider` to avoid conflict with `System.IFormatProvider`
-- Move automatically created backups from the configuration file's directory to the platform-specific hidden backup directory (`.backup/`). Configure `CommonFileProvider.BackupDirectory = "/"` to retain the previous location.
+- Add benchmarks for Configuration.Writable with XML and YAML support
+- Implement migration lookup for configuration options and enhance debounce logic for file changes
+- Coordinate configuration saves
+- Recover configuration from backups
+- Atomically replace zip configuration archives
+- Report and recover watcher failures
 
+### 🐛 Bug Fixes
+
+- Update .gitignore to ignore all .trx files
+- Add PolySharpUseEmbeddedAttributeForGeneratedTypes property to Directory.Build.props
+- Update NativeAOT validation handling and documentation
+- Remove outdated comment about common file provider in UserSetting initialization
+- Update workflow dependencies and triggers in release and test workflows
+- Harden configuration persistence
+- Address Sonar quality issues
+- Resolve strict analyzer build errors
+- Support nullable file paths across targets
+- Restore/release action on net6.0 strict-test
+- Streamline target framework setup in test workflow
+- Update Microsoft.NET.Test.Sdk versioning for target framework compatibility
+- Correct debounce logic for file change notifications
+- Remove Microsoft.Extensions.Hosting 9.* net48 fallback from Xml.Tests
+- Use TaskCompletionSource<bool> for net48 compatibility
+- Mark PolySharp generated types as embedded to avoid net48 conflicts
+- Resolve Windows CI failures (net48 PublicApi + path/polyfill conflicts)
+- Limit test PolySharp to net48
+- Isolate PolySharp generated types
+
+### 🚜 Refactor
+
+- Optimize serialization and file handling in format providers
+
+### 📚 Documentation
+
+- Update README.md to include NativeAOT support and remove obsolete aliases
+- Update README.md to include NativeAOT support for format providers and improve callback disposal
+- Restore interfaces diagram in README.md for better clarity
+- Update README.md with NativeAOT support for YamlFormatProvider configuration
+- Update README.md with example for YamlFormatProvider usage
+- Update README.md to improve GitHub Actions badge labels
+- Update README to include YAML format provider usage and examples
+
+### 🧪 Testing
+
+- Add [OptionsModel] attribute to test configuration classes
+- Replace flaky Task.Delay with FileWatcherTestHelper polling waits
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.5.0
+- Move CLAUDE.md content to AGENTS.md
+- Clean up .gitignore by removing DocFX and claude entries, and adding log report file
+- Remove obsolete members and interfaces, update changelog for breaking changes
+- Replace OnChangeThrottleMs with OnChangeThrottle property of type TimeSpan
+- Rename IFormatProvider to IWritableFormatProvider to avoid System.IFormatProvider conflict
+- Update package references to use latest versions
+- Consolidate Microsoft.Extensions.Hosting package reference
 ## [0.5.0] - 2026-07-11
 
 ### 🚀 Features
