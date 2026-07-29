@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
+using Configuration.Writable.Tests.Utility;
 
 namespace Configuration.Writable.Tests;
 
@@ -79,7 +80,17 @@ public partial class OnChangeDebounceIntegrationTests : IDisposable
             s.Name = "initial";
             s.Value = 0;
         });
-        await Task.Delay(100); // Allow file watcher to initialize
+        // Wait reliably for the initial save to deliver its notification so the
+        // count below represents only the rapid-change phase.
+        await FileWatcherTestHelper.WaitForConditionAsync(
+            () =>
+            {
+                lock (receivedValues)
+                {
+                    return receivedValues.Count >= 1;
+                }
+            }
+        );
 
         var initialChangeCount = changeCount;
 
@@ -93,8 +104,19 @@ public partial class OnChangeDebounceIntegrationTests : IDisposable
             Thread.Sleep(50); // Small delay between writes
         }
 
-        // Wait for debounce period + buffer
-        Thread.Sleep(700);
+        // Wait reliably for the debounce period to elapse and the final change to arrive.
+        await FileWatcherTestHelper.WaitForConditionAsync(
+            () =>
+            {
+                lock (receivedValues)
+                {
+                    return receivedValues.Count > 0
+                        && receivedValues[^1].Name == "change5"
+                        && receivedValues[^1].Value == 5;
+                }
+            },
+            timeout: TimeSpan.FromSeconds(5)
+        );
 
         // Assert - Debouncing coalesces rapid changes and delivers the final file contents.
         var changesAfterRapidWrites = changeCount - initialChangeCount;

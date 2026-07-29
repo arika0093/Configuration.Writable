@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Tests.Utility;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Configuration.Writable.Tests;
@@ -373,8 +374,9 @@ public partial class KeyedServicesIntegrationTests
                 settings => settings.ApplicationName = "Changed"
             );
 
-            // Give time for FileSystemWatcher to detect the change
-            await Task.Delay(300);
+            // Wait reliably for FileSystemWatcher to detect the change and the default
+            // OnChangeDebounce to elapse. A fixed Task.Delay is flaky on busy CI runners.
+            await FileWatcherTestHelper.WaitForConditionAsync(() => changeNotified);
 
             changeNotified.ShouldBeTrue();
         }

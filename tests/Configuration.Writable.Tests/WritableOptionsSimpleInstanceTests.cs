@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Tests.Utility;
 
 namespace Configuration.Writable.Tests;
 
@@ -425,8 +426,9 @@ public class WritableOptionsSimpleInstanceTests
                 settings.Value = 999;
             });
 
-            // Wait for FileSystemWatcher to detect the change
-            await Task.Delay(300);
+            // Wait reliably for FileSystemWatcher to detect the change and the default
+            // OnChangeDebounce to elapse. A fixed Task.Delay is flaky on busy CI runners.
+            await FileWatcherTestHelper.WaitForConditionAsync(() => callCount >= 1);
 
             // Assert
             callCount.ShouldBeGreaterThanOrEqualTo(1);
@@ -488,8 +490,11 @@ public class WritableOptionsSimpleInstanceTests
                 settings.Value = 777;
             });
 
-            // Wait for FileSystemWatcher to detect the change
-            await Task.Delay(300);
+            // Wait reliably for FileSystemWatcher to detect the change and the default
+            // OnChangeDebounce to elapse. A fixed Task.Delay is flaky on busy CI runners.
+            await FileWatcherTestHelper.WaitForConditionAsync(
+                () => receivedNotifications.Count >= 1
+            );
 
             // Assert
             receivedNotifications.Count.ShouldBeGreaterThanOrEqualTo(1);
@@ -543,8 +548,11 @@ public class WritableOptionsSimpleInstanceTests
                 settings.Value = 555;
             });
 
-            // Wait for FileSystemWatcher to detect the change
-            await Task.Delay(300);
+            // Wait reliably for FileSystemWatcher to detect the change and the default
+            // OnChangeDebounce to elapse. A fixed Task.Delay is flaky on busy CI runners.
+            await FileWatcherTestHelper.WaitForConditionAsync(
+                () => callCount1 >= 1 && callCount2 >= 1 && callCount3 >= 1
+            );
 
             // Assert - All listeners should be called
             callCount1.ShouldBeGreaterThanOrEqualTo(1);
@@ -596,14 +604,22 @@ public class WritableOptionsSimpleInstanceTests
                 );
             });
 
-            // Act - Save multiple times with sufficient delay between saves
-            // Note: The debounce delay is 300ms, so we need longer delays.
+            // Act - Save multiple times and wait reliably for each notification
+            // (FileSystemWatcher + default OnChangeDebounce).
             await option.SaveAsync(settings => settings.Name = "first");
-            await Task.Delay(1200); // Wait for FileSystemWatcher + debounce
+            await FileWatcherTestHelper.WaitForConditionAsync(
+                () => receivedValues.Any(v => v.Name == "first")
+            );
+
             await option.SaveAsync(settings => settings.Name = "second");
-            await Task.Delay(1200); // Wait for FileSystemWatcher + debounce
+            await FileWatcherTestHelper.WaitForConditionAsync(
+                () => receivedValues.Any(v => v.Name == "second")
+            );
+
             await option.SaveAsync(settings => settings.Name = "third");
-            await Task.Delay(1200); // Wait for FileSystemWatcher + debounce
+            await FileWatcherTestHelper.WaitForConditionAsync(
+                () => receivedValues.Any(v => v.Name == "third")
+            );
 
             // Assert
             receivedValues.Count.ShouldBeGreaterThanOrEqualTo(3);
@@ -649,14 +665,17 @@ public class WritableOptionsSimpleInstanceTests
 
             // Act - Save, then dispose, then save again
             await option.SaveAsync(settings => settings.Name = "before_dispose");
-            await Task.Delay(300); // Wait for FileSystemWatcher
+            // Wait reliably for FileSystemWatcher + debounce instead of fixed Task.Delay.
+            await FileWatcherTestHelper.WaitForConditionAsync(() => callCount >= 1);
             var countBeforeDispose = callCount;
             countBeforeDispose.ShouldBeGreaterThanOrEqualTo(1);
 
             subscription?.Dispose();
 
             await option.SaveAsync(settings => settings.Name = "after_dispose");
-            await Task.Delay(300); // Wait for FileSystemWatcher
+            // Allow time for any in-flight FileSystemWatcher event to deliver, but
+            // a disposed subscription should no longer update callCount.
+            await Task.Delay(1000);
 
             // Assert - Should not have received new notifications after dispose
             callCount.ShouldBe(countBeforeDispose);
@@ -705,8 +724,9 @@ public class WritableOptionsSimpleInstanceTests
                 settings.Value = 321;
             });
 
-            // Wait for FileSystemWatcher to detect the change
-            await Task.Delay(300);
+            // Wait reliably for FileSystemWatcher to detect the change and the default
+            // OnChangeDebounce to elapse. A fixed Task.Delay is flaky on busy CI runners.
+            await FileWatcherTestHelper.WaitForNonNullAsync(() => notifiedValue);
 
             // Assert - Both CurrentValue and notification should have latest value
             option.CurrentValue.Name.ShouldBe("updated_value");
