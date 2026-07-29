@@ -492,8 +492,8 @@ public class WritableOptionsSimpleInstanceTests
 
             // Wait reliably for FileSystemWatcher to detect the change and the default
             // OnChangeDebounce to elapse. A fixed Task.Delay is flaky on busy CI runners.
-            await FileWatcherTestHelper.WaitForConditionAsync(
-                () => receivedNotifications.Count >= 1
+            await FileWatcherTestHelper.WaitForConditionAsync(() =>
+                receivedNotifications.Count >= 1
             );
 
             // Assert
@@ -550,8 +550,8 @@ public class WritableOptionsSimpleInstanceTests
 
             // Wait reliably for FileSystemWatcher to detect the change and the default
             // OnChangeDebounce to elapse. A fixed Task.Delay is flaky on busy CI runners.
-            await FileWatcherTestHelper.WaitForConditionAsync(
-                () => callCount1 >= 1 && callCount2 >= 1 && callCount3 >= 1
+            await FileWatcherTestHelper.WaitForConditionAsync(() =>
+                callCount1 >= 1 && callCount2 >= 1 && callCount3 >= 1
             );
 
             // Assert - All listeners should be called
@@ -607,18 +607,18 @@ public class WritableOptionsSimpleInstanceTests
             // Act - Save multiple times and wait reliably for each notification
             // (FileSystemWatcher + default OnChangeDebounce).
             await option.SaveAsync(settings => settings.Name = "first");
-            await FileWatcherTestHelper.WaitForConditionAsync(
-                () => receivedValues.Any(v => v.Name == "first")
+            await FileWatcherTestHelper.WaitForConditionAsync(() =>
+                receivedValues.Any(v => v.Name == "first")
             );
 
             await option.SaveAsync(settings => settings.Name = "second");
-            await FileWatcherTestHelper.WaitForConditionAsync(
-                () => receivedValues.Any(v => v.Name == "second")
+            await FileWatcherTestHelper.WaitForConditionAsync(() =>
+                receivedValues.Any(v => v.Name == "second")
             );
 
             await option.SaveAsync(settings => settings.Name = "third");
-            await FileWatcherTestHelper.WaitForConditionAsync(
-                () => receivedValues.Any(v => v.Name == "third")
+            await FileWatcherTestHelper.WaitForConditionAsync(() =>
+                receivedValues.Any(v => v.Name == "third")
             );
 
             // Assert

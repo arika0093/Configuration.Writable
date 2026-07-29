@@ -82,15 +82,13 @@ public partial class OnChangeDebounceIntegrationTests : IDisposable
         });
         // Wait reliably for the initial save to deliver its notification so the
         // count below represents only the rapid-change phase.
-        await FileWatcherTestHelper.WaitForConditionAsync(
-            () =>
+        await FileWatcherTestHelper.WaitForConditionAsync(() =>
+        {
+            lock (receivedValues)
             {
-                lock (receivedValues)
-                {
-                    return receivedValues.Count >= 1;
-                }
+                return receivedValues.Count >= 1;
             }
-        );
+        });
 
         var initialChangeCount = changeCount;
 
