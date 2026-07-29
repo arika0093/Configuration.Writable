@@ -6,6 +6,5 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <Reference Include="System.IO.Compression" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.*" />
   </ItemGroup>
 </Project>
