@@ -37,7 +37,11 @@
     <PackageReference Include="PublicApiGenerator" Version="11.5.4" />
     <PackageReference Include="GitHubActionsTestLogger" Version="3.0.3" />
     <!-- PolySharp provides System.Index/System.Range polyfills for net48 only. -->
-    <PackageReference Include="PolySharp" Version="1.*" Condition="'$(TargetFramework)' == 'net48'" />
+    <PackageReference
+      Include="PolySharp"
+      Version="1.*"
+      Condition="'$(TargetFramework)' == 'net48'"
+    />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
