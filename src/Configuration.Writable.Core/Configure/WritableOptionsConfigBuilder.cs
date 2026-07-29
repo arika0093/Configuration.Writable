@@ -25,10 +25,10 @@ namespace Configuration.Writable.Configure;
 public class WritableOptionsConfigBuilder<T>
     where T : class, new()
 {
-#if NET
     private const string AotJsonReason =
         "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
 
+#if NET
     private const string AotAnnotationsReason =
         "Data Annotations validation is disabled by default when dynamic code is not supported.";
 #endif
@@ -87,7 +87,7 @@ public class WritableOptionsConfigBuilder<T>
 #if NET
         RuntimeFeature.IsDynamicCodeSupported;
 #else
-        true;
+        false;
 #endif
 
     /// <summary>
@@ -130,10 +130,8 @@ public class WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Sets the cloning strategy to use JSON serialization for deep cloning of the configuration object.
     /// </summary>
-#if NET
     [RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
     [UnconditionalSuppressMessage("AOT", "IL3050")]
-#endif
     public void UseJsonCloneStrategy()
     {
         _usesDefaultJsonCloneFallback = false;
@@ -257,10 +255,8 @@ public class WritableOptionsConfigBuilder<T>
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
-#if NET
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
-#endif
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
         var fileProvider = FileProvider ?? new CommonFileProvider();

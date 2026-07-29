@@ -11,6 +11,11 @@
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <IsPackable>false</IsPackable>
+    <!-- Source generator does not need polyfills to be public; making them public causes duplicate-type
+         conflicts (CS0433) on net8.0+ consumers of this project as an analyzer. The polyfills are still
+         generated (and made internal) so that the embedded source from IDeepCloneable.Generator.Source
+         can compile. -->
+    <PolySharpUsePublicAccessibilityForGeneratedTypes>false</PolySharpUsePublicAccessibilityForGeneratedTypes>
   </PropertyGroup>
   <ItemGroup>
     <None

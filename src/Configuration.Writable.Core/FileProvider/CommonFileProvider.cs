@@ -26,9 +26,10 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
 
     /// <summary>
     /// Gets or sets the backup directory relative to the configuration file. Use "/" to save backups alongside the
-    /// configuration file. Defaults to ".backup".
+    /// configuration file. Defaults to "backup" on Windows or ".backup" on other platforms.
     /// </summary>
-    public virtual string BackupDirectory { get; set; } = ".backup";
+    public virtual string BackupDirectory { get; set; } =
+        Path.DirectorySeparatorChar == '\\' ? "backup" : ".backup";
 
     /// <summary>
     /// The maximum number of retry attempts when a file write operation fails due to an exception. Defaults to 3.
