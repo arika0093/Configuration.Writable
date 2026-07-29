@@ -56,8 +56,6 @@ namespace Configuration.Writable.Configure
         public bool RegisterAsSingleton { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
@@ -65,8 +63,6 @@ namespace Configuration.Writable.Configure
         public void UseDefaultCloneStrategy() { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory() { }
         public void UseFile(string? path) { }
-        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Default JSON serialization may not be compatible with NativeAOT.")]
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050")]
         public void UseJsonCloneStrategy() { }
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
         public void UseMigration<TOld, TNew>(System.Func<TOld, TNew> migrator)
@@ -306,8 +302,6 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios")]
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }

@@ -1,5 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
+using System.Text.RegularExpressions;
 using Configuration.Writable.FormatProvider;
 using PublicApiGenerator;
 
@@ -7,22 +8,26 @@ namespace Configuration.Writable.Tests.PublicApi;
 
 public static class PublicApiCheck
 {
+    private static readonly Regex RuntimeAnnotationAttributes = new(
+        @"^[ \t]*\[System\.Diagnostics\.CodeAnalysis\.(?:RequiresUnreferencedCode|UnconditionalSuppressMessage).*?\]\r?\n",
+        RegexOptions.Multiline
+    );
+
     public static void Check<T>()
     {
-        var publicApi = typeof(T).Assembly.GeneratePublicApi(
-            new()
-            { // These attributes won't be included in the public API
-                ExcludeAttributes =
-                [
-                    typeof(InternalsVisibleToAttribute).FullName!,
-                    "System.Runtime.CompilerServices.IsByRefLike",
-                    typeof(TargetFrameworkAttribute).FullName!,
-                ],
-                // By default types found in Microsoft or System
-                // namespaces are not treated as part of the public API.
-                // By passing an empty array, we ensure they're all
-                DenyNamespacePrefixes = [],
-            }
+        var publicApi = RuntimeAnnotationAttributes.Replace(
+            typeof(T).Assembly.GeneratePublicApi(
+                new()
+                { // These attributes won't be included in the public API
+                    ExcludeAttributes =
+                    [
+                        typeof(InternalsVisibleToAttribute).FullName!,
+                        "System.Runtime.CompilerServices.IsByRefLike",
+                        typeof(TargetFrameworkAttribute).FullName!,
+                    ],
+                }
+            ),
+            string.Empty
         );
         publicApi.ShouldMatchApproved(c =>
         {

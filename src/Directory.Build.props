@@ -13,8 +13,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <PolySharpUseEmbeddedAttributeForGeneratedTypes>true</PolySharpUseEmbeddedAttributeForGeneratedTypes>
-    <PolySharpUsePublicAccessibilityForGeneratedTypes>true</PolySharpUsePublicAccessibilityForGeneratedTypes>
-    <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference

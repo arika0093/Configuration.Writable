@@ -11,7 +11,7 @@
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable.Generator\Configuration.Writable.Generator.csproj">
       <OutputItemType>Analyzer</OutputItemType>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
 </Project>

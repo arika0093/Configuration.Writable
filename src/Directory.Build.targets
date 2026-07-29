@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup
+    Condition="'$(TargetFramework)' == 'netstandard2.0' and '$(MSBuildProjectName)' != 'Configuration.Writable.Generator'"
+  >
+    <!-- net48 consumers need these runtime annotation polyfills to be public.
+         Directory.Build.targets is imported after the target framework is set. -->
+    <PolySharpUsePublicAccessibilityForGeneratedTypes>true</PolySharpUsePublicAccessibilityForGeneratedTypes>
+    <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
+  </PropertyGroup>
+</Project>
