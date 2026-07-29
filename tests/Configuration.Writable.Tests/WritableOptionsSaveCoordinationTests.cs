@@ -233,14 +233,14 @@ public partial class WritableOptionsSaveCoordinationTests
 
     private sealed class BlockingFormatProvider(int expectedSaveCount) : JsonFormatProvider
     {
-        private readonly TaskCompletionSource _release = new(
+        private readonly TaskCompletionSource<bool> _release = new(
             TaskCreationOptions.RunContinuationsAsynchronously
         );
         private int _saveCount;
 
-        internal TaskCompletionSource FirstSaveEntered { get; } =
+        internal TaskCompletionSource<bool> FirstSaveEntered { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal TaskCompletionSource AllSavesEntered { get; } =
+        internal TaskCompletionSource<bool> AllSavesEntered { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal int SaveCount => Volatile.Read(ref _saveCount);
 
@@ -251,14 +251,14 @@ public partial class WritableOptionsSaveCoordinationTests
         )
         {
             var saveCount = Interlocked.Increment(ref _saveCount);
-            FirstSaveEntered.TrySetResult();
+            FirstSaveEntered.TrySetResult(true);
             if (saveCount == expectedSaveCount)
             {
-                AllSavesEntered.TrySetResult();
+                AllSavesEntered.TrySetResult(true);
             }
             await _release.Task.WaitAsync(cancellationToken);
         }
 
-        internal void Release() => _release.TrySetResult();
+        internal void Release() => _release.TrySetResult(true);
     }
 }
