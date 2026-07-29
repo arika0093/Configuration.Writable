@@ -46,7 +46,16 @@ public partial class WritableOptionsConfigBuilderTests
     {
         var options = new WritableOptionsConfigBuilder<TestSettings>();
 
-        options.UseDataAnnotationsValidation.ShouldBe(RuntimeFeature.IsDynamicCodeSupported);
+        options.UseDataAnnotationsValidation.ShouldBe(IsDynamicCodeSupported());
+    }
+
+    private static bool IsDynamicCodeSupported()
+    {
+#if NET48
+        return false;
+#else
+        return RuntimeFeature.IsDynamicCodeSupported;
+#endif
     }
 
     [Fact]

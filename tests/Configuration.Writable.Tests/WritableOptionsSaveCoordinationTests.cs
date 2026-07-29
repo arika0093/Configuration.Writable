@@ -42,7 +42,7 @@ public partial class WritableOptionsSaveCoordinationTests
         var second = CreateOptions<SecondSettings>(provider, path);
 
         var firstSave = first.SaveAsync(new FirstSettings { Value = "first" });
-        await provider.FirstSaveEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await AwaitWithTimeout(provider.FirstSaveEntered.Task, TimeSpan.FromSeconds(2));
 
         var secondSave = second.SaveAsync(new SecondSettings { Value = "second" });
         await Task.Delay(100);
@@ -66,7 +66,7 @@ public partial class WritableOptionsSaveCoordinationTests
         var firstSave = first.SaveAsync(new FirstSettings { Value = "first" });
         var secondSave = second.SaveAsync(new SecondSettings { Value = "second" });
 
-        await provider.AllSavesEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await AwaitWithTimeout(provider.AllSavesEntered.Task, TimeSpan.FromSeconds(2));
         provider.SaveCount.ShouldBe(2);
         provider.Release();
         await Task.WhenAll(firstSave, secondSave);
@@ -85,7 +85,7 @@ public partial class WritableOptionsSaveCoordinationTests
         try
         {
             var save = options.SaveAsync(new FirstSettings { Value = "saved" });
-            await provider.FirstSaveEntered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            await AwaitWithTimeout(provider.FirstSaveEntered.Task, TimeSpan.FromSeconds(2));
 
             File.Exists(path + ".lock").ShouldBeTrue();
 
@@ -256,9 +256,38 @@ public partial class WritableOptionsSaveCoordinationTests
             {
                 AllSavesEntered.TrySetResult(true);
             }
-            await _release.Task.WaitAsync(cancellationToken);
+            await AwaitWithCancellation(_release.Task, cancellationToken);
         }
 
         internal void Release() => _release.TrySetResult(true);
+    }
+
+    private static async Task AwaitWithTimeout(Task task, TimeSpan timeout)
+    {
+        var completed = await Task.WhenAny(task, Task.Delay(timeout));
+        if (completed != task)
+        {
+            throw new TimeoutException(
+                $"Task did not complete within {timeout}."
+            );
+        }
+        await task;
+    }
+
+    private static async Task AwaitWithCancellation(Task task, CancellationToken cancellationToken)
+    {
+        if (!cancellationToken.CanBeCanceled)
+        {
+            await task;
+            return;
+        }
+        var tcs = new TaskCompletionSource<bool>();
+        using var registration = cancellationToken.Register(() => tcs.TrySetCanceled());
+        var completed = await Task.WhenAny(task, tcs.Task);
+        if (completed != task)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        await task;
     }
 }
