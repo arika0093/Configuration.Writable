@@ -267,9 +267,7 @@ public partial class WritableOptionsSaveCoordinationTests
         var completed = await Task.WhenAny(task, Task.Delay(timeout));
         if (completed != task)
         {
-            throw new TimeoutException(
-                $"Task did not complete within {timeout}."
-            );
+            throw new TimeoutException($"Task did not complete within {timeout}.");
         }
         await task;
     }
