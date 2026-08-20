@@ -18,7 +18,7 @@
     <!-- Microsoft.NET.Test.Sdk 18.x only supports net8.0+, use 17.x for net6.0 -->
     <PackageReference
       Include="Microsoft.NET.Test.Sdk"
-      Version="18.8.1"
+      Version="18.9.0"
       Condition="'$(TargetFramework)' != 'net6.0'"
     />
     <PackageReference
