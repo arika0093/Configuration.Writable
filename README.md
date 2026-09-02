@@ -24,9 +24,11 @@ using Configuration.Writable;
 using Configuration.Writable.FormatProvider;
 
 // initialize
-WritableOptions.Initialize<SampleSetting>(conf => {
-    conf.UseFile("usersettings.json");
-    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+WritableOptions.Initialize(options => {
+    options.Add<SampleSetting>(conf => {
+        conf.UseFile("usersettings.json");
+        conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+    });
 });
 
 // get the writable options instance
@@ -42,8 +44,7 @@ options.OnChange(newSetting => {
 // and save to storage
 Console.Write("Enter new name: ");
 var newName = Console.ReadLine() ?? "";
-await options.SaveAsync(setting =>
-{
+await options.SaveAsync(setting => {
     setting.Name = newName;
 });
 
@@ -110,7 +111,9 @@ Use `WritableOptions` as the starting point for reading and writing settings.
 using Configuration.Writable;
 
 // initialize once (at application startup)
-WritableOptions.Initialize<SampleSetting>();
+WritableOptions.Initialize(conf => {
+    conf.Add<SampleSetting>();
+});
 
 // -------------
 // get the writable config instance with the specified setting class
@@ -121,24 +124,24 @@ var sampleSetting = options.CurrentValue;
 Console.WriteLine($">> Name: {sampleSetting.Name}");
 
 // and save to storage
-await options.SaveAsync(setting =>
-{
+await options.SaveAsync(setting => {
     setting.Name = "new name";
 });
 // By default, it's saved to ./usersettings.json
 ```
 
 > [!IMPORTANT]
-> Always call `WritableOptions.Initialize<T>()` before `WritableOptions.GetOptions<T>()`.
-> `GetOptions` will throw if the setting has not been initialized.
+> Always register the type with `WritableOptions.Initialize` before calling `WritableOptions.GetOptions`.
 
 ### Host Application (With DI)
 If you are using DI (for example, in ASP.NET Core, Blazor, Worker Service, etc.), register `IReadOnlyOptions<T>` and `IWritableOptions<T>` in the DI container.
-First, call `AddWritableOptions<T>` to register the settings class.
+First, call `AddWritableOptions`to register the settings class.
 
 ```csharp
 // Program.cs
-builder.Services.AddWritableOptions<UserSetting>();
+builder.Services.AddWritableOptions(options => {
+    options.Add<UserSetting>();
+});
 ```
 
 Then, inject `IReadOnlyOptions<T>` or `IWritableOptions<T>` to read and write settings.
@@ -146,10 +149,8 @@ Then, inject `IReadOnlyOptions<T>` or `IWritableOptions<T>` to read and write se
 ```csharp
 // read config in your class
 // you can also use IOptions<T>, IOptionsMonitor<T> or IOptionsSnapshot<T>
-public class ConfigReadService(IReadOnlyOptions<UserSetting> options)
-{
-    public void Print()
-    {
+public class ConfigReadService(IReadOnlyOptions<UserSetting> options) {
+    public void Print() {
         // get the UserSetting instance
         var sampleSetting = options.CurrentValue;
         Console.WriteLine($">> Name: {sampleSetting.Name}");
@@ -157,15 +158,12 @@ public class ConfigReadService(IReadOnlyOptions<UserSetting> options)
 }
 
 // read and write config in your class
-public class ConfigReadWriteService(IWritableOptions<UserSetting> options)
-{
-    public async Task UpdateAsync()
-    {
+public class ConfigReadWriteService(IWritableOptions<UserSetting> options) {
+    public async Task UpdateAsync() {
         // get the UserSetting instance
         var sampleSetting = options.CurrentValue;
         // and save to storage
-        await options.SaveAsync(setting =>
-        {
+        await options.SaveAsync(setting => {
             setting.Name = "new name";
         });
     }
@@ -177,10 +175,9 @@ By explicitly specifying the [SectionName](#sectionname), you can dynamically up
 
 ```csharp
 var builder = WebApplication.CreateSlimBuilder(args);
-builder.Services.AddWritableOptions<SampleSetting>(conf =>
-{
+builder.Services.AddWritableOptions(conf => {
     conf.UseFile("appsettings.json");
-    conf.SectionName = "MySetting";
+    conf.Add<UserSetting>(c => c.SectionName = "MySetting");
 });
 
 // In this case, the settings will be saved under the `MySetting` section in `appsettings.json`.
@@ -200,14 +197,24 @@ Reading and writing settings is performed in the same way as described above in 
 - [Validation](#validation)
 
 ### Configuration Method
-You can change various settings as arguments to `Initialize` or `AddWritableOptions`.
+You can configure common settings once and register multiple types in the same block. The block is fully collected before registration, so common settings may appear before or after `Add<T>`. Type-specific configuration takes precedence.
 
 ```csharp
 // Without DI
-WritableOptions.Initialize<SampleSetting>(conf => { /* ... */ });
+WritableOptions.Initialize(conf => {
+    // 1. common configuration here
+    conf.Add<SampleSetting>(c => {
+        // 2. specific configuration for SampleSetting
+    });
+});
 
 // With DI
-builder.Services.AddWritableOptions<UserSetting>(conf => { /* ... */ });
+builder.Services.AddWritableOptions(conf => {
+    // 1. common configuration here
+    conf.Add<UserSetting>(c => {
+        // 2. specific configuration for UserSetting
+    });
+});
 ```
 
 ### Save Location
@@ -216,17 +223,23 @@ If you want to change the save location, use `conf.UseFile(path)` or `conf.UseXx
 
 For example:
 ```csharp
-// to save to the parent directory
-conf.UseFile("../myconfig");
-// to save to child directory
-conf.UseFile("config/myconfig");
+conf.Add<UserSetting>(c => {
+    // to save to the parent directory
+    c.UseFile("../myconfig");
+    // alternatively, to save to a child directory
+    // c.UseFile("config/myconfig");
+});
 
 // to save to a common settings directory
 //   in Windows: %APPDATA%/MyAppId
 //   in macOS: $XDG_CONFIG_HOME/MyAppId or ~/Library/Application Support/MyAppId
 //   in Linux: $XDG_CONFIG_HOME/MyAppId or ~/.config/MyAppId
-conf.UseStandardSaveDirectory("MyAppId")
-    .AddFilePath("myconfig");
+conf.UseStandardSaveDirectory("MyAppId");
+conf.Add<UserSetting>(c => {
+    // -- and specific configuration for UserSetting
+    // In this case, it will be saved as MyAppId/mysettings.json.
+    c.AddFilePath("mysettings");
+});
 ```
 
 If you want to read/write files from multiple locations, you can call `UseXxxDirectory().AddFilePath(path)` multiple times as follows.  
@@ -280,21 +293,21 @@ If you want to toggle between development and production environments, you can u
 // - production:  %APPDATA%/MyAppId/mysettings.json (on Windows)
 
 // without DI
-WritableOptions.Initialize<UserSetting>(conf => {
+WritableOptions.Initialize(options => {
 #if DEBUG
     var isProduction = false;
 #else
     var isProduction = true;
 #endif
-    conf.UseStandardSaveDirectory("MyAppId", enabled: isProduction)
-        .AddFilePath("mysettings");
+    options.UseStandardSaveDirectory("MyAppId", enabled: isProduction);
+    options.Add<UserSetting>(conf => conf.AddFilePath("mysettings"));
 });
 
 // if using IHostApplicationBuilder
-builder.Services.AddWritableOptions<UserSetting>(conf => {
+builder.Services.AddWritableOptions(options => {
     var isProd = builder.Environment.IsProduction();
-    conf.UseStandardSaveDirectory("MyAppId", enabled: isProd)
-        .AddFilePath("mysettings");
+    options.UseStandardSaveDirectory("MyAppId", enabled: isProd);
+    options.Add<UserSetting>(conf => conf.AddFilePath("mysettings"));
 });
 ```
 
@@ -351,9 +364,9 @@ and following code to configure the YAML format provider.
 // 1. Register formatters at startup (required for NativeAOT)
 SampleSetting.__RegisterVYamlFormatter();
 // 2. Congigure YamlFormatProvider
-builder.Services.AddWritableOptions<SampleSetting>(conf => {
+builder.Services.AddWritableOptions(conf => {
     conf.FormatProvider = new YamlFormatProvider();
-    // and you can also specify the file path
+    conf.Add<SampleSetting>();
 });
 ```
 
@@ -391,27 +404,23 @@ For example:
 ```csharp
 public class MyService(IWritableOptions<UserSetting> options) : IDisposable
 {
-    public void WatchStart()
-    {
+    public void WatchStart() {
         // register change callback
         _disposable = options.OnChange(newSetting => {
             // called when the configuration file is changed externally
             Console.WriteLine($">> Settings changed: Name={newSetting.Name}, Age={newSetting.Age}");
         });
-
         // you can also register a callback for reload failures
         // options.OnReloadFailed(ex => {
         //     Console.WriteLine($">> Settings reload failed: {ex.Message}");
         // });
     }
 
-    public async Task UpdateAsync()
-    {
+    public async Task UpdateAsync() {
         // get the UserSetting instance
         var sampleSetting = options.CurrentValue;
         // and save to storage
-        await options.SaveAsync(setting =>
-        {
+        await options.SaveAsync(setting => {
             setting.Name = "new name";
         });
         // this will trigger the OnChange callback
@@ -440,24 +449,20 @@ If you want to directly reference the settings class, specify `conf.RegisterAsSi
 > Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
 
 ```csharp
-builder.Services.AddWritableOptions<UserSetting>(conf => {
-    conf.RegisterAsSingleton = true;
+builder.Services.AddWritableOptions(conf => {
+    conf.Add<UserSetting>(c => c.RegisterAsSingleton = true);
 });
 
 // you can use UserSetting directly
-public class MyService(UserSetting setting)
-{
-    public void Print()
-    {
+public class MyService(UserSetting setting) {
+    public void Print() {
         Console.WriteLine($">> Name: {setting.Name}");
     }
 }
 
 // and you can also use IReadOnlyOptions<T> as usual
-public class MyOtherService(IReadOnlyOptions<UserSetting> options)
-{
-    public void Print()
-    {
+public class MyOtherService(IReadOnlyOptions<UserSetting> options) {
+    public void Print() {
         var setting = options.CurrentValue;
         Console.WriteLine($">> Name: {setting.Name}");
     }
@@ -505,9 +510,11 @@ To write settings to a specific section, only that section is updated while the 
 
 ```csharp
 // configure to save under MyAppSettings:Foo:Bar section
-builder.Services.AddWritableOptions<UserSetting>(conf => {
-    conf.UseFile("appsettings.json");
-    conf.SectionName = "MyAppSettings:Foo:Bar";
+builder.Services.AddWritableOptions(options => {
+    options.UseFile("appsettings.json");
+    options.Add<UserSetting>(conf => {
+        conf.SectionName = "MyAppSettings:Foo:Bar";
+    });
 });
 
 // and save settings
@@ -543,14 +550,20 @@ The resulting `appsettings.json` will look like this:
 By using this method, it is possible to save multiple configuration classes in different sections within the same file.
 
 ```csharp
-builder.Services.AddWritableOptions<UserSettingA>(conf => {
-    conf.UseFile("appsettings.json");
-    conf.SectionName = "SettingsA";
+builder.Services.AddWritableOptions(options => {
+    options.UseFile("appsettings.json");
+    options.Add<UserSettingA>(conf => conf.SectionName = "SettingsA");
+    options.Add<UserSettingB>(conf => conf.SectionName = "SettingsB");
 });
-builder.Services.AddWritableOptions<UserSettingB>(conf => {
-    conf.UseFile("appsettings.json");
-    conf.SectionName = "SettingsB";
-});
+/* result may look like this:
+{
+  "SettingsA": {
+    "Name": "custom name A", "Age": 30
+  },
+  "SettingsB": {
+    "Name": "custom name B", "Age": 40
+  }
+} */
 ```
 
 For more details, please refer to the [Example.WebApi](./example/Example.WebApi/) project.
@@ -562,9 +575,11 @@ If validation fails, an `OptionsValidationException` is thrown and the settings 
 ```csharp
 using Microsoft.Extensions.Options;
 
-builder.Services.AddWritableOptions<UserSetting>(conf => {
-    // if you want to disable validation of DataAnnotations, do the following:
-    // conf.UseDataAnnotationsValidation = false;
+builder.Services.AddWritableOptions(options => {
+    options.Add<UserSetting>(conf => {
+        // if you want to disable validation of DataAnnotations, do the following:
+        // conf.UseDataAnnotationsValidation = false;
+    });
 });
 
 var options = WritableOptions.GetOptions<UserSetting>();
@@ -574,8 +589,7 @@ try {
         setting.Age = 200;  // out of range
     });
 }
-catch (OptionsValidationException ex)
-{
+catch (OptionsValidationException ex) {
     Console.WriteLine($">> Validation failed: {ex.Message}");
     // setting is not saved if validation fails
 }
@@ -592,11 +606,13 @@ internal class UserSetting
 To use source generators for DataAnnotations, use the following pattern.
 
 ```csharp
-builder.Services.AddWritableOptions<UserSetting>(conf => {
-    // disable attributes-based validation
-    conf.UseDataAnnotationsValidation = false;
-    // enable source-generator-based validation
-    conf.WithValidator<UserSettingValidator>();
+builder.Services.AddWritableOptions(options => {
+    options.Add<UserSetting>(conf => {
+        // disable attributes-based validation
+        conf.UseDataAnnotationsValidation = false;
+        // enable source-generator-based validation
+        conf.WithValidator<UserSettingValidator>();
+    });
 });
 
 internal class UserSetting { /* ... */ }
@@ -610,22 +626,24 @@ Alternatively, you can add custom validation using `WithValidatorFunction` or `W
 ```csharp
 using Microsoft.Extensions.Options;
 
-builder.Services.AddWritableOptions<UserSetting>(conf => {
-    // add custom validation function
-    conf.WithValidatorFunction(setting => {
-        if (setting.Name.Contains("invalid"))
-            return ValidateOptionsResult.Fail("Name must not contain 'invalid'.");
-        return ValidateOptionsResult.Success;
+builder.Services.AddWritableOptions(options => {
+    options.Add<UserSetting>(conf => {
+        // add custom validation function
+        conf.WithValidatorFunction(setting => {
+            if (setting.Name.Contains("invalid")) {
+                return ValidateOptionsResult.Fail("Name must not contain 'invalid'.");
+            }
+            return ValidateOptionsResult.Success;
+        });
+        // or use a custom validator class
+        conf.WithValidator<MyCustomValidator>();
     });
-    // or use a custom validator class
-    conf.WithValidator<MyCustomValidator>();
 });
 
 // IValidateOptions sample
 internal class MyCustomValidator : IValidateOptions<UserSetting>
 {
-    public ValidateOptionsResult Validate(string? name, UserSetting options)
-    {
+    public ValidateOptionsResult Validate(string? name, UserSetting options) {
         if (options.Age < 10)
             return ValidateOptionsResult.Fail("Age must be at least 10.");
         if (options.Age > 100)
@@ -648,8 +666,7 @@ Use `Update` for edits to the in-memory draft.
 var session = options.BeginConfigure();
 
 // Temporarily update the draft.
-session.Update(setting =>
-{
+session.Update(setting => {
     setting.Name = "new name";
     setting.Age = 30;
 });
@@ -677,17 +694,16 @@ stored below `Profiles:{name}` in the same file. The configured default profile 
 immediately and is persisted on its first save.
 
 ```csharp
-builder.Services.AddProfiledWritableOptions<UserSetting>(conf =>
-{
-    conf.UseFile("usersettings.json");
-    conf.SectionName = "MySettings";
-    conf.DefaultProfile = "default"; // The profile initially set as active
+builder.Services.AddWritableOptions(options => {
+    options.AddProfiled<UserSetting>(conf => {
+        conf.UseFile("usersettings.json");
+        conf.SectionName = "MySettings";
+        conf.DefaultProfile = "default"; // The profile initially set as active
+    });
 });
 
-public class ProfileService(IProfiledWritableOptions<UserSetting> profiles)
-{
-    public async Task SwitchToWorkAsync()
-    {
+public class ProfileService(IProfiledWritableOptions<UserSetting> profiles) {
+    public async Task SwitchToWorkAsync() {
         // Read and save the active profile.
         var name = profiles.CurrentValue.Name;
         await profiles.SaveAsync(setting => setting.Name = "my settings");
@@ -702,8 +718,7 @@ public class ProfileService(IProfiledWritableOptions<UserSetting> profiles)
         var newName = profiles.CurrentValue.Name;
 
         // Save a specific profile.
-        await profiles.GetProfile("Work").SaveAsync(setting =>
-        {
+        await profiles.GetProfile("Work").SaveAsync(setting => {
             setting.Name = "Work settings";
         });
     }
@@ -758,12 +773,14 @@ public partial class UserSettingV2 : IHasVersion
 Next, register the migration as follows:
 ```csharp
 // register latest version (V2)
-builder.Services.AddWritableOptions<UserSettingV2>(conf => {
-    // and register migration from V1 to V2
-    conf.UseMigration<UserSettingV1, UserSettingV2>(oldSetting => {
-        return new UserSettingV2 {
-            Names = [oldSetting.Name] // migrate Name to Names list
-        };
+builder.Services.AddWritableOptions(options => {
+    options.Add<UserSettingV2>(conf => {
+        // and register migration from V1 to V2
+        conf.UseMigration<UserSettingV1, UserSettingV2>(oldSetting => {
+            return new UserSettingV2 {
+                Names = [oldSetting.Name] // migrate Name to Names list
+            };
+        });
     });
 });
 ```
@@ -779,11 +796,13 @@ public class UserSettingV0
     public string Name { get; set; } = "default name";
 }
 
-builder.Services.AddWritableOptions<UserSettingV2>(conf => {
-    conf.UseMigrationFromNone<UserSettingV0, UserSettingV2>(oldSetting => {
-        return new UserSettingV2 {
-            Names = [oldSetting.Name]
-        };
+builder.Services.AddWritableOptions(options => {
+    options.Add<UserSettingV2>(conf => {
+        conf.UseMigrationFromNone<UserSettingV0, UserSettingV2>(oldSetting => {
+            return new UserSettingV2 {
+                Names = [oldSetting.Name]
+            };
+        });
     });
 });
 ```
@@ -835,13 +854,15 @@ conf.UseCustomCloneStrategy(original => {
 If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
 
 ```csharp
-// first setting
-builder.Services.AddWritableOptions<UserSetting>("First", conf => {
-    conf.UseFile("firstsettings.json");
-});
-// second setting
-builder.Services.AddWritableOptions<UserSetting>("Second", conf => {
-    conf.UseFile("secondsettings.json");
+builder.Services.AddWritableOptions(options => {
+    // first setting
+    options.Add<UserSetting>("First", conf => {
+        conf.UseFile("firstsettings.json");
+    });
+    // second setting
+    options.Add<UserSetting>("Second", conf => {
+        conf.UseFile("secondsettings.json");
+    });
 });
 ```
 
@@ -849,10 +870,8 @@ And use `IReadOnlyNamedOptions<T>` and `IWritableNamedOptions<T>` to access them
 
 ```csharp
 // use IReadOnlyNamedOptions<T> to read, IWritableNamedOptions<T> to read and write
-public class MyService(IWritableNamedOptions<UserSetting> options)
-{
-    public async Task GetAndSaveAsync()
-    {
+public class MyService(IWritableNamedOptions<UserSetting> options) {
+    public async Task GetAndSaveAsync() {
         var firstSetting = options.Get("First");
         var secondSetting = options.Get("Second");
         await options.SaveAsync("First", setting => {
@@ -876,10 +895,8 @@ public class MyService(IWritableNamedOptions<UserSetting> options)
 public class MyOtherService(
     [FromKeyedService("First")]
     IWritableOptions<UserSetting> firstOptions
-)
-{
-    public async Task GetAndSaveAsync()
-    {
+) {
+    public async Task GetAndSaveAsync() {
         var firstSetting = firstOptions.CurrentValue;
         await firstOptions.SaveAsync(setting => {
             setting.Name = "first name";
@@ -891,10 +908,8 @@ public class MyOtherService(
 If `RegisterAsSingleton` is enabled, you can access it as follows:
 
 ```csharp
-public class MyService([FromKeyedService("First")] UserSetting options)
-{
-    public void DirectUseNamedInstance()
-    {
+public class MyService([FromKeyedService("First")] UserSetting options) {
+    public void DirectUseNamedInstance() {
         // you can use the instance directly
         Console.WriteLine($">> Name: {options.Name}");
     }
@@ -911,26 +926,21 @@ for example, in addition to common application settings, it is useful when you w
 
 ```csharp
 // use IWritableOptionsConfigRegistry from DI
-public class DynamicOptionsService(IWritableOptionsConfigRegistry<UserSetting> registry)
-{
-    public void AddNewOptions(string instanceName, string filePath)
-    {
+public class DynamicOptionsService(IWritableOptionsConfigRegistry<UserSetting> registry) {
+    public void AddNewOptions(string instanceName, string filePath) {
         registry.TryAdd(instanceName, conf => {
             conf.UseFile(filePath);
         });
     }
 
-    public void RemoveOptions(string instanceName)
-    {
+    public void RemoveOptions(string instanceName) {
         registry.TryRemove(instanceName);
     }
 }
 
 // and you can access IOptionsNamedMonitor<T> or IWritableNamedOptions<T> as usual
-public class MyService(IWritableNamedOptions<UserSetting> options)
-{
-    public void UseOptions()
-    {
+public class MyService(IWritableNamedOptions<UserSetting> options) {
+    public void UseOptions() {
         var commonSetting = options.Get("Common");
         var documentSetting = options.Get("UserDocument1");
         var name = documentSetting.Name ?? commonSetting.Name ?? "default";

@@ -35,6 +35,20 @@ public static class WritableOptions
     public static void Initialize<T>(Action<WritableOptionsConfigBuilder<T>> configurationOptions)
         where T : class, new() => GetInternalInstance<T>().Initialize(configurationOptions);
 
+    /// <summary>Initializes multiple writable options types with shared configuration.</summary>
+    public static void Initialize(Action<WritableOptionsBuilder> configure)
+    {
+        var builder = new WritableOptionsBuilder();
+        configure(builder);
+        builder.Execute();
+    }
+
+    internal static void InitializeInternal<T>(
+        string instanceName,
+        WritableOptionsConfigBuilder<T> builder
+    )
+        where T : class, new() => GetInternalInstance<T>().Initialize(instanceName, builder);
+
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>

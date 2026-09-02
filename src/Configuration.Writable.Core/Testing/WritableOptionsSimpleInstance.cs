@@ -41,6 +41,9 @@ public class WritableOptionsSimpleInstance<T>
         _options = optionBuilder.BuildOptions(instanceName);
     }
 
+    internal void Initialize(string instanceName, WritableOptionsConfigBuilder<T> optionBuilder) =>
+        _options = optionBuilder.BuildOptions(instanceName);
+
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>

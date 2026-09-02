@@ -18,6 +18,17 @@ internal class SaveLocationManager
     /// </summary>
     public List<ILocationBuilder> LocationBuilders { get; private set; } = [];
 
+    public SaveLocationManager() { }
+
+    public SaveLocationManager(SaveLocationManager source)
+    {
+        LocationBuilders = source
+            .LocationBuilders.Select(builder =>
+                (ILocationBuilder)new LocationBuilderInternal((LocationBuilderInternal)builder)
+            )
+            .ToList();
+    }
+
     /// <summary>
     /// Gets the first registered save location path based on priority.
     /// </summary>
@@ -137,6 +148,14 @@ internal class LocationBuilderInternal : ILocationBuilder
     private string configFolder = "";
 
     private readonly List<LocationPathInfo> targetPaths = [];
+
+    public LocationBuilderInternal() { }
+
+    public LocationBuilderInternal(LocationBuilderInternal source)
+    {
+        configFolder = source.configFolder;
+        targetPaths.AddRange(source.targetPaths);
+    }
 
     /// <inheritdoc />
     public IEnumerable<LocationPathInfo> SaveLocationPaths => targetPaths;

@@ -13,6 +13,18 @@ public static class WritableOptionsExtensions
 {
     private const string LoggerCategoryName = "Configuration.Writable";
 
+    /// <summary>Adds multiple writable options types with shared configuration.</summary>
+    public static IServiceCollection AddWritableOptions(
+        this IServiceCollection services,
+        Action<WritableOptionsServiceBuilder> configure
+    )
+    {
+        var builder = new WritableOptionsServiceBuilder(services);
+        configure(builder);
+        builder.Execute();
+        return services;
+    }
+
     /// <summary>
     /// Adds a user-specific configuration file to the application's configuration system and registers the specified
     /// options type for dependency injection.
@@ -93,7 +105,7 @@ public static class WritableOptionsExtensions
     /// <param name="services">The <see cref="IServiceCollection"/> to which the configuration and options will be added.</param>
     /// <param name="instanceName">The name of the options instance.</param>
     /// <param name="confBuilder">A pre-configured <see cref="WritableOptionsConfigBuilder{T}"/> instance used to specify the configuration file. </param>
-    private static IServiceCollection AddWritableOptions<T>(
+    internal static IServiceCollection AddWritableOptions<T>(
         this IServiceCollection services,
         string instanceName,
         WritableOptionsConfigBuilder<T> confBuilder
