@@ -10,6 +10,7 @@ namespace Configuration.Writable;
 public class WritableOptionsBuilder : WritableOptionsConfigBuilder
 {
     private readonly List<Action> registrations = [];
+    private readonly HashSet<Type> registeredTypes = [];
 
     internal void AddDeferred(Action registration) => registrations.Add(registration);
 
@@ -44,7 +45,8 @@ public class WritableOptionsBuilder : WritableOptionsConfigBuilder
     {
         var builder = new WritableOptionsConfigBuilder<T>(this);
         configure(builder);
-        WritableOptions.InitializeInternal(instanceName, builder);
+        var replace = registeredTypes.Add(typeof(T));
+        WritableOptions.InitializeInternal(instanceName, builder, replace);
     }
 }
 

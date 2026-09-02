@@ -12,7 +12,7 @@ namespace Configuration.Writable.Testing;
 public class WritableOptionsSimpleInstance<T>
     where T : class, new()
 {
-    private WritableOptionsConfiguration<T>? _options = null;
+    private readonly List<WritableOptionsConfiguration<T>> _options = [];
 
     /// <summary>
     /// Initializes writable configuration with default settings.
@@ -38,25 +38,35 @@ public class WritableOptionsSimpleInstance<T>
     {
         var optionBuilder = new WritableOptionsConfigBuilder<T>();
         configurationOptions(optionBuilder);
-        _options = optionBuilder.BuildOptions(instanceName);
+        _options.Clear();
+        _options.Add(optionBuilder.BuildOptions(instanceName));
     }
 
-    internal void Initialize(string instanceName, WritableOptionsConfigBuilder<T> optionBuilder) =>
-        _options = optionBuilder.BuildOptions(instanceName);
+    internal void Initialize(
+        string instanceName,
+        WritableOptionsConfigBuilder<T> optionBuilder,
+        bool replace
+    )
+    {
+        if (replace)
+        {
+            _options.Clear();
+        }
+        _options.Add(optionBuilder.BuildOptions(instanceName));
+    }
 
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.
     /// </summary>
     public IWritableOptionsMonitor<T> GetOptions()
     {
-        if (_options == null)
+        if (_options.Count == 0)
         {
             throw new InvalidOperationException(
                 "WritableOptionsSimpleInstance is not initialized. Call Initialize() before GetOptions()."
             );
         }
-        var options = new List<WritableOptionsConfiguration<T>> { _options };
-        var optionsRegistry = new WritableOptionsConfigRegistryImpl<T>(options);
+        var optionsRegistry = new WritableOptionsConfigRegistryImpl<T>(_options);
         var optionsMonitor = new OptionsMonitorImpl<T>(optionsRegistry);
         var writableOptions = new WritableOptionsImpl<T>(optionsMonitor, optionsRegistry);
         return writableOptions;

@@ -45,9 +45,11 @@ public static class WritableOptions
 
     internal static void InitializeInternal<T>(
         string instanceName,
-        WritableOptionsConfigBuilder<T> builder
+        WritableOptionsConfigBuilder<T> builder,
+        bool replace
     )
-        where T : class, new() => GetInternalInstance<T>().Initialize(instanceName, builder);
+        where T : class, new() =>
+        GetInternalInstance<T>().Initialize(instanceName, builder, replace);
 
     /// <summary>
     /// Creates a new instance of the writable configuration for the specified type.

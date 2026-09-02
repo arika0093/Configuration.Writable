@@ -18,6 +18,12 @@ public partial class GroupedWritableOptionsTests
         public string Value { get; set; } = "second";
     }
 
+    [OptionsModel]
+    public partial class NamedSettings
+    {
+        public string Value { get; set; } = "named";
+    }
+
     [Fact]
     public void GroupedRegistration_AppliesSharedConfigurationAfterRecipesAreCollected()
     {
@@ -69,5 +75,22 @@ public partial class GroupedWritableOptionsTests
             .GetOptionsConfiguration();
         configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("specific.json"));
         configuration.SectionNameParts.ShouldBe(["Specific"]);
+    }
+
+    [Fact]
+    public void StaticGroupedInitialization_RetainsEveryNamedRegistration()
+    {
+        var provider = new InMemoryFileProvider();
+        WritableOptions.Initialize(options =>
+        {
+            options.FileProvider = provider;
+            options.Add<NamedSettings>("First", conf => conf.UseFile("first.json"));
+            options.Add<NamedSettings>("Second", conf => conf.UseFile("second.json"));
+        });
+
+        var writableOptions =
+            (IWritableOptionsMonitor<NamedSettings>)WritableOptions.GetOptions<NamedSettings>();
+        writableOptions.Get("First").ShouldNotBeNull();
+        writableOptions.Get("Second").ShouldNotBeNull();
     }
 }
