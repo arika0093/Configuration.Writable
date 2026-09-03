@@ -25,6 +25,15 @@ public static class ProfiledOptionsExtensions
     {
         var builder = new ProfiledOptionsConfigBuilder<T>();
         configure(builder);
+        return services.AddProfiledWritableOptions(builder);
+    }
+
+    internal static IServiceCollection AddProfiledWritableOptions<T>(
+        this IServiceCollection services,
+        ProfiledOptionsConfigBuilder<T> builder
+    )
+        where T : class, new()
+    {
         var configuration = builder.Build();
 
         services.AddSingleton(configuration.Catalog);

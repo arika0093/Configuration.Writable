@@ -22,9 +22,98 @@ namespace Configuration.Writable.Configure;
 /// Options for initializing writable configuration.
 /// </summary>
 /// <typeparam name="T">The type of the configuration class.</typeparam>
-public class WritableOptionsConfigBuilder<T>
+public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     where T : class, new()
 {
+    /// <inheritdoc />
+    public new FormatProvider.IWritableFormatProvider FormatProvider
+    {
+        get => base.FormatProvider;
+        set => base.FormatProvider = value;
+    }
+
+    /// <inheritdoc />
+    public new IWritableFileProvider? FileProvider
+    {
+        get => base.FileProvider;
+        set => base.FileProvider = value;
+    }
+
+    /// <inheritdoc />
+    public new string? FilePath
+    {
+        get => base.FilePath;
+        set => base.FilePath = value;
+    }
+
+    /// <inheritdoc />
+    public new TimeSpan OnChangeDebounce
+    {
+        get => base.OnChangeDebounce;
+        set => base.OnChangeDebounce = value;
+    }
+
+    /// <inheritdoc />
+    public new bool RegisterAsSingleton
+    {
+        get => base.RegisterAsSingleton;
+        set => base.RegisterAsSingleton = value;
+    }
+
+    /// <inheritdoc />
+    public new bool UseDataAnnotationsValidation
+    {
+        get => base.UseDataAnnotationsValidation;
+        set => base.UseDataAnnotationsValidation = value;
+    }
+
+    /// <inheritdoc />
+    public new ILogger? Logger
+    {
+        get => base.Logger;
+        set => base.Logger = value;
+    }
+
+    /// <inheritdoc />
+    public new ConfigurationConflictResolution ConflictResolution
+    {
+        get => base.ConflictResolution;
+        set => base.ConflictResolution = value;
+    }
+
+    /// <inheritdoc />
+    public new string SectionName
+    {
+        get => base.SectionName;
+        set => base.SectionName = value;
+    }
+
+    /// <inheritdoc />
+    public new void UseFile(string? path) => base.UseFile(path);
+
+    /// <inheritdoc />
+    public new void AddFilePath(string path, int priority = 0) => base.AddFilePath(path, priority);
+
+    /// <inheritdoc />
+    public new ILocationBuilder UseStandardSaveDirectory(
+        string applicationId,
+        bool enabled = true
+    ) => base.UseStandardSaveDirectory(applicationId, enabled);
+
+    /// <inheritdoc />
+    public new ILocationBuilder UseExecutableDirectory() => base.UseExecutableDirectory();
+
+    /// <inheritdoc />
+    public new ILocationBuilder UseCurrentDirectory() => base.UseCurrentDirectory();
+
+    /// <inheritdoc />
+    public new ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder) =>
+        base.UseSpecialFolder(folder);
+
+    /// <inheritdoc />
+    public new ILocationBuilder UseCustomDirectory(string directoryPath) =>
+        base.UseCustomDirectory(directoryPath);
+
     private const string AotJsonReason =
         "JsonSerializerOptions.TypeInfoResolver handles NativeAOT scenarios";
 
@@ -33,82 +122,59 @@ public class WritableOptionsConfigBuilder<T>
         "Data Annotations validation is disabled by default when dynamic code is not supported.";
 #endif
 
-    private const string DefaultSectionName = "";
     private Func<T, T>? _cloneMethod = null;
     private bool _usesDefaultJsonCloneFallback;
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
-    private readonly SaveLocationManager _saveLocationManager = new();
     private readonly List<MigrationStep> _migrationSteps = [];
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
     /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
     /// </summary>
-    public FormatProvider.IWritableFormatProvider FormatProvider { get; set; } =
-        new JsonFormatProvider();
-
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations override from provider's default.
     /// </summary>
-    public IWritableFileProvider? FileProvider { get; set; } = null;
-
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
     /// Extension is determined by the <see cref="IWritableFormatProvider"/> so it can be omitted.
     /// </summary>
-    public string? FilePath
-    {
-        get => _saveLocationManager.LocationPath;
-        set => UseFile(value);
-    }
-
     /// <summary>
     /// Gets or sets the debounce duration for change events.
     /// This delays event firing until rapid changes have stopped. <br/>
     /// Defaults to 300 ms.
     /// </summary>
-    public TimeSpan OnChangeDebounce { get; set; } = TimeSpan.FromMilliseconds(300);
-
     /// <summary>
     /// Indicates whether to automatically register <typeparamref name="T"/> as a singleton in the DI container. Defaults to false. <br/>
     /// Enabling this allows you to obtain the instance directly from the DI container,
     /// which is convenient, but automatic value updates are not provided, so be careful with the lifecycle. <br/>
     /// if you specify InstanceName, you can get it with [FromKeyedServices("instance-name")].
     /// </summary>
-    public bool RegisterAsSingleton { get; set; } = false;
-
     /// <summary>
     /// Gets or sets a value indicating whether validation using data annotation attributes is enabled.
     /// Defaults to true when dynamic code is supported; otherwise false, including NativeAOT. <br/>
     /// If you want to use Source-Generator based validation or custom validation only, set this to false.
     /// </summary>
-    public bool UseDataAnnotationsValidation { get; set; } =
-#if NET
-        RuntimeFeature.IsDynamicCodeSupported;
-#else
-        false;
-#endif
-
     /// <summary>
     /// Gets or sets the logger for configuration operations. Defaults to null. <br/>
     /// If null, logging is disabled or use provider's default logger.
     /// </summary>
-    public ILogger? Logger { get; set; }
-
     /// <summary>
     /// Gets or sets how saves handle changes made to the configuration file after it was loaded.
     /// Defaults to <see cref="ConfigurationConflictResolution.FailOnConflict"/>.
     /// </summary>
-    public ConfigurationConflictResolution ConflictResolution { get; set; } =
-        ConfigurationConflictResolution.FailOnConflict;
-
     /// <summary>
     /// Get or sets the name of the configuration section. <br/>
     /// You can use ":" or "__" to specify nested sections, e.g. "Parent:Child". <br/>
     /// If empty that means the root of the configuration file.
     /// </summary>
-    public string SectionName { get; set; } = DefaultSectionName;
+    internal WritableOptionsConfigBuilder(WritableOptionsConfigBuilder shared)
+    {
+        CopyFrom(shared);
+    }
+
+    /// <summary>Creates a builder with default settings.</summary>
+    public WritableOptionsConfigBuilder() { }
 
     /// <summary>
     /// Sets the cloning strategy to use the default deep clone method if <typeparamref name="T"/> implements <see cref="IDeepCloneable{T}"/>.
@@ -260,7 +326,7 @@ public class WritableOptionsConfigBuilder<T>
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
         var fileProvider = FileProvider ?? new CommonFileProvider();
-        var configFilePath = _saveLocationManager.Build(FormatProvider, fileProvider, instanceName);
+        var configFilePath = SaveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
         var migrationSteps = new List<MigrationStep>(_migrationSteps);
         var sectionNamePart = SectionName
@@ -309,81 +375,6 @@ public class WritableOptionsConfigBuilder<T>
         return _cloneMethod
             ?? throw new InvalidOperationException("The clone strategy could not be initialized.");
     }
-
-    /// <summary>
-    /// Use a specific file path for saving the configuration.
-    /// </summary>
-    /// <param name="path">The file path to use.</param>
-    public void UseFile(string? path)
-    {
-        _saveLocationManager.LocationBuilders.Clear();
-        if (path == null)
-        {
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            _saveLocationManager.MakeLocationBuilder().AddFilePath(path);
-        }
-    }
-
-    /// <summary>
-    /// Sets the configuration folder to the standard save location for the specified application.
-    /// </summary>
-    /// <remarks>
-    /// in Windows: %APPDATA%/<paramref name="applicationId"/> <br/>
-    /// in macOS: ~/Library/Application Support/<paramref name="applicationId"/> <br/>
-    /// in Linux: $XDG_CONFIG_HOME/<paramref name="applicationId"/>
-    /// </remarks>
-    /// <param name="applicationId">The unique identifier of the application. This is used to determine the subdirectory within the user
-    /// configuration root directory.</param>
-    /// <param name="enabled">If false, alternatively uses the executable directory.</param>
-    public ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true)
-    {
-        var builder = _saveLocationManager.MakeLocationBuilder();
-        if (enabled)
-        {
-            builder.UseStandardSaveDirectory(applicationId);
-        }
-        else
-        {
-            builder.UseExecutableDirectory();
-        }
-        return builder;
-    }
-
-    /// <summary>
-    /// Sets the configuration folder to the directory where the executable is located. (default behavior)
-    /// </summary>
-    /// <remarks>
-    /// This uses <see cref="AppContext.BaseDirectory"/> to determine the executable directory.
-    /// </remarks>
-    public ILocationBuilder UseExecutableDirectory() =>
-        _saveLocationManager.MakeLocationBuilder().UseExecutableDirectory();
-
-    /// <summary>
-    /// Sets the configuration folder to the current working directory.
-    /// </summary>
-    /// <remarks>
-    /// This uses <see cref="System.IO.Directory.GetCurrentDirectory()"/> to determine the current directory.
-    /// </remarks>
-    public ILocationBuilder UseCurrentDirectory() =>
-        _saveLocationManager.MakeLocationBuilder().UseCurrentDirectory();
-
-    /// <summary>
-    /// Sets the configuration folder to a special folder defined by <see cref="Environment.SpecialFolder"/>.
-    /// </summary>
-    /// <param name="folder">The special folder to use as the configuration folder.</param>
-    public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder) =>
-        _saveLocationManager.MakeLocationBuilder().UseSpecialFolder(folder);
-
-    /// <summary>
-    /// Sets the configuration folder to a custom folder path.
-    /// </summary>
-    /// <param name="directoryPath">The custom directory path to use as the configuration folder.</param>
-    public ILocationBuilder UseCustomDirectory(string directoryPath) =>
-        _saveLocationManager.MakeLocationBuilder().UseCustomDirectory(directoryPath);
 
     /// <summary>
     /// Builds the composite validator from all registered validators.

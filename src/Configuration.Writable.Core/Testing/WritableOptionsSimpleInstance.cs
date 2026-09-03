@@ -12,7 +12,7 @@ namespace Configuration.Writable.Testing;
 public class WritableOptionsSimpleInstance<T>
     where T : class, new()
 {
-    private WritableOptionsConfiguration<T>? _options = null;
+    private readonly List<WritableOptionsConfiguration<T>> _options = [];
 
     /// <summary>
     /// Initializes writable configuration with default settings.
@@ -38,7 +38,23 @@ public class WritableOptionsSimpleInstance<T>
     {
         var optionBuilder = new WritableOptionsConfigBuilder<T>();
         configurationOptions(optionBuilder);
-        _options = optionBuilder.BuildOptions(instanceName);
+        var option = optionBuilder.BuildOptions(instanceName);
+        _options.Clear();
+        _options.Add(option);
+    }
+
+    internal void Initialize(
+        string instanceName,
+        WritableOptionsConfigBuilder<T> optionBuilder,
+        bool replace
+    )
+    {
+        var option = optionBuilder.BuildOptions(instanceName);
+        if (replace)
+        {
+            _options.Clear();
+        }
+        _options.Add(option);
     }
 
     /// <summary>
@@ -46,14 +62,13 @@ public class WritableOptionsSimpleInstance<T>
     /// </summary>
     public IWritableOptionsMonitor<T> GetOptions()
     {
-        if (_options == null)
+        if (_options.Count == 0)
         {
             throw new InvalidOperationException(
                 "WritableOptionsSimpleInstance is not initialized. Call Initialize() before GetOptions()."
             );
         }
-        var options = new List<WritableOptionsConfiguration<T>> { _options };
-        var optionsRegistry = new WritableOptionsConfigRegistryImpl<T>(options);
+        var optionsRegistry = new WritableOptionsConfigRegistryImpl<T>(_options);
         var optionsMonitor = new OptionsMonitorImpl<T>(optionsRegistry);
         var writableOptions = new WritableOptionsImpl<T>(optionsMonitor, optionsRegistry);
         return writableOptions;
