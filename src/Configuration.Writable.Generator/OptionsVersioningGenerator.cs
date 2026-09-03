@@ -15,6 +15,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     private const string AttributeName = "Configuration.Writable.OptionsModelAttribute";
     private const string MetadataInterfaceName = "Configuration.Writable.IGeneratedOptionsMetadata";
     private const string LegacyInterfaceName = "Configuration.Writable.IHasVersion";
+    private const string DiagnosticsDocumentationUrl =
+        "https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Generator/README.md";
 
     private static readonly DiagnosticDescriptor MissingId = new(
         "CWWR001",
@@ -22,7 +24,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Options model '{0}' should declare a stable Id",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Warning,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr001"
     );
     private static readonly DiagnosticDescriptor InvalidId = new(
         "CWWR002",
@@ -30,7 +33,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Options model '{0}' has an empty Id",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Error,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr002"
     );
     private static readonly DiagnosticDescriptor InvalidVersion = new(
         "CWWR003",
@@ -38,7 +42,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Options model '{0}' must declare a Version greater than zero",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Error,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr003"
     );
     private static readonly DiagnosticDescriptor DuplicateVersion = new(
         "CWWR004",
@@ -46,7 +51,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Model ID '{0}' has more than one type at version {1}",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Error,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr004"
     );
     private static readonly DiagnosticDescriptor MissingPreviousVersion = new(
         "CWWR005",
@@ -54,7 +60,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Options model '{0}' at version {1} requires an accessible version {2} with Id '{3}'",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Error,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr005"
     );
     private static readonly DiagnosticDescriptor ReservedNameCollision = new(
         "CWWR006",
@@ -62,7 +69,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Member '{0}' serializes as reserved schema metadata name '{1}'",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Error,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr006"
     );
     private static readonly DiagnosticDescriptor LegacyVersioning = new(
         "CWWR007",
@@ -70,7 +78,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Options model '{0}' uses IHasVersion; declare Version on OptionsModelAttribute instead",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Warning,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr007"
     );
     private static readonly DiagnosticDescriptor PartialRequired = new(
         "CWWR008",
@@ -78,7 +87,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Options model '{0}' must be partial so schema metadata can be generated",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Error,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr008"
     );
     private static readonly DiagnosticDescriptor UnsupportedModel = new(
         "CWWR009",
@@ -86,7 +96,17 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         "Versioned options model '{0}' must be a non-static class with an accessible parameterless constructor",
         "Configuration.Writable.Versioning",
         DiagnosticSeverity.Error,
-        true
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr009"
+    );
+    private static readonly DiagnosticDescriptor MissingVersion = new(
+        "CWWR010",
+        "Options model version is missing",
+        "Options model '{0}' should explicitly declare Version = 1",
+        "Configuration.Writable.Versioning",
+        DiagnosticSeverity.Warning,
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr010"
     );
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -248,6 +268,12 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 }
             }
 
+            var usesLegacyVersion = Implements(type, LegacyInterfaceName);
+            if (!versionSpecified && !usesLegacyVersion)
+            {
+                version = 1;
+            }
+
             result.Add(
                 new ModelInfo(
                     type,
@@ -259,7 +285,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()
                         ?? type.Locations.FirstOrDefault()
                         ?? Location.None,
-                    Implements(type, LegacyInterfaceName)
+                    usesLegacyVersion
                 )
             );
         }
@@ -289,6 +315,12 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(
                 Diagnostic.Create(InvalidVersion, model.Location, model.Symbol.Name)
+            );
+        }
+        else if (!model.VersionSpecified)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(MissingVersion, model.Location, model.Symbol.Name)
             );
         }
 
