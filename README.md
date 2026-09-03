@@ -49,8 +49,7 @@ await options.SaveAsync(setting => {
 });
 
 // announce saved location
-var savedLocation = options.ConfigurationInfo.WritePath;
-Console.WriteLine($"Saved to {savedLocation}");
+Console.WriteLine($"Saved to {options.ConfigurationInfo.WritePath}");
 
 // need some delay to see the change callback in action
 await Task.Delay(100);
@@ -85,13 +84,8 @@ Install `Configuration.Writable` from NuGet.
 dotnet add package Configuration.Writable
 ```
 
-Libraries and domain projects that only consume the public options contracts can instead install
-`Configuration.Writable.Abstractions`. It has no runtime package dependencies and does not expose
-Microsoft.Extensions.Options, dependency injection, logging, pipelines, JSON, or provider types.
-
-```bash
-dotnet add package Configuration.Writable.Abstractions
-```
+> [!NOTE]
+> If you only need type definitions, you can use `Configuration.Writable.Abstractions`.
 
 Then, prepare a class (`UserSetting`) in advance that you want to read and write as settings.
 

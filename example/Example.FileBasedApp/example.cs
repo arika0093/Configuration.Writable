@@ -33,8 +33,7 @@ await options.SaveAsync(setting =>
 });
 
 // announce saved location
-var savedLocation = options.ConfigurationInfo.WritePath;
-Console.WriteLine($"Saved to {savedLocation}");
+Console.WriteLine($"Saved to {options.ConfigurationInfo.WritePath}");
 
 // need some delay to see the change callback in action
 await Task.Delay(100);
