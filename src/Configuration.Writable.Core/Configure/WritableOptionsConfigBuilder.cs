@@ -279,7 +279,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     /// <exception cref="InvalidOperationException">Thrown when attempting to register a downgrade migration (where the new version is less than the old version).</exception>
 #pragma warning disable S1133 // Kept for backward compatibility.
     [Obsolete(
-        "This method is deprecated. Declare versions with [OptionsModel(Version = x)] and implement the generated Migrate method instead."
+        "This method is deprecated. Declare versions with [OptionsModel] and implement the generated Migrate method instead."
     )]
     public void UseMigration<TOld, TNew>(Func<TOld, TNew> migrator)
         where TOld : class, new()

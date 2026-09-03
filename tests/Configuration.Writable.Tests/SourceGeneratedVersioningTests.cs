@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -14,7 +15,11 @@ using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Generator;
 using Configuration.Writable.Migration;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Configuration.Writable.Tests;
@@ -337,6 +342,100 @@ public class OptionsVersioningGeneratorTests
             .Single()
             .SourceText.ToString()
             .ShouldContain(".Version => 1;");
+    }
+
+    [Fact]
+    public void Generator_ShouldReportMissingMigrationImplementation()
+    {
+        var result = RunGenerator(
+            """
+            using Configuration.Writable;
+            [OptionsModel(Id = "Settings", Version = 1)]
+            public partial class SettingsV1 {}
+            [OptionsModel(Id = "Settings", Version = 2)]
+            public partial class SettingsV2 {}
+            """
+        );
+
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldContain("CWWR011");
+        result
+            .Results.SelectMany(generatorResult => generatorResult.GeneratedSources)
+            .Single(generatedSource =>
+                generatedSource.HintName.Contains("SettingsV2", StringComparison.Ordinal)
+            )
+            .SourceText.ToString()
+            .ShouldNotContain(" Migrate(");
+    }
+
+    [Fact]
+    public async Task MigrationCodeFix_ShouldAddShortTypeNamesAndRequiredUsing()
+    {
+        const string source = """
+            using Configuration.Writable;
+
+            namespace Previous
+            {
+                [OptionsModel(Id = "Settings", Version = 1)]
+                public partial class SettingsV1 {}
+            }
+
+            namespace Current
+            {
+                [OptionsModel(Id = "Settings", Version = 2)]
+                public partial class SettingsV2 {}
+            }
+            """;
+        using var workspace = new AdhocWorkspace();
+        var project = workspace
+            .AddProject("CodeFixTests", LanguageNames.CSharp)
+            .WithParseOptions(new CSharpParseOptions(LanguageVersion.Preview));
+        var document = workspace.AddDocument(project.Id, "Settings.cs", SourceText.From(source));
+        var root = (await document.GetSyntaxRootAsync())!;
+        var declaration = root.DescendantNodes()
+            .OfType<ClassDeclarationSyntax>()
+            .Single(type => type.Identifier.ValueText == "SettingsV2");
+        var descriptor = new DiagnosticDescriptor(
+            "CWWR011",
+            "Missing migration",
+            "Missing migration",
+            "Test",
+            DiagnosticSeverity.Error,
+            true
+        );
+        var properties = ImmutableDictionary<string, string?>
+            .Empty.Add("CurrentTypeName", "SettingsV2")
+            .Add("PreviousTypeName", "SettingsV1")
+            .Add("CodeFixAvailable", bool.TrueString)
+            .Add("PreviousNamespace", "Previous");
+        var diagnostic = Diagnostic.Create(
+            descriptor,
+            declaration.Identifier.GetLocation(),
+            properties
+        );
+        var actions = new List<CodeAction>();
+        var provider = new MigrationCodeFixProvider();
+        await provider.RegisterCodeFixesAsync(
+            new CodeFixContext(
+                document,
+                diagnostic,
+                (action, _) => actions.Add(action),
+                CancellationToken.None
+            )
+        );
+
+        var operations = await actions.Single().GetOperationsAsync(CancellationToken.None);
+        var changedSolution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+        var fixedSource = (
+            await changedSolution.GetDocument(document.Id)!.GetTextAsync()
+        ).ToString();
+
+        fixedSource.ShouldContain("using Previous;");
+        fixedSource.ShouldContain("private static partial SettingsV2 Migrate(SettingsV1 source)");
+        fixedSource.ShouldNotContain("Previous.SettingsV1");
+        fixedSource.ShouldNotContain("global::Current.SettingsV2");
+        RunGenerator(fixedSource)
+            .Diagnostics.Select(resultDiagnostic => resultDiagnostic.Id)
+            .ShouldNotContain("CWWR011");
     }
 
     [Fact]

@@ -11,7 +11,7 @@
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <IsPackable>false</IsPackable>
-    <NoWarn>$(NoWarn);RS2008;S1075</NoWarn>
+    <NoWarn>$(NoWarn);RS1038;RS2008;S1075</NoWarn>
     <!-- Source generator does not need polyfills to be public; making them public causes duplicate-type
          conflicts (CS0433) on net8.0+ consumers of this project as an analyzer. The polyfills are still
          generated (and made internal) so that the embedded source from IDeepCloneable.Generator.Source
@@ -32,6 +32,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

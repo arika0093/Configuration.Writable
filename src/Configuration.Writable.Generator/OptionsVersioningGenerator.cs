@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -108,6 +109,15 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         true,
         helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr010"
     );
+    private static readonly DiagnosticDescriptor MissingMigration = new(
+        "CWWR011",
+        "Options migration implementation is missing",
+        "Options model '{0}' must implement migration from '{1}'",
+        "Configuration.Writable.Versioning",
+        DiagnosticSeverity.Error,
+        true,
+        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr011"
+    );
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -152,6 +162,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         foreach (var model in sourceModels)
         {
             ModelInfo? previous = null;
+            var hasMigrationImplementation = true;
             if (model.Version is > 1 && model.Id is not null)
             {
                 groups.TryGetValue(model.Id, out var candidates);
@@ -172,6 +183,32 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                         )
                     );
                 }
+                else if (!HasMigrationImplementation(model.Symbol, previous.Symbol))
+                {
+                    hasMigrationImplementation = false;
+                    var properties = ImmutableDictionary<string, string?>
+                        .Empty.Add("CurrentTypeName", GetMinimalTypeName(model.Symbol))
+                        .Add("PreviousTypeName", GetMinimalTypeName(previous.Symbol))
+                        .Add(
+                            "CodeFixAvailable",
+                            CanAddMigrationImplementation(model.Symbol, previous.Symbol).ToString()
+                        )
+                        .Add(
+                            "PreviousNamespace",
+                            previous.Symbol.ContainingNamespace.IsGlobalNamespace
+                                ? null
+                                : previous.Symbol.ContainingNamespace.ToDisplayString()
+                        );
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            MissingMigration,
+                            model.Location,
+                            properties,
+                            model.Symbol.Name,
+                            previous.Symbol.Name
+                        )
+                    );
+                }
             }
 
             if (!model.HasPartialModifier)
@@ -181,10 +218,61 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
             context.AddSource(
                 GetHintName(model.Symbol),
-                SourceText.From(GenerateMetadata(model, previous), Encoding.UTF8)
+                SourceText.From(
+                    GenerateMetadata(model, previous, hasMigrationImplementation),
+                    Encoding.UTF8
+                )
             );
         }
     }
+
+    private static bool HasMigrationImplementation(
+        INamedTypeSymbol current,
+        INamedTypeSymbol previous
+    ) =>
+        current
+            .GetMembers("Migrate")
+            .OfType<IMethodSymbol>()
+            .Any(method =>
+                method.IsStatic
+                && method.DeclaredAccessibility == Accessibility.Private
+                && SymbolEqualityComparer.Default.Equals(method.ReturnType, current)
+                && method.Parameters.Length == 1
+                && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, previous)
+                && method.DeclaringSyntaxReferences.Any(reference =>
+                    reference.GetSyntax() is MethodDeclarationSyntax syntax
+                    && syntax.Modifiers.Any(SyntaxKind.PartialKeyword)
+                    && (syntax.Body is not null || syntax.ExpressionBody is not null)
+                )
+            );
+
+    private static bool CanAddMigrationImplementation(
+        INamedTypeSymbol current,
+        INamedTypeSymbol previous
+    ) =>
+        !current
+            .GetMembers("Migrate")
+            .OfType<IMethodSymbol>()
+            .Any(method =>
+                method.Parameters.Length == 1
+                && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, previous)
+            );
+
+    private static string GetMinimalTypeName(INamedTypeSymbol type)
+    {
+        if (type.TypeArguments.Length == 0)
+        {
+            return type.Name;
+        }
+
+        return type.Name
+            + "<"
+            + string.Join(", ", type.TypeArguments.Select(GetMinimalTypeArgumentName))
+            + ">";
+    }
+
+    private static string GetMinimalTypeArgumentName(ITypeSymbol type) =>
+        type is INamedTypeSymbol namedType ? GetMinimalTypeName(namedType) : type.Name;
 
     private static List<ModelInfo> CollectModels(Compilation compilation)
     {
@@ -458,7 +546,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     private static bool Implements(INamedTypeSymbol type, string interfaceName) =>
         type.AllInterfaces.Any(@interface => @interface.ToDisplayString() == interfaceName);
 
-    private static string GenerateMetadata(ModelInfo model, ModelInfo? previous)
+    private static string GenerateMetadata(
+        ModelInfo model,
+        ModelInfo? previous,
+        bool hasMigrationImplementation
+    )
     {
         var builder = new StringBuilder();
         builder.AppendLine("// <auto-generated/>");
@@ -507,7 +599,12 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 ".RegisterMigrations(global::Configuration.Writable.IOptionsMigrationRegistrar registrar)"
             );
         builder.AppendLine("    {");
-        if (previous != null && model.Id != null && model.Version is not null)
+        if (
+            previous != null
+            && hasMigrationImplementation
+            && model.Id != null
+            && model.Version is not null
+        )
         {
             var previousType = previous.Symbol.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat
@@ -536,7 +633,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         }
         builder.AppendLine("    }");
 
-        if (previous != null)
+        if (previous != null && hasMigrationImplementation)
         {
             builder
                 .Append("    private static partial ")

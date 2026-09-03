@@ -87,3 +87,19 @@ version should be explicit so future schema changes can be tracked reliably.
 [OptionsModel(Id = "UserSetting", Version = 1)]
 public partial class UserSetting;
 ```
+
+## CWWR011
+
+**Severity:** Error
+
+A model after version 1 does not implement the migration from its immediately preceding
+version. Use the code fix to add the required method, then replace the generated
+`NotImplementedException` with the migration logic.
+
+```csharp
+private static partial UserSettingV2 Migrate(UserSettingV1 source)
+{
+    // TODO: Implement migration.
+    throw new global::System.NotImplementedException();
+}
+```
