@@ -5,7 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
+using Configuration.Writable.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ZLogger;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
@@ -24,7 +26,11 @@ namespace Configuration.Writable;
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
     IWritableOptionsConfigRegistry<T> registryInstance
-) : IWritableOptionsMonitor<T>
+)
+    : IWritableOptionsMonitor<T>,
+        IOptionsMonitor<T>,
+        IWritableOptionsConfigurationAccessor<T>,
+        INamedWritableOptionsConfigurationAccessor<T>
     where T : class, new()
 {
     /// <inheritdoc />
@@ -33,6 +39,14 @@ internal sealed class WritableOptionsImpl<T>(
 
     /// <inheritdoc />
     public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name) => GetOptions(name);
+
+    /// <inheritdoc />
+    public IOptionsConfigurationInfo GetConfigurationInfo() =>
+        GetConfigurationInfo(MEOptions.DefaultName);
+
+    /// <inheritdoc />
+    public IOptionsConfigurationInfo GetConfigurationInfo(string name) =>
+        OptionsConfigurationInfo.From(GetOptions(name));
 
     /// <inheritdoc />
     public ConfigureSession<T> BeginConfigure() => BeginConfigure(MEOptions.DefaultName);
@@ -97,7 +111,9 @@ internal sealed class WritableOptionsImpl<T>(
     public T CurrentValue => optionMonitorInstance.CurrentValue;
 
     /// <inheritdoc />
-    public T Get(string? name) => optionMonitorInstance.Get(name);
+    public T Get(string name) => optionMonitorInstance.Get(name);
+
+    T IOptionsMonitor<T>.Get(string? name) => optionMonitorInstance.Get(name);
 
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T> listener) =>

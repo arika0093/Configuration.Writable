@@ -302,7 +302,7 @@ public partial class KeyedServicesIntegrationTests
     }
 
     [Fact]
-    public void KeyedOptions_GetOptionsConfiguration_ShouldReturnCorrectConfiguration()
+    public void KeyedOptions_GetConfigurationInfo_ShouldReturnCorrectConfiguration()
     {
         var fileName = Path.GetRandomFileName();
 
@@ -321,11 +321,13 @@ public partial class KeyedServicesIntegrationTests
             IWritableOptions<AppSettings>
         >("ConfigTest");
 
-        var configOptions = writableOptions.GetOptionsConfiguration();
+        var configOptions = (
+            (IOptionsConfigurationAccessor<AppSettings>)writableOptions
+        ).GetConfigurationInfo();
 
         configOptions.ShouldNotBeNull();
         configOptions.InstanceName.ShouldBe("ConfigTest");
-        configOptions.ConfigFilePath.ShouldEndWith(fileName);
+        configOptions.WritePath.ShouldEndWith(fileName);
     }
 
     [Fact]

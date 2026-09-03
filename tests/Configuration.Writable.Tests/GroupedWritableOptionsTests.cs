@@ -48,10 +48,10 @@ public partial class GroupedWritableOptionsTests
 
         using var serviceProvider = services.BuildServiceProvider();
         var first = serviceProvider
-            .GetRequiredService<IWritableOptions<FirstSettings>>()
+            .GetRequiredService<IWritableOptionsConfigurationAccessor<FirstSettings>>()
             .GetOptionsConfiguration();
         var second = serviceProvider
-            .GetRequiredService<IWritableOptions<SecondSettings>>()
+            .GetRequiredService<IWritableOptionsConfigurationAccessor<SecondSettings>>()
             .GetOptionsConfiguration();
 
         first.FileProvider.ShouldBeSameAs(provider);
@@ -79,7 +79,7 @@ public partial class GroupedWritableOptionsTests
 
         using var serviceProvider = services.BuildServiceProvider();
         var configuration = serviceProvider
-            .GetRequiredService<IWritableOptions<FirstSettings>>()
+            .GetRequiredService<IWritableOptionsConfigurationAccessor<FirstSettings>>()
             .GetOptionsConfiguration();
         configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("specific.json"));
         configuration.SectionNameParts.ShouldBe(["Specific"]);
@@ -121,7 +121,9 @@ public partial class GroupedWritableOptionsTests
             })
         );
 
-        var configuration = instance.GetOptions().GetOptionsConfiguration();
+        var configuration = (
+            (IWritableOptionsConfigurationAccessor<ReinitializedSettings>)instance.GetOptions()
+        ).GetOptionsConfiguration();
         configuration.FileProvider.ShouldBeSameAs(provider);
         configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("existing.json"));
     }
@@ -144,9 +146,10 @@ public partial class GroupedWritableOptionsTests
             })
         );
 
-        var configuration = WritableOptions
-            .GetOptions<ReinitializedSettings>()
-            .GetOptionsConfiguration();
+        var configuration = (
+            (IWritableOptionsConfigurationAccessor<ReinitializedSettings>)
+                WritableOptions.GetOptions<ReinitializedSettings>()
+        ).GetOptionsConfiguration();
         configuration.FileProvider.ShouldBeSameAs(provider);
         configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("existing.json"));
     }

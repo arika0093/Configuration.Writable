@@ -40,6 +40,9 @@ public static class PublicApiCheck
 public class PublicApiCheckTest
 {
     [Fact]
+    public void Abstractions() => PublicApiCheck.Check<IOptionsConfigurationInfo>();
+
+    [Fact]
     public void Core() => PublicApiCheck.Check<JsonFormatProvider>();
 
     [Fact]

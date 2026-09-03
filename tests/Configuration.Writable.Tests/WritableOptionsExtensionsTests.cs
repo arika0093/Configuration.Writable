@@ -87,7 +87,9 @@ public partial class WritableOptionsExtensionsTests
         var readonlyOptions = serviceProvider.GetService<IReadOnlyOptions<TestSettings>>();
         writableOptions.ShouldNotBeNull();
         readonlyOptions.ShouldNotBeNull();
-        writableOptions.GetOptionsConfiguration().ConfigFilePath.ShouldBe(testFilePath);
+        ((IOptionsConfigurationAccessor<TestSettings>)writableOptions)
+            .GetConfigurationInfo()
+            .WritePath.ShouldBe(testFilePath);
     }
 
     [Fact]
@@ -119,7 +121,9 @@ public partial class WritableOptionsExtensionsTests
         var host = builder.Build();
         var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettings>>();
 
-        var configOptions = writableOptions.GetOptionsConfiguration();
+        var configOptions = (
+            (IWritableOptionsConfigurationAccessor<TestSettings>)writableOptions
+        ).GetOptionsConfiguration();
         configOptions.ConfigFilePath.ShouldBe(testFilePath);
     }
 

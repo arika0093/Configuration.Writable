@@ -4,6 +4,9 @@
     <RootNamespace>Configuration.Writable</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Configuration.Writable.Abstractions/Configuration.Writable.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.*" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
     <PackageReference Include="ZLogger" Version="2.*" />

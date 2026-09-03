@@ -7,7 +7,7 @@
     <IsPackable>false</IsPackable>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Example.AbstractionsOnly'">
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable.Generator\Configuration.Writable.Generator.csproj">
       <OutputItemType>Analyzer</OutputItemType>

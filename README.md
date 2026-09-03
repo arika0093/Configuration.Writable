@@ -49,7 +49,9 @@ await options.SaveAsync(setting => {
 });
 
 // announce saved location
-var savedLocation = options.GetOptionsConfiguration().ConfigFilePath;
+var savedLocation = ((IOptionsConfigurationAccessor<SampleSetting>)options)
+    .GetConfigurationInfo()
+    .WritePath;
 Console.WriteLine($"Saved to {savedLocation}");
 
 // need some delay to see the change callback in action
@@ -83,6 +85,14 @@ Install `Configuration.Writable` from NuGet.
 
 ```bash
 dotnet add package Configuration.Writable
+```
+
+Libraries and domain projects that only consume the public options contracts can instead install
+`Configuration.Writable.Abstractions`. It has no runtime package dependencies and does not expose
+Microsoft.Extensions.Options, dependency injection, logging, pipelines, JSON, or provider types.
+
+```bash
+dotnet add package Configuration.Writable.Abstractions
 ```
 
 Then, prepare a class (`UserSetting`) in advance that you want to read and write as settings.
@@ -1018,24 +1028,42 @@ Here, we describe the main interfaces provided by this library.
 ### `IReadOnlyOptions` / `IWritableOptions` (recommended)
 These are the primary interfaces for reading and writing settings. They provide the latest values at the current point in time, and when the configuration file is updated, the latest values are automatically reflected.
 
-* [`IReadOnlyOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyOptions.cs)
+* [`IReadOnlyOptions<T>`](./src/Configuration.Writable.Abstractions/IReadOnlyOptions.cs)
     * A simple read-only options interface that does not support named access.
     * Use the `.CurrentValue` property to access the current value.
     * Use the `OnChange(Action<T> listener)` method to monitor changes to the options.
-* [`IWritableOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IWritableOptions.cs)
+* [`IWritableOptions<T>`](./src/Configuration.Writable.Abstractions/IWritableOptions.cs)
     * In addition to `IReadOnlyOptions<T>`, this supports saving settings via `SaveAsync`.
 
-Both interfaces allow you to retrieve configuration options (e.g., file save locations) using the `GetOptionsConfiguration` method.
+Request `IOptionsConfigurationAccessor<T>` when you need provider-independent metadata such as
+the effective read path, next write path, format extension, instance name, or section. Core
+consumers that require the concrete configuration can request
+`IWritableOptionsConfigurationAccessor<T>`.
 
 ### `IReadOnlyNamedOptions` / `IWritableNamedOptions`
 Named variants of the above interfaces. Use these when you manage multiple settings of the same type with different `InstanceName` values.
 
-* [`IReadOnlyNamedOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IReadOnlyNamedOptions.cs)
+* [`IReadOnlyNamedOptions<T>`](./src/Configuration.Writable.Abstractions/IReadOnlyNamedOptions.cs)
     * Use the `.Get(name)` method to access named options.
     * Use the `OnChange(string name, Action<T> listener)` method to monitor changes to specific named options.
     * Use `GetInstance(name)` to retrieve a pre-specified `IReadOnlyOptions<T>` instance.
-* [`IWritableNamedOptions<T>`](./src/Configuration.Writable.Core/Abstractions/IWritableNamedOptions.cs)
+* [`IWritableNamedOptions<T>`](./src/Configuration.Writable.Abstractions/IWritableNamedOptions.cs)
     * In addition to `IReadOnlyNamedOptions<T>`, this supports saving settings via `SaveAsync(name, ...)`.
+
+### Migrating to the Abstractions split
+
+The contract split is a breaking change. Rebuild consumers so the existing
+`Configuration.Writable` type names resolve from `Configuration.Writable.Abstractions`.
+
+* `IReadOnlyOptionsMonitor<T>` no longer inherits `Microsoft.Extensions.Options.IOptionsMonitor<T>`.
+  Core still registers both services, and built-in writable monitors remain runtime-castable to the
+  Microsoft interface.
+* `GetOptionsConfiguration()` is no longer part of the basic read/write interfaces. Inject or cast
+  to `IOptionsConfigurationAccessor<T>` / `INamedOptionsConfigurationAccessor<T>` for portable
+  metadata.
+* Consumers needing providers, validators, or the concrete `WritableOptionsConfiguration<T>` must
+  reference Core and use `IWritableOptionsConfigurationAccessor<T>` or
+  `INamedWritableOptionsConfigurationAccessor<T>`.
 
 <details>
 <summary>Other interfaces (for compatibility)</summary>

@@ -1,0 +1,114 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
+namespace Configuration.Writable.Abstractions
+{
+    public interface IDeepCloneable<out T>
+    {
+        T DeepClone();
+    }
+}
+namespace Configuration.Writable
+{
+    public sealed class ConfigureSession<T>
+        where T :  class, new ()
+    {
+        public T CurrentValue { get; }
+        public System.Threading.Tasks.Task CommitAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public void ResetToDefault() { }
+        public void ResetToDefault(System.Action<T, T> reset) { }
+        public void ResetToLoaded() { }
+        public void ResetToLoaded(System.Action<T, T> reset) { }
+        public void Update(System.Action<T> updater) { }
+    }
+    public interface IHasVersion
+    {
+        int Version { get; set; }
+    }
+    public interface INamedOptionsConfigurationAccessor<T>
+        where T :  class, new ()
+    {
+        Configuration.Writable.IOptionsConfigurationInfo GetConfigurationInfo(string name);
+    }
+    public interface IOptionsConfigurationAccessor<T>
+        where T :  class, new ()
+    {
+        Configuration.Writable.IOptionsConfigurationInfo GetConfigurationInfo();
+    }
+    public interface IOptionsConfigurationInfo
+    {
+        string FormatFileExtension { get; }
+        string InstanceName { get; }
+        string ReadPath { get; }
+        System.Collections.Generic.IReadOnlyList<string> SectionNameParts { get; }
+        string WritePath { get; }
+    }
+    public interface IProfiledReadOnlyOptions<T>
+        where T :  class, new ()
+    {
+        string ActiveProfileName { get; }
+        T CurrentValue { get; }
+        string DefaultProfile { get; }
+        System.Collections.Generic.IReadOnlyCollection<string> ProfileNames { get; }
+        Configuration.Writable.IReadOnlyOptions<T> GetProfile(string name);
+        System.IDisposable? OnChange(System.Action<T> listener);
+    }
+    public interface IProfiledWritableOptions<T> : Configuration.Writable.IProfiledReadOnlyOptions<T>
+        where T :  class, new ()
+    {
+        System.Threading.Tasks.Task CreateProfileAsync(string name, string? copyFrom = null, System.Threading.CancellationToken cancellationToken = default);
+        Configuration.Writable.IWritableOptions<T> GetProfile(string name);
+        System.Threading.Tasks.Task RemoveProfileAsync(string name, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SetActiveProfileAsync(string name, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        T Get(string name);
+        Configuration.Writable.IReadOnlyOptions<T> GetInstance(string name);
+        System.IDisposable? OnChange(string name, System.Action<T> listener);
+    }
+    public interface IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        System.IDisposable? OnChange(System.Action<T, string?> listener);
+    }
+    public interface IReadOnlyOptionsMonitor<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>
+        where T :  class, new ()
+    {
+        new T CurrentValue { get; }
+        new T Get(string name);
+        new System.IDisposable? OnChange(System.Action<T, string?> listener);
+        System.IDisposable? OnReloadFailed(System.Action<System.Exception, string?> listener);
+    }
+    public interface IReadOnlyOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        T CurrentValue { get; }
+        System.IDisposable? OnChange(System.Action<T> listener);
+    }
+    public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        Configuration.Writable.ConfigureSession<T> BeginConfigure(string name);
+        Configuration.Writable.IWritableOptions<T> GetInstance(string name);
+        System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(string name, System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IWritableOptionsMonitor<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptionsMonitor<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptions<T>
+        where T :  class, new ()
+    {
+        new T CurrentValue { get; }
+        new T Get(string name);
+    }
+    public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>
+        where T :  class, new ()
+    {
+        Configuration.Writable.ConfigureSession<T> BeginConfigure();
+        System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
+    }
+}
