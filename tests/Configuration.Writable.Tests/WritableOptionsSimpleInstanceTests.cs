@@ -189,9 +189,7 @@ public class WritableOptionsSimpleInstanceTests
         _instance.Initialize();
 
         var option = _instance.GetOptions();
-        var path = ((IOptionsConfigurationAccessor<TestSettings>)option)
-            .GetConfigurationInfo()
-            .WritePath;
+        var path = option.ConfigurationInfo.WritePath;
         path.ShouldNotBeNullOrEmpty();
         path.ShouldEndWith(".json");
     }

@@ -411,12 +411,8 @@ public partial class InstanceNameIntegrationTests
         var secondOptions = namedOptions.GetInstance("Second");
 
         // Get configurations
-        var firstConfig = (
-            (IOptionsConfigurationAccessor<UserSetting>)firstOptions
-        ).GetConfigurationInfo();
-        var secondConfig = (
-            (IOptionsConfigurationAccessor<UserSetting>)secondOptions
-        ).GetConfigurationInfo();
+        var firstConfig = firstOptions.ConfigurationInfo;
+        var secondConfig = secondOptions.ConfigurationInfo;
 
         // Verify configurations
         firstConfig.InstanceName.ShouldBe("First");

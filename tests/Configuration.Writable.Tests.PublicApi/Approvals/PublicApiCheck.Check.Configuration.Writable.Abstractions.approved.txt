@@ -23,16 +23,6 @@ namespace Configuration.Writable
     {
         int Version { get; set; }
     }
-    public interface INamedOptionsConfigurationAccessor<T>
-        where T :  class, new ()
-    {
-        Configuration.Writable.IOptionsConfigurationInfo GetConfigurationInfo(string name);
-    }
-    public interface IOptionsConfigurationAccessor<T>
-        where T :  class, new ()
-    {
-        Configuration.Writable.IOptionsConfigurationInfo GetConfigurationInfo();
-    }
     public interface IOptionsConfigurationInfo
     {
         string FormatFileExtension { get; }
@@ -85,6 +75,7 @@ namespace Configuration.Writable
     public interface IReadOnlyOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
         where T :  class, new ()
     {
+        Configuration.Writable.IOptionsConfigurationInfo ConfigurationInfo { get; }
         T CurrentValue { get; }
         System.IDisposable? OnChange(System.Action<T> listener);
     }

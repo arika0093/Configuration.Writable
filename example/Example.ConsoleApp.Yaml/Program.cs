@@ -31,9 +31,7 @@ await options.SaveAsync(setting =>
     setting.LastUpdatedAt = DateTime.Now;
 });
 Console.WriteLine(":: Config saved.");
-var configurationInfo = (
-    (IOptionsConfigurationAccessor<SampleSetting>)options
-).GetConfigurationInfo();
+var configurationInfo = options.ConfigurationInfo;
 Console.WriteLine($"   at {configurationInfo.WritePath}");
 
 // get updated config instance

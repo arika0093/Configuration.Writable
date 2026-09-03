@@ -41,11 +41,10 @@ internal sealed class WritableOptionsImpl<T>(
     public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name) => GetOptions(name);
 
     /// <inheritdoc />
-    public IOptionsConfigurationInfo GetConfigurationInfo() =>
+    public IOptionsConfigurationInfo ConfigurationInfo =>
         GetConfigurationInfo(MEOptions.DefaultName);
 
-    /// <inheritdoc />
-    public IOptionsConfigurationInfo GetConfigurationInfo(string name) =>
+    internal IOptionsConfigurationInfo GetConfigurationInfo(string name) =>
         OptionsConfigurationInfo.From(GetOptions(name));
 
     /// <inheritdoc />

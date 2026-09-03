@@ -4,7 +4,7 @@ namespace Configuration.Writable;
 /// Provides the Core configuration object for the default options instance.
 /// </summary>
 /// <typeparam name="T">The type of the options class.</typeparam>
-public interface IWritableOptionsConfigurationAccessor<T> : IOptionsConfigurationAccessor<T>
+public interface IWritableOptionsConfigurationAccessor<T>
     where T : class, new()
 {
     /// <summary>
@@ -18,7 +18,6 @@ public interface IWritableOptionsConfigurationAccessor<T> : IOptionsConfiguratio
 /// </summary>
 /// <typeparam name="T">The type of the options class.</typeparam>
 public interface INamedWritableOptionsConfigurationAccessor<T>
-    : INamedOptionsConfigurationAccessor<T>
     where T : class, new()
 {
     /// <summary>

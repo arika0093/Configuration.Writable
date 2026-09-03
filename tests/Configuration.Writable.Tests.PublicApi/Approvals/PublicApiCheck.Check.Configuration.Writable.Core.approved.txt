@@ -185,7 +185,7 @@ namespace Configuration.Writable.FormatProvider
 }
 namespace Configuration.Writable
 {
-    public interface INamedWritableOptionsConfigurationAccessor<T> : Configuration.Writable.INamedOptionsConfigurationAccessor<T>
+    public interface INamedWritableOptionsConfigurationAccessor<T>
         where T :  class, new ()
     {
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
@@ -212,7 +212,7 @@ namespace Configuration.Writable
         System.TimeSpan OnChangeDebounce { get; }
         System.Collections.Generic.List<string> SectionNameParts { get; }
     }
-    public interface IWritableOptionsConfigurationAccessor<T> : Configuration.Writable.IOptionsConfigurationAccessor<T>
+    public interface IWritableOptionsConfigurationAccessor<T>
         where T :  class, new ()
     {
         Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration();
@@ -286,20 +286,19 @@ namespace Configuration.Writable.Testing
         public static Configuration.Writable.Testing.WritableOptionsStub<T> Create<T>(string instanceName, T value)
             where T :  class, new () { }
     }
-    public class WritableOptionsStub<T> : Configuration.Writable.INamedOptionsConfigurationAccessor<T>, Configuration.Writable.IOptionsConfigurationAccessor<T>, Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptionsMonitor<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptionsMonitor<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+    public class WritableOptionsStub<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptionsMonitor<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptionsMonitor<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
         where T :  class, new ()
     {
         public WritableOptionsStub(System.Collections.Generic.Dictionary<string, T> namedValues) { }
         public WritableOptionsStub(T value) { }
         public WritableOptionsStub(string instanceName, T value) { }
         public System.Collections.Generic.List<System.Action<T, string?>> ChangeListeners { get; }
+        public Configuration.Writable.IOptionsConfigurationInfo ConfigurationInfo { get; }
         public T CurrentValue { get; }
         public System.Collections.Generic.Dictionary<string, T> NamedValues { get; }
         public Configuration.Writable.ConfigureSession<T> BeginConfigure() { }
         public Configuration.Writable.ConfigureSession<T> BeginConfigure(string name) { }
         public T Get(string name) { }
-        public Configuration.Writable.IOptionsConfigurationInfo GetConfigurationInfo() { }
-        public Configuration.Writable.IOptionsConfigurationInfo GetConfigurationInfo(string name) { }
         public System.IDisposable? OnChange(System.Action<T> listener) { }
         public System.IDisposable? OnChange(System.Action<T, string?> listener) { }
         public System.IDisposable? OnChange(string name, System.Action<T> listener) { }

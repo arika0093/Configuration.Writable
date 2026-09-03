@@ -112,9 +112,7 @@ public partial class AbstractionsPackageTests
         standardMonitor.CurrentValue.Name.ShouldBe(customMonitor.CurrentValue.Name);
         standardMonitor.Get("named").Name.ShouldBe(customMonitor.Get("named").Name);
 
-        var info = provider
-            .GetRequiredService<IOptionsConfigurationAccessor<TestSettings>>()
-            .GetConfigurationInfo();
+        var info = provider.GetRequiredService<IReadOnlyOptions<TestSettings>>().ConfigurationInfo;
         info.InstanceName.ShouldBe(MEOptions.DefaultName);
         info.ReadPath.ShouldBe(info.WritePath);
         info.WritePath.ShouldEndWith("settings.custom");
@@ -123,14 +121,15 @@ public partial class AbstractionsPackageTests
         info.SectionNameParts.ShouldBe(["Application", "Settings"]);
 
         var namedInfo = provider
-            .GetRequiredService<INamedOptionsConfigurationAccessor<TestSettings>>()
-            .GetConfigurationInfo("named");
+            .GetRequiredService<IReadOnlyNamedOptions<TestSettings>>()
+            .GetInstance("named")
+            .ConfigurationInfo;
         namedInfo.InstanceName.ShouldBe("named");
         namedInfo.WritePath.ShouldEndWith("named.custom");
 
         var keyedInfo = provider
-            .GetRequiredKeyedService<IOptionsConfigurationAccessor<TestSettings>>("named")
-            .GetConfigurationInfo();
+            .GetRequiredKeyedService<IReadOnlyOptions<TestSettings>>("named")
+            .ConfigurationInfo;
         keyedInfo.InstanceName.ShouldBe("named");
 
         var coreConfiguration = provider
@@ -193,7 +192,7 @@ public partial class AbstractionsPackageTests
     {
         var stub = new WritableOptionsStub<TestSettings>(new TestSettings());
 
-        Should.Throw<InvalidOperationException>(() => stub.GetConfigurationInfo());
+        Should.Throw<InvalidOperationException>(() => stub.ConfigurationInfo);
 
         stub.SetConfigurationInfo(
             MEOptions.DefaultName,
@@ -203,7 +202,7 @@ public partial class AbstractionsPackageTests
             ["Root"]
         );
 
-        var info = stub.GetConfigurationInfo();
+        var info = stub.ConfigurationInfo;
         info.ReadPath.ShouldBe("loaded.json");
         info.WritePath.ShouldBe("saved.config");
         info.FormatFileExtension.ShouldBe("json");

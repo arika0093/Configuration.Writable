@@ -24,7 +24,7 @@ internal sealed class WritableOptionsWithNameImpl<T>(
         innerWritableOptionsInstance.GetOptionsConfiguration(instanceName);
 
     /// <inheritdoc />
-    public IOptionsConfigurationInfo GetConfigurationInfo() =>
+    public IOptionsConfigurationInfo ConfigurationInfo =>
         innerWritableOptionsInstance.GetConfigurationInfo(instanceName);
 
     /// <inheritdoc />

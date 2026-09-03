@@ -68,12 +68,6 @@ public static class WritableOptionsCoreExtensions
         services.AddSingleton<IWritableOptionsMonitor<T>>(p =>
             p.GetRequiredService<WritableOptionsImpl<T>>()
         );
-        services.AddSingleton<IOptionsConfigurationAccessor<T>>(p =>
-            p.GetRequiredService<WritableOptionsImpl<T>>()
-        );
-        services.AddSingleton<INamedOptionsConfigurationAccessor<T>>(p =>
-            p.GetRequiredService<WritableOptionsImpl<T>>()
-        );
         services.AddSingleton<IWritableOptionsConfigurationAccessor<T>>(p =>
             p.GetRequiredService<WritableOptionsImpl<T>>()
         );
@@ -95,12 +89,6 @@ public static class WritableOptionsCoreExtensions
             services.AddKeyedSingleton<IReadOnlyOptions<T>>(
                 instanceName,
                 (p, key) => p.GetRequiredKeyedService<IWritableOptions<T>>(instanceName)
-            );
-            services.AddKeyedSingleton<IOptionsConfigurationAccessor<T>>(
-                instanceName,
-                (p, key) =>
-                    (IOptionsConfigurationAccessor<T>)
-                        p.GetRequiredKeyedService<IWritableOptions<T>>(instanceName)
             );
             services.AddKeyedSingleton<IWritableOptionsConfigurationAccessor<T>>(
                 instanceName,

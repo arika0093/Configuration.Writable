@@ -16,6 +16,11 @@ public interface IReadOnlyOptions<T> : IReadOnlyOptionsCore<T>
     T CurrentValue { get; }
 
     /// <summary>
+    /// Gets provider-independent metadata for this options instance.
+    /// </summary>
+    IOptionsConfigurationInfo ConfigurationInfo { get; }
+
+    /// <summary>
     /// Registers a listener to be called whenever the default <typeparamref name="T"/> changes.
     /// </summary>
     /// <param name="listener">The action to be invoked when <typeparamref name="T"/> has changed.</param>

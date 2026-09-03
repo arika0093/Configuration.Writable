@@ -14,11 +14,7 @@ namespace Configuration.Writable.Testing;
 /// A simple stub implementation of <see cref="IWritableOptions{T}"/> or <see cref="IReadOnlyOptions{T}"/> for testing purposes.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class WritableOptionsStub<T>
-    : IWritableOptionsMonitor<T>,
-        IOptionsMonitor<T>,
-        IOptionsConfigurationAccessor<T>,
-        INamedOptionsConfigurationAccessor<T>
+public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>, IOptionsMonitor<T>
     where T : class, new()
 {
     /// <summary>
@@ -91,11 +87,10 @@ public class WritableOptionsStub<T>
     }
 
     /// <inheritdoc/>
-    public IOptionsConfigurationInfo GetConfigurationInfo() =>
+    public IOptionsConfigurationInfo ConfigurationInfo =>
         GetConfigurationInfo(MEOptions.DefaultName);
 
-    /// <inheritdoc/>
-    public IOptionsConfigurationInfo GetConfigurationInfo(string name) =>
+    internal IOptionsConfigurationInfo GetConfigurationInfo(string name) =>
         ConfigurationInfos.TryGetValue(name, out var info)
             ? info
             : throw new InvalidOperationException(
@@ -235,14 +230,14 @@ public class WritableOptionsStub<T>
 internal sealed class WritableOptionsStubWithName<T>(
     WritableOptionsStub<T> innerStub,
     string instanceName
-) : IWritableOptions<T>, IOptionsConfigurationAccessor<T>
+) : IWritableOptions<T>
     where T : class, new()
 {
     /// <inheritdoc/>
     public T CurrentValue => innerStub.Get(instanceName);
 
     /// <inheritdoc/>
-    public IOptionsConfigurationInfo GetConfigurationInfo() =>
+    public IOptionsConfigurationInfo ConfigurationInfo =>
         innerStub.GetConfigurationInfo(instanceName);
 
     /// <inheritdoc/>

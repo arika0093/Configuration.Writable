@@ -321,9 +321,7 @@ public partial class KeyedServicesIntegrationTests
             IWritableOptions<AppSettings>
         >("ConfigTest");
 
-        var configOptions = (
-            (IOptionsConfigurationAccessor<AppSettings>)writableOptions
-        ).GetConfigurationInfo();
+        var configOptions = writableOptions.ConfigurationInfo;
 
         configOptions.ShouldNotBeNull();
         configOptions.InstanceName.ShouldBe("ConfigTest");

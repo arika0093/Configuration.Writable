@@ -33,9 +33,7 @@ await options.SaveAsync(setting =>
 });
 
 // announce saved location
-var savedLocation = ((IOptionsConfigurationAccessor<SampleSetting>)options)
-    .GetConfigurationInfo()
-    .WritePath;
+var savedLocation = options.ConfigurationInfo.WritePath;
 Console.WriteLine($"Saved to {savedLocation}");
 
 // need some delay to see the change callback in action

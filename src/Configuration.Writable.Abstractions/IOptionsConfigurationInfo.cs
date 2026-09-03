@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Configuration.Writable;
 
@@ -32,41 +31,4 @@ public interface IOptionsConfigurationInfo
     /// Gets the hierarchical configuration section name parts.
     /// </summary>
     IReadOnlyList<string> SectionNameParts { get; }
-}
-
-/// <summary>
-/// Provides configuration metadata for the default options instance.
-/// </summary>
-/// <typeparam name="T">The type of the options class.</typeparam>
-[SuppressMessage(
-    "Major Code Smell",
-    "S2326",
-    Justification = "The generic parameter provides type-safe DI service identity."
-)]
-public interface IOptionsConfigurationAccessor<T>
-    where T : class, new()
-{
-    /// <summary>
-    /// Gets configuration metadata for the default options instance.
-    /// </summary>
-    IOptionsConfigurationInfo GetConfigurationInfo();
-}
-
-/// <summary>
-/// Provides configuration metadata for named options instances.
-/// </summary>
-/// <typeparam name="T">The type of the options class.</typeparam>
-[SuppressMessage(
-    "Major Code Smell",
-    "S2326",
-    Justification = "The generic parameter provides type-safe DI service identity."
-)]
-public interface INamedOptionsConfigurationAccessor<T>
-    where T : class, new()
-{
-    /// <summary>
-    /// Gets configuration metadata for the specified options instance.
-    /// </summary>
-    /// <param name="name">The name of the options instance.</param>
-    IOptionsConfigurationInfo GetConfigurationInfo(string name);
 }
