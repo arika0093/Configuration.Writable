@@ -27,6 +27,15 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
     public string EntriesDirectory { get; set; } = "/";
 
     /// <inheritdoc/>
+    public bool TryBackup(string path, out string? backupPath, ILogger? logger = null)
+    {
+        // Zip archives do not support in-place backups of individual entries.
+        // Therefore, this method does not create a backup and returns false.
+        backupPath = null;
+        return false;
+    }
+
+    /// <inheritdoc/>
     public bool FileExists(string path)
     {
         using var zip = GetZipEntry(path, out var entry);

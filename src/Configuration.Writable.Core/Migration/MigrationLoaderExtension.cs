@@ -48,15 +48,36 @@ internal static class MigrationLoaderExtension
             return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
 
+        // The file declares a version that is newer than the target. This is an unsupported scenario.
+        if (fileVersion > targetVersion.Value)
+        {
+            throw new InvalidOperationException(
+                $"Configuration schema version {fileVersion} is newer than supported version {targetVersion.Value}."
+            );
+        }
+
         // Find the type matching the declared file version.
         if (
             migrationLookup is null
             || !migrationLookup.TryGetType(fileVersion, out var currentType)
         )
         {
-            throw new InvalidOperationException(
-                $"No type found matching version {fileVersion} in migration chain."
-            );
+            // The compatibility is broken, so create a backup and return the default values.
+            var success = options.FileProvider.TryBackup(
+                options.ConfigFilePath, out var backupPath, options.Logger);
+            if (success)
+            {
+                options.Logger?.ZLogWarning(
+                    $"Configuration schema version {fileVersion} is no longer supported by {typeof(T).Name}. Using defaults. The original configuration was backed up to: {backupPath}"
+                );
+            }
+            else
+            {
+                options.Logger?.ZLogWarning(
+                    $"Configuration schema version {fileVersion} is no longer supported by {typeof(T).Name}. Using defaults without a backup."
+                );
+            }
+            return new T();
         }
 
         return ApplyMigrationChain<T>(formatProvider, options, migrationLookup, currentType);

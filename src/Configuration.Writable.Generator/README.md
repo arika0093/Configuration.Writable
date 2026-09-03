@@ -98,12 +98,13 @@ version. Use the code fix to add the required method, then replace the generated
 
 Set `SupportMigration = false` on the current `[OptionsModel]` to start a new
 compatibility chain without requiring the immediately preceding version or a migration method.
-Files from versions before that compatibility boundary are rejected when loaded.
+Files from versions before that compatibility boundary are backed up when supported by the
+configured file provider, then the current model's default values are used.
 
 ```csharp
 private static partial UserSettingV2 Migrate(UserSettingV1 source)
 {
     // TODO: Implement migration.
-    throw new global::System.NotImplementedException();
+    throw new NotImplementedException();
 }
 ```

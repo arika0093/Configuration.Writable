@@ -115,7 +115,7 @@ public class SourceGeneratedVersioningTests
     }
 
     [Fact]
-    public async Task DisabledMigrationSupport_ShouldRejectOlderVersion()
+    public async Task DisabledMigrationSupport_ShouldUseDefaultsForOlderVersion()
     {
         const string fileName = "generated-cutoff.json";
         await _fileProvider.SaveToFileAsync(
@@ -130,11 +130,33 @@ public class SourceGeneratedVersioningTests
             FileProvider = _fileProvider,
         };
 
+        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+
+        result.CurrentValue.ShouldBe("");
+        _fileProvider.BackupAttemptCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task MigrationLoad_ShouldRejectNewerVersion()
+    {
+        const string fileName = "generated-future.json";
+        await _fileProvider.SaveToFileAsync(
+            fileName,
+            Encoding.UTF8.GetBytes(
+                """{"ModelId":"CutoffSettings","Version":3,"CurrentValue":"future"}"""
+            )
+        );
+        var builder = new WritableOptionsConfigBuilder<CutoffSettingsV2>
+        {
+            FilePath = fileName,
+            FileProvider = _fileProvider,
+        };
+
         var exception = Should.Throw<InvalidOperationException>(() =>
             new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""))
         );
 
-        exception.Message.ShouldContain("version 1");
+        exception.Message.ShouldContain("newer than supported");
     }
 
     [Fact]

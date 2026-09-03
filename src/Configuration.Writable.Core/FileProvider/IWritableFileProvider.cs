@@ -12,6 +12,15 @@ namespace Configuration.Writable.FileProvider;
 public interface IWritableFileProvider
 {
     /// <summary>
+    /// Attempts to create a backup of the specified file.
+    /// </summary>
+    /// <param name="path">The path of the file to back up.</param>
+    /// <param name="backupPath">The provider-defined backup path when a backup was created; otherwise, <see langword="null"/>.</param>
+    /// <param name="logger">An optional logger for logging operations and errors.</param>
+    /// <returns><see langword="true"/> when a backup was created; otherwise, <see langword="false"/>.</returns>
+    bool TryBackup(string path, out string? backupPath, ILogger? logger = null);
+
+    /// <summary>
     /// Returns a PipeReader for reading the contents of the specified file path. If the file does not exist, returns null.
     /// </summary>
     /// <param name="path">The path of the file to retrieve. Can be relative or absolute.</param>

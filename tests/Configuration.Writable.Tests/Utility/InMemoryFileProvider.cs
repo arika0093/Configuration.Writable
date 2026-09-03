@@ -17,6 +17,16 @@ public class InMemoryFileProvider : IWritableFileProvider
 {
     private readonly ConcurrentDictionary<string, byte[]> _files = new();
 
+    public int BackupAttemptCount { get; private set; }
+
+    /// <inheritdoc />
+    public bool TryBackup(string path, out string? backupPath, ILogger? logger = null)
+    {
+        BackupAttemptCount++;
+        backupPath = null;
+        return false;
+    }
+
     /// <inheritdoc />
     public Task SaveToFileAsync(
         string path,

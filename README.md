@@ -797,7 +797,10 @@ public partial class UserSetting
 ```
 
 The generator does not require versions 1 through 4 or a `Migrate` method for this model.
-Loading a file from an unsupported older version throws an `InvalidOperationException`.
+When an unsupported older version is loaded, the file provider attempts to create a backup
+and the application continues with the current model's default values. A warning is logged
+whether or not the provider supports backups. Newer schema versions, invalid metadata, and
+model ID mismatches still throw an exception.
 
 ## Advanced Usage
 ### Support NativeAOT

@@ -138,6 +138,21 @@ public class CommonFileProviderTests
     }
 
     [Fact]
+    public async Task TryBackup_ShouldReturnProviderDefinedBackupPath()
+    {
+        using var testFile = new TemporaryFile();
+        var writer = new CommonFileProvider();
+        var content = Encoding.UTF8.GetBytes("Original content");
+        await writer.SaveToFileAsync(testFile.FilePath, content);
+
+        writer.TryBackup(testFile.FilePath, out var backupPath).ShouldBeTrue();
+
+        backupPath.ShouldNotBeNull();
+        File.Exists(backupPath).ShouldBeTrue();
+        (await ReadAllBytesCompat(backupPath)).ShouldBe(content);
+    }
+
+    [Fact]
     public async Task TryRestoreLatestBackup_ShouldRestoreDeletedFile()
     {
         using var testFile = new TemporaryFile();

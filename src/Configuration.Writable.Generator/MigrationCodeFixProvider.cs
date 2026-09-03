@@ -94,9 +94,7 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
                         .ThrowStatement(
                             SyntaxFactory
                                 .ObjectCreationExpression(
-                                    SyntaxFactory.ParseTypeName(
-                                        "global::System.NotImplementedException"
-                                    )
+                                    SyntaxFactory.ParseTypeName("NotImplementedException")
                                 )
                                 .WithArgumentList(SyntaxFactory.ArgumentList())
                         )
