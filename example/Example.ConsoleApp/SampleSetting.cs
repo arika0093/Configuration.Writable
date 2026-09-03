@@ -3,7 +3,7 @@ using Configuration.Writable;
 
 namespace Example.ConsoleApp;
 
-[OptionsModel]
+[OptionsModel(Id = "Example.SampleSetting")]
 public partial class SampleSetting
 {
     [Required]

@@ -57,6 +57,7 @@ public class ProfiledOptionsConfigBuilder<T> : WritableOptionsConfigBuilder<T>
             ConfigFilePath = template.ConfigFilePath,
             InstanceName = "",
             SectionNameParts = catalogSectionParts,
+            SchemaMetadata = null,
             OnChangeDebounce = template.OnChangeDebounce,
             ConflictResolution = template.ConflictResolution,
             CloneMethod = ProfileCatalog.Clone,

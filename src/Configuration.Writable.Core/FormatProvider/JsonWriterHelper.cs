@@ -88,6 +88,55 @@ internal static class JsonWriterHelper
         return bytes;
     }
 
+    public static JsonSerializeAction<T> AddSchemaMetadata<T>(
+        JsonSerializeAction<T> serializeAction,
+        OptionsSchemaMetadata? metadata,
+        bool persistVersion
+    )
+    {
+        if (metadata is null)
+        {
+            return serializeAction;
+        }
+
+        return (writer, value) =>
+        {
+            var serialized = new ArrayBufferWriter<byte>();
+            using (var valueWriter = new Utf8JsonWriter(serialized))
+            {
+                serializeAction(valueWriter, value);
+                valueWriter.Flush();
+            }
+
+            using var document = JsonDocument.Parse(serialized.WrittenMemory);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                throw new InvalidOperationException(
+                    "Options schema metadata can only be written for JSON objects."
+                );
+            }
+
+            writer.WriteStartObject();
+            if (metadata.ModelId is not null)
+            {
+                writer.WriteString(OptionsSchemaMetadata.ModelIdPropertyName, metadata.ModelId);
+            }
+            if (persistVersion && metadata.Version is not null)
+            {
+                writer.WriteNumber(
+                    OptionsSchemaMetadata.VersionPropertyName,
+                    metadata.Version.Value
+                );
+            }
+
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                property.WriteTo(writer);
+            }
+            writer.WriteEndObject();
+        };
+    }
+
     /// <summary>
     /// Gets save contents for partial write (with section name).
     /// </summary>

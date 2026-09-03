@@ -13,14 +13,19 @@ internal sealed class MigrationLookup
     private readonly Dictionary<int, Type> _typesByVersion = new();
     private readonly Dictionary<Type, MigrationStep> _migrationsBySourceType = new();
 
-    public MigrationLookup(Type targetType, IReadOnlyList<MigrationStep> migrationSteps)
+    public MigrationLookup(
+        Type targetType,
+        OptionsSchemaMetadata targetMetadata,
+        IReadOnlyList<MigrationStep> migrationSteps
+    )
     {
-        TargetVersion = AddType(targetType);
+        TargetVersion = targetMetadata.Version;
+        AddType(targetType, targetMetadata.Version);
 
         foreach (var step in migrationSteps)
         {
-            var fromVersion = AddType(step.FromType);
-            AddType(step.ToType);
+            var fromVersion = AddType(step.FromType, step.FromVersion);
+            AddType(step.ToType, step.ToVersion);
 
             if (fromVersion is null && FromNoneStep is null)
             {
@@ -46,14 +51,13 @@ internal sealed class MigrationLookup
 
     public int? GetVersion(Type type) => _versionsByType[type];
 
-    private int? AddType(Type type)
+    private int? AddType(Type type, int? version)
     {
         if (_versionsByType.TryGetValue(type, out var existingVersion))
         {
             return existingVersion;
         }
 
-        var version = VersionCache.GetVersion(type);
         _versionsByType.Add(type, version);
 
         if (version is not null && !_typesByVersion.ContainsKey(version.Value))

@@ -180,6 +180,11 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     /// Sets the cloning strategy to use the default deep clone method if <typeparamref name="T"/> implements <see cref="IDeepCloneable{T}"/>.
     /// If not, it falls back to JSON serialization for deep cloning.
     /// </summary>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026",
+        Justification = "The JSON fallback is only selected when generated cloning is unavailable."
+    )]
     public void UseDefaultCloneStrategy()
     {
         if (typeof(IDeepCloneable<T>).IsAssignableFrom(typeof(T)))
@@ -268,17 +273,37 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     /// Registers a migration step from an old configuration version to a new version.
     /// Migrations should be registered in sequential order (e.g., V1 -> V2, then V2 -> V3).
     /// </summary>
-    /// <typeparam name="TOld">The old configuration type. Must implement <see cref="IHasVersion"/>.</typeparam>
-    /// <typeparam name="TNew">The new configuration type. Must implement <see cref="IHasVersion"/>.</typeparam>
+    /// <typeparam name="TOld">The old versioned configuration type.</typeparam>
+    /// <typeparam name="TNew">The new versioned configuration type.</typeparam>
     /// <param name="migrator">A function that converts an instance of <typeparamref name="TOld"/> to <typeparamref name="TNew"/>.</param>
     /// <exception cref="InvalidOperationException">Thrown when attempting to register a downgrade migration (where the new version is less than the old version).</exception>
     public void UseMigration<TOld, TNew>(Func<TOld, TNew> migrator)
-        where TOld : class, IHasVersion, new()
-        where TNew : class, IHasVersion, new()
+        where TOld : class, new()
+        where TNew : class, new()
     {
-        // Validate that this is not a downgrade
-        var oldVersion = VersionCache.GetVersion<TOld>();
-        var newVersion = VersionCache.GetVersion<TNew>();
+        var oldMetadata = OptionsMetadataResolver.Resolve<TOld>();
+        var newMetadata = OptionsMetadataResolver.Resolve<TNew>();
+        var oldVersion =
+            oldMetadata?.Version
+            ?? throw new InvalidOperationException(
+                $"Source type {typeof(TOld).Name} does not declare a schema version."
+            );
+        var newVersion =
+            newMetadata?.Version
+            ?? throw new InvalidOperationException(
+                $"Target type {typeof(TNew).Name} does not declare a schema version."
+            );
+
+        if (
+            oldMetadata.ModelId is not null
+            && newMetadata.ModelId is not null
+            && oldMetadata.ModelId != newMetadata.ModelId
+        )
+        {
+            throw new InvalidOperationException(
+                $"Cannot migrate between model IDs '{oldMetadata.ModelId}' and '{newMetadata.ModelId}'."
+            );
+        }
 
         if (newVersion <= oldVersion)
         {
@@ -293,29 +318,37 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             );
         }
 
-        _migrationSteps.Add(new MigrationStep<TOld, TNew>(migrator));
+        _migrationSteps.Add(
+            new MigrationStep<TOld, TNew>(
+                migrator,
+                newMetadata.ModelId ?? oldMetadata.ModelId,
+                oldVersion,
+                newVersion
+            )
+        );
     }
 
     /// <summary>
     /// Registers a migration step from a configuration without a version (version 0) to a versioned configuration.
     /// </summary>
     /// <typeparam name="TSource">The old configuration type without <see cref="IHasVersion"/>. Must have a parameterless constructor.</typeparam>
-    /// <typeparam name="TNew">The new configuration type. Must implement <see cref="IHasVersion"/>.</typeparam>
+    /// <typeparam name="TNew">The new versioned configuration type.</typeparam>
     /// <param name="migrator">A function that converts an instance of <typeparamref name="TSource"/> to <typeparamref name="TNew"/>.</param>
     /// <exception cref="InvalidOperationException">Thrown when <typeparamref name="TNew"/> is not versioned.</exception>
     public void UseMigrationFromNone<TSource, TNew>(Func<TSource, TNew> migrator)
         where TSource : class, new()
-        where TNew : class, IHasVersion, new()
+        where TNew : class, new()
     {
-        var newVersion = VersionCache.GetVersion(typeof(TNew));
-        if (newVersion is null)
-        {
-            throw new InvalidOperationException(
-                $"Target type {typeof(TNew).Name} does not implement IHasVersion correctly."
+        var metadata = OptionsMetadataResolver.Resolve<TNew>();
+        var newVersion =
+            metadata?.Version
+            ?? throw new InvalidOperationException(
+                $"Target type {typeof(TNew).Name} does not declare a schema version."
             );
-        }
 
-        _migrationSteps.Add(new MigrationStepFromNone<TSource, TNew>(migrator));
+        _migrationSteps.Add(
+            new MigrationStepFromNone<TSource, TNew>(migrator, metadata.ModelId, newVersion)
+        );
     }
 
     /// <summary>
@@ -328,7 +361,18 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         var fileProvider = FileProvider ?? new CommonFileProvider();
         var configFilePath = SaveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
+        var schemaMetadata = OptionsMetadataResolver.Resolve<T>();
+        if (schemaMetadata is not null && FormatProvider is not IOptionsSchemaMetadataProvider)
+        {
+            throw new InvalidOperationException(
+                $"Format provider {FormatProvider.GetType().Name} does not support options schema metadata required by {typeof(T).Name}."
+            );
+        }
+
         var migrationSteps = new List<MigrationStep>(_migrationSteps);
+        var generatedMetadata = new T() as IGeneratedOptionsMetadata;
+        generatedMetadata?.RegisterMigrations(new OptionsMigrationRegistrar(migrationSteps));
+        ValidateMigrationSteps(schemaMetadata, migrationSteps);
         var sectionNamePart = SectionName
             .Split([":", "__"], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
@@ -354,6 +398,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             ConfigFilePath = configFilePath,
             InstanceName = instanceName,
             SectionNameParts = sectionNamePart,
+            SchemaMetadata = schemaMetadata,
             OnChangeDebounce = OnChangeDebounce,
             ConflictResolution = ConflictResolution,
             CloneMethod = cloneMethod,
@@ -361,8 +406,48 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             Validator = validator,
             MigrationSteps = migrationSteps,
             MigrationLookup =
-                migrationSteps.Count == 0 ? null : new MigrationLookup(typeof(T), migrationSteps),
+                migrationSteps.Count == 0 || schemaMetadata?.Version is null
+                    ? null
+                    : new MigrationLookup(typeof(T), schemaMetadata, migrationSteps),
         };
+    }
+
+    private static void ValidateMigrationSteps(
+        OptionsSchemaMetadata? targetMetadata,
+        IReadOnlyList<MigrationStep> migrationSteps
+    )
+    {
+        if (migrationSteps.Count == 0)
+        {
+            return;
+        }
+
+        var targetVersion =
+            targetMetadata?.Version
+            ?? throw new InvalidOperationException(
+                $"Target type {typeof(T).Name} does not declare a schema version."
+            );
+
+        foreach (var step in migrationSteps)
+        {
+            if (
+                targetMetadata.ModelId is not null
+                && step.ModelId is not null
+                && targetMetadata.ModelId != step.ModelId
+            )
+            {
+                throw new InvalidOperationException(
+                    $"Migration for model ID '{step.ModelId}' cannot be registered for '{targetMetadata.ModelId}'."
+                );
+            }
+
+            if (step.ToVersion > targetVersion)
+            {
+                throw new InvalidOperationException(
+                    $"Migration to version {step.ToVersion} exceeds target version {targetVersion}."
+                );
+            }
+        }
     }
 
     private Func<T, T> GetCloneMethod()

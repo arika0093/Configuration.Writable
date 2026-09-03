@@ -3,7 +3,7 @@ using Configuration.Writable;
 
 namespace Example.WorkerService;
 
-[OptionsModel]
+[OptionsModel(Id = "Example.SampleSetting")]
 public partial class SampleSetting
 {
     public string? Name { get; set; }

@@ -756,42 +756,38 @@ The resulting JSON is structured as follows:
 
 ### Migrating Existing Configurations
 Provides a mechanism for automatically migrating old version configuration files to the new version when the structure of the configuration file changes.
-First, prepare a settings class for each version and implement the `Version` property and set the version number as the initial value.
+Give every generation the same stable model ID and a consecutive positive version. The source generator emits schema metadata and requires the next generation to implement the generated `Migrate` partial method.
 
 ```csharp
 // Version 1
-[OptionsModel]
-public partial class UserSettingV1 : IHasVersion
+[OptionsModel(Id = "UserSetting", Version = 1)]
+public partial class UserSettingV1
 {
-    public int Version { get; set; } = 1; // add it
     public string Name { get; set; } = "default name";
 }
 
 // Version 2
-[OptionsModel]
-public partial class UserSettingV2 : IHasVersion
+[OptionsModel(Id = "UserSetting", Version = 2)]
+public partial class UserSettingV2
 {
-    public int Version { get; set; } = 2; // add it
     public List<string> Names { get; set; } = [];
+
+    private static partial UserSettingV2 Migrate(UserSettingV1 source) =>
+        new() { Names = [source.Name] };
 }
 ```
 
-Next, register the migration as follows:
+Register only the latest generation. Its generated metadata recursively registers the complete migration chain, including public generations in directly referenced assemblies.
+
 ```csharp
-// register latest version (V2)
 builder.Services.AddWritableOptions(options => {
-    options.Add<UserSettingV2>(conf => {
-        // and register migration from V1 to V2
-        conf.UseMigration<UserSettingV1, UserSettingV2>(oldSetting => {
-            return new UserSettingV2 {
-                Names = [oldSetting.Name] // migrate Name to Names list
-            };
-        });
-    });
+    options.Add<UserSettingV2>();
 });
 ```
 
-That's it. When reading the settings, if an old version configuration file is detected, migration will be performed automatically, and the new version format will be saved the next time you save the settings.
+`ModelId` and `Version` are persisted as reserved provider metadata. JSON, JSON AOT, XML, and YAML support the metadata at the root and inside configured sections. Existing files containing only a numeric `Version` remain compatible. Omit `Version` on `OptionsModel` for an unversioned model.
+
+`IHasVersion` and manual `UseMigration` registrations remain available for compatibility, but the analyzer recommends source-generated versioning.
 
 If you have an old configuration file that does not have a `Version` property, you can migrate it with `UseMigrationFromNone`:
 

@@ -21,19 +21,20 @@ internal static class MigrationLoaderExtension
         where T : class, new()
     {
         var migrationLookup = options.MigrationLookup;
+        var targetMetadata = options.SchemaMetadata;
+        var metadataProvider = formatProvider as IOptionsSchemaMetadataProvider;
+        var fileMetadata = metadataProvider?.ReadSchemaMetadata(options);
+        ValidateFileMetadata(fileMetadata);
+        ValidateModelId(targetMetadata, fileMetadata);
 
         // If the target type is not versioned, simply load it directly.
-        var targetVersion = migrationLookup is null
-            ? VersionCache.GetVersion(typeof(T))
-            : migrationLookup.TargetVersion;
+        var targetVersion = targetMetadata?.Version;
         if (targetVersion is null)
         {
             return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
 
-        // Try to read the version declared in the file without binding to a specific model.
-        // A null result means the file does not declare a version field.
-        var fileVersion = (formatProvider as FormatProviderBase)?.TryGetFileVersion(options);
+        var fileVersion = fileMetadata?.Version;
 
         // When the file has no declared version, check for a migration from an unversioned type.
         if (fileVersion is null)
@@ -75,6 +76,35 @@ internal static class MigrationLoaderExtension
         return ApplyMigrationChain<T>(formatProvider, options, migrationLookup, currentType);
     }
 
+    private static void ValidateFileMetadata(OptionsSchemaMetadata? fileMetadata)
+    {
+        if (fileMetadata?.ModelId is not null && string.IsNullOrWhiteSpace(fileMetadata.ModelId))
+        {
+            throw new FormatException("Configuration model ID cannot be empty.");
+        }
+        if (fileMetadata?.Version is <= 0)
+        {
+            throw new FormatException("Configuration schema version must be greater than zero.");
+        }
+    }
+
+    private static void ValidateModelId(
+        OptionsSchemaMetadata? targetMetadata,
+        OptionsSchemaMetadata? fileMetadata
+    )
+    {
+        if (
+            targetMetadata?.ModelId is not null
+            && fileMetadata?.ModelId is not null
+            && targetMetadata.ModelId != fileMetadata.ModelId
+        )
+        {
+            throw new InvalidOperationException(
+                $"Configuration model ID '{fileMetadata.ModelId}' does not match expected model ID '{targetMetadata.ModelId}'."
+            );
+        }
+    }
+
     private static T ApplyMigrationChain<T>(
         FormatProvider.IWritableFormatProvider formatProvider,
         WritableOptionsConfiguration<T> options,
@@ -98,8 +128,8 @@ internal static class MigrationLoaderExtension
                 );
             }
 
-            var fromVersion = migrationLookup.GetVersion(migration.FromType) ?? 0;
-            var toVersion = migrationLookup.GetVersion(migration.ToType) ?? 0;
+            var fromVersion = migration.FromVersion ?? 0;
+            var toVersion = migration.ToVersion;
 
             options.Logger?.ZLogInformation(
                 $"Applying migration from {migration.FromType.Name} (v{fromVersion}) to {migration.ToType.Name} (v{toVersion})"

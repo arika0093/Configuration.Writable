@@ -43,7 +43,7 @@ await Task.Delay(100);
 
 // ------
 // setting class
-[OptionsModel]
+[OptionsModel(Id = "Example.SampleSetting")]
 public partial class SampleSetting
 {
     public string Name { get; set; } = "default name";

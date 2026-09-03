@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,13 +32,6 @@ public abstract class FormatProviderBase : IWritableFormatProvider
         CancellationToken cancellationToken = default
     )
         where T : class, new();
-
-    /// <summary>
-    /// Attempts to read the version declared in the configuration file without fully deserializing it.
-    /// </summary>
-    /// <param name="options">The options that control how the configuration is loaded.</param>
-    /// <returns>The version declared in the file, or <see langword="null"/> if the file does not exist or does not declare a version.</returns>
-    internal virtual int? TryGetFileVersion(IWritableOptionsConfiguration options) => null;
 
     /// <inheritdoc />
     public object LoadConfiguration(Type type, IWritableOptionsConfiguration options)
@@ -72,7 +66,7 @@ public abstract class FormatProviderBase : IWritableFormatProvider
         var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
         if (pipeReader == null)
         {
-            return Activator.CreateInstance(type)!;
+            return CreateDefault(type);
         }
 
         // PipeReader.Create returns a type that implements IDisposable
@@ -97,6 +91,14 @@ public abstract class FormatProviderBase : IWritableFormatProvider
             }
         }
     }
+
+    /// <summary>Creates a default value when no configuration data is available.</summary>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2067",
+        Justification = "Non-AOT providers retain their existing runtime type activation behavior."
+    )]
+    internal virtual object CreateDefault(Type type) => Activator.CreateInstance(type)!;
 
     /// <summary>
     /// Creates a nested dictionary structure from a section name that supports ':' and '__' as separators.

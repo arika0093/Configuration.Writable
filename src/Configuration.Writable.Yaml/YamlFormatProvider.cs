@@ -18,7 +18,7 @@ namespace Configuration.Writable.FormatProvider;
 /// Writable configuration implementation for Yaml files using VYaml.
 /// This provider is AOT-compatible when user types are annotated with <c>[YamlObject]</c>.
 /// </summary>
-public class YamlFormatProvider : FormatProviderBase
+public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvider
 {
     private static readonly MethodInfo DeserializeMethod = typeof(YamlSerializer)
         .GetMethods()
@@ -42,6 +42,115 @@ public class YamlFormatProvider : FormatProviderBase
 
     /// <inheritdoc />
     public override string FileExtension => "yaml";
+
+    /// <inheritdoc />
+    public OptionsSchemaMetadata? ReadSchemaMetadata(IWritableOptionsConfiguration options)
+    {
+        var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+        if (pipeReader == null)
+        {
+            return null;
+        }
+
+        using var stream = pipeReader.AsStream(leaveOpen: false);
+        var yamlBytes = ReadYamlBytesAsync(stream, CancellationToken.None)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+        if (IsEmptyOrWhiteSpace(yamlBytes.Span))
+        {
+            return null;
+        }
+
+        Dictionary<string, object>? data;
+        try
+        {
+            data = YamlSerializer.Deserialize<Dictionary<string, object>>(
+                yamlBytes,
+                SerializerOptions
+            );
+        }
+        catch (Exception ex)
+        {
+            throw new FormatException("Failed to read YAML schema metadata.", ex);
+        }
+        if (data == null)
+        {
+            return null;
+        }
+
+        object current = data;
+        foreach (var section in options.SectionNameParts)
+        {
+            if (!TryGetSectionValue(current, section, out var sectionValue) || sectionValue == null)
+            {
+                return null;
+            }
+            current = sectionValue;
+        }
+
+        if (current is not Dictionary<string, object> metadata)
+        {
+            if (current is Dictionary<object, object> objectMetadata)
+            {
+                metadata = DeepCopyObjectDictionary(objectMetadata);
+            }
+            else
+            {
+                throw new FormatException(
+                    "Options schema metadata must be stored in a YAML mapping."
+                );
+            }
+        }
+
+        var modelId = TryGetMetadataValue(
+            metadata,
+            OptionsSchemaMetadata.ModelIdPropertyName,
+            out var modelIdValue
+        )
+            ? modelIdValue as string
+                ?? throw new FormatException("YAML metadata property 'ModelId' must be a string.")
+            : null;
+        int? version = TryGetMetadataValue(
+            metadata,
+            OptionsSchemaMetadata.VersionPropertyName,
+            out var versionValue
+        )
+            ? ConvertVersion(versionValue)
+            : null;
+
+        return modelId is null && version is null
+            ? null
+            : new OptionsSchemaMetadata(modelId, version);
+    }
+
+    private static bool TryGetMetadataValue(
+        Dictionary<string, object> metadata,
+        string name,
+        out object value
+    )
+    {
+        if (metadata.TryGetValue(name, out value!))
+        {
+            return true;
+        }
+
+        var camelCaseName = char.ToLowerInvariant(name[0]) + name.Substring(1);
+        return metadata.TryGetValue(camelCaseName, out value!);
+    }
+
+    private static int ConvertVersion(object? value)
+    {
+        try
+        {
+            return Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex)
+            when (ex is FormatException or InvalidCastException or OverflowException)
+        {
+            throw new FormatException("YAML metadata property 'Version' must be an integer.", ex);
+        }
+    }
 
     /// <inheritdoc />
     public override async ValueTask<object> LoadConfigurationAsync(
@@ -285,8 +394,13 @@ public class YamlFormatProvider : FormatProviderBase
 
         if (sections.Count == 0)
         {
-            // No section name, serialize directly (full file overwrite)
-            return new ValueTask<ReadOnlyMemory<byte>>(SerializeForFile(config));
+            var contents =
+                options.SchemaMetadata == null
+                    ? SerializeForFile(config)
+                    : SerializeForFile(
+                        CreateSchemaMetadataDictionary(config, options.SchemaMetadata)
+                    );
+            return new ValueTask<ReadOnlyMemory<byte>>(contents);
         }
 
         // Section specified - use partial write (merge with existing file)
@@ -334,6 +448,11 @@ public class YamlFormatProvider : FormatProviderBase
                 configYamlBytes,
                 SerializerOptions
             ) ?? new Dictionary<string, object>();
+        configDict = AddSchemaMetadata(
+            configDict,
+            options.SchemaMetadata,
+            config is not IHasVersion
+        );
 
         Dictionary<string, object> resultDict;
 
@@ -379,6 +498,48 @@ public class YamlFormatProvider : FormatProviderBase
         var yaml = Encoding.UTF8.GetString(utf8Bytes.Span);
 #endif
         return Encoding.GetBytes(yaml);
+    }
+
+    private Dictionary<string, object> CreateSchemaMetadataDictionary<T>(
+        T config,
+        OptionsSchemaMetadata metadata
+    )
+        where T : class, new()
+    {
+        var yamlBytes = YamlSerializer.Serialize(config, SerializerOptions);
+        var dictionary =
+            YamlSerializer.Deserialize<Dictionary<string, object>>(yamlBytes, SerializerOptions)
+            ?? throw new FormatException(
+                "Options schema metadata can only be written for YAML mappings."
+            );
+        return AddSchemaMetadata(dictionary, metadata, config is not IHasVersion);
+    }
+
+    private static Dictionary<string, object> AddSchemaMetadata(
+        Dictionary<string, object> values,
+        OptionsSchemaMetadata? metadata,
+        bool persistVersion
+    )
+    {
+        if (metadata == null)
+        {
+            return values;
+        }
+
+        var result = new Dictionary<string, object>();
+        if (metadata.ModelId is not null)
+        {
+            result[OptionsSchemaMetadata.ModelIdPropertyName] = metadata.ModelId;
+        }
+        if (persistVersion && metadata.Version is not null)
+        {
+            result[OptionsSchemaMetadata.VersionPropertyName] = metadata.Version.Value;
+        }
+        foreach (var item in values)
+        {
+            result[item.Key] = item.Value;
+        }
+        return result;
     }
 
     /// <summary>

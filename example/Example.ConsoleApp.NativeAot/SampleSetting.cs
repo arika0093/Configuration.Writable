@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Example.ConsoleApp.NativeAot;
 
-[OptionsModel]
+[OptionsModel(Id = "Example.SampleSetting")]
 public partial class SampleSetting
 {
     [Required]

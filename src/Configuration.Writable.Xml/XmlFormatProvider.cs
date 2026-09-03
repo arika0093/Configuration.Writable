@@ -16,7 +16,7 @@ namespace Configuration.Writable.FormatProvider;
 /// <summary>
 /// Writable configuration implementation for XML files.
 /// </summary>
-public class XmlFormatProvider : FormatProviderBase
+public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvider
 {
     private static class SerializerCache<T>
         where T : class, new()
@@ -26,6 +26,50 @@ public class XmlFormatProvider : FormatProviderBase
 
     /// <inheritdoc />
     public override string FileExtension => "xml";
+
+    /// <inheritdoc />
+    public OptionsSchemaMetadata? ReadSchemaMetadata(IWritableOptionsConfiguration options)
+    {
+        var pipeReader = options.FileProvider.GetFilePipeReader(options.ConfigFilePath);
+        if (pipeReader == null)
+        {
+            return null;
+        }
+
+        using var stream = pipeReader.AsStream(leaveOpen: false);
+        var document = XDocument.Load(stream);
+        var current = document.Root;
+        if (current == null)
+        {
+            return null;
+        }
+
+        foreach (var section in options.SectionNameParts)
+        {
+            current = current.Element(section);
+            if (current == null)
+            {
+                return null;
+            }
+        }
+
+        var modelId = current.Element(OptionsSchemaMetadata.ModelIdPropertyName)?.Value;
+        var versionElement = current.Element(OptionsSchemaMetadata.VersionPropertyName);
+        int? version = null;
+        if (versionElement != null)
+        {
+            if (!int.TryParse(versionElement.Value, out var parsedVersion))
+            {
+                throw new FormatException("XML metadata element 'Version' must be an integer.");
+            }
+
+            version = parsedVersion;
+        }
+
+        return modelId is null && version is null
+            ? null
+            : new OptionsSchemaMetadata(modelId, version);
+    }
 
     /// <inheritdoc />
     public override async ValueTask<object> LoadConfigurationAsync(
@@ -132,6 +176,7 @@ public class XmlFormatProvider : FormatProviderBase
         {
             throw new InvalidOperationException("Failed to serialize configuration to XML");
         }
+        AddSchemaMetadata(configElement, config, options.SchemaMetadata);
 
         // Build nested XML structure with innerXml
         var innerXml = configElement.InnerXml;
@@ -156,6 +201,7 @@ public class XmlFormatProvider : FormatProviderBase
         var parts = options.SectionNameParts;
         var existingDoc = LoadExistingDocument(options);
         var configElement = SerializeConfiguration(config);
+        AddSchemaMetadata(configElement, config, options.SchemaMetadata);
         var resultDoc =
             existingDoc?.Root == null
                 ? CreatePartialDocument(configElement, parts, options)
@@ -205,6 +251,34 @@ public class XmlFormatProvider : FormatProviderBase
         document.LoadXml(writer.ToString());
         return document.DocumentElement
             ?? throw new InvalidOperationException("Failed to serialize configuration to XML");
+    }
+
+    private static void AddSchemaMetadata<T>(
+        XmlElement configElement,
+        T config,
+        OptionsSchemaMetadata? metadata
+    )
+    {
+        if (metadata == null)
+        {
+            return;
+        }
+
+        var document = configElement.OwnerDocument;
+        if (metadata.Version is not null && config is not IHasVersion)
+        {
+            var version = document.CreateElement(OptionsSchemaMetadata.VersionPropertyName);
+            version.InnerText = metadata.Version.Value.ToString(
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+            configElement.PrependChild(version);
+        }
+        if (metadata.ModelId is not null)
+        {
+            var modelId = document.CreateElement(OptionsSchemaMetadata.ModelIdPropertyName);
+            modelId.InnerText = metadata.ModelId;
+            configElement.PrependChild(modelId);
+        }
     }
 
     private static XDocument CreatePartialDocument(

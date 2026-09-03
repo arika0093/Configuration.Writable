@@ -80,17 +80,177 @@ namespace Configuration.Writable.Configure
         public void UseJsonCloneStrategy() { }
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
         public void UseMigration<TOld, TNew>(System.Func<TOld, TNew> migrator)
-            where TOld :  class, Configuration.Writable.IHasVersion, new ()
-            where TNew :  class, Configuration.Writable.IHasVersion, new () { }
+            where TOld :  class, new ()
+            where TNew :  class, new () { }
         public void UseMigrationFromNone<TSource, TNew>(System.Func<TSource, TNew> migrator)
             where TSource :  class, new ()
-            where TNew :  class, Configuration.Writable.IHasVersion, new () { }
+            where TNew :  class, new () { }
         public new Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
         public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
         public void WithValidator<TValidator>()
             where TValidator : Microsoft.Extensions.Options.IValidateOptions<T>, new () { }
         public void WithValidatorFunction(System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult> validator) { }
+    }
+}
+namespace Configuration.Writable
+{
+    public sealed class ConfigureSession<T>
+        where T :  class, new ()
+    {
+        public T CurrentValue { get; }
+        public System.Threading.Tasks.Task CommitAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public void ResetToDefault() { }
+        public void ResetToDefault(System.Action<T, T> reset) { }
+        public void ResetToLoaded() { }
+        public void ResetToLoaded(System.Action<T, T> reset) { }
+        public void Update(System.Action<T> updater) { }
+    }
+    public interface IGeneratedOptionsMetadata
+    {
+        string? ModelId { get; }
+        int? Version { get; }
+        void RegisterMigrations(Configuration.Writable.IOptionsMigrationRegistrar registrar);
+    }
+    public interface IHasVersion
+    {
+        int Version { get; set; }
+    }
+    public interface IOptionsMigrationRegistrar
+    {
+        void Register<TOld, TNew>(System.Func<TOld, TNew> migrator, string modelId, int oldVersion, int newVersion)
+            where TOld :  class, new ()
+            where TNew :  class, new ();
+    }
+    public interface IProfiledReadOnlyOptions<T>
+        where T :  class, new ()
+    {
+        string ActiveProfileName { get; }
+        T CurrentValue { get; }
+        string DefaultProfile { get; }
+        System.Collections.Generic.IReadOnlyCollection<string> ProfileNames { get; }
+        Configuration.Writable.IReadOnlyOptions<T> GetProfile(string name);
+        System.IDisposable? OnChange(System.Action<T> listener);
+    }
+    public interface IProfiledWritableOptions<T> : Configuration.Writable.IProfiledReadOnlyOptions<T>
+        where T :  class, new ()
+    {
+        System.Threading.Tasks.Task CreateProfileAsync(string name, string? copyFrom = null, System.Threading.CancellationToken cancellationToken = default);
+        Configuration.Writable.IWritableOptions<T> GetProfile(string name);
+        System.Threading.Tasks.Task RemoveProfileAsync(string name, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SetActiveProfileAsync(string name, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IReadOnlyNamedOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        T Get(string name);
+        Configuration.Writable.IReadOnlyOptions<T> GetInstance(string name);
+        Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
+        System.IDisposable? OnChange(string name, System.Action<T> listener);
+    }
+    public interface IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        System.IDisposable? OnChange(System.Action<T, string?> listener);
+    }
+    public interface IReadOnlyOptionsMonitor<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class, new ()
+    {
+        new T CurrentValue { get; }
+        new T Get(string name);
+        new System.IDisposable? OnChange(System.Action<T, string?> listener);
+        System.IDisposable? OnReloadFailed(System.Action<System.Exception, string?> listener);
+    }
+    public interface IReadOnlyOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        T CurrentValue { get; }
+        Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration();
+        System.IDisposable? OnChange(System.Action<T> listener);
+    }
+    public interface IWritableNamedOptions<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>
+        where T :  class, new ()
+    {
+        Configuration.Writable.ConfigureSession<T> BeginConfigure(string name);
+        Configuration.Writable.IWritableOptions<T> GetInstance(string name);
+        System.Threading.Tasks.Task SaveAsync(string name, System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(string name, System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(string name, T newConfig, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IWritableOptionsConfigRegistry<T>
+        where T :  class, new ()
+    {
+        event System.Action<Configuration.Writable.WritableOptionsConfiguration<T>> OnAdded;
+        event System.Action<string> OnRemoved;
+        void Clear();
+        Configuration.Writable.WritableOptionsConfiguration<T> Get(string instanceName);
+        System.Collections.Generic.IEnumerable<string> GetInstanceNames();
+        bool TryAdd(Configuration.Writable.WritableOptionsConfiguration<T> configuration);
+        bool TryAdd(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
+        bool TryRemove(string instanceName);
+    }
+    public interface IWritableOptionsConfiguration
+    {
+        string ConfigFilePath { get; }
+        Configuration.Writable.FileProvider.IWritableFileProvider FileProvider { get; }
+        Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; }
+        string InstanceName { get; }
+        Microsoft.Extensions.Logging.ILogger? Logger { get; }
+        System.TimeSpan OnChangeDebounce { get; }
+        Configuration.Writable.OptionsSchemaMetadata? SchemaMetadata { get; }
+        System.Collections.Generic.List<string> SectionNameParts { get; }
+    }
+    public interface IWritableOptionsMonitor<T> : Configuration.Writable.IReadOnlyNamedOptions<T>, Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptionsMonitor<T>, Configuration.Writable.IReadOnlyOptions<T>, Configuration.Writable.IWritableNamedOptions<T>, Configuration.Writable.IWritableOptions<T>, Microsoft.Extensions.Options.IOptionsMonitor<T>
+        where T :  class, new ()
+    {
+        new T CurrentValue { get; }
+        new T Get(string name);
+    }
+    public interface IWritableOptions<T> : Configuration.Writable.IReadOnlyOptionsCore<T>, Configuration.Writable.IReadOnlyOptions<T>
+        where T :  class, new ()
+    {
+        Configuration.Writable.ConfigureSession<T> BeginConfigure();
+        System.Threading.Tasks.Task SaveAsync(System.Action<T> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(System.Func<T, System.Threading.Tasks.Task> configUpdater, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync(T newConfig, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public sealed class OptionsSchemaMetadata : System.IEquatable<Configuration.Writable.OptionsSchemaMetadata>
+    {
+        public const string ModelIdPropertyName = "ModelId";
+        public const string VersionPropertyName = "Version";
+        public OptionsSchemaMetadata(string? ModelId, int? Version) { }
+        public string? ModelId { get; init; }
+        public int? Version { get; init; }
+    }
+    public static class ProfiledOptionsExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddProfiledWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.Configure.ProfiledOptionsConfigBuilder<T>> configure)
+            where T :  class, new () { }
+    }
+    public class WritableOptionsConfiguration<T> : Configuration.Writable.IWritableOptionsConfiguration, System.IEquatable<Configuration.Writable.WritableOptionsConfiguration<T>>
+        where T :  class, new ()
+    {
+        public required System.Func<T, T> CloneMethod { get; init; }
+        public required string ConfigFilePath { get; init; }
+        public Configuration.Writable.Configure.ConfigurationConflictResolution ConflictResolution { get; init; }
+        public required Configuration.Writable.FileProvider.IWritableFileProvider FileProvider { get; init; }
+        public required Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
+        public required string InstanceName { get; init; }
+        public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
+        public required System.TimeSpan OnChangeDebounce { get; init; }
+        public Configuration.Writable.OptionsSchemaMetadata? SchemaMetadata { get; init; }
+        public required System.Collections.Generic.List<string> SectionNameParts { get; init; }
+        public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }
+    }
+    public static class WritableOptionsCoreExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+            where T :  class, new () { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string instanceName)
+            where T :  class, new () { }
     }
 }
 namespace Configuration.Writable.FileProvider
@@ -154,6 +314,10 @@ namespace Configuration.Writable.FormatProvider
             where T :  class, new ();
         protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
     }
+    public interface IOptionsSchemaMetadataProvider
+    {
+        Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options);
+    }
     public interface IWritableFormatProvider
     {
         string FileExtension { get; }
@@ -162,23 +326,25 @@ namespace Configuration.Writable.FormatProvider
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new ();
     }
-    public class JsonAotFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase
+    public class JsonAotFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
     {
         public JsonAotFormatProvider(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; init; }
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
+        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
-    public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase
+    public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
     {
         public JsonFormatProvider() { }
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
+        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
