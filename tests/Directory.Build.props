@@ -12,7 +12,7 @@
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
     <SonarQubeExclude>true</SonarQubeExclude>
-    <NoWarn>$(NoWarn);CWWR001;CWWR007</NoWarn>
+    <NoWarn>$(NoWarn);CS0618;CWWR001;CWWR007;CWWR010</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Shouldly" Version="4.*" />

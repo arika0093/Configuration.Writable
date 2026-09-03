@@ -43,8 +43,8 @@ public partial class GeneratedSettingsV3
         new() { Names = [.. source.Names] };
 }
 
-[OptionsModel(Id = "GeneratedUnversioned")]
-public partial class GeneratedUnversionedSettings
+[OptionsModel(Id = "GeneratedDefaultVersion")]
+public partial class GeneratedDefaultVersionSettings
 {
     public string Value { get; set; } = "";
 }
@@ -178,9 +178,9 @@ public class SourceGeneratedVersioningTests
     }
 
     [Fact]
-    public async Task UnversionedGeneratedModel_ShouldPersistOnlyModelId()
+    public async Task OmittedVersion_ShouldDefaultToOneAndPersistMetadata()
     {
-        var builder = new WritableOptionsConfigBuilder<GeneratedUnversionedSettings>
+        var builder = new WritableOptionsConfigBuilder<GeneratedDefaultVersionSettings>
         {
             FilePath = "unversioned.json",
             FileProvider = _fileProvider,
@@ -188,13 +188,13 @@ public class SourceGeneratedVersioningTests
         var options = builder.BuildOptions("");
 
         await options.FormatProvider.SaveAsync(
-            new GeneratedUnversionedSettings { Value = "value" },
+            new GeneratedDefaultVersionSettings { Value = "value" },
             options
         );
 
         var json = _fileProvider.ReadAllText("unversioned.json");
-        json.ShouldContain("\"ModelId\":\"GeneratedUnversioned\"");
-        json.ShouldNotContain("\"Version\"");
+        json.ShouldContain("\"ModelId\":\"GeneratedDefaultVersion\"");
+        json.ShouldContain("\"Version\":1");
     }
 
     [Fact]
@@ -228,17 +228,17 @@ public class SourceGeneratedVersioningTests
     public async Task StaticInitialization_ShouldPersistGeneratedMetadata()
     {
         const string fileName = "static-generated.json";
-        WritableOptions.Initialize<GeneratedUnversionedSettings>(options =>
+        WritableOptions.Initialize<GeneratedDefaultVersionSettings>(options =>
         {
             options.FilePath = fileName;
             options.FileProvider = _fileProvider;
         });
 
         await WritableOptions
-            .GetOptions<GeneratedUnversionedSettings>()
-            .SaveAsync(new GeneratedUnversionedSettings { Value = "static" });
+            .GetOptions<GeneratedDefaultVersionSettings>()
+            .SaveAsync(new GeneratedDefaultVersionSettings { Value = "static" });
 
-        _fileProvider.ReadAllText(fileName).ShouldContain("GeneratedUnversioned");
+        _fileProvider.ReadAllText(fileName).ShouldContain("GeneratedDefaultVersion");
     }
 
     private sealed class MetadataUnsupportedProvider : IWritableFormatProvider
@@ -268,6 +268,7 @@ public class OptionsVersioningGeneratorTests
 {
     [Theory]
     [InlineData("[OptionsModel] public partial class Model {}", "CWWR001")]
+    [InlineData("[OptionsModel(Id = \"Model\")] public partial class Model {}", "CWWR010")]
     [InlineData(
         "[OptionsModel(Id = \"Model\", Version = 0)] public partial class Model {}",
         "CWWR003"
@@ -320,22 +321,22 @@ public class OptionsVersioningGeneratorTests
     }
 
     [Fact]
-    public void Generator_ShouldAllowVersionToBeOmitted()
+    public void Generator_ShouldDefaultOmittedVersionToOneAndWarn()
     {
         var result = RunGenerator(
             """
             using Configuration.Writable;
-            [OptionsModel(Id = "Unversioned")]
+            [OptionsModel(Id = "DefaultVersion")]
             public partial class Model {}
             """
         );
 
-        result.Diagnostics.ShouldBeEmpty();
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldBe(["CWWR010"]);
         result
             .Results.SelectMany(generatorResult => generatorResult.GeneratedSources)
             .Single()
             .SourceText.ToString()
-            .ShouldContain(".Version => null;");
+            .ShouldContain(".Version => 1;");
     }
 
     [Fact]

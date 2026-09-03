@@ -4,6 +4,7 @@
     <Database>
       <Connection>
         <Settings>
+          <Version>1</Version>
           <StringValue>TestString</StringValue>
           <IntValue>42</IntValue>
           <DoubleValue>3.14159</DoubleValue>

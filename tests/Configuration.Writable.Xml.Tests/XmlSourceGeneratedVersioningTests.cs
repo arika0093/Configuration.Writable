@@ -42,7 +42,7 @@ public class XmlSourceGeneratedVersioningTests
     }
 
     [Fact]
-    public async Task XmlProvider_ShouldLoadLegacyNumericVersionThroughGeneratedMigration()
+    public async Task XmlProvider_ShouldTreatMissingVersionAsVersionOne()
     {
         const string fileName = "xml-legacy.xml";
         await _fileProvider.SaveToFileAsync(
@@ -51,7 +51,6 @@ public class XmlSourceGeneratedVersioningTests
                 """
                 <?xml version="1.0" encoding="utf-8"?>
                 <configuration>
-                  <Version>1</Version>
                   <Name>legacy</Name>
                 </configuration>
                 """

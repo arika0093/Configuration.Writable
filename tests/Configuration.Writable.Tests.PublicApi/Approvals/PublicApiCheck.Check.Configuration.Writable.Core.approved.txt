@@ -79,11 +79,10 @@ namespace Configuration.Writable.Configure
         public new void UseFile(string? path) { }
         public void UseJsonCloneStrategy() { }
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
+        [System.Obsolete("This method is deprecated. Declare versions with [OptionsModel(Id = \"...\", Versio" +
+            "n = x)] and implement the generated Migrate method instead.")]
         public void UseMigration<TOld, TNew>(System.Func<TOld, TNew> migrator)
             where TOld :  class, new ()
-            where TNew :  class, new () { }
-        public void UseMigrationFromNone<TSource, TNew>(System.Func<TSource, TNew> migrator)
-            where TSource :  class, new ()
             where TNew :  class, new () { }
         public new Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
@@ -112,6 +111,7 @@ namespace Configuration.Writable
         int? Version { get; }
         void RegisterMigrations(Configuration.Writable.IOptionsMigrationRegistrar registrar);
     }
+    [System.Obsolete("This interface is deprecated. Use [OptionsModel(Version = x)] instead.")]
     public interface IHasVersion
     {
         int Version { get; set; }

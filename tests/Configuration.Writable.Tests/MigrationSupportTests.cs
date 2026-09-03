@@ -100,10 +100,6 @@ public partial class MigrationSupportTests
     {
         // Arrange
         var builder = new WritableOptionsConfigBuilder<MySettingsV2>();
-        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV1>(v0 => new MySettingsV1
-        {
-            Name = v0.Name,
-        });
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
             Names = [v1.Name],
@@ -116,8 +112,6 @@ public partial class MigrationSupportTests
         options.MigrationLookup.ShouldNotBeNull();
         var lookup = options.MigrationLookup;
         lookup.TargetVersion.ShouldBe(2);
-        lookup.FromNoneStep.ShouldNotBeNull();
-        lookup.FromNoneStep.FromType.ShouldBe(typeof(SettingsWithoutVersion));
         lookup.TryGetType(1, out var versionOneType).ShouldBeTrue();
         versionOneType.ShouldBe(typeof(MySettingsV1));
         lookup.TryGetMigration(typeof(MySettingsV1), out var migration).ShouldBeTrue();
@@ -332,7 +326,7 @@ public partial class MigrationSupportTests
     }
 
     [Fact]
-    public async Task LoadWithMigration_ShouldMigrateFromVersionNone_WhenFileHasNoVersion()
+    public async Task LoadWithMigration_ShouldTreatMissingFileVersionAsVersionOne()
     {
         // Arrange
         var fileName = "settings-none.json";
@@ -349,9 +343,9 @@ public partial class MigrationSupportTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
-        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV2>(v0 => new MySettingsV2
+        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
-            Names = [v0.Name],
+            Names = [v1.Name],
         });
 
         var options = builder.BuildOptions("");

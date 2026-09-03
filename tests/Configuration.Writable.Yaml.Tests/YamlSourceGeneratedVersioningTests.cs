@@ -47,14 +47,13 @@ public class YamlSourceGeneratedVersioningTests
     }
 
     [Fact]
-    public async Task YamlProvider_ShouldLoadLegacyNumericVersionThroughGeneratedMigration()
+    public async Task YamlProvider_ShouldTreatMissingVersionAsVersionOne()
     {
         const string fileName = "yaml-legacy.yaml";
         await _fileProvider.SaveToFileAsync(
             fileName,
             Encoding.UTF8.GetBytes(
                 """
-                version: 1
                 name: legacy
                 """
             )
