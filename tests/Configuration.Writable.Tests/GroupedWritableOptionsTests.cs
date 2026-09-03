@@ -1,5 +1,7 @@
+using System;
 using System.IO;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Configuration.Writable.Tests;
@@ -22,6 +24,12 @@ public partial class GroupedWritableOptionsTests
     public partial class NamedSettings
     {
         public string Value { get; set; } = "named";
+    }
+
+    [OptionsModel]
+    public partial class ReinitializedSettings
+    {
+        public string Value { get; set; } = "retained";
     }
 
     [Fact]
@@ -92,5 +100,59 @@ public partial class GroupedWritableOptionsTests
             (IWritableOptionsMonitor<NamedSettings>)WritableOptions.GetOptions<NamedSettings>();
         writableOptions.Get("First").ShouldNotBeNull();
         writableOptions.Get("Second").ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void SimpleInstance_ReinitializationFailureRetainsPreviousConfiguration()
+    {
+        var provider = new InMemoryFileProvider();
+        var instance = new WritableOptionsSimpleInstance<ReinitializedSettings>();
+        instance.Initialize(options =>
+        {
+            options.FileProvider = provider;
+            options.UseFile("existing.json");
+        });
+
+        Should.Throw<InvalidOperationException>(() =>
+            instance.Initialize(options =>
+            {
+                options.FileProvider = new RejectingFileProvider();
+                options.UseFile("replacement.json");
+            })
+        );
+
+        var configuration = instance.GetOptions().GetOptionsConfiguration();
+        configuration.FileProvider.ShouldBeSameAs(provider);
+        configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("existing.json"));
+    }
+
+    [Fact]
+    public void StaticGroupedInitialization_FailureRetainsPreviousConfiguration()
+    {
+        var provider = new InMemoryFileProvider();
+        WritableOptions.Initialize<ReinitializedSettings>(options =>
+        {
+            options.FileProvider = provider;
+            options.UseFile("existing.json");
+        });
+
+        Should.Throw<InvalidOperationException>(() =>
+            WritableOptions.Initialize(options =>
+            {
+                options.FileProvider = new RejectingFileProvider();
+                options.Add<ReinitializedSettings>(conf => conf.UseFile("replacement.json"));
+            })
+        );
+
+        var configuration = WritableOptions
+            .GetOptions<ReinitializedSettings>()
+            .GetOptionsConfiguration();
+        configuration.FileProvider.ShouldBeSameAs(provider);
+        configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("existing.json"));
+    }
+
+    private sealed class RejectingFileProvider : CommonFileProvider
+    {
+        public override bool EnsureDirectoryExists(string path) => false;
     }
 }

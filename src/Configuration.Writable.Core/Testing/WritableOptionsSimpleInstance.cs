@@ -38,8 +38,9 @@ public class WritableOptionsSimpleInstance<T>
     {
         var optionBuilder = new WritableOptionsConfigBuilder<T>();
         configurationOptions(optionBuilder);
+        var option = optionBuilder.BuildOptions(instanceName);
         _options.Clear();
-        _options.Add(optionBuilder.BuildOptions(instanceName));
+        _options.Add(option);
     }
 
     internal void Initialize(
@@ -48,11 +49,12 @@ public class WritableOptionsSimpleInstance<T>
         bool replace
     )
     {
+        var option = optionBuilder.BuildOptions(instanceName);
         if (replace)
         {
             _options.Clear();
         }
-        _options.Add(optionBuilder.BuildOptions(instanceName));
+        _options.Add(option);
     }
 
     /// <summary>
