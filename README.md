@@ -56,7 +56,7 @@ await Task.Delay(100);
 
 // ------
 // setting class
-[OptionsModel]
+[OptionsModel(Id = "SampleSetting", Version = 1)]
 public partial class SampleSetting
 {
     public string Name { get; set; } = "default name";
@@ -92,18 +92,19 @@ Then, prepare a class (`UserSetting`) in advance that you want to read and write
 ```csharp
 using Configuration.Writable;
 
-// add [OptionsModel] and mark as partial class
-[OptionsModel]
+// Add [OptionsModel] to the class and mark it as partial class.
+// * Id is a stable identifier shared by every version of this settings model.
+// * Version is a positive schema version that starts at 1 and increases consecutively.
+[OptionsModel(Id = "UserSetting", Version = 1)]
 public partial class UserSetting
 {
-    public string Name { get; set; } = "default name";
+    public string Name { get; set; } = "default name"; // default value can be specified here
     public int Age { get; set; } = 20;
 }
 ```
 
-> [!NOTE]
-> `[OptionsModel]` is included in the main `Configuration.Writable` package.
-> By adding it to a `partial class`, the `DeepClone` method is automatically generated via [IDeepCloneable](https://github.com/arika0093/IDeepCloneable).
+> [!TIPS]
+> Be sure to add `partial`. This allows you to take advantage of various features provided by the Source Generator.
 
 ### Simple Application (Without DI)
 If you are not using DI (for example, in WinForms, WPF, console apps, etc.),
@@ -356,7 +357,7 @@ Currently, the following providers are available:
 To read and write YAML, you need to use [VYaml](https://github.com/hadashiA/VYaml). Therefore, you need to add `[YamlObject]` to your settings class.
 
 ```csharp
-[OptionsModel, YamlObject] // add [YamlObject] and mark as partial class
+[OptionsModel(Id = "SampleSetting", Version = 1), YamlObject] // add [YamlObject] and mark as partial class
 public partial class SampleSetting
 {
     public string Name { get; set; } = "";
@@ -785,29 +786,10 @@ builder.Services.AddWritableOptions(options => {
 });
 ```
 
-`ModelId` and `Version` are persisted as reserved provider metadata. JSON, JSON AOT, XML, and YAML support the metadata at the root and inside configured sections. Existing files containing only a numeric `Version` remain compatible. Omit `Version` on `OptionsModel` for an unversioned model.
+`ModelId` and `Version` are persisted as reserved provider metadata.
 
-`IHasVersion` and manual `UseMigration` registrations remain available for compatibility, but the analyzer recommends source-generated versioning.
-
-If you have an old configuration file that does not have a `Version` property, you can migrate it with `UseMigrationFromNone`:
-
-```csharp
-// old setting without version
-public class UserSettingV0
-{
-    public string Name { get; set; } = "default name";
-}
-
-builder.Services.AddWritableOptions(options => {
-    options.Add<UserSettingV2>(conf => {
-        conf.UseMigrationFromNone<UserSettingV0, UserSettingV2>(oldSetting => {
-            return new UserSettingV2 {
-                Names = [oldSetting.Name]
-            };
-        });
-    });
-});
-```
+> [!NOTE]
+> If the old version does not specify `Version`, it is treated as `Version=1` and will be automatically appended to the file on the next write.
 
 ## Advanced Usage
 ### Support NativeAOT
