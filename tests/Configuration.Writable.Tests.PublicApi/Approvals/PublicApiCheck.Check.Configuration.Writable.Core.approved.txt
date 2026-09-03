@@ -79,8 +79,8 @@ namespace Configuration.Writable.Configure
         public new void UseFile(string? path) { }
         public void UseJsonCloneStrategy() { }
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
-        [System.Obsolete("This method is deprecated. Declare versions with [OptionsModel(Id = \"...\", Versio" +
-            "n = x)] and implement the generated Migrate method instead.")]
+        [System.Obsolete("This method is deprecated. Declare versions with [OptionsModel] and implement the" +
+            " generated Migrate method instead.")]
         public void UseMigration<TOld, TNew>(System.Func<TOld, TNew> migrator)
             where TOld :  class, new ()
             where TNew :  class, new () { }

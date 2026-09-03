@@ -163,7 +163,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         {
             ModelInfo? previous = null;
             var hasMigrationImplementation = true;
-            if (model.Version is > 1 && model.Id is not null)
+            if (model.SupportMigration && model.Version is > 1 && model.Id is not null)
             {
                 groups.TryGetValue(model.Id, out var candidates);
                 previous = candidates?.FirstOrDefault(candidate =>
@@ -318,6 +318,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             string? id = null;
             int? version = null;
             var versionSpecified = false;
+            var supportMigration = true;
             foreach (var argument in attribute.NamedArguments)
             {
                 if (argument.Key == "Id")
@@ -328,6 +329,10 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 {
                     versionSpecified = true;
                     version = argument.Value.Value as int?;
+                }
+                else if (argument.Key == "SupportMigration")
+                {
+                    supportMigration = argument.Value.Value as bool? ?? true;
                 }
             }
             if (
@@ -353,6 +358,10 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                         versionSpecified = true;
                         version = constant.Value as int?;
                     }
+                    else if (name == "SupportMigration")
+                    {
+                        supportMigration = constant.Value as bool? ?? true;
+                    }
                 }
             }
 
@@ -373,7 +382,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()
                         ?? type.Locations.FirstOrDefault()
                         ?? Location.None,
-                    usesLegacyVersion
+                    usesLegacyVersion,
+                    supportMigration
                 )
             );
         }
@@ -729,7 +739,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         bool isSource,
         bool isPartial,
         Location location,
-        bool usesLegacyVersion
+        bool usesLegacyVersion,
+        bool supportMigration
     )
     {
         public INamedTypeSymbol Symbol { get; } = symbol;
@@ -740,5 +751,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         public bool HasPartialModifier { get; } = isPartial;
         public Location Location { get; } = location;
         public bool UsesLegacyVersion { get; } = usesLegacyVersion;
+        public bool SupportMigration { get; } = supportMigration;
     }
 }

@@ -17,8 +17,7 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
 {
     private const string DiagnosticId = "CWWR011";
 
-    public override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create(DiagnosticId);
+    public override ImmutableArray<string> FixableDiagnosticIds => [DiagnosticId];
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -54,7 +53,6 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
                     AddMigrationAsync(
                         context.Document,
                         declaration,
-                        currentTypeName,
                         previousTypeName,
                         diagnostic.Properties.TryGetValue("PreviousNamespace", out var value)
                             ? value
@@ -70,12 +68,14 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
     private static async Task<Document> AddMigrationAsync(
         Document document,
         TypeDeclarationSyntax declaration,
-        string currentTypeName,
         string previousTypeName,
         string? previousNamespace,
         CancellationToken cancellationToken
     )
     {
+        var currentTypeName =
+            declaration.Identifier.ValueText + declaration.TypeParameterList?.ToString();
+        previousTypeName = GetShortTypeName(previousTypeName, previousNamespace);
         var method = SyntaxFactory
             .MethodDeclaration(SyntaxFactory.ParseTypeName(currentTypeName), "Migrate")
             .AddModifiers(
@@ -132,5 +132,24 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
         }
 
         return document.WithSyntaxRoot(newRoot);
+    }
+
+    private static string GetShortTypeName(string typeName, string? namespaceName)
+    {
+        if (string.IsNullOrEmpty(namespaceName))
+        {
+            return typeName.StartsWith("global::") ? typeName[8..] : typeName;
+        }
+
+        var globalPrefix = "global::" + namespaceName + ".";
+        if (typeName.StartsWith(globalPrefix))
+        {
+            return typeName[globalPrefix.Length..];
+        }
+
+        var namespacePrefix = namespaceName + ".";
+        return typeName.StartsWith(namespacePrefix)
+            ? typeName[namespacePrefix.Length..]
+            : typeName;
     }
 }

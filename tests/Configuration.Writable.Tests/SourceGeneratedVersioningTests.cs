@@ -48,6 +48,18 @@ public partial class GeneratedSettingsV3
         new() { Names = [.. source.Names] };
 }
 
+[OptionsModel(Id = "CutoffSettings", Version = 1)]
+public partial class CutoffSettingsV1
+{
+    public string LegacyValue { get; set; } = "";
+}
+
+[OptionsModel(Id = "CutoffSettings", Version = 2, SupportMigration = false)]
+public partial class CutoffSettingsV2
+{
+    public string CurrentValue { get; set; } = "";
+}
+
 [OptionsModel(Id = "GeneratedDefaultVersion")]
 public partial class GeneratedDefaultVersionSettings
 {
@@ -100,6 +112,29 @@ public class SourceGeneratedVersioningTests
         var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
 
         result.Names.ShouldBe(["legacy"]);
+    }
+
+    [Fact]
+    public async Task DisabledMigrationSupport_ShouldRejectOlderVersion()
+    {
+        const string fileName = "generated-cutoff.json";
+        await _fileProvider.SaveToFileAsync(
+            fileName,
+            Encoding.UTF8.GetBytes(
+                """{"ModelId":"CutoffSettings","Version":1,"LegacyValue":"legacy"}"""
+            )
+        );
+        var builder = new WritableOptionsConfigBuilder<CutoffSettingsV2>
+        {
+            FilePath = fileName,
+            FileProvider = _fileProvider,
+        };
+
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""))
+        );
+
+        exception.Message.ShouldContain("version 1");
     }
 
     [Fact]
@@ -368,6 +403,26 @@ public class OptionsVersioningGeneratorTests
     }
 
     [Fact]
+    public void Generator_ShouldAllowStartingNewCompatibilityChain()
+    {
+        var result = RunGenerator(
+            """
+            using Configuration.Writable;
+            [OptionsModel(Id = "Settings", Version = 10, SupportMigration = false)]
+            public partial class Settings {}
+            """
+        );
+
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldNotContain("CWWR005");
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldNotContain("CWWR011");
+        result
+            .Results.SelectMany(generatorResult => generatorResult.GeneratedSources)
+            .Single()
+            .SourceText.ToString()
+            .ShouldNotContain(" Migrate(");
+    }
+
+    [Fact]
     public async Task MigrationCodeFix_ShouldAddShortTypeNamesAndRequiredUsing()
     {
         const string source = """
@@ -403,8 +458,8 @@ public class OptionsVersioningGeneratorTests
             true
         );
         var properties = ImmutableDictionary<string, string?>
-            .Empty.Add("CurrentTypeName", "SettingsV2")
-            .Add("PreviousTypeName", "SettingsV1")
+            .Empty.Add("CurrentTypeName", "global::Current.SettingsV2")
+            .Add("PreviousTypeName", "global::Previous.SettingsV1")
             .Add("CodeFixAvailable", bool.TrueString)
             .Add("PreviousNamespace", "Previous");
         var diagnostic = Diagnostic.Create(

@@ -21,4 +21,10 @@ public sealed class OptionsModelAttribute : Attribute
     /// Gets or sets the positive schema version.
     /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether migration from the immediately preceding version is supported.
+    /// Set this to <see langword="false"/> to start a new compatibility chain at this version.
+    /// </summary>
+    public bool SupportMigration { get; set; } = true;
 }

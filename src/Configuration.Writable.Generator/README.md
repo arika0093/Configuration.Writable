@@ -96,6 +96,10 @@ A model after version 1 does not implement the migration from its immediately pr
 version. Use the code fix to add the required method, then replace the generated
 `NotImplementedException` with the migration logic.
 
+Set `SupportMigration = false` on the current `[OptionsModel]` to start a new
+compatibility chain without requiring the immediately preceding version or a migration method.
+Files from versions before that compatibility boundary are rejected when loaded.
+
 ```csharp
 private static partial UserSettingV2 Migrate(UserSettingV1 source)
 {

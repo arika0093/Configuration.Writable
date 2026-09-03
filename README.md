@@ -778,7 +778,7 @@ public partial class UserSettingV2
 }
 ```
 
-Register only the latest generation. Its generated metadata recursively registers the complete migration chain, including public generations in directly referenced assemblies.
+Register only the latest generation. Its generated metadata recursively registers the complete migration chain, including public generations in directly referenced assemblies. `ModelId` and `Version` are persisted as reserved provider metadata.
 
 ```csharp
 builder.Services.AddWritableOptions(options => {
@@ -786,10 +786,18 @@ builder.Services.AddWritableOptions(options => {
 });
 ```
 
-`ModelId` and `Version` are persisted as reserved provider metadata.
+To intentionally stop supporting older configurations, start a new compatibility chain:
 
-> [!NOTE]
-> If the old version does not specify `Version`, it is treated as `Version=1` and will be automatically appended to the file on the next write.
+```csharp
+[OptionsModel(Id = "UserSetting", Version = 5, SupportMigration = false)]
+public partial class UserSetting
+{
+    public List<string> Names { get; set; } = [];
+}
+```
+
+The generator does not require versions 1 through 4 or a `Migrate` method for this model.
+Loading a file from an unsupported older version throws an `InvalidOperationException`.
 
 ## Advanced Usage
 ### Support NativeAOT
