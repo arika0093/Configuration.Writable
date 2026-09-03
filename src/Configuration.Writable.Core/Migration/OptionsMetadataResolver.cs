@@ -2,6 +2,7 @@ using System;
 
 namespace Configuration.Writable.Migration;
 
+#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 internal static class OptionsMetadataResolver
 {
     public static OptionsSchemaMetadata? Resolve<T>()
@@ -23,6 +24,7 @@ internal static class OptionsMetadataResolver
                 $"Generated version {generatedVersion} for {typeof(T).Name} does not match its legacy IHasVersion value {legacyVersion}."
             );
         }
+#pragma warning restore CS0618
 
         var version = generatedVersion ?? legacyVersion;
         if (version is <= 0)

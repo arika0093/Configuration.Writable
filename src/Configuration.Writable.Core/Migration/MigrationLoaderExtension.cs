@@ -34,27 +34,13 @@ internal static class MigrationLoaderExtension
             return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
 
-        var fileVersion = fileMetadata?.Version;
-
-        // When the file has no declared version, check for a migration from an unversioned type.
-        if (fileVersion is null)
+        // Missing documents or sections are initialized directly as the target type.
+        if (fileMetadata is null)
         {
-            var fromNoneStep = migrationLookup?.FromNoneStep;
-
-            if (fromNoneStep is null)
-            {
-                // No migration from an unversioned type is registered; load as the target type.
-                return (T)formatProvider.LoadConfiguration(typeof(T), options);
-            }
-
-            // Start from the unversioned type and apply the migration chain.
-            return ApplyMigrationChain<T>(
-                formatProvider,
-                options,
-                migrationLookup!,
-                fromNoneStep.FromType
-            );
+            return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
+
+        var fileVersion = fileMetadata.Version ?? 1;
 
         // The file declares a version. If it already matches the target, load directly.
         if (fileVersion == targetVersion)
@@ -65,7 +51,7 @@ internal static class MigrationLoaderExtension
         // Find the type matching the declared file version.
         if (
             migrationLookup is null
-            || !migrationLookup.TryGetType(fileVersion.Value, out var currentType)
+            || !migrationLookup.TryGetType(fileVersion, out var currentType)
         )
         {
             throw new InvalidOperationException(

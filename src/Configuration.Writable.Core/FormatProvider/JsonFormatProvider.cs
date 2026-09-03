@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
+#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// Writable configuration implementation for JSON files.
 /// </summary>
@@ -70,10 +71,8 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             }
 
             var modelId = ReadOptionalString(current, OptionsSchemaMetadata.ModelIdPropertyName);
-            var version = ReadOptionalVersion(current);
-            return modelId is null && version is null
-                ? null
-                : new OptionsSchemaMetadata(modelId, version);
+            var version = ReadOptionalVersion(current) ?? 1;
+            return new OptionsSchemaMetadata(modelId, version);
         }
         finally
         {

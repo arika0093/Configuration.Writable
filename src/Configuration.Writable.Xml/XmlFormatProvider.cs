@@ -13,6 +13,7 @@ using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
+#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// Writable configuration implementation for XML files.
 /// </summary>
@@ -55,7 +56,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
 
         var modelId = current.Element(OptionsSchemaMetadata.ModelIdPropertyName)?.Value;
         var versionElement = current.Element(OptionsSchemaMetadata.VersionPropertyName);
-        int? version = null;
+        var version = 1;
         if (versionElement != null)
         {
             if (!int.TryParse(versionElement.Value, out var parsedVersion))
@@ -66,9 +67,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
             version = parsedVersion;
         }
 
-        return modelId is null && version is null
-            ? null
-            : new OptionsSchemaMetadata(modelId, version);
+        return new OptionsSchemaMetadata(modelId, version);
     }
 
     /// <inheritdoc />

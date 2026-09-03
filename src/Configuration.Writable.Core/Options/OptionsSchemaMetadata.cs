@@ -4,7 +4,7 @@ namespace Configuration.Writable;
 /// Identifies the schema stored in a writable configuration document.
 /// </summary>
 /// <param name="ModelId">The stable model identifier, or <see langword="null"/> when unavailable.</param>
-/// <param name="Version">The positive schema version, or <see langword="null"/> for an unversioned model.</param>
+/// <param name="Version">The positive schema version, or <see langword="null"/> when unavailable.</param>
 public sealed record OptionsSchemaMetadata(string? ModelId, int? Version)
 {
     /// <summary>The reserved persisted property name for the model identifier.</summary>

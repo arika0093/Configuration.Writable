@@ -14,6 +14,7 @@ using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
+#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// Writable configuration implementation for Yaml files using VYaml.
 /// This provider is AOT-compatible when user types are annotated with <c>[YamlObject]</c>.
@@ -111,17 +112,15 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             ? modelIdValue as string
                 ?? throw new FormatException("YAML metadata property 'ModelId' must be a string.")
             : null;
-        int? version = TryGetMetadataValue(
+        var version = TryGetMetadataValue(
             metadata,
             OptionsSchemaMetadata.VersionPropertyName,
             out var versionValue
         )
             ? ConvertVersion(versionValue)
-            : null;
+            : 1;
 
-        return modelId is null && version is null
-            ? null
-            : new OptionsSchemaMetadata(modelId, version);
+        return new OptionsSchemaMetadata(modelId, version);
     }
 
     private static bool TryGetMetadataValue(

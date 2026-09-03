@@ -277,6 +277,10 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     /// <typeparam name="TNew">The new versioned configuration type.</typeparam>
     /// <param name="migrator">A function that converts an instance of <typeparamref name="TOld"/> to <typeparamref name="TNew"/>.</param>
     /// <exception cref="InvalidOperationException">Thrown when attempting to register a downgrade migration (where the new version is less than the old version).</exception>
+#pragma warning disable S1133 // Kept for backward compatibility.
+    [Obsolete(
+        "This method is deprecated. Declare versions with [OptionsModel(Version = x)] and implement the generated Migrate method instead."
+    )]
     public void UseMigration<TOld, TNew>(Func<TOld, TNew> migrator)
         where TOld : class, new()
         where TNew : class, new()
@@ -327,29 +331,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             )
         );
     }
-
-    /// <summary>
-    /// Registers a migration step from a configuration without a version (version 0) to a versioned configuration.
-    /// </summary>
-    /// <typeparam name="TSource">The old configuration type without <see cref="IHasVersion"/>. Must have a parameterless constructor.</typeparam>
-    /// <typeparam name="TNew">The new versioned configuration type.</typeparam>
-    /// <param name="migrator">A function that converts an instance of <typeparamref name="TSource"/> to <typeparamref name="TNew"/>.</param>
-    /// <exception cref="InvalidOperationException">Thrown when <typeparamref name="TNew"/> is not versioned.</exception>
-    public void UseMigrationFromNone<TSource, TNew>(Func<TSource, TNew> migrator)
-        where TSource : class, new()
-        where TNew : class, new()
-    {
-        var metadata = OptionsMetadataResolver.Resolve<TNew>();
-        var newVersion =
-            metadata?.Version
-            ?? throw new InvalidOperationException(
-                $"Target type {typeof(TNew).Name} does not declare a schema version."
-            );
-
-        _migrationSteps.Add(
-            new MigrationStepFromNone<TSource, TNew>(migrator, metadata.ModelId, newVersion)
-        );
-    }
+#pragma warning restore S1133
 
     /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.

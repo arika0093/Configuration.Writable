@@ -19,7 +19,6 @@ public sealed class OptionsModelAttribute : Attribute
 
     /// <summary>
     /// Gets or sets the positive schema version.
-    /// Omitting this property declares an unversioned model.
     /// </summary>
     public int Version { get; set; }
 }
