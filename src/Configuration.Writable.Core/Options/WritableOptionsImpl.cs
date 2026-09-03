@@ -26,20 +26,9 @@ namespace Configuration.Writable;
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
     IWritableOptionsConfigRegistry<T> registryInstance
-)
-    : IWritableOptionsMonitor<T>,
-        IOptionsMonitor<T>,
-        IWritableOptionsConfigurationAccessor<T>,
-        INamedWritableOptionsConfigurationAccessor<T>
+) : IWritableOptionsMonitor<T>, IOptionsMonitor<T>
     where T : class, new()
 {
-    /// <inheritdoc />
-    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
-        GetOptions(MEOptions.DefaultName);
-
-    /// <inheritdoc />
-    public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name) => GetOptions(name);
-
     /// <inheritdoc />
     public IOptionsConfigurationInfo ConfigurationInfo =>
         GetConfigurationInfo(MEOptions.DefaultName);

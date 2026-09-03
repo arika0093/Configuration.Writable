@@ -131,11 +131,6 @@ public partial class AbstractionsPackageTests
             .GetRequiredKeyedService<IReadOnlyOptions<TestSettings>>("named")
             .ConfigurationInfo;
         keyedInfo.InstanceName.ShouldBe("named");
-
-        var coreConfiguration = provider
-            .GetRequiredService<IWritableOptionsConfigurationAccessor<TestSettings>>()
-            .GetOptionsConfiguration();
-        coreConfiguration.ConfigFilePath.ShouldBe(info.WritePath);
     }
 
     [Fact]

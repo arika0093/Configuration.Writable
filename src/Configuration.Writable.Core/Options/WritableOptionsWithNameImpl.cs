@@ -13,15 +13,11 @@ namespace Configuration.Writable;
 internal sealed class WritableOptionsWithNameImpl<T>(
     WritableOptionsImpl<T> innerWritableOptionsInstance,
     string instanceName
-) : IWritableOptions<T>, IWritableOptionsConfigurationAccessor<T>
+) : IWritableOptions<T>
     where T : class, new()
 {
     /// <inheritdoc />
     public T CurrentValue => innerWritableOptionsInstance.Get(instanceName);
-
-    /// <inheritdoc />
-    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
-        innerWritableOptionsInstance.GetOptionsConfiguration(instanceName);
 
     /// <inheritdoc />
     public IOptionsConfigurationInfo ConfigurationInfo =>

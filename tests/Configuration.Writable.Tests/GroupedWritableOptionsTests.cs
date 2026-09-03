@@ -48,11 +48,11 @@ public partial class GroupedWritableOptionsTests
 
         using var serviceProvider = services.BuildServiceProvider();
         var first = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigurationAccessor<FirstSettings>>()
-            .GetOptionsConfiguration();
+            .GetRequiredService<IWritableOptionsConfigRegistry<FirstSettings>>()
+            .Get(string.Empty);
         var second = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigurationAccessor<SecondSettings>>()
-            .GetOptionsConfiguration();
+            .GetRequiredService<IWritableOptionsConfigRegistry<SecondSettings>>()
+            .Get(string.Empty);
 
         first.FileProvider.ShouldBeSameAs(provider);
         second.FileProvider.ShouldBeSameAs(provider);
@@ -79,8 +79,8 @@ public partial class GroupedWritableOptionsTests
 
         using var serviceProvider = services.BuildServiceProvider();
         var configuration = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigurationAccessor<FirstSettings>>()
-            .GetOptionsConfiguration();
+            .GetRequiredService<IWritableOptionsConfigRegistry<FirstSettings>>()
+            .Get(string.Empty);
         configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("specific.json"));
         configuration.SectionNameParts.ShouldBe(["Specific"]);
     }
@@ -121,11 +121,9 @@ public partial class GroupedWritableOptionsTests
             })
         );
 
-        var configuration = (
-            (IWritableOptionsConfigurationAccessor<ReinitializedSettings>)instance.GetOptions()
-        ).GetOptionsConfiguration();
-        configuration.FileProvider.ShouldBeSameAs(provider);
-        configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("existing.json"));
+        instance
+            .GetOptions()
+            .ConfigurationInfo.WritePath.ShouldBe(Path.GetFullPath("existing.json"));
     }
 
     [Fact]
@@ -146,12 +144,9 @@ public partial class GroupedWritableOptionsTests
             })
         );
 
-        var configuration = (
-            (IWritableOptionsConfigurationAccessor<ReinitializedSettings>)
-                WritableOptions.GetOptions<ReinitializedSettings>()
-        ).GetOptionsConfiguration();
-        configuration.FileProvider.ShouldBeSameAs(provider);
-        configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("existing.json"));
+        WritableOptions
+            .GetOptions<ReinitializedSettings>()
+            .ConfigurationInfo.WritePath.ShouldBe(Path.GetFullPath("existing.json"));
     }
 
     private sealed class RejectingFileProvider : CommonFileProvider

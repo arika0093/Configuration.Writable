@@ -185,11 +185,6 @@ namespace Configuration.Writable.FormatProvider
 }
 namespace Configuration.Writable
 {
-    public interface INamedWritableOptionsConfigurationAccessor<T>
-        where T :  class, new ()
-    {
-        Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration(string name);
-    }
     public interface IWritableOptionsConfigRegistry<T>
         where T :  class, new ()
     {
@@ -211,11 +206,6 @@ namespace Configuration.Writable
         Microsoft.Extensions.Logging.ILogger? Logger { get; }
         System.TimeSpan OnChangeDebounce { get; }
         System.Collections.Generic.List<string> SectionNameParts { get; }
-    }
-    public interface IWritableOptionsConfigurationAccessor<T>
-        where T :  class, new ()
-    {
-        Configuration.Writable.WritableOptionsConfiguration<T> GetOptionsConfiguration();
     }
     public static class ProfiledOptionsExtensions
     {

@@ -7,8 +7,7 @@
 - Remove `Microsoft.Extensions.Options.IOptionsMonitor<T>` inheritance from
   `IReadOnlyOptionsMonitor<T>`; Core continues to register both monitor contracts.
 - Replace `GetOptionsConfiguration()` on the basic options interfaces with the provider-independent
-  `IReadOnlyOptions<T>.ConfigurationInfo` property. Core retains concrete configuration accessors
-  for advanced scenarios.
+  `IReadOnlyOptions<T>.ConfigurationInfo` property.
 
 ## [0.6.0] - 2026-07-29
 

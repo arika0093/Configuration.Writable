@@ -119,10 +119,7 @@ public partial class WritableOptionsExtensionsTests
         var host = builder.Build();
         var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettings>>();
 
-        var configOptions = (
-            (IWritableOptionsConfigurationAccessor<TestSettings>)writableOptions
-        ).GetOptionsConfiguration();
-        configOptions.ConfigFilePath.ShouldBe(testFilePath);
+        writableOptions.ConfigurationInfo.WritePath.ShouldBe(testFilePath);
     }
 
     [Fact]
