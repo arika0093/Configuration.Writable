@@ -49,9 +49,7 @@ await options.SaveAsync(setting => {
 });
 
 // announce saved location
-var savedLocation = ((IOptionsConfigurationAccessor<SampleSetting>)options)
-    .GetConfigurationInfo()
-    .WritePath;
+var savedLocation = options.ConfigurationInfo.WritePath;
 Console.WriteLine($"Saved to {savedLocation}");
 
 // need some delay to see the change callback in action
@@ -1031,14 +1029,13 @@ These are the primary interfaces for reading and writing settings. They provide 
 * [`IReadOnlyOptions<T>`](./src/Configuration.Writable.Abstractions/IReadOnlyOptions.cs)
     * A simple read-only options interface that does not support named access.
     * Use the `.CurrentValue` property to access the current value.
+    * Use the `.ConfigurationInfo` property to access provider-independent metadata.
     * Use the `OnChange(Action<T> listener)` method to monitor changes to the options.
 * [`IWritableOptions<T>`](./src/Configuration.Writable.Abstractions/IWritableOptions.cs)
     * In addition to `IReadOnlyOptions<T>`, this supports saving settings via `SaveAsync`.
 
-Request `IOptionsConfigurationAccessor<T>` when you need provider-independent metadata such as
-the effective read path, next write path, format extension, instance name, or section. Core
-consumers that require the concrete configuration can request
-`IWritableOptionsConfigurationAccessor<T>`.
+Use `IReadOnlyOptions<T>.ConfigurationInfo` when you need provider-independent metadata such as
+the effective read path, next write path, format extension, instance name, or section.
 
 ### `IReadOnlyNamedOptions` / `IWritableNamedOptions`
 Named variants of the above interfaces. Use these when you manage multiple settings of the same type with different `InstanceName` values.
@@ -1049,21 +1046,6 @@ Named variants of the above interfaces. Use these when you manage multiple setti
     * Use `GetInstance(name)` to retrieve a pre-specified `IReadOnlyOptions<T>` instance.
 * [`IWritableNamedOptions<T>`](./src/Configuration.Writable.Abstractions/IWritableNamedOptions.cs)
     * In addition to `IReadOnlyNamedOptions<T>`, this supports saving settings via `SaveAsync(name, ...)`.
-
-### Migrating to the Abstractions split
-
-The contract split is a breaking change. Rebuild consumers so the existing
-`Configuration.Writable` type names resolve from `Configuration.Writable.Abstractions`.
-
-* `IReadOnlyOptionsMonitor<T>` no longer inherits `Microsoft.Extensions.Options.IOptionsMonitor<T>`.
-  Core still registers both services, and built-in writable monitors remain runtime-castable to the
-  Microsoft interface.
-* `GetOptionsConfiguration()` is no longer part of the basic read/write interfaces. Inject or cast
-  to `IOptionsConfigurationAccessor<T>` / `INamedOptionsConfigurationAccessor<T>` for portable
-  metadata.
-* Consumers needing providers, validators, or the concrete `WritableOptionsConfiguration<T>` must
-  reference Core and use `IWritableOptionsConfigurationAccessor<T>` or
-  `INamedWritableOptionsConfigurationAccessor<T>`.
 
 <details>
 <summary>Other interfaces (for compatibility)</summary>

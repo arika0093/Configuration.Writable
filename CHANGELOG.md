@@ -6,8 +6,9 @@
   dependency-free `Configuration.Writable.Abstractions` package without changing their namespaces.
 - Remove `Microsoft.Extensions.Options.IOptionsMonitor<T>` inheritance from
   `IReadOnlyOptionsMonitor<T>`; Core continues to register both monitor contracts.
-- Remove `GetOptionsConfiguration()` from the basic options interfaces. Use the new
-  configuration-info accessors, or Core's concrete configuration accessors for advanced scenarios.
+- Replace `GetOptionsConfiguration()` on the basic options interfaces with the provider-independent
+  `IReadOnlyOptions<T>.ConfigurationInfo` property. Core retains concrete configuration accessors
+  for advanced scenarios.
 
 ## [0.6.0] - 2026-07-29
 
