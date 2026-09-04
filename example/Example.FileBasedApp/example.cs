@@ -6,9 +6,11 @@ using Configuration.Writable;
 using Configuration.Writable.FormatProvider;
 
 // initialize
-WritableOptions.Initialize(conf => {
+WritableOptions.Initialize(conf =>
+{
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
-    conf.Add<SampleSetting>(c => {
+    conf.Add<SampleSetting>(c =>
+    {
         c.UseFile("usersettings.json");
     });
 });
