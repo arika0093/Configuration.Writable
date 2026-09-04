@@ -3,24 +3,29 @@ using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp.NativeAot;
 
 // initialize the writable config system
-// default save location is ./userconfig.json
-WritableOptions.Initialize<SampleSetting>();
-
-// if you want to specify a custom save location, use the following instead:
-WritableOptions.Initialize<SampleSetting>(conf =>
+WritableOptions.Initialize(conf =>
 {
-    conf.UseFile("./config/mysettings");
+    // shared configuration for all options types
 
-    // if you want to customize the section name in the config file
-    // conf.SectionName = "App:SampleSetting";
-
-    // customize the provider and file writer
-    // JsonAotFormatProvider is the recommended provider for NativeAOT scenarios
+    // JsonAotFormatProvider is the recommended format provider for NativeAOT scenarios
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 
-    // use a custom validator to validate the config instance before saving
-    // (built-in DataAnnotations validation is disabled when building for NativeAOT)
-    conf.WithValidator<SampleSettingValidator>();
+    // if you want to standard system configuration location, use conf.UseStandardSaveDirectory("your-app-id");
+    // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
+    // conf.UseStandardSaveDirectory("your-app-id");
+
+    // add SampleSetting
+    conf.Add<SampleSetting>(c =>
+    {
+        c.UseFile("./config/mysettings");
+
+        // if you want to customize the section name in the config file
+        // c.SectionName = "App:SampleSetting";
+
+        // use a custom validator to validate the config instance before saving
+        // (built-in DataAnnotations validation is disabled when building for NativeAOT)
+        c.WithValidator<SampleSettingValidator>();
+    });
 });
 
 // -------------------------------
@@ -39,7 +44,7 @@ await options.SaveAsync(setting =>
     setting.LastUpdatedAt = DateTime.Now;
 });
 Console.WriteLine(":: Config saved.");
-Console.WriteLine($"  at{options.ConfigurationInfo.WritePath}");
+Console.WriteLine($"  at {options.ConfigurationInfo.WritePath}");
 
 // get updated config instance
 var updatedSampleSetting = options.CurrentValue;

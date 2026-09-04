@@ -24,10 +24,10 @@ using Configuration.Writable;
 using Configuration.Writable.FormatProvider;
 
 // initialize
-WritableOptions.Initialize(options => {
-    options.Add<SampleSetting>(conf => {
-        conf.UseFile("usersettings.json");
-        conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+WritableOptions.Initialize(conf => {
+    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+    conf.Add<SampleSetting>(c => {
+        c.UseFile("usersettings.json");
     });
 });
 
@@ -141,8 +141,8 @@ First, call `AddWritableOptions`to register the settings class.
 
 ```csharp
 // Program.cs
-builder.Services.AddWritableOptions(options => {
-    options.Add<UserSetting>();
+builder.Services.AddWritableOptions(conf => {
+    conf.Add<UserSetting>();
 });
 ```
 
@@ -244,7 +244,9 @@ conf.Add<UserSetting>(c => {
 });
 ```
 
-If you want to read/write files from multiple locations, you can call `UseXxxDirectory().AddFilePath(path)` multiple times as follows.  
+<details>
+<summary>Available base directories</summary>
+
 You can following methods to specify the base directory:  
 
 * `UseExecutableDirectory()`: directory where the executable is located (`AppContext.BaseDirectory`).
@@ -255,6 +257,8 @@ You can following methods to specify the base directory:
     * in Windows: `%APPDATA%/appId`
     * in macOS: `$XDG_CONFIG_HOME/appId` or `~/Library/Application Support/appId`
     * in Linux: `$XDG_CONFIG_HOME/appId` or `~/.config/appId`
+
+</details>
 
 <details>
 <summary>Priority Determination Details</summary>

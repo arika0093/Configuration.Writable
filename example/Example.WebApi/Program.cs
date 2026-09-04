@@ -9,12 +9,22 @@ using NSwag.AspNetCore;
 var builder = WebApplication.CreateSlimBuilder(args);
 
 // Configuration.Writable
-builder.Services.AddWritableOptions<SampleSetting>(conf =>
+builder.Services.AddWritableOptions(services =>
 {
-    conf.UseFile("appsettings.json");
-    conf.SectionName = "MySetting";
-    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
-    conf.WithValidator<SampleSettingValidator>();
+    // shared configuration for all options types
+    services.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+
+    // if you want to standard system configuration location, use services.UseStandardSaveDirectory("your-app-id");
+    // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
+    // services.UseStandardSaveDirectory("your-app-id");
+
+    // add SampleSetting
+    services.Add<SampleSetting>(c =>
+    {
+        c.UseFile("appsettings.json");
+        c.SectionName = "MySetting";
+        c.WithValidator<SampleSettingValidator>();
+    });
 });
 
 // default Configuration

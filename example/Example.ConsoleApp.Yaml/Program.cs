@@ -9,10 +9,20 @@ using Example.ConsoleApp.Yaml;
 SampleSetting.__RegisterVYamlFormatter();
 
 // initialize the writable config system with YAML format
-WritableOptions.Initialize<SampleSetting>(conf =>
+WritableOptions.Initialize(conf =>
 {
-    conf.UseFile("./config/mysettings");
+    // shared configuration for all options types
     conf.FormatProvider = new YamlFormatProvider();
+
+    // if you want to standard system configuration location, use conf.UseStandardSaveDirectory("your-app-id");
+    // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
+    // conf.UseStandardSaveDirectory("your-app-id");
+
+    // add SampleSetting
+    conf.Add<SampleSetting>(c =>
+    {
+        c.UseFile("./config/mysettings");
+    });
 });
 
 // -------------------------------
@@ -31,7 +41,7 @@ await options.SaveAsync(setting =>
     setting.LastUpdatedAt = DateTime.Now;
 });
 Console.WriteLine(":: Config saved.");
-Console.WriteLine($"  at{options.ConfigurationInfo.WritePath}");
+Console.WriteLine($"  at {options.ConfigurationInfo.WritePath}");
 
 // get updated config instance
 var updatedSampleSetting = options.CurrentValue;

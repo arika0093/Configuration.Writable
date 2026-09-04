@@ -6,10 +6,11 @@ using Configuration.Writable;
 using Configuration.Writable.FormatProvider;
 
 // initialize
-WritableOptions.Initialize<SampleSetting>(conf =>
-{
-    conf.UseFile("usersettings.json");
+WritableOptions.Initialize(conf => {
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+    conf.Add<SampleSetting>(c => {
+        c.UseFile("usersettings.json");
+    });
 });
 
 // get the writable options instance

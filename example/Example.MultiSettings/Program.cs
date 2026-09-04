@@ -1,15 +1,27 @@
 ﻿using Configuration.Writable;
 
-// initialize each setting with the same file provider
-WritableOptions.Initialize<UserSetting>(conf =>
+// initialize each setting with shared configuration
+WritableOptions.Initialize(conf =>
 {
+    // shared configuration for all options types
+    // when using SectionName to store multiple settings in one file, set the file path here
     conf.UseFile("usersettings");
-    conf.SectionName = "UserSettings";
-});
-WritableOptions.Initialize<UserSecretSetting>(conf =>
-{
-    conf.UseFile("usersettings");
-    conf.SectionName = "Secrets";
+
+    // if you want to standard system configuration location, use conf.UseStandardSaveDirectory("your-app-id");
+    // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
+    // conf.UseStandardSaveDirectory("your-app-id");
+
+    // add UserSetting
+    conf.Add<UserSetting>(c =>
+    {
+        c.SectionName = "UserSettings";
+    });
+
+    // add UserSecretSetting
+    conf.Add<UserSecretSetting>(c =>
+    {
+        c.SectionName = "Secrets";
+    });
 });
 
 // and get each setting

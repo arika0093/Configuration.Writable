@@ -3,24 +3,11 @@ using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp;
 
 // initialize the writable config system
-// default save location is ./userconfig.json
-WritableOptions.Initialize<SampleSetting>();
-
-// if you want to specify a custom save location, use the following instead:
-WritableOptions.Initialize<SampleSetting>(conf =>
+WritableOptions.Initialize(conf =>
 {
-    // save file location is ./config/mysettings.json
-    // extension is determined by the provider (omittable)
-    conf.UseFile("./config/mysettings");
+    // shared configuration for all options types
 
-    // this is same as above
-    // conf.UseExecutableDirectory().AddFilePath("./config/mysettings");
-
-    // if you want to standard system configration location, use conf.UseStandardSaveDirectory("your-app-id");
-    // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
-    // conf.UseStandardSaveDirectory("your-app-id").AddFilePath("appdata-setting");
-
-    // customize the provider and file writer
+    // customize the format provider
     // you can use Json, Xml, Yaml, or your original format by implementing IWritableFormatProvider
     conf.FormatProvider = new JsonFormatProvider()
     {
@@ -36,10 +23,22 @@ WritableOptions.Initialize<SampleSetting>(conf =>
     //    .Create(builder => builder.AddZLoggerConsole())
     //    .CreateLogger("UserConfig");
 
-    // if you want to validate the config before saving, use
-    // * UseDataAnnotationsValidation: use data annotation attributes in your config class. Defaults to true.
-    // * WithValidatorFunction: a simple way to set validation function
-    // * WithValidator: set a custom validation class implementing IValidateOptions<T>
+    // if you want to standard system configuration location, use conf.UseStandardSaveDirectory("your-app-id");
+    // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows
+    // conf.UseStandardSaveDirectory("your-app-id");
+
+    // add SampleSetting
+    conf.Add<SampleSetting>(c =>
+    {
+        // save file location is ./config/mysettings.json
+        // extension is determined by the provider (omittable)
+        c.UseFile("./config/mysettings");
+
+        // if you want to validate the config before saving, use
+        // * UseDataAnnotationsValidation: use data annotation attributes in your config class. Defaults to true.
+        // * WithValidatorFunction: a simple way to set validation function
+        // * WithValidator: set a custom validation class implementing IValidateOptions<T>
+    });
 });
 
 // -------------------------------
@@ -67,7 +66,7 @@ await options.SaveAsync(setting =>
     setting.LastUpdatedAt = DateTime.Now;
 });
 Console.WriteLine(":: Config saved.");
-Console.WriteLine($"  at{options.ConfigurationInfo.WritePath}");
+Console.WriteLine($"  at {options.ConfigurationInfo.WritePath}");
 
 // get updated config instance
 var updatedSampleSetting = options.CurrentValue;
