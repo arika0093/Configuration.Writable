@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -121,16 +123,43 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        var sourceModels = context
+            .SyntaxProvider.ForAttributeWithMetadataName(
+                AttributeName,
+                static (node, _) => node is TypeDeclarationSyntax,
+                static (attributeContext, cancellationToken) =>
+                    SourceModelInfo.Create(attributeContext, cancellationToken)
+            )
+            .Collect()
+            .Select(
+                static (models, _) =>
+                    new EquatableArray<SourceModelInfo>(models)
+            );
+        var referencedModels = context.CompilationProvider.Select(
+            static (compilation, cancellationToken) => CollectReferencedModels(compilation, cancellationToken)
+        );
+
         context.RegisterSourceOutput(
-            context.CompilationProvider,
-            static (productionContext, compilation) => Execute(productionContext, compilation)
+            sourceModels.Combine(referencedModels),
+            static (productionContext, models) =>
+                Execute(productionContext, models.Left, models.Right)
         );
     }
 
-    private static void Execute(SourceProductionContext context, Compilation compilation)
+    private static void Execute(
+        SourceProductionContext context,
+        EquatableArray<SourceModelInfo> sourceModels,
+        EquatableArray<ReferencedModelInfo> referencedModels
+    )
     {
-        var models = CollectModels(compilation);
-        var sourceModels = models.Where(model => model.IsSource).ToList();
+        var models = sourceModels
+            .Select(static model => new ModelReference(model.Id, model.Version, model.FullName, true))
+            .Concat(
+                referencedModels.Select(
+                    static model =>
+                        new ModelReference(model.Id, model.Version, model.FullName, model.IsPublic)
+                )
+            );
         var groups = models
             .Where(model => !string.IsNullOrWhiteSpace(model.Id) && model.Version is not null)
             .GroupBy(model => model.Id!, StringComparer.Ordinal)
@@ -150,10 +179,17 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     continue;
                 }
 
-                foreach (var model in versions.Where(model => model.IsSource))
+                foreach (var model in sourceModels.Where(model =>
+                    model.Id == group.Key && model.Version == versions.Key
+                ))
                 {
                     context.ReportDiagnostic(
-                        Diagnostic.Create(DuplicateVersion, model.Location, group.Key, versions.Key)
+                        Diagnostic.Create(
+                            DuplicateVersion,
+                            model.DiagnosticLocation.ToLocation(),
+                            group.Key,
+                            versions.Key
+                        )
                     );
                 }
             }
@@ -161,63 +197,58 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
         foreach (var model in sourceModels)
         {
-            ModelInfo? previous = null;
+            ModelReference? previous = null;
             var hasMigrationImplementation = true;
             if (model.SupportMigration && model.Version is > 1 && model.Id is not null)
             {
                 groups.TryGetValue(model.Id, out var candidates);
                 previous = candidates?.FirstOrDefault(candidate =>
                     candidate.Version == model.Version - 1
-                    && IsAccessibleFromCompilation(candidate.Symbol, compilation)
+                    && candidate.IsSourceOrPublic
                 );
                 if (previous == null)
                 {
                     context.ReportDiagnostic(
                         Diagnostic.Create(
                             MissingPreviousVersion,
-                            model.Location,
-                            model.Symbol.Name,
+                            model.DiagnosticLocation.ToLocation(),
+                            model.Name,
                             model.Version,
                             model.Version - 1,
                             model.Id
                         )
                     );
                 }
-                else if (!HasMigrationImplementation(model.Symbol, previous.Symbol))
+                else if (!model.MigrationSourceTypeNames.Contains(previous.FullName))
                 {
                     hasMigrationImplementation = false;
                     var properties = ImmutableDictionary<string, string?>
-                        .Empty.Add("CurrentTypeName", GetMinimalTypeName(model.Symbol))
-                        .Add("PreviousTypeName", GetMinimalTypeName(previous.Symbol))
+                        .Empty.Add("CurrentTypeName", model.MinimalName)
+                        .Add("PreviousTypeName", previous.MinimalName)
                         .Add(
                             "CodeFixAvailable",
-                            CanAddMigrationImplementation(model.Symbol, previous.Symbol).ToString()
+                            (!model.MigrationParameterTypeNames.Contains(previous.FullName)).ToString()
                         )
-                        .Add(
-                            "PreviousNamespace",
-                            previous.Symbol.ContainingNamespace.IsGlobalNamespace
-                                ? null
-                                : previous.Symbol.ContainingNamespace.ToDisplayString()
-                        );
+                        .Add("PreviousNamespace", previous.Namespace);
                     context.ReportDiagnostic(
                         Diagnostic.Create(
                             MissingMigration,
-                            model.Location,
+                            model.DiagnosticLocation.ToLocation(),
                             properties,
-                            model.Symbol.Name,
-                            previous.Symbol.Name
+                            model.Name,
+                            previous.Name
                         )
                     );
                 }
             }
 
-            if (!model.HasPartialModifier)
+            if (!model.IsPartial)
             {
                 continue;
             }
 
             context.AddSource(
-                GetHintName(model.Symbol),
+                model.HintName,
                 SourceText.From(
                     GenerateMetadata(model, previous, hasMigrationImplementation),
                     Encoding.UTF8
@@ -225,38 +256,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             );
         }
     }
-
-    private static bool HasMigrationImplementation(
-        INamedTypeSymbol current,
-        INamedTypeSymbol previous
-    ) =>
-        current
-            .GetMembers("Migrate")
-            .OfType<IMethodSymbol>()
-            .Any(method =>
-                method.IsStatic
-                && method.DeclaredAccessibility == Accessibility.Private
-                && SymbolEqualityComparer.Default.Equals(method.ReturnType, current)
-                && method.Parameters.Length == 1
-                && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, previous)
-                && method.DeclaringSyntaxReferences.Any(reference =>
-                    reference.GetSyntax() is MethodDeclarationSyntax syntax
-                    && syntax.Modifiers.Any(SyntaxKind.PartialKeyword)
-                    && (syntax.Body is not null || syntax.ExpressionBody is not null)
-                )
-            );
-
-    private static bool CanAddMigrationImplementation(
-        INamedTypeSymbol current,
-        INamedTypeSymbol previous
-    ) =>
-        !current
-            .GetMembers("Migrate")
-            .OfType<IMethodSymbol>()
-            .Any(method =>
-                method.Parameters.Length == 1
-                && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, previous)
-            );
 
     private static string GetMinimalTypeName(INamedTypeSymbol type)
     {
@@ -274,13 +273,14 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     private static string GetMinimalTypeArgumentName(ITypeSymbol type) =>
         type is INamedTypeSymbol namedType ? GetMinimalTypeName(namedType) : type.Name;
 
-    private static List<ModelInfo> CollectModels(Compilation compilation)
+    private static List<ModelInfo> CollectModels(Compilation compilation, CancellationToken cancellationToken)
     {
         var result = new List<ModelInfo>();
-        CollectNamespace(compilation.Assembly.GlobalNamespace, compilation, true, result);
+        CollectNamespace(compilation.Assembly.GlobalNamespace, compilation, true, result, cancellationToken);
         foreach (var assembly in compilation.SourceModule.ReferencedAssemblySymbols)
         {
-            CollectNamespace(assembly.GlobalNamespace, compilation, false, result);
+            cancellationToken.ThrowIfCancellationRequested();
+            CollectNamespace(assembly.GlobalNamespace, compilation, false, result, cancellationToken);
         }
         return result;
     }
@@ -289,16 +289,19 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         Compilation compilation,
         bool isSource,
-        List<ModelInfo> result
+        List<ModelInfo> result,
+        CancellationToken cancellationToken
     )
     {
         foreach (var type in namespaceSymbol.GetTypeMembers())
         {
-            CollectType(type, compilation, isSource, result);
+            cancellationToken.ThrowIfCancellationRequested();
+            CollectType(type, compilation, isSource, result, cancellationToken);
         }
         foreach (var child in namespaceSymbol.GetNamespaceMembers())
         {
-            CollectNamespace(child, compilation, isSource, result);
+            cancellationToken.ThrowIfCancellationRequested();
+            CollectNamespace(child, compilation, isSource, result, cancellationToken);
         }
     }
 
@@ -306,7 +309,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         INamedTypeSymbol type,
         Compilation compilation,
         bool isSource,
-        List<ModelInfo> result
+        List<ModelInfo> result,
+        CancellationToken cancellationToken
     )
     {
         var attribute = type.GetAttributes()
@@ -321,6 +325,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             var supportMigration = true;
             foreach (var argument in attribute.NamedArguments)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (argument.Key == "Id")
                 {
                     id = argument.Value.Value as string;
@@ -337,14 +342,18 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             }
             if (
                 isSource
-                && attribute.ApplicationSyntaxReference?.GetSyntax() is AttributeSyntax syntax
+                && attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken) is AttributeSyntax syntax
             )
             {
                 var semanticModel = compilation.GetSemanticModel(syntax.SyntaxTree);
                 foreach (var argument in syntax.ArgumentList?.Arguments ?? default)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var name = argument.NameEquals?.Name.Identifier.ValueText;
-                    var constant = semanticModel.GetConstantValue(argument.Expression);
+                    var constant = semanticModel.GetConstantValue(
+                        argument.Expression,
+                        cancellationToken
+                    );
                     if (!constant.HasValue)
                     {
                         continue;
@@ -379,7 +388,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     versionSpecified,
                     isSource,
                     IsPartial(type),
-                    attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()
+                    attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation()
                         ?? type.Locations.FirstOrDefault()
                         ?? Location.None,
                     usesLegacyVersion,
@@ -390,104 +399,22 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
         foreach (var nested in type.GetTypeMembers())
         {
-            CollectType(nested, compilation, isSource, result);
+            cancellationToken.ThrowIfCancellationRequested();
+            CollectType(nested, compilation, isSource, result, cancellationToken);
         }
     }
 
-    private static void ReportModelDiagnostics(SourceProductionContext context, ModelInfo model)
-    {
-        if (model.Id == null)
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(MissingId, model.Location, model.Symbol.Name)
-            );
-        }
-        else if (string.IsNullOrWhiteSpace(model.Id))
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(InvalidId, model.Location, model.Symbol.Name)
-            );
-        }
-
-        if (model.VersionSpecified && model.Version is <= 0)
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(InvalidVersion, model.Location, model.Symbol.Name)
-            );
-        }
-        else if (!model.VersionSpecified)
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(MissingVersion, model.Location, model.Symbol.Name)
-            );
-        }
-
-        if (model.UsesLegacyVersion)
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(LegacyVersioning, model.Location, model.Symbol.Name)
-            );
-        }
-
-        if (!model.HasPartialModifier)
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(PartialRequired, model.Location, model.Symbol.Name)
-            );
-        }
-
-        if (
-            model.Version is not null
-            && (
-                model.Symbol.TypeKind != TypeKind.Class
-                || model.Symbol.IsStatic
-                || !HasAccessibleParameterlessConstructor(model.Symbol, model.IsSource)
-            )
-        )
-        {
-            context.ReportDiagnostic(
-                Diagnostic.Create(UnsupportedModel, model.Location, model.Symbol.Name)
-            );
-        }
-
-        foreach (var member in GetSerializableMembers(model.Symbol))
-        {
-            foreach (var serializedName in GetSerializedNames(member))
-            {
-                if (serializedName != "ModelId" && serializedName != "Version")
-                {
-                    continue;
-                }
-
-                if (
-                    serializedName == "Version"
-                    && model.UsesLegacyVersion
-                    && !model.VersionSpecified
-                    && member.Name == "Version"
-                )
-                {
-                    continue;
-                }
-
-                context.ReportDiagnostic(
-                    Diagnostic.Create(
-                        ReservedNameCollision,
-                        member.Locations.FirstOrDefault() ?? model.Location,
-                        member.Name,
-                        serializedName
-                    )
-                );
-                break;
-            }
-        }
-    }
-
-    private static IEnumerable<ISymbol> GetSerializableMembers(INamedTypeSymbol type)
+    private static IEnumerable<ISymbol> GetSerializableMembers(
+        INamedTypeSymbol type,
+        CancellationToken cancellationToken
+    )
     {
         for (var current = type; current != null; current = current.BaseType)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             foreach (var member in current.GetMembers())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (member.IsStatic || member.DeclaredAccessibility != Accessibility.Public)
                 {
                     continue;
@@ -500,13 +427,18 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         }
     }
 
-    private static IEnumerable<string> GetSerializedNames(ISymbol member)
+    private static IEnumerable<string> GetSerializedNames(
+        ISymbol member,
+        CancellationToken cancellationToken
+    )
     {
         yield return member.Name;
         foreach (var attribute in member.GetAttributes())
         {
+            cancellationToken.ThrowIfCancellationRequested();
             foreach (var argument in attribute.ConstructorArguments)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (argument.Value is string value)
                 {
                     yield return value;
@@ -514,6 +446,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             }
             foreach (var argument in attribute.NamedArguments)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (argument.Value.Value is string value)
                 {
                     yield return value;
@@ -546,69 +479,46 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             )
         );
 
-    private static bool IsAccessibleFromCompilation(
-        INamedTypeSymbol type,
-        Compilation compilation
-    ) =>
-        SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, compilation.Assembly)
-        || type.DeclaredAccessibility == Accessibility.Public;
-
     private static bool Implements(INamedTypeSymbol type, string interfaceName) =>
         type.AllInterfaces.Any(@interface => @interface.ToDisplayString() == interfaceName);
 
     private static string GenerateMetadata(
-        ModelInfo model,
-        ModelInfo? previous,
+        SourceModelInfo model,
+        ModelReference? previous,
         bool hasMigrationImplementation
     )
     {
-        var builder = new StringBuilder();
-        builder.AppendLine("// <auto-generated/>");
-        builder.AppendLine("#nullable enable");
+        var builder = new IndentedStringBuilder();
+        builder.AppendLine(
+            """
+            // <auto-generated/>
+            #nullable enable
+            """
+        );
 
-        var namespaceName = model.Symbol.ContainingNamespace.IsGlobalNamespace
-            ? null
-            : model.Symbol.ContainingNamespace.ToDisplayString();
+        var namespaceName = model.Namespace;
         if (namespaceName != null)
         {
-            builder.Append("namespace ").Append(namespaceName).AppendLine();
+            builder.AppendLine($"namespace {namespaceName}");
             builder.AppendLine("{");
+            builder.IncreaseIndent();
         }
 
-        var containingTypes = new Stack<INamedTypeSymbol>();
-        for (
-            var current = model.Symbol.ContainingType;
-            current != null;
-            current = current.ContainingType
-        )
-        {
-            containingTypes.Push(current);
-        }
-        foreach (var containingType in containingTypes)
+        foreach (var containingType in model.ContainingTypeDeclarations)
         {
             AppendTypeStart(builder, containingType, null);
+            builder.IncreaseIndent();
         }
 
-        AppendTypeStart(builder, model.Symbol, MetadataInterfaceName);
-        builder
-            .Append("    string? global::")
-            .Append(MetadataInterfaceName)
-            .Append(".ModelId => ")
-            .Append(model.Id == null ? "null" : SymbolDisplay.FormatLiteral(model.Id, true))
-            .AppendLine(";");
-        builder
-            .Append("    int? global::")
-            .Append(MetadataInterfaceName)
-            .Append(".Version => ")
-            .Append(model.Version?.ToString() ?? "null")
-            .AppendLine(";");
-        builder
-            .Append("    void global::")
-            .Append(MetadataInterfaceName)
-            .AppendLine(
-                ".RegisterMigrations(global::Configuration.Writable.IOptionsMigrationRegistrar registrar)"
-            );
-        builder.AppendLine("    {");
+        AppendTypeStart(builder, model.TypeDeclaration, MetadataInterfaceName);
+        builder.IncreaseIndent();
+        builder.AppendLine($$"""
+            string? global::{{MetadataInterfaceName}}.ModelId => {{model.IdLiteral}};
+            int? global::{{MetadataInterfaceName}}.Version => {{model.VersionValue}};
+            void global::{{MetadataInterfaceName}}.RegisterMigrations(global::Configuration.Writable.IOptionsMigrationRegistrar registrar)
+            {
+            """);
+        builder.IncreaseIndent();
         if (
             previous != null
             && hasMigrationImplementation
@@ -616,98 +526,47 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             && model.Version is not null
         )
         {
-            var previousType = previous.Symbol.ToDisplayString(
-                SymbolDisplayFormat.FullyQualifiedFormat
-            );
-            var currentType = model.Symbol.ToDisplayString(
-                SymbolDisplayFormat.FullyQualifiedFormat
-            );
-            builder
-                .Append("        ((global::")
-                .Append(MetadataInterfaceName)
-                .Append(")new ")
-                .Append(previousType)
-                .AppendLine("()).RegisterMigrations(registrar);");
-            builder
-                .Append("        registrar.Register<")
-                .Append(previousType)
-                .Append(", ")
-                .Append(currentType)
-                .Append(">(Migrate, ")
-                .Append(SymbolDisplay.FormatLiteral(model.Id, true))
-                .Append(", ")
-                .Append(previous.Version)
-                .Append(", ")
-                .Append(model.Version)
-                .AppendLine(");");
+            builder.AppendLine($$"""
+                ((global::{{MetadataInterfaceName}})new {{previous.FullName}}()).RegisterMigrations(registrar);
+                registrar.Register<{{previous.FullName}}, {{model.FullName}}>(Migrate, {{model.IdLiteral}}, {{previous.Version}}, {{model.Version}});
+                """);
         }
-        builder.AppendLine("    }");
+        builder.DecreaseIndent();
+        builder.AppendLine("}");
 
         if (previous != null && hasMigrationImplementation)
         {
-            builder
-                .Append("    private static partial ")
-                .Append(model.Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
-                .Append(" Migrate(")
-                .Append(previous.Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
-                .AppendLine(" source);");
+            builder.AppendLine(
+                $"private static partial {model.FullName} Migrate({previous.FullName} source);"
+            );
         }
 
+        builder.DecreaseIndent();
         builder.AppendLine("}");
-        foreach (var _ in containingTypes)
+        foreach (var _ in model.ContainingTypeDeclarations)
         {
+            builder.DecreaseIndent();
             builder.AppendLine("}");
         }
         if (namespaceName != null)
         {
+            builder.DecreaseIndent();
             builder.AppendLine("}");
         }
         return builder.ToString();
     }
 
     private static void AppendTypeStart(
-        StringBuilder builder,
-        INamedTypeSymbol type,
+        IndentedStringBuilder builder,
+        string typeDeclaration,
         string? implementedInterface
     )
     {
-        builder.Append(GetAccessibility(type.DeclaredAccessibility));
-        if (type.IsStatic)
-        {
-            builder.Append("static ");
-        }
-        else
-        {
-            if (type.IsAbstract)
-            {
-                builder.Append("abstract ");
-            }
-            if (type.IsSealed)
-            {
-                builder.Append("sealed ");
-            }
-        }
-        builder.Append("partial ");
-        var typeKeyword = type.TypeKind == TypeKind.Struct ? "struct " : "class ";
-        if (type.IsRecord)
-        {
-            typeKeyword = type.TypeKind == TypeKind.Struct ? "record struct " : "record class ";
-        }
-        builder.Append(typeKeyword);
-        builder.Append(type.Name);
-        if (type.TypeParameters.Length > 0)
-        {
-            builder
-                .Append('<')
-                .Append(string.Join(", ", type.TypeParameters.Select(parameter => parameter.Name)))
-                .Append('>');
-        }
-        if (implementedInterface != null)
-        {
-            builder.Append(" : global::").Append(implementedInterface);
-        }
-        builder.AppendLine();
-        builder.AppendLine("{");
+        builder.AppendLine(
+            implementedInterface is null
+                ? $"{typeDeclaration}\n{{"
+                : $"{typeDeclaration} : global::{implementedInterface}\n{{"
+        );
     }
 
     private static string GetAccessibility(Accessibility accessibility) =>
@@ -752,5 +611,350 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         public Location Location { get; } = location;
         public bool UsesLegacyVersion { get; } = usesLegacyVersion;
         public bool SupportMigration { get; } = supportMigration;
+    }
+
+    private static EquatableArray<ReferencedModelInfo> CollectReferencedModels(
+        Compilation compilation,
+        CancellationToken cancellationToken
+    ) =>
+        new(
+            CollectModels(compilation, cancellationToken)
+                .Where(static model => !model.IsSource)
+                .Select(
+                    static model =>
+                        new ReferencedModelInfo(
+                            model.Id,
+                            model.Version,
+                            model.Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                            model.Symbol.Name,
+                            model.Symbol.ContainingNamespace.IsGlobalNamespace
+                                ? null
+                                : model.Symbol.ContainingNamespace.ToDisplayString(),
+                            model.Symbol.DeclaredAccessibility == Accessibility.Public
+                        )
+                )
+        );
+
+    private static void ReportModelDiagnostics(
+        SourceProductionContext context,
+        SourceModelInfo model
+    )
+    {
+        foreach (var diagnostic in model.Diagnostics)
+        {
+            context.ReportDiagnostic(
+                Diagnostic.Create(
+                    diagnostic.Id switch
+                    {
+                        "CWWR001" => MissingId,
+                        "CWWR002" => InvalidId,
+                        "CWWR003" => InvalidVersion,
+                        "CWWR006" => ReservedNameCollision,
+                        "CWWR007" => LegacyVersioning,
+                        "CWWR008" => PartialRequired,
+                        "CWWR009" => UnsupportedModel,
+                        _ => MissingVersion,
+                    },
+                    diagnostic.Location.ToLocation(),
+                    diagnostic.GetArguments()
+                )
+            );
+        }
+    }
+
+    private sealed record SourceModelInfo(
+        string? Id,
+        int? Version,
+        bool SupportMigration,
+        bool IsPartial,
+        string Name,
+        string MinimalName,
+        string FullName,
+        string? Namespace,
+        string TypeDeclaration,
+        EquatableArray<string> ContainingTypeDeclarations,
+        EquatableArray<string> MigrationSourceTypeNames,
+        EquatableArray<string> MigrationParameterTypeNames,
+        string HintName,
+        string IdLiteral,
+        string VersionValue,
+        DiagnosticLocation DiagnosticLocation,
+        EquatableArray<GeneratorDiagnostic> Diagnostics
+    )
+    {
+        public static SourceModelInfo Create(
+            GeneratorAttributeSyntaxContext context,
+            CancellationToken cancellationToken
+        )
+        {
+            var type = (INamedTypeSymbol)context.TargetSymbol;
+            var attribute = context.Attributes[0];
+            string? id = null;
+            int? version = null;
+            var versionSpecified = false;
+            var supportMigration = true;
+            foreach (var argument in attribute.NamedArguments)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (argument.Key == "Id")
+                    id = argument.Value.Value as string;
+                else if (argument.Key == "Version")
+                {
+                    versionSpecified = true;
+                    version = argument.Value.Value as int?;
+                }
+                else if (argument.Key == "SupportMigration")
+                    supportMigration = argument.Value.Value as bool? ?? true;
+            }
+
+            var usesLegacyVersion = Implements(type, LegacyInterfaceName);
+            if (!versionSpecified && !usesLegacyVersion)
+                version = 1;
+
+            var location = DiagnosticLocation.Create(
+                attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation()
+                    ?? type.Locations.FirstOrDefault()
+                    ?? Microsoft.CodeAnalysis.Location.None
+            );
+            var diagnostics = new List<GeneratorDiagnostic>();
+            if (id is null)
+                diagnostics.Add(new("CWWR001", location, type.Name));
+            else if (string.IsNullOrWhiteSpace(id))
+                diagnostics.Add(new("CWWR002", location, type.Name));
+            if (versionSpecified && version is <= 0)
+                diagnostics.Add(new("CWWR003", location, type.Name));
+            else if (!versionSpecified)
+                diagnostics.Add(new("CWWR010", location, type.Name));
+            if (usesLegacyVersion)
+                diagnostics.Add(new("CWWR007", location, type.Name));
+            if (
+                type.DeclaringSyntaxReferences.Length == 0
+                || !type.DeclaringSyntaxReferences.All(reference =>
+                    reference.GetSyntax(cancellationToken) is TypeDeclarationSyntax declaration
+                    && declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
+                )
+            )
+                diagnostics.Add(new("CWWR008", location, type.Name));
+            if (
+                version is not null
+                && (
+                    type.TypeKind != TypeKind.Class
+                    || type.IsStatic
+                    || !HasAccessibleParameterlessConstructor(type, true)
+                )
+            )
+                diagnostics.Add(new("CWWR009", location, type.Name));
+
+            foreach (var member in GetSerializableMembers(type, cancellationToken))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var serializedName in GetSerializedNames(member, cancellationToken))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (
+                        serializedName is "ModelId" or "Version"
+                        && !(
+                            serializedName == "Version"
+                            && usesLegacyVersion
+                            && !versionSpecified
+                            && member.Name == "Version"
+                        )
+                    )
+                    {
+                        diagnostics.Add(
+                            new(
+                                "CWWR006",
+                                DiagnosticLocation.Create(
+                                    member.Locations.FirstOrDefault() ?? location.ToLocation()
+                                ),
+                                member.Name,
+                                serializedName
+                            )
+                        );
+                        break;
+                    }
+                }
+            }
+
+            var containingTypes = new Stack<string>();
+            for (var current = type.ContainingType; current is not null; current = current.ContainingType)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                containingTypes.Push(GetTypeDeclaration(current));
+            }
+
+            var methods = type.GetMembers("Migrate").OfType<IMethodSymbol>();
+            return new(
+                id,
+                version,
+                supportMigration,
+                type.DeclaringSyntaxReferences.Length > 0
+                    && type.DeclaringSyntaxReferences.All(reference =>
+                        reference.GetSyntax(cancellationToken) is TypeDeclarationSyntax declaration
+                        && declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
+                    ),
+                type.Name,
+                GetMinimalTypeName(type),
+                type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                type.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : type.ContainingNamespace.ToDisplayString(),
+                GetTypeDeclaration(type),
+                new EquatableArray<string>(containingTypes),
+                new EquatableArray<string>(
+                    methods
+                        .Where(method =>
+                            method.IsStatic
+                            && method.DeclaredAccessibility == Accessibility.Private
+                            && SymbolEqualityComparer.Default.Equals(method.ReturnType, type)
+                            && method.Parameters.Length == 1
+                            && method.DeclaringSyntaxReferences.Any(reference =>
+                                reference.GetSyntax(cancellationToken) is MethodDeclarationSyntax syntax
+                                && syntax.Modifiers.Any(SyntaxKind.PartialKeyword)
+                                && (syntax.Body is not null || syntax.ExpressionBody is not null)
+                            )
+                        )
+                        .Select(method =>
+                            method.Parameters[0].Type.ToDisplayString(
+                                SymbolDisplayFormat.FullyQualifiedFormat
+                            )
+                        )
+                ),
+                new EquatableArray<string>(
+                    methods
+                        .Where(static method => method.Parameters.Length == 1)
+                        .Select(method =>
+                            method.Parameters[0].Type.ToDisplayString(
+                                SymbolDisplayFormat.FullyQualifiedFormat
+                            )
+                        )
+                ),
+                GetHintName(type),
+                id is null ? "null" : SymbolDisplay.FormatLiteral(id, true),
+                version?.ToString() ?? "null",
+                location,
+                new EquatableArray<GeneratorDiagnostic>(diagnostics)
+            );
+        }
+    }
+
+    private static string GetTypeDeclaration(INamedTypeSymbol type) =>
+        GetAccessibility(type.DeclaredAccessibility)
+        + (type.IsStatic ? "static " : type.IsAbstract ? "abstract " : type.IsSealed ? "sealed " : "")
+        + "partial "
+        + (type.IsRecord
+            ? type.TypeKind == TypeKind.Struct ? "record struct " : "record class "
+            : type.TypeKind == TypeKind.Struct ? "struct " : "class ")
+        + type.Name
+        + (type.TypeParameters.Length == 0
+            ? ""
+            : "<" + string.Join(", ", type.TypeParameters.Select(static parameter => parameter.Name)) + ">");
+
+    private sealed record ModelReference(
+        string? Id,
+        int? Version,
+        string FullName,
+        bool IsSourceOrPublic
+    )
+    {
+        public string Name => FullName[(FullName.LastIndexOf('.') + 1)..];
+        public string MinimalName => Name;
+        public string? Namespace =>
+            FullName.LastIndexOf('.') is var index && index > "global::".Length
+                ? FullName["global::".Length..index]
+                : null;
+    }
+
+    private sealed record ReferencedModelInfo(
+        string? Id,
+        int? Version,
+        string FullName,
+        string Name,
+        string? Namespace,
+        bool IsPublic
+    );
+
+    private sealed record GeneratorDiagnostic(
+        string Id,
+        DiagnosticLocation Location,
+        string Argument1,
+        string? Argument2 = null
+    )
+    {
+        public object[] GetArguments() =>
+            Argument2 is null ? [Argument1] : [Argument1, Argument2];
+    }
+
+    private sealed record DiagnosticLocation(
+        string Path,
+        int Start,
+        int Length,
+        int StartLine,
+        int StartCharacter,
+        int EndLine,
+        int EndCharacter
+    )
+    {
+        public static DiagnosticLocation Create(Location location)
+        {
+            var lineSpan = location.GetLineSpan();
+            return new(
+                location.SourceTree?.FilePath ?? "",
+                location.SourceSpan.Start,
+                location.SourceSpan.Length,
+                lineSpan.StartLinePosition.Line,
+                lineSpan.StartLinePosition.Character,
+                lineSpan.EndLinePosition.Line,
+                lineSpan.EndLinePosition.Character
+            );
+        }
+
+        public Location ToLocation() =>
+            Location.Create(
+                Path,
+                new TextSpan(Start, Length),
+                new LinePositionSpan(
+                    new LinePosition(StartLine, StartCharacter),
+                    new LinePosition(EndLine, EndCharacter)
+                )
+            );
+    }
+
+    private sealed class EquatableArray<T> : IReadOnlyList<T>, IEquatable<EquatableArray<T>>
+    {
+        private readonly ImmutableArray<T> _items;
+
+        public EquatableArray(IEnumerable<T> items) => _items = [.. items];
+        public int Count => _items.Length;
+        public T this[int index] => _items[index];
+        public bool Equals(EquatableArray<T>? other) =>
+            other is not null && _items.SequenceEqual(other._items);
+        public override bool Equals(object? obj) => obj is EquatableArray<T> other && Equals(other);
+        public override int GetHashCode() =>
+            _items.Aggregate(
+                0,
+                static (hash, item) => (hash * 397) ^ EqualityComparer<T>.Default.GetHashCode(item!)
+            );
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_items).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    private sealed class IndentedStringBuilder
+    {
+        private readonly StringBuilder _builder = new();
+        private int _indentation;
+
+        public void IncreaseIndent() => _indentation++;
+        public void DecreaseIndent() => _indentation--;
+        public void AppendLine(string value)
+        {
+            foreach (var line in value.Replace("\r\n", "\n").Split('\n'))
+            {
+                if (line.Length > 0)
+                    _builder.Append(' ', _indentation * 4);
+                _builder.AppendLine(line);
+            }
+        }
+        public override string ToString() => _builder.ToString();
     }
 }
