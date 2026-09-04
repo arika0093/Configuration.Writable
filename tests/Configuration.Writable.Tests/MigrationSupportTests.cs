@@ -291,6 +291,28 @@ public partial class MigrationSupportTests
         result.Name.ShouldBe("TestName");
     }
 
+    [Fact]
+    public async Task LoadWithMigration_ShouldNotReadSchemaMetadata_WhenTargetIsUnversioned()
+    {
+        const string fileName = "settings-unversioned.json";
+        await _fileProvider.SaveToFileAsync(
+            fileName,
+            Encoding.UTF8.GetBytes("""{"Version":"business","Name":"TestName"}""")
+        );
+
+        var builder = new WritableOptionsConfigBuilder<SettingsWithBusinessVersion>
+        {
+            FilePath = fileName,
+            FormatProvider = new JsonFormatProvider(),
+            FileProvider = _fileProvider,
+        };
+
+        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+
+        result.Version.ShouldBe("business");
+        result.Name.ShouldBe("TestName");
+    }
+
     // Test model classes
     [OptionsModel]
     public partial class MySettingsV1 : IHasVersion
@@ -322,6 +344,12 @@ public partial class MigrationSupportTests
     [OptionsModel]
     public partial class SettingsWithoutVersion
     {
+        public string Name { get; set; } = "";
+    }
+
+    public class SettingsWithBusinessVersion
+    {
+        public string Version { get; set; } = "";
         public string Name { get; set; } = "";
     }
 

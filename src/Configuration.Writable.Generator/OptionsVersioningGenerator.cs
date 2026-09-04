@@ -153,7 +153,9 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     )
     {
         var models = sourceModels
-            .Select(static model => new ModelReference(model.Id, model.Version, model.FullName, true))
+            .Select(
+                static model => new ModelReference(model.Id, model.SchemaVersion, model.FullName, true)
+            )
             .Concat(
                 referencedModels.Select(
                     static model =>
@@ -180,7 +182,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 }
 
                 foreach (var model in sourceModels.Where(model =>
-                    model.Id == group.Key && model.Version == versions.Key
+                    model.Id == group.Key && model.SchemaVersion == versions.Key
                 ))
                 {
                     context.ReportDiagnostic(
@@ -199,11 +201,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         {
             ModelReference? previous = null;
             var hasMigrationImplementation = true;
-            if (model.SupportMigration && model.Version is > 1 && model.Id is not null)
+            if (model.SupportMigration && model.SchemaVersion is > 1 && model.Id is not null)
             {
                 groups.TryGetValue(model.Id, out var candidates);
                 previous = candidates?.FirstOrDefault(candidate =>
-                    candidate.Version == model.Version - 1
+                    candidate.Version == model.SchemaVersion - 1
                     && candidate.IsSourceOrPublic
                 );
                 if (previous == null)
@@ -213,8 +215,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                             MissingPreviousVersion,
                             model.DiagnosticLocation.ToLocation(),
                             model.Name,
-                            model.Version,
-                            model.Version - 1,
+                            model.SchemaVersion,
+                            model.SchemaVersion - 1,
                             model.Id
                         )
                     );
@@ -242,7 +244,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 }
             }
 
-            if (!model.IsPartial)
+            if (!model.ModelIsPartial)
             {
                 continue;
             }
@@ -404,79 +406,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         }
     }
 
-    private static IEnumerable<ISymbol> GetSerializableMembers(
-        INamedTypeSymbol type,
-        CancellationToken cancellationToken
-    )
-    {
-        for (var current = type; current != null; current = current.BaseType)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            foreach (var member in current.GetMembers())
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (member.IsStatic || member.DeclaredAccessibility != Accessibility.Public)
-                {
-                    continue;
-                }
-                if (member is IPropertySymbol { IsIndexer: false } or IFieldSymbol)
-                {
-                    yield return member;
-                }
-            }
-        }
-    }
-
-    private static IEnumerable<string> GetSerializedNames(
-        ISymbol member,
-        CancellationToken cancellationToken
-    )
-    {
-        yield return member.Name;
-        foreach (var attribute in member.GetAttributes())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            foreach (var argument in attribute.ConstructorArguments)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (argument.Value is string value)
-                {
-                    yield return value;
-                }
-            }
-            foreach (var argument in attribute.NamedArguments)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (argument.Value.Value is string value)
-                {
-                    yield return value;
-                }
-            }
-        }
-    }
-
     private static bool IsPartial(INamedTypeSymbol type) =>
         type.DeclaringSyntaxReferences.Length > 0
         && type.DeclaringSyntaxReferences.All(reference =>
             reference.GetSyntax() is TypeDeclarationSyntax declaration
             && declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
-        );
-
-    private static bool HasAccessibleParameterlessConstructor(
-        INamedTypeSymbol type,
-        bool isSource
-    ) =>
-        type.InstanceConstructors.Any(constructor =>
-            constructor.Parameters.Length == 0
-            && (
-                constructor.DeclaredAccessibility == Accessibility.Public
-                || (
-                    isSource
-                    && constructor.DeclaredAccessibility
-                        is Accessibility.Internal
-                            or Accessibility.ProtectedOrInternal
-                )
-            )
         );
 
     private static bool Implements(INamedTypeSymbol type, string interfaceName) =>
@@ -523,12 +457,12 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             previous != null
             && hasMigrationImplementation
             && model.Id != null
-            && model.Version is not null
+            && model.SchemaVersion is not null
         )
         {
             builder.AppendLine($$"""
                 ((global::{{MetadataInterfaceName}})new {{previous.FullName}}()).RegisterMigrations(registrar);
-                registrar.Register<{{previous.FullName}}, {{model.FullName}}>(Migrate, {{model.IdLiteral}}, {{previous.Version}}, {{model.Version}});
+                registrar.Register<{{previous.FullName}}, {{model.FullName}}>(Migrate, {{model.IdLiteral}}, {{previous.Version}}, {{model.SchemaVersion}});
                 """);
         }
         builder.DecreaseIndent();
@@ -567,27 +501,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 ? $"{typeDeclaration}\n{{"
                 : $"{typeDeclaration} : global::{implementedInterface}\n{{"
         );
-    }
-
-    private static string GetAccessibility(Accessibility accessibility) =>
-        accessibility switch
-        {
-            Accessibility.Public => "public ",
-            Accessibility.Internal => "internal ",
-            Accessibility.Private => "private ",
-            Accessibility.Protected => "protected ",
-            Accessibility.ProtectedOrInternal => "protected internal ",
-            Accessibility.ProtectedAndInternal => "private protected ",
-            _ => "",
-        };
-
-    private static string GetHintName(INamedTypeSymbol symbol)
-    {
-        var name = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var sanitized = new string(
-            name.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray()
-        );
-        return sanitized + ".OptionsMetadata.g.cs";
     }
 
     private sealed class ModelInfo(
@@ -664,9 +577,9 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
     private sealed record SourceModelInfo(
         string? Id,
-        int? Version,
+        int? SchemaVersion,
         bool SupportMigration,
-        bool IsPartial,
+        bool ModelIsPartial,
         string Name,
         string MinimalName,
         string FullName,
@@ -836,19 +749,166 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 new EquatableArray<GeneratorDiagnostic>(diagnostics)
             );
         }
-    }
 
-    private static string GetTypeDeclaration(INamedTypeSymbol type) =>
-        GetAccessibility(type.DeclaredAccessibility)
-        + (type.IsStatic ? "static " : type.IsAbstract ? "abstract " : type.IsSealed ? "sealed " : "")
-        + "partial "
-        + (type.IsRecord
-            ? type.TypeKind == TypeKind.Struct ? "record struct " : "record class "
-            : type.TypeKind == TypeKind.Struct ? "struct " : "class ")
-        + type.Name
-        + (type.TypeParameters.Length == 0
-            ? ""
-            : "<" + string.Join(", ", type.TypeParameters.Select(static parameter => parameter.Name)) + ">");
+        private static IEnumerable<ISymbol> GetSerializableMembers(
+            INamedTypeSymbol type,
+            CancellationToken cancellationToken
+        )
+        {
+            for (var current = type; current != null; current = current.BaseType)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var member in current.GetMembers())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (member.IsStatic || member.DeclaredAccessibility != Accessibility.Public)
+                    {
+                        continue;
+                    }
+                    if (member is IPropertySymbol { IsIndexer: false } or IFieldSymbol)
+                    {
+                        yield return member;
+                    }
+                }
+            }
+        }
+
+        private static IEnumerable<string> GetSerializedNames(
+            ISymbol member,
+            CancellationToken cancellationToken
+        )
+        {
+            yield return member.Name;
+            foreach (var attribute in member.GetAttributes())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var attributeName = attribute.AttributeClass?.ToDisplayString();
+                if (attributeName == "System.Text.Json.Serialization.JsonPropertyNameAttribute")
+                {
+                    if (attribute.ConstructorArguments.FirstOrDefault().Value is string name)
+                    {
+                        yield return name;
+                    }
+                }
+                else if (attributeName == "System.Runtime.Serialization.DataMemberAttribute")
+                {
+                    if (GetNamedStringArgument(attribute, "Name") is { } name)
+                    {
+                        yield return name;
+                    }
+                }
+                else if (attributeName == "System.Xml.Serialization.XmlElementAttribute")
+                {
+                    if (attribute.ConstructorArguments.FirstOrDefault().Value is string name)
+                    {
+                        yield return name;
+                    }
+                    if (GetNamedStringArgument(attribute, "ElementName") is { } elementName)
+                    {
+                        yield return elementName;
+                    }
+                }
+                else if (
+                    attributeName is "YamlDotNet.Serialization.YamlMemberAttribute"
+                        or "VYaml.Annotations.YamlMemberAttribute"
+                )
+                {
+                    if (GetNamedStringArgument(attribute, "Alias") is { } alias)
+                    {
+                        yield return alias;
+                    }
+                    if (GetNamedStringArgument(attribute, "Name") is { } name)
+                    {
+                        yield return name;
+                    }
+                }
+            }
+        }
+
+        private static string? GetNamedStringArgument(AttributeData attribute, string name) =>
+            attribute.NamedArguments.FirstOrDefault(argument => argument.Key == name).Value.Value
+                as string;
+
+        private static bool HasAccessibleParameterlessConstructor(
+            INamedTypeSymbol type,
+            bool isSource
+        ) =>
+            type.InstanceConstructors.Any(constructor =>
+                constructor.Parameters.Length == 0
+                && (
+                    constructor.DeclaredAccessibility == Accessibility.Public
+                    || (
+                        isSource
+                        && constructor.DeclaredAccessibility
+                            is Accessibility.Internal
+                                or Accessibility.ProtectedOrInternal
+                    )
+                )
+            );
+
+        private static string GetTypeDeclaration(INamedTypeSymbol type)
+        {
+            var kind = "class ";
+            if (type.IsRecord)
+            {
+                kind = type.TypeKind == TypeKind.Struct ? "record struct " : "record class ";
+            }
+            else if (type.TypeKind == TypeKind.Struct)
+            {
+                kind = "struct ";
+            }
+
+            var modifiers = "";
+            if (type.IsStatic)
+            {
+                modifiers = "static ";
+            }
+            else if (type.IsAbstract)
+            {
+                modifiers = "abstract ";
+            }
+            else if (type.IsSealed)
+            {
+                modifiers = "sealed ";
+            }
+
+            var typeParameters = "";
+            if (type.TypeParameters.Length > 0)
+            {
+                typeParameters =
+                    "<"
+                    + string.Join(", ", type.TypeParameters.Select(static parameter => parameter.Name))
+                    + ">";
+            }
+            return GetAccessibility(type.DeclaredAccessibility)
+                + modifiers
+                + "partial "
+                + kind
+                + type.Name
+                + typeParameters;
+        }
+
+        private static string GetAccessibility(Accessibility accessibility) =>
+            accessibility switch
+            {
+                Accessibility.Public => "public ",
+                Accessibility.Internal => "internal ",
+                Accessibility.Private => "private ",
+                Accessibility.Protected => "protected ",
+                Accessibility.ProtectedOrInternal => "protected internal ",
+                Accessibility.ProtectedAndInternal => "private protected ",
+                _ => "",
+            };
+
+        private static string GetHintName(INamedTypeSymbol symbol)
+        {
+            var name = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var sanitized = new string(
+                name.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray()
+            );
+            return sanitized + ".OptionsMetadata.g.cs";
+        }
+    }
 
     private sealed record ModelReference(
         string? Id,

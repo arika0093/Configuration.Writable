@@ -114,19 +114,32 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
         }
 
         var newRoot = root.ReplaceNode(declaration, newDeclaration);
-        if (
-            !string.IsNullOrEmpty(previousNamespace)
-            && declaration.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>()?.Name.ToString()
-                != previousNamespace
-            && newRoot is CompilationUnitSyntax compilationUnit
-            && !compilationUnit.Usings.Any(usingDirective =>
-                usingDirective.Name?.ToString() == previousNamespace
-            )
-        )
+        if (newRoot is CompilationUnitSyntax compilationUnit)
         {
-            newRoot = compilationUnit.AddUsings(
-                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(previousNamespace!))
-            );
+            if (
+                !string.IsNullOrEmpty(previousNamespace)
+                && declaration.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>()?.Name.ToString()
+                    != previousNamespace
+                && !compilationUnit.Usings.Any(usingDirective =>
+                    usingDirective.Name?.ToString() == previousNamespace
+                )
+            )
+            {
+                compilationUnit = compilationUnit.AddUsings(
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(previousNamespace!))
+                );
+            }
+
+            if (!compilationUnit.Usings.Any(usingDirective =>
+                    usingDirective.Name?.ToString() == "System"
+                ))
+            {
+                compilationUnit = compilationUnit.AddUsings(
+                    SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName("System"))
+                );
+            }
+
+            newRoot = compilationUnit;
         }
 
         return document.WithSyntaxRoot(newRoot);

@@ -383,6 +383,25 @@ public class OptionsVersioningGeneratorTests
     }
 
     [Fact]
+    public void Generator_ShouldIgnoreUnrelatedAttributeStringArguments()
+    {
+        var result = RunGenerator(
+            """
+            using System.ComponentModel;
+            using Configuration.Writable;
+            [OptionsModel(Id = "Model", Version = 1)]
+            public partial class Model
+            {
+                [DefaultValue("Version")]
+                public string SchemaRevision { get; set; } = "";
+            }
+            """
+        );
+
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldNotContain("CWWR006");
+    }
+
+    [Fact]
     public void Generator_ShouldDefaultOmittedVersionToOneAndWarn()
     {
         var result = RunGenerator(
@@ -507,6 +526,7 @@ public class OptionsVersioningGeneratorTests
         ).ToString();
 
         fixedSource.ShouldContain("using Previous;");
+        fixedSource.ShouldContain("using System;");
         fixedSource.ShouldContain("private static partial SettingsV2 Migrate(SettingsV1 source)");
         fixedSource.ShouldNotContain("Previous.SettingsV1");
         fixedSource.ShouldNotContain("global::Current.SettingsV2");

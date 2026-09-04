@@ -140,14 +140,26 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 
     private static int ConvertVersion(object? value)
     {
-        try
+        switch (value)
         {
-            return Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture);
-        }
-        catch (Exception ex)
-            when (ex is FormatException or InvalidCastException or OverflowException)
-        {
-            throw new FormatException("YAML metadata property 'Version' must be an integer.", ex);
+            case sbyte version:
+                return version;
+            case byte version:
+                return version;
+            case short version:
+                return version;
+            case ushort version:
+                return version;
+            case int version:
+                return version;
+            case uint version when version <= int.MaxValue:
+                return (int)version;
+            case long version when version is >= int.MinValue and <= int.MaxValue:
+                return (int)version;
+            case ulong version when version <= int.MaxValue:
+                return (int)version;
+            default:
+                throw new FormatException("YAML metadata property 'Version' must be an integer.");
         }
     }
 

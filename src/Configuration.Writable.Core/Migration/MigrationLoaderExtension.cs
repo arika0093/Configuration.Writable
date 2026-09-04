@@ -22,10 +22,6 @@ internal static class MigrationLoaderExtension
     {
         var migrationLookup = options.MigrationLookup;
         var targetMetadata = options.SchemaMetadata;
-        var metadataProvider = formatProvider as IOptionsSchemaMetadataProvider;
-        var fileMetadata = metadataProvider?.ReadSchemaMetadata(options);
-        ValidateFileMetadata(fileMetadata);
-        ValidateModelId(targetMetadata, fileMetadata);
 
         // If the target type is not versioned, simply load it directly.
         var targetVersion = targetMetadata?.Version;
@@ -33,6 +29,16 @@ internal static class MigrationLoaderExtension
         {
             return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
+
+        var metadataProvider = formatProvider as IOptionsSchemaMetadataProvider;
+        var fileMetadata = metadataProvider is null
+            ? null
+            : FormatProviderBase.ExecuteWithBackupRecovery(
+                options,
+                () => metadataProvider.ReadSchemaMetadata(options)
+            );
+        ValidateFileMetadata(fileMetadata);
+        ValidateModelId(targetMetadata, fileMetadata);
 
         // Missing documents or sections are initialized directly as the target type.
         if (fileMetadata is null)

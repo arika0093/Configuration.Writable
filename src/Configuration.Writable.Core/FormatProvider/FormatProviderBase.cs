@@ -36,6 +36,14 @@ public abstract class FormatProviderBase : IWritableFormatProvider
     /// <inheritdoc />
     public object LoadConfiguration(Type type, IWritableOptionsConfiguration options)
     {
+        return ExecuteWithBackupRecovery(options, () => LoadConfigurationCore(type, options));
+    }
+
+    internal static TResult ExecuteWithBackupRecovery<TResult>(
+        IWritableOptionsConfiguration options,
+        Func<TResult> operation
+    )
+    {
         if (
             !options.FileProvider.FileExists(options.ConfigFilePath)
             && options.FileProvider is CommonFileProvider missingFileProvider
@@ -46,7 +54,7 @@ public abstract class FormatProviderBase : IWritableFormatProvider
 
         try
         {
-            return LoadConfigurationCore(type, options);
+            return operation();
         }
         catch (Exception)
             when (options.FileProvider is CommonFileProvider recoverableFileProvider
@@ -56,7 +64,7 @@ public abstract class FormatProviderBase : IWritableFormatProvider
                 )
             )
         {
-            return LoadConfigurationCore(type, options);
+            return operation();
         }
     }
 

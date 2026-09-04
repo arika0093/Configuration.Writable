@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -62,6 +63,23 @@ public class YamlSourceGeneratedVersioningTests
         var loaded = CreateInstance(fileName, "").GetOptions().CurrentValue;
 
         loaded.Names.ShouldBe(["legacy"]);
+    }
+
+    [Fact]
+    public async Task YamlProvider_ShouldRejectNonIntegralVersion()
+    {
+        const string fileName = "yaml-invalid-version.yaml";
+        await _fileProvider.SaveToFileAsync(
+            fileName,
+            Encoding.UTF8.GetBytes(
+                """
+                Version: true
+                Names: []
+                """
+            )
+        );
+
+        Should.Throw<FormatException>(() => CreateInstance(fileName, "").GetOptions());
     }
 
     private WritableOptionsSimpleInstance<YamlGeneratedSettingsV2> CreateInstance(
