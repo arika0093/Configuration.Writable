@@ -1,4 +1,5 @@
 using System;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using ZLogger;
 
@@ -69,8 +70,14 @@ internal static class MigrationLoaderExtension
         )
         {
             // The compatibility is broken, so create a backup and return the default values.
-            var success = options.FileProvider.TryBackup(
-                options.ConfigFilePath, out var backupPath, options.Logger);
+            string? backupPath = null;
+            var success =
+                options.FileProvider is IBackupFileProvider backupFileProvider
+                && backupFileProvider.TryBackup(
+                    options.ConfigFilePath,
+                    out backupPath,
+                    options.Logger
+                );
             if (success)
             {
                 options.Logger?.ZLogWarning(

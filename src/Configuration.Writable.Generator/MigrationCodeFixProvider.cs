@@ -94,7 +94,9 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
                         .ThrowStatement(
                             SyntaxFactory
                                 .ObjectCreationExpression(
-                                    SyntaxFactory.ParseTypeName("NotImplementedException")
+                                    SyntaxFactory.ParseTypeName(
+                                        "global::System.NotImplementedException"
+                                    )
                                 )
                                 .WithArgumentList(SyntaxFactory.ArgumentList())
                         )
@@ -129,16 +131,6 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
                     SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(previousNamespace!))
                 );
             }
-
-            if (!compilationUnit.Usings.Any(usingDirective =>
-                    usingDirective.Name?.ToString() == "System"
-                ))
-            {
-                compilationUnit = compilationUnit.AddUsings(
-                    SyntaxFactory.UsingDirective(SyntaxFactory.IdentifierName("System"))
-                );
-            }
-
             newRoot = compilationUnit;
         }
 

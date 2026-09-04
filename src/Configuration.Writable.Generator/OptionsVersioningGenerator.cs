@@ -154,12 +154,26 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     {
         var models = sourceModels
             .Select(
-                static model => new ModelReference(model.Id, model.SchemaVersion, model.FullName, true)
+                static model => new ModelReference(
+                    model.Id,
+                    model.SchemaVersion,
+                    model.FullName,
+                    model.Name,
+                    model.Namespace,
+                    true
+                )
             )
             .Concat(
                 referencedModels.Select(
                     static model =>
-                        new ModelReference(model.Id, model.Version, model.FullName, model.IsPublic)
+                        new ModelReference(
+                            model.Id,
+                            model.Version,
+                            model.FullName,
+                            model.Name,
+                            model.Namespace,
+                            model.IsPublic
+                        )
                 )
             );
         var groups = models
@@ -226,12 +240,12 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     hasMigrationImplementation = false;
                     var properties = ImmutableDictionary<string, string?>
                         .Empty.Add("CurrentTypeName", model.MinimalName)
-                        .Add("PreviousTypeName", previous.MinimalName)
+                        .Add("PreviousTypeName", previous.FullName)
                         .Add(
                             "CodeFixAvailable",
                             (!model.MigrationParameterTypeNames.Contains(previous.FullName)).ToString()
                         )
-                        .Add("PreviousNamespace", previous.Namespace);
+                        .Add("PreviousNamespace", null);
                     context.ReportDiagnostic(
                         Diagnostic.Create(
                             MissingMigration,
@@ -778,6 +792,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             CancellationToken cancellationToken
         )
         {
+            if (HasSerializationIgnoreAttribute(member))
+            {
+                yield break;
+            }
+
             yield return member.Name;
             foreach (var attribute in member.GetAttributes())
             {
@@ -824,6 +843,16 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 }
             }
         }
+
+        private static bool HasSerializationIgnoreAttribute(ISymbol member) =>
+            member.GetAttributes().Any(attribute =>
+                attribute.AttributeClass?.ToDisplayString()
+                    is "System.Text.Json.Serialization.JsonIgnoreAttribute"
+                        or "System.Xml.Serialization.XmlIgnoreAttribute"
+                        or "System.Runtime.Serialization.IgnoreDataMemberAttribute"
+                        or "YamlDotNet.Serialization.YamlIgnoreAttribute"
+                        or "VYaml.Annotations.YamlIgnoreAttribute"
+            );
 
         private static string? GetNamedStringArgument(AttributeData attribute, string name) =>
             attribute.NamedArguments.FirstOrDefault(argument => argument.Key == name).Value.Value
@@ -914,16 +943,10 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         string? Id,
         int? Version,
         string FullName,
+        string Name,
+        string? Namespace,
         bool IsSourceOrPublic
-    )
-    {
-        public string Name => FullName[(FullName.LastIndexOf('.') + 1)..];
-        public string MinimalName => Name;
-        public string? Namespace =>
-            FullName.LastIndexOf('.') is var index && index > "global::".Length
-                ? FullName["global::".Length..index]
-                : null;
-    }
+    );
 
     private sealed record ReferencedModelInfo(
         string? Id,
@@ -980,41 +1003,4 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             );
     }
 
-    private sealed class EquatableArray<T> : IReadOnlyList<T>, IEquatable<EquatableArray<T>>
-    {
-        private readonly ImmutableArray<T> _items;
-
-        public EquatableArray(IEnumerable<T> items) => _items = [.. items];
-        public int Count => _items.Length;
-        public T this[int index] => _items[index];
-        public bool Equals(EquatableArray<T>? other) =>
-            other is not null && _items.SequenceEqual(other._items);
-        public override bool Equals(object? obj) => obj is EquatableArray<T> other && Equals(other);
-        public override int GetHashCode() =>
-            _items.Aggregate(
-                0,
-                static (hash, item) => (hash * 397) ^ EqualityComparer<T>.Default.GetHashCode(item!)
-            );
-        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_items).GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    }
-
-    private sealed class IndentedStringBuilder
-    {
-        private readonly StringBuilder _builder = new();
-        private int _indentation;
-
-        public void IncreaseIndent() => _indentation++;
-        public void DecreaseIndent() => _indentation--;
-        public void AppendLine(string value)
-        {
-            foreach (var line in value.Replace("\r\n", "\n").Split('\n'))
-            {
-                if (line.Length > 0)
-                    _builder.Append(' ', _indentation * 4);
-                _builder.AppendLine(line);
-            }
-        }
-        public override string ToString() => _builder.ToString();
-    }
 }
