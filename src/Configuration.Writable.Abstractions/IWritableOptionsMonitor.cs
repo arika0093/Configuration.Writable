@@ -13,6 +13,6 @@ public interface IWritableOptionsMonitor<T>
     /// <inheritdoc cref="IReadOnlyOptions{T}.CurrentValue" />
     new T CurrentValue { get; }
 
-    /// <inheritdoc cref="IReadOnlyNamedOptions{T}.Get(string?)" />
+    /// <inheritdoc cref="IReadOnlyNamedOptions{T}.Get(string)" />
     new T Get(string name);
 }

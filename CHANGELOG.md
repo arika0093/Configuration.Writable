@@ -1,3 +1,14 @@
+## Unreleased
+
+### Breaking changes
+
+- Move consumer-facing options contracts and lightweight editing/versioning contracts to the new
+  dependency-free `Configuration.Writable.Abstractions` package without changing their namespaces.
+- Remove `Microsoft.Extensions.Options.IOptionsMonitor<T>` inheritance from
+  `IReadOnlyOptionsMonitor<T>`; Core continues to register both monitor contracts.
+- Replace `GetOptionsConfiguration()` on the basic options interfaces with the provider-independent
+  `IReadOnlyOptions<T>.ConfigurationInfo` property.
+
 ## [0.6.0] - 2026-07-29
 
 ### 🚀 Features

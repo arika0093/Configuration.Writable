@@ -378,7 +378,7 @@ public partial class InstanceNameIntegrationTests
     }
 
     [Fact]
-    public void GetInstance_GetOptionsConfiguration_ShouldReturnCorrectConfiguration()
+    public void GetInstance_GetConfigurationInfo_ShouldReturnCorrectConfiguration()
     {
         var firstFileName = Path.GetRandomFileName();
         var secondFileName = Path.GetRandomFileName();
@@ -411,14 +411,14 @@ public partial class InstanceNameIntegrationTests
         var secondOptions = namedOptions.GetInstance("Second");
 
         // Get configurations
-        var firstConfig = firstOptions.GetOptionsConfiguration();
-        var secondConfig = secondOptions.GetOptionsConfiguration();
+        var firstConfig = firstOptions.ConfigurationInfo;
+        var secondConfig = secondOptions.ConfigurationInfo;
 
         // Verify configurations
         firstConfig.InstanceName.ShouldBe("First");
-        Path.GetFileName(firstConfig.ConfigFilePath).ShouldBe(firstFileName);
+        Path.GetFileName(firstConfig.WritePath).ShouldBe(firstFileName);
         secondConfig.InstanceName.ShouldBe("Second");
-        Path.GetFileName(secondConfig.ConfigFilePath).ShouldBe(secondFileName);
+        Path.GetFileName(secondConfig.WritePath).ShouldBe(secondFileName);
 
         host.Dispose();
     }

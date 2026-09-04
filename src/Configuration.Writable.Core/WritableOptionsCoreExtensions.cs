@@ -68,7 +68,6 @@ public static class WritableOptionsCoreExtensions
         services.AddSingleton<IWritableOptionsMonitor<T>>(p =>
             p.GetRequiredService<WritableOptionsImpl<T>>()
         );
-
         // if named instance, add named wrapper
         if (!string.IsNullOrEmpty(instanceName))
         {

@@ -20,8 +20,8 @@ internal sealed class WritableOptionsWithNameImpl<T>(
     public T CurrentValue => innerWritableOptionsInstance.Get(instanceName);
 
     /// <inheritdoc />
-    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
-        innerWritableOptionsInstance.GetOptionsConfiguration(instanceName);
+    public IOptionsConfigurationInfo ConfigurationInfo =>
+        innerWritableOptionsInstance.GetConfigurationInfo(instanceName);
 
     /// <inheritdoc />
     public IDisposable? OnChange(Action<T, string?> listener) =>

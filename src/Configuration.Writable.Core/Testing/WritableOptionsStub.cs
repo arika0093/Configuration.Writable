@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
+using Configuration.Writable.Options;
+using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable.Testing;
@@ -13,13 +14,15 @@ namespace Configuration.Writable.Testing;
 /// A simple stub implementation of <see cref="IWritableOptions{T}"/> or <see cref="IReadOnlyOptions{T}"/> for testing purposes.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
+public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>, IOptionsMonitor<T>
     where T : class, new()
 {
     /// <summary>
     /// A dictionary containing named configuration values.
     /// </summary>
     public Dictionary<string, T> NamedValues { get; } = [];
+
+    private Dictionary<string, IOptionsConfigurationInfo> ConfigurationInfos { get; } = [];
 
     /// <summary>
     /// A list of change listeners that have been registered.
@@ -59,32 +62,40 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>
     public T CurrentValue => NamedValues[MEOptions.DefaultName];
 
     /// <inheritdoc/>
-    public T Get(string? name) => NamedValues[name!];
+    public T Get(string name) => NamedValues[name];
 
-    /// <inheritdoc/>
-    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
-        GetOptionsConfiguration(MEOptions.DefaultName);
+    T IOptionsMonitor<T>.Get(string? name) => Get(name ?? MEOptions.DefaultName);
 
-    /// <inheritdoc/>
-    public WritableOptionsConfiguration<T> GetOptionsConfiguration(string name)
+    /// <summary>
+    /// Sets provider-independent configuration metadata for an options instance.
+    /// </summary>
+    public void SetConfigurationInfo(
+        string instanceName,
+        string readPath,
+        string writePath,
+        string formatFileExtension,
+        IReadOnlyList<string> sectionNameParts
+    )
     {
-        // return dummy options
-        var sectionName = $"{typeof(T).Name}";
-        if (!string.IsNullOrWhiteSpace(name))
-        {
-            sectionName = $"{sectionName}-{name}";
-        }
-        return new()
-        {
-            ConfigFilePath = "",
-            InstanceName = name,
-            SectionNameParts = [sectionName], // use dummy section name parts in stub
-            FormatProvider = null!, // no need for format provider in stub
-            CloneMethod = t => t, // no need for cloning in stub
-            FileProvider = new CommonFileProvider(),
-            OnChangeDebounce = TimeSpan.FromSeconds(1),
-        };
+        ConfigurationInfos[instanceName] = new OptionsConfigurationInfo(
+            instanceName,
+            readPath,
+            writePath,
+            formatFileExtension,
+            sectionNameParts
+        );
     }
+
+    /// <inheritdoc/>
+    public IOptionsConfigurationInfo ConfigurationInfo =>
+        GetConfigurationInfo(MEOptions.DefaultName);
+
+    internal IOptionsConfigurationInfo GetConfigurationInfo(string name) =>
+        ConfigurationInfos.TryGetValue(name, out var info)
+            ? info
+            : throw new InvalidOperationException(
+                $"No configuration information has been set for instance '{name}'."
+            );
 
     /// <inheritdoc/>
     public IDisposable? OnChange(Action<T, string?> listener)
@@ -226,8 +237,8 @@ internal sealed class WritableOptionsStubWithName<T>(
     public T CurrentValue => innerStub.Get(instanceName);
 
     /// <inheritdoc/>
-    public WritableOptionsConfiguration<T> GetOptionsConfiguration() =>
-        innerStub.GetOptionsConfiguration(instanceName);
+    public IOptionsConfigurationInfo ConfigurationInfo =>
+        innerStub.GetConfigurationInfo(instanceName);
 
     /// <inheritdoc/>
     public IDisposable? OnChange(Action<T, string?> listener) =>

@@ -9,6 +9,7 @@
   </Folder>
   <Folder Name="/src/">
     <File Path="src/Directory.Build.props" />
+    <Project Path="src/Configuration.Writable.Abstractions/Configuration.Writable.Abstractions.csproj" />
     <Project Path="src/Configuration.Writable.Core/Configuration.Writable.Core.csproj" />
     <Project
       Path="src/Configuration.Writable.Generator/Configuration.Writable.Generator.csproj"
