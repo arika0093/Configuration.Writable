@@ -12,7 +12,7 @@ namespace Configuration.Writable.FileProvider;
 /// <summary>
 /// Provides functionality to write data to a zip file. support multiple file entries.
 /// </summary>
-public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDisposable
+public class ZipFileProvider : IWritableFileProvider, IBackupFileProvider, IPhysicalFileProvider, IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -25,6 +25,15 @@ public class ZipFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDi
     /// Gets or sets the directory inside the zip file where entries are stored. Defaults to "/".
     /// </summary>
     public string EntriesDirectory { get; set; } = "/";
+
+    /// <inheritdoc/>
+    public bool TryBackup(string path, out string? backupPath, ILogger? logger = null)
+    {
+        // Zip archives do not support in-place backups of individual entries.
+        // Therefore, this method does not create a backup and returns false.
+        backupPath = null;
+        return false;
+    }
 
     /// <inheritdoc/>
     public bool FileExists(string path)

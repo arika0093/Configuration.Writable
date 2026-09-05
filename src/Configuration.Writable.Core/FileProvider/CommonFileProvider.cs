@@ -15,7 +15,11 @@ namespace Configuration.Writable.FileProvider;
 /// <summary>
 /// Provides functionality to write data to a file, ensuring thread safety and data integrity.
 /// </summary>
-public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, IDisposable
+public class CommonFileProvider
+    : IWritableFileProvider,
+        IBackupFileProvider,
+        IPhysicalFileProvider,
+        IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -69,7 +73,6 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
                     logger?.ZLogTrace($"Directory created: {directory}");
                 }
 
-                // Generate backup file
                 GenerateBackupFile(path, logger);
 
                 string temporaryFilePath = GetTemporaryFilePath(path);
@@ -136,27 +139,56 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
         return $"{filePathWithoutExtension}_{timestamp}{extension}";
     }
 
+    /// <inheritdoc />
+    public virtual bool TryBackup(string path, out string? backupPath, ILogger? logger = null)
+    {
+        _semaphore.Wait();
+        try
+        {
+            backupPath = CreateBackupFile(path, logger);
+            return backupPath != null;
+        }
+        catch (IOException ex)
+        {
+            logger?.ZLogError(ex, $"Failed to create configuration backup: {path}");
+            backupPath = null;
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger?.ZLogError(ex, $"Failed to create configuration backup: {path}");
+            backupPath = null;
+            return false;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
     /// <summary>
-    /// Creates a backup of the specified file if it exists and manages the number of backup files according to the
-    /// maximum backup count.
+    /// Generates a backup file before replacing the configuration file.
     /// </summary>
-    /// <param name="path">The full path of the file to back up. Must not be null or empty.</param>
-    /// <param name="logger">An optional logger for logging operations and errors.</param>
+    /// <param name="path">The full path of the file to back up.</param>
+    /// <param name="logger">An optional logger for backup diagnostics.</param>
     protected virtual void GenerateBackupFile(string path, ILogger? logger)
     {
-        // if file does not exist, do nothing
+        CreateBackupFile(path, logger);
+    }
+
+    private string? CreateBackupFile(string path, ILogger? logger)
+    {
         if (!File.Exists(path))
         {
             logger?.ZLogTrace($"File does not exist, skipping backup: {path}");
-            return;
+            return null;
         }
-        // if backup count is 0, do nothing
         if (BackupMaxCount == 0)
         {
             logger?.ZLogTrace($"BackupMaxCount is 0, skipping backup: {path}");
-            return;
+            return null;
         }
-        // delete older backup files
+
         var backupFilesOrderByCreated = GetBackupFiles(path)
             .OrderBy(file => file.CreationTimeUtc)
             .ToList();
@@ -176,11 +208,11 @@ public class CommonFileProvider : IWritableFileProvider, IPhysicalFileProvider, 
         Directory.CreateDirectory(backupDirectory);
         SetHiddenOnWindows(backupDirectory);
 
-        // create backup file
         var backupFilePath = Path.Combine(backupDirectory, GetBackupFileName(path));
         logger?.ZLogDebug($"Creating backup file for: {backupFilePath}");
         File.Copy(path, backupFilePath);
         SetHiddenOnWindows(backupFilePath);
+        return backupFilePath;
     }
 
     private IEnumerable<FileInfo> GetBackupFiles(string path)

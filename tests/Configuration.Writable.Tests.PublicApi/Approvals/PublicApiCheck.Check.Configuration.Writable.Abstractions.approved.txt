@@ -19,6 +19,7 @@ namespace Configuration.Writable
         public void ResetToLoaded(System.Action<T, T> reset) { }
         public void Update(System.Action<T> updater) { }
     }
+    [System.Obsolete("This interface is deprecated. Use [OptionsModel(Version = x)] instead.")]
     public interface IHasVersion
     {
         int Version { get; set; }

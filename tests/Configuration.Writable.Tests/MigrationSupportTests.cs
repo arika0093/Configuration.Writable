@@ -100,10 +100,6 @@ public partial class MigrationSupportTests
     {
         // Arrange
         var builder = new WritableOptionsConfigBuilder<MySettingsV2>();
-        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV1>(v0 => new MySettingsV1
-        {
-            Name = v0.Name,
-        });
         builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
             Names = [v1.Name],
@@ -116,8 +112,6 @@ public partial class MigrationSupportTests
         options.MigrationLookup.ShouldNotBeNull();
         var lookup = options.MigrationLookup;
         lookup.TargetVersion.ShouldBe(2);
-        lookup.FromNoneStep.ShouldNotBeNull();
-        lookup.FromNoneStep.FromType.ShouldBe(typeof(SettingsWithoutVersion));
         lookup.TryGetType(1, out var versionOneType).ShouldBeTrue();
         versionOneType.ShouldBe(typeof(MySettingsV1));
         lookup.TryGetMigration(typeof(MySettingsV1), out var migration).ShouldBeTrue();
@@ -297,6 +291,28 @@ public partial class MigrationSupportTests
         result.Name.ShouldBe("TestName");
     }
 
+    [Fact]
+    public async Task LoadWithMigration_ShouldNotReadSchemaMetadata_WhenTargetIsUnversioned()
+    {
+        const string fileName = "settings-unversioned.json";
+        await _fileProvider.SaveToFileAsync(
+            fileName,
+            Encoding.UTF8.GetBytes("""{"Version":"business","Name":"TestName"}""")
+        );
+
+        var builder = new WritableOptionsConfigBuilder<SettingsWithBusinessVersion>
+        {
+            FilePath = fileName,
+            FormatProvider = new JsonFormatProvider(),
+            FileProvider = _fileProvider,
+        };
+
+        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+
+        result.Version.ShouldBe("business");
+        result.Name.ShouldBe("TestName");
+    }
+
     // Test model classes
     [OptionsModel]
     public partial class MySettingsV1 : IHasVersion
@@ -331,8 +347,14 @@ public partial class MigrationSupportTests
         public string Name { get; set; } = "";
     }
 
+    public class SettingsWithBusinessVersion
+    {
+        public string Version { get; set; } = "";
+        public string Name { get; set; } = "";
+    }
+
     [Fact]
-    public async Task LoadWithMigration_ShouldMigrateFromVersionNone_WhenFileHasNoVersion()
+    public async Task LoadWithMigration_ShouldTreatMissingFileVersionAsVersionOne()
     {
         // Arrange
         var fileName = "settings-none.json";
@@ -349,9 +371,9 @@ public partial class MigrationSupportTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
-        builder.UseMigrationFromNone<SettingsWithoutVersion, MySettingsV2>(v0 => new MySettingsV2
+        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
         {
-            Names = [v0.Name],
+            Names = [v1.Name],
         });
 
         var options = builder.BuildOptions("");

@@ -30,7 +30,7 @@ public class YamlPartialWriteTests
         var initialContent = """
             appSettings:
               name: OldApp
-              version: 0
+              revision: 0
             userSettings:
               theme: light
               notifications: false
@@ -54,7 +54,7 @@ public class YamlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "NewApp";
-            setting.Version = 2;
+            setting.Revision = 2;
         });
 
         // Assert
@@ -69,7 +69,7 @@ public class YamlPartialWriteTests
         var appSettings = result["appSettings"] as Dictionary<object, object>;
         appSettings.ShouldNotBeNull();
         appSettings["name"].ShouldBe("NewApp");
-        appSettings["version"].ToString().ShouldBe("2");
+        appSettings["revision"].ToString().ShouldBe("2");
 
         // Verify userSettings was preserved
         var userSettings = result["userSettings"] as Dictionary<object, object>;
@@ -94,7 +94,7 @@ public class YamlPartialWriteTests
             app:
               settings:
                 name: OldApp
-                version: 0
+                revision: 0
               other:
                 value: Preserved
             """;
@@ -115,7 +115,7 @@ public class YamlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "UpdatedApp";
-            setting.Version = 5;
+            setting.Revision = 5;
         });
 
         // Assert
@@ -132,7 +132,7 @@ public class YamlPartialWriteTests
         var settings = app["settings"] as Dictionary<object, object>;
         settings.ShouldNotBeNull();
         settings["name"].ShouldBe("UpdatedApp");
-        settings["version"].ToString().ShouldBe("5");
+        settings["revision"].ToString().ShouldBe("5");
 
         // Verify sibling section was preserved
         var other = app["other"] as Dictionary<object, object>;
@@ -160,7 +160,7 @@ public class YamlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "BrandNewApp";
-            setting.Version = 1;
+            setting.Revision = 1;
         });
 
         // Assert
@@ -175,7 +175,7 @@ public class YamlPartialWriteTests
         var appSettings = result["appSettings"] as Dictionary<object, object>;
         appSettings.ShouldNotBeNull();
         appSettings["name"].ShouldBe("BrandNewApp");
-        appSettings["version"].ToString().ShouldBe("1");
+        appSettings["revision"].ToString().ShouldBe("1");
     }
 
     [Fact]
@@ -196,7 +196,7 @@ public class YamlPartialWriteTests
         var options = builder.BuildOptions("");
 
         await Should.ThrowAsync<Exception>(() =>
-            provider.SaveAsync(new AppSettings { Name = "MustNotBeWritten", Version = 1 }, options)
+            provider.SaveAsync(new AppSettings { Name = "MustNotBeWritten", Revision = 1 }, options)
         );
 
         _fileProvider.ReadAllText(testFileName).ShouldBe(malformedContent);
@@ -228,7 +228,7 @@ public class YamlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "AddedApp";
-            setting.Version = 3;
+            setting.Revision = 3;
         });
 
         // Assert
@@ -243,7 +243,7 @@ public class YamlPartialWriteTests
         var newSection = result["newSection"] as Dictionary<object, object>;
         newSection.ShouldNotBeNull();
         newSection["name"].ShouldBe("AddedApp");
-        newSection["version"].ToString().ShouldBe("3");
+        newSection["revision"].ToString().ShouldBe("3");
 
         // Verify existing section was preserved
         var existingSection = result["existingSection"] as Dictionary<object, object>;
@@ -258,7 +258,7 @@ public class YamlPartialWriteTests
         const string initialContent = """
             appSettings:
               name: OldApp
-              version: 0
+              revision: 0
             preserved:
               value: Keep
             """;
@@ -278,7 +278,7 @@ public class YamlPartialWriteTests
 
         await instance
             .GetOptions()
-            .SaveAsync(new AppSettings { Name = "UpdatedUtf16App", Version = 7 });
+            .SaveAsync(new AppSettings { Name = "UpdatedUtf16App", Revision = 7 });
 
         var resultContent = Encoding.Unicode.GetString(_fileProvider.ReadAllBytes(testFileName));
         resultContent.ShouldContain("UpdatedUtf16App");
@@ -307,7 +307,7 @@ public class YamlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "CompletelyNew";
-            setting.Version = 99;
+            setting.Revision = 99;
         });
 
         // Assert
@@ -320,6 +320,6 @@ public class YamlPartialWriteTests
 
         // Should contain only the new data, no nested structure
         result["name"].ShouldBe("CompletelyNew");
-        result["version"].ToString().ShouldBe("99");
+        result["revision"].ToString().ShouldBe("99");
     }
 }

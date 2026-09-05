@@ -46,6 +46,11 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     public required List<string> SectionNameParts { get; init; }
 
     /// <summary>
+    /// Gets the source-generated schema metadata persisted with this configuration.
+    /// </summary>
+    public OptionsSchemaMetadata? SchemaMetadata { get; init; }
+
+    /// <summary>
     /// Gets the debounce duration for change events.
     /// This delays event firing until rapid changes have stopped.
     /// </summary>

@@ -13,9 +13,19 @@ namespace Configuration.Writable.FileProvider;
 /// Provides an in-memory implementation of the <see cref="IWritableFileProvider"/> interface for managing files and directories without
 /// persistent storage. for testing purposes.
 /// </summary>
-public class InMemoryFileProvider : IWritableFileProvider
+public class InMemoryFileProvider : IWritableFileProvider, IBackupFileProvider
 {
     private readonly ConcurrentDictionary<string, byte[]> _files = new();
+
+    public int BackupAttemptCount { get; private set; }
+
+    /// <inheritdoc />
+    public bool TryBackup(string path, out string? backupPath, ILogger? logger = null)
+    {
+        BackupAttemptCount++;
+        backupPath = null;
+        return false;
+    }
 
     /// <inheritdoc />
     public Task SaveToFileAsync(

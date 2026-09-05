@@ -11,10 +11,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
+#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// Writable configuration implementation for JSON files.
 /// </summary>
-public class JsonFormatProvider : FormatProviderBase
+public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvider
 {
 #if NET
     private const string AotJsonReason =
@@ -36,7 +37,7 @@ public class JsonFormatProvider : FormatProviderBase
     public override string FileExtension => "json";
 
     /// <inheritdoc />
-    internal override int? TryGetFileVersion(IWritableOptionsConfiguration options)
+    public OptionsSchemaMetadata? ReadSchemaMetadata(IWritableOptionsConfiguration options)
     {
         var filePath = options.ConfigFilePath;
         var pipeReader = options.FileProvider.GetFilePipeReader(filePath);
@@ -62,19 +63,16 @@ public class JsonFormatProvider : FormatProviderBase
                 return null;
             }
 
-            var propertyName =
-                JsonSerializerOptions.PropertyNamingPolicy?.ConvertName("Version") ?? "Version";
-            if (
-                current.ValueKind == JsonValueKind.Object
-                && current.TryGetProperty(propertyName, out var versionElement)
-                && versionElement.ValueKind == JsonValueKind.Number
-                && versionElement.TryGetInt32(out var version)
-            )
+            if (current.ValueKind != JsonValueKind.Object)
             {
-                return version;
+                throw new FormatException(
+                    "Options schema metadata must be stored in a JSON object."
+                );
             }
 
-            return null;
+            var modelId = ReadOptionalString(current, OptionsSchemaMetadata.ModelIdPropertyName);
+            var version = ReadOptionalVersion(current) ?? 1;
+            return new OptionsSchemaMetadata(modelId, version);
         }
         finally
         {
@@ -83,6 +81,89 @@ public class JsonFormatProvider : FormatProviderBase
                 disposable.Dispose();
             }
         }
+    }
+
+    private string? ReadOptionalString(JsonElement element, string propertyName)
+    {
+        if (!TryGetMetadataProperty(element, propertyName, out var value))
+        {
+            return null;
+        }
+
+        if (value.ValueKind != JsonValueKind.String)
+        {
+            throw new FormatException($"JSON metadata property '{propertyName}' must be a string.");
+        }
+
+        return value.GetString();
+    }
+
+    private int? ReadOptionalVersion(JsonElement element)
+    {
+        if (
+            !TryGetMetadataProperty(
+                element,
+                OptionsSchemaMetadata.VersionPropertyName,
+                out var value
+            )
+        )
+        {
+            return null;
+        }
+
+        if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var version))
+        {
+            throw new FormatException("JSON metadata property 'Version' must be an integer.");
+        }
+
+        return version;
+    }
+
+    private bool TryGetMetadataProperty(
+        JsonElement element,
+        string propertyName,
+        out JsonElement value
+    )
+    {
+        if (element.TryGetProperty(propertyName, out value))
+        {
+            return true;
+        }
+
+        var convertedName = JsonSerializerOptions.PropertyNamingPolicy?.ConvertName(propertyName);
+        if (
+            convertedName is not null
+            && convertedName != propertyName
+            && element.TryGetProperty(convertedName, out value)
+        )
+        {
+            return true;
+        }
+
+        if (JsonSerializerOptions.PropertyNameCaseInsensitive)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (
+                    string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase)
+                    || (
+                        convertedName is not null
+                        && string.Equals(
+                            property.Name,
+                            convertedName,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                )
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
     }
 
     /// <inheritdoc />
@@ -105,7 +186,7 @@ public class JsonFormatProvider : FormatProviderBase
             return await JsonSerializer
                     .DeserializeAsync(stream, type, JsonSerializerOptions, cancellationToken)
                     .ConfigureAwait(false)
-                ?? Activator.CreateInstance(type)!;
+                ?? CreateDefault(type);
         }
 
         using var jsonDocument = await JsonDocument
@@ -119,11 +200,11 @@ public class JsonFormatProvider : FormatProviderBase
             )
         )
         {
-            return Activator.CreateInstance(type)!;
+            return CreateDefault(type);
         }
 
         return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
-            ?? Activator.CreateInstance(type)!;
+            ?? CreateDefault(type);
     }
 
     /// <inheritdoc />
@@ -161,7 +242,11 @@ public class JsonFormatProvider : FormatProviderBase
         );
 
         var sections = options.SectionNameParts;
-        var serializeAction = CreateSerializeAction<T>(JsonSerializerOptions);
+        var serializeAction = JsonWriterHelper.AddSchemaMetadata(
+            CreateSerializeAction<T>(JsonSerializerOptions),
+            options.SchemaMetadata,
+            config is not IHasVersion
+        );
         var writerOptions = new JsonWriterOptions
         {
             Indented = JsonSerializerOptions.WriteIndented,

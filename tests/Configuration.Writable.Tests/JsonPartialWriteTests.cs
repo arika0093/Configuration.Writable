@@ -19,7 +19,7 @@ public partial class JsonPartialWriteTests
     public partial class AppSettings
     {
         public string Name { get; set; } = "MyApp";
-        public int Version { get; set; } = 1;
+        public int Revision { get; set; } = 1;
     }
 
     [OptionsModel]
@@ -40,7 +40,7 @@ public partial class JsonPartialWriteTests
             {
               "AppSettings": {
                 "Name": "OldApp",
-                "Version": 0
+                "Revision": 0
               },
               "UserSettings": {
                 "Theme": "light",
@@ -71,7 +71,7 @@ public partial class JsonPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "NewApp";
-            setting.Version = 2;
+            setting.Revision = 2;
         });
 
         // Assert
@@ -81,7 +81,7 @@ public partial class JsonPartialWriteTests
 
         // Verify AppSettings was updated
         root.GetProperty("AppSettings").GetProperty("Name").GetString().ShouldBe("NewApp");
-        root.GetProperty("AppSettings").GetProperty("Version").GetInt32().ShouldBe(2);
+        root.GetProperty("AppSettings").GetProperty("Revision").GetInt32().ShouldBe(2);
 
         // Verify UserSettings was preserved
         root.GetProperty("UserSettings").GetProperty("Theme").GetString().ShouldBe("light");
@@ -106,7 +106,7 @@ public partial class JsonPartialWriteTests
               "App": {
                 "Settings": {
                   "Name": "OldApp",
-                  "Version": 0
+                  "Revision": 0
                 },
                 "Other": {
                   "Value": "Preserved"
@@ -134,7 +134,7 @@ public partial class JsonPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "UpdatedApp";
-            setting.Version = 5;
+            setting.Revision = 5;
         });
 
         // Assert
@@ -145,7 +145,7 @@ public partial class JsonPartialWriteTests
         // Verify nested section was updated
         var appSettings = root.GetProperty("App").GetProperty("Settings");
         appSettings.GetProperty("Name").GetString().ShouldBe("UpdatedApp");
-        appSettings.GetProperty("Version").GetInt32().ShouldBe(5);
+        appSettings.GetProperty("Revision").GetInt32().ShouldBe(5);
 
         // Verify sibling section was preserved
         root.GetProperty("App")
@@ -178,7 +178,7 @@ public partial class JsonPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "BrandNewApp";
-            setting.Version = 1;
+            setting.Revision = 1;
         });
 
         // Assert
@@ -188,7 +188,7 @@ public partial class JsonPartialWriteTests
 
         // Should create nested structure
         root.GetProperty("AppSettings").GetProperty("Name").GetString().ShouldBe("BrandNewApp");
-        root.GetProperty("AppSettings").GetProperty("Version").GetInt32().ShouldBe(1);
+        root.GetProperty("AppSettings").GetProperty("Revision").GetInt32().ShouldBe(1);
     }
 
     [Fact]
@@ -223,7 +223,7 @@ public partial class JsonPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "AddedApp";
-            setting.Version = 3;
+            setting.Revision = 3;
         });
 
         // Assert
@@ -233,7 +233,7 @@ public partial class JsonPartialWriteTests
 
         // Verify new section was added
         root.GetProperty("NewSection").GetProperty("Name").GetString().ShouldBe("AddedApp");
-        root.GetProperty("NewSection").GetProperty("Version").GetInt32().ShouldBe(3);
+        root.GetProperty("NewSection").GetProperty("Revision").GetInt32().ShouldBe(3);
 
         // Verify existing section was preserved
         root.GetProperty("ExistingSection").GetProperty("Value").GetString().ShouldBe("Exists");
@@ -272,7 +272,7 @@ public partial class JsonPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "CompletelyNew";
-            setting.Version = 99;
+            setting.Revision = 99;
         });
 
         // Assert
@@ -282,7 +282,7 @@ public partial class JsonPartialWriteTests
 
         // Should contain only the new data, no nested structure
         root.GetProperty("Name").GetString().ShouldBe("CompletelyNew");
-        root.GetProperty("Version").GetInt32().ShouldBe(99);
+        root.GetProperty("Revision").GetInt32().ShouldBe(99);
 
         // Old section should not exist
         root.TryGetProperty("OldSection", out _).ShouldBe(false);

@@ -1,9 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
+    <ProjectReference
+      Update="..\..\src\Configuration.Writable.Generator\Configuration.Writable.Generator.csproj"
+      ReferenceOutputAssembly="true"
+    />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ReferenceFiles\**\*" CopyToOutputDirectory="PreserveNewest" />

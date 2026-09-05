@@ -1,3 +1,4 @@
+Version: 1
 stringValue: "Test with \"quotes\" and: colons"
 intValue: 42
 doubleValue: 3.14159
@@ -6,7 +7,7 @@ arrayValue:
 - item with spaces
 - "item:with:colons"
 - "item\"with\"quotes"
-dateTimeValue: 2023-12-25T10:30:45.0000000Z
+dateTimeValue: "2023-12-25T10:30:45.0000000Z"
 nested:
   description: Nested description
   price: 99.99

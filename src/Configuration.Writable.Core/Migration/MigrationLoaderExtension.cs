@@ -1,4 +1,5 @@
 using System;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using ZLogger;
 
@@ -21,39 +22,32 @@ internal static class MigrationLoaderExtension
         where T : class, new()
     {
         var migrationLookup = options.MigrationLookup;
+        var targetMetadata = options.SchemaMetadata;
 
         // If the target type is not versioned, simply load it directly.
-        var targetVersion = migrationLookup is null
-            ? VersionCache.GetVersion(typeof(T))
-            : migrationLookup.TargetVersion;
+        var targetVersion = targetMetadata?.Version;
         if (targetVersion is null)
         {
             return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
 
-        // Try to read the version declared in the file without binding to a specific model.
-        // A null result means the file does not declare a version field.
-        var fileVersion = (formatProvider as FormatProviderBase)?.TryGetFileVersion(options);
-
-        // When the file has no declared version, check for a migration from an unversioned type.
-        if (fileVersion is null)
-        {
-            var fromNoneStep = migrationLookup?.FromNoneStep;
-
-            if (fromNoneStep is null)
-            {
-                // No migration from an unversioned type is registered; load as the target type.
-                return (T)formatProvider.LoadConfiguration(typeof(T), options);
-            }
-
-            // Start from the unversioned type and apply the migration chain.
-            return ApplyMigrationChain<T>(
-                formatProvider,
+        var metadataProvider = formatProvider as IOptionsSchemaMetadataProvider;
+        var fileMetadata = metadataProvider is null
+            ? null
+            : FormatProviderBase.ExecuteWithBackupRecovery(
                 options,
-                migrationLookup!,
-                fromNoneStep.FromType
+                () => metadataProvider.ReadSchemaMetadata(options)
             );
+        ValidateFileMetadata(fileMetadata);
+        ValidateModelId(targetMetadata, fileMetadata);
+
+        // Missing documents or sections are initialized directly as the target type.
+        if (fileMetadata is null)
+        {
+            return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
+
+        var fileVersion = fileMetadata.Version ?? 1;
 
         // The file declares a version. If it already matches the target, load directly.
         if (fileVersion == targetVersion)
@@ -61,18 +55,74 @@ internal static class MigrationLoaderExtension
             return (T)formatProvider.LoadConfiguration(typeof(T), options);
         }
 
-        // Find the type matching the declared file version.
-        if (
-            migrationLookup is null
-            || !migrationLookup.TryGetType(fileVersion.Value, out var currentType)
-        )
+        // The file declares a version that is newer than the target. This is an unsupported scenario.
+        if (fileVersion > targetVersion.Value)
         {
             throw new InvalidOperationException(
-                $"No type found matching version {fileVersion} in migration chain."
+                $"Configuration schema version {fileVersion} is newer than supported version {targetVersion.Value}."
             );
         }
 
+        // Find the type matching the declared file version.
+        if (
+            migrationLookup is null
+            || !migrationLookup.TryGetType(fileVersion, out var currentType)
+        )
+        {
+            // The compatibility is broken, so create a backup and return the default values.
+            string? backupPath = null;
+            var success =
+                options.FileProvider is IBackupFileProvider backupFileProvider
+                && backupFileProvider.TryBackup(
+                    options.ConfigFilePath,
+                    out backupPath,
+                    options.Logger
+                );
+            if (success)
+            {
+                options.Logger?.ZLogWarning(
+                    $"Configuration schema version {fileVersion} is no longer supported by {typeof(T).Name}. Using defaults. The original configuration was backed up to: {backupPath}"
+                );
+            }
+            else
+            {
+                options.Logger?.ZLogWarning(
+                    $"Configuration schema version {fileVersion} is no longer supported by {typeof(T).Name}. Using defaults without a backup."
+                );
+            }
+            return new T();
+        }
+
         return ApplyMigrationChain<T>(formatProvider, options, migrationLookup, currentType);
+    }
+
+    private static void ValidateFileMetadata(OptionsSchemaMetadata? fileMetadata)
+    {
+        if (fileMetadata?.ModelId is not null && string.IsNullOrWhiteSpace(fileMetadata.ModelId))
+        {
+            throw new FormatException("Configuration model ID cannot be empty.");
+        }
+        if (fileMetadata?.Version is <= 0)
+        {
+            throw new FormatException("Configuration schema version must be greater than zero.");
+        }
+    }
+
+    private static void ValidateModelId(
+        OptionsSchemaMetadata? targetMetadata,
+        OptionsSchemaMetadata? fileMetadata
+    )
+    {
+        if (
+            targetMetadata?.ModelId is not null
+            && fileMetadata?.ModelId is not null
+            && targetMetadata.ModelId != fileMetadata.ModelId
+        )
+        {
+            throw new InvalidOperationException(
+                $"Configuration model ID '{fileMetadata.ModelId}' does not match expected model ID '{targetMetadata.ModelId}'."
+            );
+        }
     }
 
     private static T ApplyMigrationChain<T>(
@@ -98,8 +148,8 @@ internal static class MigrationLoaderExtension
                 );
             }
 
-            var fromVersion = migrationLookup.GetVersion(migration.FromType) ?? 0;
-            var toVersion = migrationLookup.GetVersion(migration.ToType) ?? 0;
+            var fromVersion = migration.FromVersion ?? 0;
+            var toVersion = migration.ToVersion;
 
             options.Logger?.ZLogInformation(
                 $"Applying migration from {migration.FromType.Name} (v{fromVersion}) to {migration.ToType.Name} (v{toVersion})"

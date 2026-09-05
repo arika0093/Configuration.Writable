@@ -3,7 +3,7 @@ using VYaml.Annotations;
 
 namespace Example.ConsoleApp.Yaml;
 
-[OptionsModel]
+[OptionsModel(Id = "SampleSetting", Version = 1)]
 [YamlObject]
 public partial class SampleSetting
 {

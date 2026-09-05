@@ -19,7 +19,7 @@ public partial class XmlPartialWriteTests
     public partial class AppSettings
     {
         public string Name { get; set; } = "MyApp";
-        public int Version { get; set; } = 1;
+        public int Revision { get; set; } = 1;
     }
 
     [OptionsModel]
@@ -41,7 +41,7 @@ public partial class XmlPartialWriteTests
             <configuration>
               <AppSettings>
                 <Name>OldApp</Name>
-                <Version>0</Version>
+                <Revision>0</Revision>
               </AppSettings>
               <UserSettings>
                 <Theme>light</Theme>
@@ -69,7 +69,7 @@ public partial class XmlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "NewApp";
-            setting.Version = 2;
+            setting.Revision = 2;
         });
 
         // Assert
@@ -83,7 +83,7 @@ public partial class XmlPartialWriteTests
         var appSettings = root.Element("AppSettings");
         appSettings.ShouldNotBeNull();
         appSettings.Element("Name")?.Value.ShouldBe("NewApp");
-        appSettings.Element("Version")?.Value.ShouldBe("2");
+        appSettings.Element("Revision")?.Value.ShouldBe("2");
 
         // Verify UserSettings was preserved
         var userSettings = root.Element("UserSettings");
@@ -110,7 +110,7 @@ public partial class XmlPartialWriteTests
               <App>
                 <Settings>
                   <Name>OldApp</Name>
-                  <Version>0</Version>
+                  <Revision>0</Revision>
                 </Settings>
                 <Other>
                   <Value>Preserved</Value>
@@ -135,7 +135,7 @@ public partial class XmlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "UpdatedApp";
-            setting.Version = 5;
+            setting.Revision = 5;
         });
 
         // Assert
@@ -151,7 +151,7 @@ public partial class XmlPartialWriteTests
         var settings = app.Element("Settings");
         settings.ShouldNotBeNull();
         settings.Element("Name")?.Value.ShouldBe("UpdatedApp");
-        settings.Element("Version")?.Value.ShouldBe("5");
+        settings.Element("Revision")?.Value.ShouldBe("5");
 
         // Verify sibling section was preserved
         var other = app.Element("Other");
@@ -179,7 +179,7 @@ public partial class XmlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "BrandNewApp";
-            setting.Version = 1;
+            setting.Revision = 1;
         });
 
         // Assert
@@ -193,7 +193,7 @@ public partial class XmlPartialWriteTests
         var appSettings = root.Element("AppSettings");
         appSettings.ShouldNotBeNull();
         appSettings.Element("Name")?.Value.ShouldBe("BrandNewApp");
-        appSettings.Element("Version")?.Value.ShouldBe("1");
+        appSettings.Element("Revision")?.Value.ShouldBe("1");
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public partial class XmlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "AddedApp";
-            setting.Version = 3;
+            setting.Revision = 3;
         });
 
         // Assert
@@ -240,7 +240,7 @@ public partial class XmlPartialWriteTests
         var newSection = root.Element("NewSection");
         newSection.ShouldNotBeNull();
         newSection.Element("Name")?.Value.ShouldBe("AddedApp");
-        newSection.Element("Version")?.Value.ShouldBe("3");
+        newSection.Element("Revision")?.Value.ShouldBe("3");
 
         // Verify existing section was preserved
         var existingSection = root.Element("ExistingSection");
@@ -279,7 +279,7 @@ public partial class XmlPartialWriteTests
         await appOptions.SaveAsync(setting =>
         {
             setting.Name = "CompletelyNew";
-            setting.Version = 99;
+            setting.Revision = 99;
         });
 
         // Assert
@@ -292,6 +292,6 @@ public partial class XmlPartialWriteTests
         // Should have configuration wrapper with AppSettings content directly inside
         root.Name.LocalName.ShouldBe("configuration");
         root.Element("Name")?.Value.ShouldBe("CompletelyNew");
-        root.Element("Version")?.Value.ShouldBe("99");
+        root.Element("Revision")?.Value.ShouldBe("99");
     }
 }

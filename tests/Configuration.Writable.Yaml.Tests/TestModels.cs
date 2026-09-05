@@ -51,7 +51,7 @@ public partial class NestedConfiguration
 public partial class AppSettings
 {
     public string Name { get; set; } = "MyApp";
-    public int Version { get; set; } = 1;
+    public int Revision { get; set; } = 1;
 }
 
 [OptionsModel]

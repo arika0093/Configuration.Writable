@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
+  <Version>1</Version>
   <StringValue />
   <IntValue>42</IntValue>
   <DoubleValue>3.14159</DoubleValue>

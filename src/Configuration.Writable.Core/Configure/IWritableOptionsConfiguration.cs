@@ -36,6 +36,11 @@ public interface IWritableOptionsConfiguration
     List<string> SectionNameParts { get; }
 
     /// <summary>
+    /// The source-generated schema metadata to persist with the options value.
+    /// </summary>
+    OptionsSchemaMetadata? SchemaMetadata { get; }
+
+    /// <summary>
     /// The debounce duration for change notifications.
     /// </summary>
     System.TimeSpan OnChangeDebounce { get; }
