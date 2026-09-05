@@ -108,6 +108,7 @@ namespace Configuration.Writable.FileProvider
         protected virtual void Dispose(bool disposing) { }
         public virtual bool EnsureDirectoryExists(string path) { }
         public virtual bool FileExists(string path) { }
+        protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
         public virtual System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
         protected virtual string GetTemporaryFilePath(string path) { }
         public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }

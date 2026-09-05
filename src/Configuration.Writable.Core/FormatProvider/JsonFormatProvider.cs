@@ -131,9 +131,39 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         }
 
         var convertedName = JsonSerializerOptions.PropertyNamingPolicy?.ConvertName(propertyName);
-        return convertedName is not null
+        if (
+            convertedName is not null
             && convertedName != propertyName
-            && element.TryGetProperty(convertedName, out value);
+            && element.TryGetProperty(convertedName, out value)
+        )
+        {
+            return true;
+        }
+
+        if (JsonSerializerOptions.PropertyNameCaseInsensitive)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (
+                    string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase)
+                    || (
+                        convertedName is not null
+                        && string.Equals(
+                            property.Name,
+                            convertedName,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                )
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
     }
 
     /// <inheritdoc />

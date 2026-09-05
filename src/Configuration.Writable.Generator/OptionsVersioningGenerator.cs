@@ -131,12 +131,10 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     SourceModelInfo.Create(attributeContext, cancellationToken)
             )
             .Collect()
-            .Select(
-                static (models, _) =>
-                    new EquatableArray<SourceModelInfo>(models)
-            );
+            .Select(static (models, _) => new EquatableArray<SourceModelInfo>(models));
         var referencedModels = context.CompilationProvider.Select(
-            static (compilation, cancellationToken) => CollectReferencedModels(compilation, cancellationToken)
+            static (compilation, cancellationToken) =>
+                CollectReferencedModels(compilation, cancellationToken)
         );
 
         context.RegisterSourceOutput(
@@ -153,28 +151,23 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     )
     {
         var models = sourceModels
-            .Select(
-                static model => new ModelReference(
+            .Select(static model => new ModelReference(
+                model.Id,
+                model.SchemaVersion,
+                model.FullName,
+                model.Name,
+                model.Namespace,
+                true
+            ))
+            .Concat(
+                referencedModels.Select(static model => new ModelReference(
                     model.Id,
-                    model.SchemaVersion,
+                    model.Version,
                     model.FullName,
                     model.Name,
                     model.Namespace,
-                    true
-                )
-            )
-            .Concat(
-                referencedModels.Select(
-                    static model =>
-                        new ModelReference(
-                            model.Id,
-                            model.Version,
-                            model.FullName,
-                            model.Name,
-                            model.Namespace,
-                            model.IsPublic
-                        )
-                )
+                    model.IsPublic
+                ))
             );
         var groups = models
             .Where(model => !string.IsNullOrWhiteSpace(model.Id) && model.Version is not null)
@@ -195,9 +188,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     continue;
                 }
 
-                foreach (var model in sourceModels.Where(model =>
-                    model.Id == group.Key && model.SchemaVersion == versions.Key
-                ))
+                foreach (
+                    var model in sourceModels.Where(model =>
+                        model.Id == group.Key && model.SchemaVersion == versions.Key
+                    )
+                )
                 {
                     context.ReportDiagnostic(
                         Diagnostic.Create(
@@ -219,8 +214,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             {
                 groups.TryGetValue(model.Id, out var candidates);
                 previous = candidates?.FirstOrDefault(candidate =>
-                    candidate.Version == model.SchemaVersion - 1
-                    && candidate.IsSourceOrPublic
+                    candidate.Version == model.SchemaVersion - 1 && candidate.IsSourceOrPublic
                 );
                 if (previous == null)
                 {
@@ -243,7 +237,9 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                         .Add("PreviousTypeName", previous.FullName)
                         .Add(
                             "CodeFixAvailable",
-                            (!model.MigrationParameterTypeNames.Contains(previous.FullName)).ToString()
+                            (
+                                !model.MigrationParameterTypeNames.Contains(previous.FullName)
+                            ).ToString()
                         )
                         .Add("PreviousNamespace", null);
                     context.ReportDiagnostic(
@@ -289,14 +285,29 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     private static string GetMinimalTypeArgumentName(ITypeSymbol type) =>
         type is INamedTypeSymbol namedType ? GetMinimalTypeName(namedType) : type.Name;
 
-    private static List<ModelInfo> CollectModels(Compilation compilation, CancellationToken cancellationToken)
+    private static List<ModelInfo> CollectModels(
+        Compilation compilation,
+        CancellationToken cancellationToken
+    )
     {
         var result = new List<ModelInfo>();
-        CollectNamespace(compilation.Assembly.GlobalNamespace, compilation, true, result, cancellationToken);
+        CollectNamespace(
+            compilation.Assembly.GlobalNamespace,
+            compilation,
+            true,
+            result,
+            cancellationToken
+        );
         foreach (var assembly in compilation.SourceModule.ReferencedAssemblySymbols)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            CollectNamespace(assembly.GlobalNamespace, compilation, false, result, cancellationToken);
+            CollectNamespace(
+                assembly.GlobalNamespace,
+                compilation,
+                false,
+                result,
+                cancellationToken
+            );
         }
         return result;
     }
@@ -358,7 +369,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             }
             if (
                 isSource
-                && attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken) is AttributeSyntax syntax
+                && attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken)
+                    is AttributeSyntax syntax
             )
             {
                 var semanticModel = compilation.GetSemanticModel(syntax.SyntaxTree);
@@ -460,12 +472,14 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
         AppendTypeStart(builder, model.TypeDeclaration, MetadataInterfaceName);
         builder.IncreaseIndent();
-        builder.AppendLine($$"""
+        builder.AppendLine(
+            $$"""
             string? global::{{MetadataInterfaceName}}.ModelId => {{model.IdLiteral}};
             int? global::{{MetadataInterfaceName}}.Version => {{model.VersionValue}};
             void global::{{MetadataInterfaceName}}.RegisterMigrations(global::Configuration.Writable.IOptionsMigrationRegistrar registrar)
             {
-            """);
+            """
+        );
         builder.IncreaseIndent();
         if (
             previous != null
@@ -474,10 +488,12 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             && model.SchemaVersion is not null
         )
         {
-            builder.AppendLine($$"""
+            builder.AppendLine(
+                $$"""
                 ((global::{{MetadataInterfaceName}})new {{previous.FullName}}()).RegisterMigrations(registrar);
                 registrar.Register<{{previous.FullName}}, {{model.FullName}}>(Migrate, {{model.IdLiteral}}, {{previous.Version}}, {{model.SchemaVersion}});
-                """);
+                """
+            );
         }
         builder.DecreaseIndent();
         builder.AppendLine("}");
@@ -547,19 +563,16 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         new(
             CollectModels(compilation, cancellationToken)
                 .Where(static model => !model.IsSource)
-                .Select(
-                    static model =>
-                        new ReferencedModelInfo(
-                            model.Id,
-                            model.Version,
-                            model.Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                            model.Symbol.Name,
-                            model.Symbol.ContainingNamespace.IsGlobalNamespace
-                                ? null
-                                : model.Symbol.ContainingNamespace.ToDisplayString(),
-                            model.Symbol.DeclaredAccessibility == Accessibility.Public
-                        )
-                )
+                .Select(static model => new ReferencedModelInfo(
+                    model.Id,
+                    model.Version,
+                    model.Symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                    model.Symbol.Name,
+                    model.Symbol.ContainingNamespace.IsGlobalNamespace
+                        ? null
+                        : model.Symbol.ContainingNamespace.ToDisplayString(),
+                    model.Symbol.DeclaredAccessibility == Accessibility.Public
+                ))
         );
 
     private static void ReportModelDiagnostics(
@@ -704,7 +717,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             }
 
             var containingTypes = new Stack<string>();
-            for (var current = type.ContainingType; current is not null; current = current.ContainingType)
+            for (
+                var current = type.ContainingType;
+                current is not null;
+                current = current.ContainingType
+            )
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 containingTypes.Push(GetTypeDeclaration(current));
@@ -736,24 +753,25 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                             && SymbolEqualityComparer.Default.Equals(method.ReturnType, type)
                             && method.Parameters.Length == 1
                             && method.DeclaringSyntaxReferences.Any(reference =>
-                                reference.GetSyntax(cancellationToken) is MethodDeclarationSyntax syntax
+                                reference.GetSyntax(cancellationToken)
+                                    is MethodDeclarationSyntax syntax
                                 && syntax.Modifiers.Any(SyntaxKind.PartialKeyword)
                                 && (syntax.Body is not null || syntax.ExpressionBody is not null)
                             )
                         )
                         .Select(method =>
-                            method.Parameters[0].Type.ToDisplayString(
-                                SymbolDisplayFormat.FullyQualifiedFormat
-                            )
+                            method
+                                .Parameters[0]
+                                .Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                         )
                 ),
                 new EquatableArray<string>(
                     methods
                         .Where(static method => method.Parameters.Length == 1)
                         .Select(method =>
-                            method.Parameters[0].Type.ToDisplayString(
-                                SymbolDisplayFormat.FullyQualifiedFormat
-                            )
+                            method
+                                .Parameters[0]
+                                .Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                         )
                 ),
                 GetHintName(type),
@@ -828,7 +846,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     }
                 }
                 else if (
-                    attributeName is "YamlDotNet.Serialization.YamlMemberAttribute"
+                    attributeName
+                    is "YamlDotNet.Serialization.YamlMemberAttribute"
                         or "VYaml.Annotations.YamlMemberAttribute"
                 )
                 {
@@ -845,18 +864,31 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         }
 
         private static bool HasSerializationIgnoreAttribute(ISymbol member) =>
-            member.GetAttributes().Any(attribute =>
-                attribute.AttributeClass?.ToDisplayString()
-                    is "System.Text.Json.Serialization.JsonIgnoreAttribute"
-                        or "System.Xml.Serialization.XmlIgnoreAttribute"
-                        or "System.Runtime.Serialization.IgnoreDataMemberAttribute"
-                        or "YamlDotNet.Serialization.YamlIgnoreAttribute"
-                        or "VYaml.Annotations.YamlIgnoreAttribute"
-            );
+            member.GetAttributes().Any(IsAlwaysIgnoredAttribute);
+
+        private static bool IsAlwaysIgnoredAttribute(AttributeData attribute)
+        {
+            var attributeName = attribute.AttributeClass?.ToDisplayString();
+            if (attributeName == "System.Text.Json.Serialization.JsonIgnoreAttribute")
+            {
+                var condition = attribute.NamedArguments.FirstOrDefault(argument =>
+                    argument.Key == "Condition"
+                );
+                return condition.Key is null
+                    || condition.Value.Value is not int conditionValue
+                    || conditionValue == 0;
+            }
+
+            return attributeName
+                is "System.Xml.Serialization.XmlIgnoreAttribute"
+                    or "System.Runtime.Serialization.IgnoreDataMemberAttribute"
+                    or "YamlDotNet.Serialization.YamlIgnoreAttribute"
+                    or "VYaml.Annotations.YamlIgnoreAttribute";
+        }
 
         private static string? GetNamedStringArgument(AttributeData attribute, string name) =>
             attribute.NamedArguments.FirstOrDefault(argument => argument.Key == name).Value.Value
-                as string;
+            as string;
 
         private static bool HasAccessibleParameterlessConstructor(
             INamedTypeSymbol type,
@@ -906,7 +938,10 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             {
                 typeParameters =
                     "<"
-                    + string.Join(", ", type.TypeParameters.Select(static parameter => parameter.Name))
+                    + string.Join(
+                        ", ",
+                        type.TypeParameters.Select(static parameter => parameter.Name)
+                    )
                     + ">";
             }
             return GetAccessibility(type.DeclaredAccessibility)
@@ -933,7 +968,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         {
             var name = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             var sanitized = new string(
-                name.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray()
+                name.Select(character => char.IsLetterOrDigit(character) ? character : '_')
+                    .ToArray()
             );
             return sanitized + ".OptionsMetadata.g.cs";
         }
@@ -964,8 +1000,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         string? Argument2 = null
     )
     {
-        public object[] GetArguments() =>
-            Argument2 is null ? [Argument1] : [Argument1, Argument2];
+        public object[] GetArguments() => Argument2 is null ? [Argument1] : [Argument1, Argument2];
     }
 
     private sealed record DiagnosticLocation(
@@ -1002,5 +1037,4 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 )
             );
     }
-
 }

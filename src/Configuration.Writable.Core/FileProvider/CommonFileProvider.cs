@@ -15,7 +15,11 @@ namespace Configuration.Writable.FileProvider;
 /// <summary>
 /// Provides functionality to write data to a file, ensuring thread safety and data integrity.
 /// </summary>
-public class CommonFileProvider : IWritableFileProvider, IBackupFileProvider, IPhysicalFileProvider, IDisposable
+public class CommonFileProvider
+    : IWritableFileProvider,
+        IBackupFileProvider,
+        IPhysicalFileProvider,
+        IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -69,7 +73,7 @@ public class CommonFileProvider : IWritableFileProvider, IBackupFileProvider, IP
                     logger?.ZLogTrace($"Directory created: {directory}");
                 }
 
-                CreateBackupFile(path, logger);
+                GenerateBackupFile(path, logger);
 
                 string temporaryFilePath = GetTemporaryFilePath(path);
                 using (new TemporaryFile(temporaryFilePath))
@@ -160,6 +164,16 @@ public class CommonFileProvider : IWritableFileProvider, IBackupFileProvider, IP
         {
             _semaphore.Release();
         }
+    }
+
+    /// <summary>
+    /// Generates a backup file before replacing the configuration file.
+    /// </summary>
+    /// <param name="path">The full path of the file to back up.</param>
+    /// <param name="logger">An optional logger for backup diagnostics.</param>
+    protected virtual void GenerateBackupFile(string path, ILogger? logger)
+    {
+        CreateBackupFile(path, logger);
     }
 
     private string? CreateBackupFile(string path, ILogger? logger)
