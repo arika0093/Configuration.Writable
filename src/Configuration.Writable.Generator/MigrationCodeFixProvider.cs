@@ -120,8 +120,9 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
         {
             if (
                 !string.IsNullOrEmpty(previousNamespace)
-                && declaration.FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>()?.Name.ToString()
-                    != previousNamespace
+                && declaration
+                    .FirstAncestorOrSelf<BaseNamespaceDeclarationSyntax>()
+                    ?.Name.ToString() != previousNamespace
                 && !compilationUnit.Usings.Any(usingDirective =>
                     usingDirective.Name?.ToString() == previousNamespace
                 )
@@ -151,8 +152,6 @@ public sealed class MigrationCodeFixProvider : CodeFixProvider
         }
 
         var namespacePrefix = namespaceName + ".";
-        return typeName.StartsWith(namespacePrefix)
-            ? typeName[namespacePrefix.Length..]
-            : typeName;
+        return typeName.StartsWith(namespacePrefix) ? typeName[namespacePrefix.Length..] : typeName;
     }
 }
