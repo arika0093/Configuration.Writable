@@ -1,14 +1,17 @@
-## Unreleased
+## [0.7.0] - 2026-09-07
 
-### Breaking changes
+### 🚀 Features
 
-- Move consumer-facing options contracts and lightweight editing/versioning contracts to the new
-  dependency-free `Configuration.Writable.Abstractions` package without changing their namespaces.
-- Remove `Microsoft.Extensions.Options.IOptionsMonitor<T>` inheritance from
-  `IReadOnlyOptionsMonitor<T>`; Core continues to register both monitor contracts.
-- Replace `GetOptionsConfiguration()` on the basic options interfaces with the provider-independent
-  `IReadOnlyOptions<T>.ConfigurationInfo` property.
+- Add abstractions package (#106)
+- Source generated versioning (#105)
 
+### 🚜 Refactor
+
+- Streamline writable options initialization across examples
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.6.0
 ## [0.6.0] - 2026-07-29
 
 ### 🚀 Features
@@ -42,10 +45,6 @@
 - Limit test PolySharp to net48
 - Isolate PolySharp generated types
 
-### 🚜 Refactor
-
-- Optimize serialization and file handling in format providers
-
 ### 📚 Documentation
 
 - Update README.md to include NativeAOT support and remove obsolete aliases
@@ -55,6 +54,10 @@
 - Update README.md with example for YamlFormatProvider usage
 - Update README.md to improve GitHub Actions badge labels
 - Update README to include YAML format provider usage and examples
+
+### 🚜 Refactor
+
+- Optimize serialization and file handling in format providers
 
 ### 🧪 Testing
 
@@ -82,6 +85,19 @@
 
 - Correct description in README.md for clarity
 
+### 📚 Documentation
+
+- Update README and example for new API names and clarity
+
+### 🚜 Refactor
+
+- Replace Dictionary with ConcurrentDictionary for thread-safe instance storage
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.4.3
+- Remove devcontainer configuration file
+
 ### 💼 Other
 
 - Add GetInstance and obsolete GetSpecifiedInstance aliases
@@ -93,19 +109,6 @@
 - Internalize WritableOptionsConfiguration constructor and expose non-generic configuration interface
 - Make IFormatProvider.LoadConfiguration non-generic and update format providers
 - Support migration from unversioned configuration files
-
-### 🚜 Refactor
-
-- Replace Dictionary with ConcurrentDictionary for thread-safe instance storage
-
-### 📚 Documentation
-
-- Update README and example for new API names and clarity
-
-### ⚙️ Miscellaneous Tasks
-
-- Update changelog for release 0.4.3
-- Remove devcontainer configuration file
 ## [0.4.3] - 2026-02-04
 
 ### ⚙️ Miscellaneous Tasks
@@ -149,15 +152,15 @@
 - Update default throttle duration for change events from 1000ms to 300ms
 - Update version from 0.2.0 to 0.2.1.0 in version.json
 
-### 🚜 Refactor
-
-- Reorder FileExists method documentation in IFileProvider interface
-- Update comments for clarity in example code
-
 ### 📚 Documentation
 
 - Update quick start instructions and add example output
 - Enhance README with additional methods for specifying base directory and save location details
+
+### 🚜 Refactor
+
+- Reorder FileExists method documentation in IFileProvider interface
+- Update comments for clarity in example code
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -174,10 +177,6 @@
 
 - Update push trigger to only activate on changes to version.json
 
-### 🚜 Refactor
-
-- Update configuration file path method to UseFile for consistency
-
 ### 📚 Documentation
 
 - Improve README structure and clarify usage sections
@@ -189,6 +188,10 @@
 - Update CLAUDE.md to streamline testing instructions and remove outdated sections
 - Update README.md to clarify library features and migration instructions
 - Add quick start guide and example for Configuration.Writable
+
+### 🚜 Refactor
+
+- Update configuration file path method to UseFile for consistency
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -310,10 +313,6 @@
 - Remove Windows environment variable setup from GitHub Actions workflow
 - Correct file path handling in save location logic
 
-### 💼 Other
-
-- *(deps)* Bump actions/checkout from 5 to 6 (#13)
-
 ### 🚜 Refactor
 
 - Rename IConfigurationOptionsRegistry to IOptionsConfigRegistry for consistency
@@ -333,6 +332,10 @@
 - Remove deprecated workflows and update CI configurations
 - Update target frameworks and package references to version 10.*
 - Update package versions
+
+### 💼 Other
+
+- *(deps)* Bump actions/checkout from 5 to 6 (#13)
 ## [0.1.0-alpha.119] - 2025-10-21
 
 ### 🚀 Features
@@ -354,6 +357,10 @@
 - Add retry logic for filesystem checks to handle delays in CI
 - Add assembly attribute to disable test parallelization
 
+### 📚 Documentation
+
+- Update README to include ZipFileProvider usage for multiple settings in a single file
+
 ### 🚜 Refactor
 
 - Rename FileWriter to FileProvider
@@ -363,10 +370,6 @@
 - Reorder parameters in SaveToFileAsync method for consistency
 - Remove FileReadStream property and update FileProvider assignment in WritableConfigurationOptionsBuilder
 - Simplify FileProvider assignment in WritableConfig initialization
-
-### 📚 Documentation
-
-- Update README to include ZipFileProvider usage for multiple settings in a single file
 
 ### 🧪 Testing
 
@@ -383,16 +386,16 @@
 - Enhance configuration caching and key deletion handling in JSON provider
 - Add advanced usage section for direct property manipulation in configuration
 
-### 🚜 Refactor
-
-- Change method visibility to static for key deletion methods in configuration providers
-
 ### 📚 Documentation
 
 - Add usage example for source generators with DataAnnotations in README
 - Add TODO item for property manipulation pattern in README
 - Add CLAUDE.md for project guidance and usage instructions
 - Fix typo
+
+### 🚜 Refactor
+
+- Change method visibility to static for key deletion methods in configuration providers
 ## [0.1.0-alpha.101] - 2025-10-13
 
 ### 🚜 Refactor
@@ -429,12 +432,18 @@
 - Handle null failures in ValidateOptionsResult for improved validation robustness
 - Update package description to correctly reference Microsoft.Extensions.Options
 
-### 💼 Other
+### 📚 Documentation
 
-- Add using directive for Configuration.Writable.FileWriter in file writing example
-- Add unit tests for readonly and writable option services
-- Add Create method for named values; refactor WritableConfig initialization methods
-- InMemoryFileWrite move to tests project
+- *(README.md)* Add section for direct reference without option type; clarify lifecycle note
+- *(README.md)* Clarify references to Microsoft.Extensions.Configuration as MS.E.C for consistency
+- *(README.md)* Simplify instructions for custom file format providers and clarify package dependencies
+- Fix punctuation in README and why-this-library documentation; add TODO file for future enhancements
+- *(README.md)* Streamline section name customization instructions and clarify root level saving
+- *(README.md)* Add example properties for UserSetting in customization section
+- *(README.md)* Clarify reasons for configuration structure and update related sections
+- *(README.md)* Update note on dynamic update functionality and lifecycle management for settings instance
+- Update TODO.md to reflect changes in migration functionality and configuration support
+- Add logging examples for configuration file changes and save operations
 
 ### 🚜 Refactor
 
@@ -476,22 +485,16 @@
 - Update wording for clarity in why-this-library documentation
 - Update configuration structure in documentation and tests for consistency
 
-### 📚 Documentation
-
-- *(README.md)* Add section for direct reference without option type; clarify lifecycle note
-- *(README.md)* Clarify references to Microsoft.Extensions.Configuration as MS.E.C for consistency
-- *(README.md)* Simplify instructions for custom file format providers and clarify package dependencies
-- Fix punctuation in README and why-this-library documentation; add TODO file for future enhancements
-- *(README.md)* Streamline section name customization instructions and clarify root level saving
-- *(README.md)* Add example properties for UserSetting in customization section
-- *(README.md)* Clarify reasons for configuration structure and update related sections
-- *(README.md)* Update note on dynamic update functionality and lifecycle management for settings instance
-- Update TODO.md to reflect changes in migration functionality and configuration support
-- Add logging examples for configuration file changes and save operations
-
 ### 🧪 Testing
 
 - Add unit tests for OptionsImpl, OptionsMonitorImpl, and OptionsSnapshotImpl to validate configuration behavior
+
+### 💼 Other
+
+- Add using directive for Configuration.Writable.FileWriter in file writing example
+- Add unit tests for readonly and writable option services
+- Add Create method for named values; refactor WritableConfig initialization methods
+- InMemoryFileWrite move to tests project
 ## [0.1.0-alpha.40] - 2025-09-27
 
 ### 💼 Other
