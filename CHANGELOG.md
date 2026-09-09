@@ -1,3 +1,13 @@
+## [0.8.0] - 2026-09-09
+
+### 🚀 Features
+
+- [**breaking**] Use generated migration interfaces
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.7.1
+- Update version to 0.8.0 in version.json
 ## [0.7.1] - 2026-09-09
 
 ### 🚀 Features
