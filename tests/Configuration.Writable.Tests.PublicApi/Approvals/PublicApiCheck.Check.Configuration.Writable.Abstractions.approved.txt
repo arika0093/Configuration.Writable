@@ -44,6 +44,12 @@ namespace Configuration.Writable
             where TOld :  class, new ()
             where TNew :  class, new ();
     }
+    public interface IOptionsMigration<in TOld, out TNew>
+        where in TOld :  class, new ()
+        where out TNew :  class, new ()
+    {
+        TNew Migrate(TOld source);
+    }
     public interface IProfiledReadOnlyOptions<T>
         where T :  class, new ()
     {

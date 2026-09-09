@@ -14,7 +14,6 @@ Keep the same value when renaming the type, namespace, or assembly and across ev
 [OptionsModel(Id = "UserSetting", Version = 1)]
 public partial class UserSetting;
 ```
-
 ## CWWR002
 
 **Severity:** Error
@@ -88,23 +87,3 @@ version should be explicit so future schema changes can be tracked reliably.
 public partial class UserSetting;
 ```
 
-## CWWR011
-
-**Severity:** Error
-
-A model after version 1 does not implement the migration from its immediately preceding
-version. Use the code fix to add the required method, then replace the generated
-`NotImplementedException` with the migration logic.
-
-Set `SupportMigration = false` on the current `[OptionsModel]` to start a new
-compatibility chain without requiring the immediately preceding version or a migration method.
-Files from versions before that compatibility boundary are backed up when supported by the
-configured file provider, then the current model's default values are used.
-
-```csharp
-private static partial UserSettingV2 Migrate(UserSettingV1 source)
-{
-    // TODO: Implement migration.
-    throw new NotImplementedException();
-}
-```

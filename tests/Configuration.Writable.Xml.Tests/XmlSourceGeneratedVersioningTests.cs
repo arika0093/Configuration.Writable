@@ -18,7 +18,7 @@ public partial class XmlGeneratedSettingsV2
 {
     public string[] Names { get; set; } = [];
 
-    private static partial XmlGeneratedSettingsV2 Migrate(XmlGeneratedSettingsV1 source) =>
+    public XmlGeneratedSettingsV2 Migrate(XmlGeneratedSettingsV1 source) =>
         new() { Names = [source.Name] };
 }
 

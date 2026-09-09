@@ -22,7 +22,7 @@ public partial class YamlGeneratedSettingsV2
 {
     public string[] Names { get; set; } = [];
 
-    private static partial YamlGeneratedSettingsV2 Migrate(YamlGeneratedSettingsV1 source) =>
+    public YamlGeneratedSettingsV2 Migrate(YamlGeneratedSettingsV1 source) =>
         new() { Names = [source.Name] };
 }
 

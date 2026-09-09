@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -17,6 +16,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 {
     private const string AttributeName = "Configuration.Writable.OptionsModelAttribute";
     private const string MetadataInterfaceName = "Configuration.Writable.IGeneratedOptionsMetadata";
+    private const string MigrationInterfaceName = "Configuration.Writable.IOptionsMigration";
     private const string LegacyInterfaceName = "Configuration.Writable.IHasVersion";
     private const string DiagnosticsDocumentationUrl =
         "https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Generator/README.md";
@@ -111,16 +111,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         true,
         helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr010"
     );
-    private static readonly DiagnosticDescriptor MissingMigration = new(
-        "CWWR011",
-        "Options migration implementation is missing",
-        "Options model '{0}' must implement migration from '{1}'",
-        "Configuration.Writable.Versioning",
-        DiagnosticSeverity.Error,
-        true,
-        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr011"
-    );
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var sourceModels = context
@@ -209,7 +199,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         foreach (var model in sourceModels)
         {
             ModelReference? previous = null;
-            var hasMigrationImplementation = true;
             if (model.SupportMigration && model.SchemaVersion is > 1 && model.Id is not null)
             {
                 groups.TryGetValue(model.Id, out var candidates);
@@ -229,29 +218,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                         )
                     );
                 }
-                else if (!model.MigrationSourceTypeNames.Contains(previous.FullName))
-                {
-                    hasMigrationImplementation = false;
-                    var properties = ImmutableDictionary<string, string?>
-                        .Empty.Add("CurrentTypeName", model.MinimalName)
-                        .Add("PreviousTypeName", previous.FullName)
-                        .Add(
-                            "CodeFixAvailable",
-                            (
-                                !model.MigrationParameterTypeNames.Contains(previous.FullName)
-                            ).ToString()
-                        )
-                        .Add("PreviousNamespace", null);
-                    context.ReportDiagnostic(
-                        Diagnostic.Create(
-                            MissingMigration,
-                            model.DiagnosticLocation.ToLocation(),
-                            properties,
-                            model.Name,
-                            previous.Name
-                        )
-                    );
-                }
             }
 
             if (!model.ModelIsPartial)
@@ -262,7 +228,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             context.AddSource(
                 model.HintName,
                 SourceText.From(
-                    GenerateMetadata(model, previous, hasMigrationImplementation),
+                    GenerateMetadata(model, previous),
                     Encoding.UTF8
                 )
             );
@@ -444,8 +410,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
     private static string GenerateMetadata(
         SourceModelInfo model,
-        ModelReference? previous,
-        bool hasMigrationImplementation
+        ModelReference? previous
     )
     {
         var builder = new IndentedStringBuilder();
@@ -470,7 +435,15 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             builder.IncreaseIndent();
         }
 
-        AppendTypeStart(builder, model.TypeDeclaration, MetadataInterfaceName);
+        var implementedInterfaces = new List<string> { MetadataInterfaceName };
+        if (previous is not null && model.Id is not null && model.SchemaVersion is not null)
+        {
+            implementedInterfaces.Add(
+                $"{MigrationInterfaceName}<{previous.FullName}, {model.FullName}>"
+            );
+        }
+
+        AppendTypeStart(builder, model.TypeDeclaration, implementedInterfaces);
         builder.IncreaseIndent();
         builder.AppendLine(
             $$"""
@@ -483,7 +456,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         builder.IncreaseIndent();
         if (
             previous != null
-            && hasMigrationImplementation
             && model.Id != null
             && model.SchemaVersion is not null
         )
@@ -497,13 +469,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         }
         builder.DecreaseIndent();
         builder.AppendLine("}");
-
-        if (previous != null && hasMigrationImplementation)
-        {
-            builder.AppendLine(
-                $"private static partial {model.FullName} Migrate({previous.FullName} source);"
-            );
-        }
 
         builder.DecreaseIndent();
         builder.AppendLine("}");
@@ -523,13 +488,13 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     private static void AppendTypeStart(
         IndentedStringBuilder builder,
         string typeDeclaration,
-        string? implementedInterface
+        IReadOnlyList<string>? implementedInterfaces
     )
     {
         builder.AppendLine(
-            implementedInterface is null
+            implementedInterfaces is null || implementedInterfaces.Count == 0
                 ? $"{typeDeclaration}\n{{"
-                : $"{typeDeclaration} : global::{implementedInterface}\n{{"
+                : $"{typeDeclaration} : {string.Join(", ", implementedInterfaces.Select(interfaceName => $"global::{interfaceName}"))}\n{{"
         );
     }
 
@@ -613,8 +578,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         string? Namespace,
         string TypeDeclaration,
         EquatableArray<string> ContainingTypeDeclarations,
-        EquatableArray<string> MigrationSourceTypeNames,
-        EquatableArray<string> MigrationParameterTypeNames,
         string HintName,
         string IdLiteral,
         string VersionValue,
@@ -727,7 +690,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 containingTypes.Push(GetTypeDeclaration(current));
             }
 
-            var methods = type.GetMembers("Migrate").OfType<IMethodSymbol>();
             return new(
                 id,
                 version,
@@ -745,35 +707,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     : type.ContainingNamespace.ToDisplayString(),
                 GetTypeDeclaration(type),
                 new EquatableArray<string>(containingTypes),
-                new EquatableArray<string>(
-                    methods
-                        .Where(method =>
-                            method.IsStatic
-                            && method.DeclaredAccessibility == Accessibility.Private
-                            && SymbolEqualityComparer.Default.Equals(method.ReturnType, type)
-                            && method.Parameters.Length == 1
-                            && method.DeclaringSyntaxReferences.Any(reference =>
-                                reference.GetSyntax(cancellationToken)
-                                    is MethodDeclarationSyntax syntax
-                                && syntax.Modifiers.Any(SyntaxKind.PartialKeyword)
-                                && (syntax.Body is not null || syntax.ExpressionBody is not null)
-                            )
-                        )
-                        .Select(method =>
-                            method
-                                .Parameters[0]
-                                .Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                        )
-                ),
-                new EquatableArray<string>(
-                    methods
-                        .Where(static method => method.Parameters.Length == 1)
-                        .Select(method =>
-                            method
-                                .Parameters[0]
-                                .Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                        )
-                ),
                 GetHintName(type),
                 id is null ? "null" : SymbolDisplay.FormatLiteral(id, true),
                 version?.ToString() ?? "null",
