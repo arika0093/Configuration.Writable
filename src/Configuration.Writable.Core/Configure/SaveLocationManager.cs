@@ -132,6 +132,12 @@ internal class SaveLocationManager
         {
             resultPath = targetPath.Path;
         }
+
+        if (formatProvider is FormatProvider.FallbackFormatProvider fallbackProvider)
+        {
+            fallbackProvider.ValidateConfigurationPath(resultPath);
+        }
+
         return resultPath;
     }
 
@@ -169,9 +175,7 @@ internal class LocationBuilderInternal : ILocationBuilder
         return this;
     }
 
-    /// <summary>
-    /// Sets the configuration folder to the standard save location for the specified application.
-    /// </summary>
+    /// <inheritdoc />
     public ILocationBuilder UseStandardSaveDirectory(string applicationId)
     {
         var root = StandardSaveLocationUtility.GetConfigDirectory();
@@ -179,36 +183,28 @@ internal class LocationBuilderInternal : ILocationBuilder
         return this;
     }
 
-    /// <summary>
-    /// Sets the configuration folder to the directory where the executable is located. (default behavior)
-    /// </summary>
+    /// <inheritdoc />
     public ILocationBuilder UseCurrentDirectory()
     {
         configFolder = Directory.GetCurrentDirectory();
         return this;
     }
 
-    /// <summary>
-    /// Sets the configuration folder to the current working directory.
-    /// </summary>
+    /// <inheritdoc />
     public ILocationBuilder UseExecutableDirectory()
     {
         configFolder = AppContext.BaseDirectory;
         return this;
     }
 
-    /// <summary>
-    /// Sets the configuration folder to a special folder defined by <see cref="Environment.SpecialFolder"/>.
-    /// </summary>
+    /// <inheritdoc />
     public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder)
     {
         configFolder = Environment.GetFolderPath(folder);
         return this;
     }
 
-    /// <summary>
-    /// Sets the configuration folder to a custom folder path.
-    /// </summary>
+    /// <inheritdoc />
     public ILocationBuilder UseCustomDirectory(string directoryPath)
     {
         configFolder = directoryPath;
