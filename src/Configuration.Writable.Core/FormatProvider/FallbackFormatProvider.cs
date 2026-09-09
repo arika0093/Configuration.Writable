@@ -118,22 +118,26 @@ internal sealed class FallbackFormatProvider
     internal string GetSelectedFilePath(IWritableOptionsConfiguration options) =>
         ResolveReadSource(options).Options.ConfigFilePath;
 
-    internal void ValidateConfigurationPath(string canonicalPath)
+    internal void ValidateConfigurationPath(
+        string canonicalPath,
+        IWritableFileProvider fileProvider
+    )
     {
-        var pathComparison = Path.DirectorySeparatorChar == '\\'
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
+        var pathComparison =
+            fileProvider is IPhysicalFileProvider && Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
 
-        foreach (var provider in _fallbackProviders)
+        foreach (var extension in _fallbackProviders.Select(provider => provider.FileExtension))
         {
-            var fallbackPath = Path.ChangeExtension(canonicalPath, provider.FileExtension);
+            var fallbackPath = Path.ChangeExtension(canonicalPath, extension);
             if (!string.Equals(canonicalPath, fallbackPath, pathComparison))
             {
                 continue;
             }
 
             var canonicalExtension = NormalizeExtension(PrimaryProvider.FileExtension);
-            var fallbackExtension = NormalizeExtension(provider.FileExtension);
+            var fallbackExtension = NormalizeExtension(extension);
             var extensionlessPath = Path.ChangeExtension(canonicalPath, null);
 
             throw new InvalidOperationException(
