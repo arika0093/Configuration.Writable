@@ -50,6 +50,40 @@ public class FallbackFormatProviderTests
     }
 
     [Fact]
+    public async Task FallbackFormat_ShouldBackUpFallbackBeforePromotingToCanonicalFormat()
+    {
+        using var testFile = new TemporaryFile();
+        var fileProvider = new CommonFileProvider();
+        var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.MySettingsV2>
+        {
+            FilePath = testFile.FilePath,
+            FileProvider = fileProvider,
+            FormatProvider = new JsonFormatProvider(),
+        };
+        builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
+        builder.UseMigration<
+            MigrationSupportTests.MySettingsV1,
+            MigrationSupportTests.MySettingsV2
+        >(source => new MigrationSupportTests.MySettingsV2 { Names = [source.Name] });
+
+        var options = builder.BuildOptions("");
+        var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy");
+        await fileProvider.SaveToFileAsync(
+            fallbackPath,
+            Encoding.UTF8.GetBytes("{\"Version\":1,\"Name\":\"legacy\"}")
+        );
+
+        options.FormatProvider.LoadWithMigration(options).Names.ShouldBe(["legacy"]);
+
+        var backupDirectory = Path.Combine(
+            Path.GetDirectoryName(fallbackPath)!,
+            Path.DirectorySeparatorChar == '\\' ? "backup" : ".backup"
+        );
+        Directory.GetFiles(backupDirectory, "*.legacy.bak").Length.ShouldBe(1);
+        File.Exists(fallbackPath).ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task FallbackFormat_ShouldTryProvidersInRegistrationOrder()
     {
         var fileProvider = new InMemoryFileProvider();

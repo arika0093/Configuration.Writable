@@ -18,6 +18,7 @@ namespace Configuration.Writable.FileProvider;
 public class CommonFileProvider
     : IWritableFileProvider,
         IBackupFileProvider,
+        IFileDeleter,
         IPhysicalFileProvider,
         IDisposable
 {
@@ -310,6 +311,25 @@ public class CommonFileProvider
     {
         var normalizedPath = Path.GetFullPath(path);
         return File.Exists(normalizedPath);
+    }
+
+    bool IFileDeleter.TryDelete(string path, ILogger? logger)
+    {
+        try
+        {
+            File.Delete(Path.GetFullPath(path));
+            return true;
+        }
+        catch (IOException ex)
+        {
+            logger?.ZLogWarning(ex, $"Failed to delete file: {path}");
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger?.ZLogWarning(ex, $"Failed to delete file: {path}");
+            return false;
+        }
     }
 
     string IPhysicalFileProvider.GetPhysicalFilePath(string path) => Path.GetFullPath(path);

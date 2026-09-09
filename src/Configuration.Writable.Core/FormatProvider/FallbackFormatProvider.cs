@@ -132,15 +132,51 @@ internal sealed class FallbackFormatProvider
             return;
         }
 
-        if (ResolveFallbackSource(options) is null)
+        var source = ResolveFallbackSource(options);
+        if (source is null)
         {
             return;
         }
 
+        // Preserve the source document before promoting it to the canonical format. This is
+        // especially important when the fallback is a versioned configuration that has just
+        // been migrated: the canonical write must not be the only copy of the original data.
+        var backedUp = false;
+        if (
+            options.FileProvider is IBackupFileProvider backupFileProvider
+            && backupFileProvider.TryBackup(
+                source.Options.ConfigFilePath,
+                out var backupPath,
+                options.Logger
+            )
+        )
+        {
+            backedUp = true;
+            options.Logger?.LogDebug(
+                "Backed up fallback configuration before promoting it: {BackupPath}",
+                backupPath
+            );
+        }
+
         // Persist the fully migrated/current model with the canonical provider. The fallback
-        // remains as a compatibility backup, but will no longer participate in resolution
+        // remains available for compatibility, but will no longer participate in resolution
         // while the canonical file exists.
         PrimaryProvider.SaveAsync(config, options).GetAwaiter().GetResult();
+
+        // Once the canonical file has been written successfully, remove the source file. Keep
+        // it when backup was unavailable or failed so a failed/unsupported migration remains
+        // recoverable.
+        if (
+            backedUp
+            && options.FileProvider is IFileDeleter fileDeleter
+            && !fileDeleter.TryDelete(source.Options.ConfigFilePath, options.Logger)
+        )
+        {
+            options.Logger?.LogWarning(
+                "The fallback configuration was promoted, but the source file could not be deleted: {Path}",
+                source.Options.ConfigFilePath
+            );
+        }
     }
 
     private ResolvedSource ResolveReadSource(IWritableOptionsConfiguration options)
