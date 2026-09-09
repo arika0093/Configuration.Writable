@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FormatProvider;
 using Shouldly;
