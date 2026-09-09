@@ -102,9 +102,15 @@ internal sealed class FallbackFormatProvider
     {
         var source = ResolveReadSource(options);
         return source.Provider is IOptionsSchemaMetadataProvider metadataProvider
-            ? metadataProvider.ReadSchemaMetadata(source.Options)
+            ? FormatProviderBase.ExecuteWithBackupRecovery(
+                source.Options,
+                () => metadataProvider.ReadSchemaMetadata(source.Options)
+            )
             : null;
     }
+
+    internal string GetSelectedFilePath(IWritableOptionsConfiguration options) =>
+        ResolveReadSource(options).Options.ConfigFilePath;
 
     internal void PromoteIfNeeded<T>(T config, IWritableOptionsConfiguration options)
         where T : class, new()
@@ -133,12 +139,24 @@ internal sealed class FallbackFormatProvider
 
     private ResolvedSource ResolveReadSource(IWritableOptionsConfiguration options)
     {
+        RestorePrimaryBackupIfNeeded(options);
         if (options.FileProvider.FileExists(options.ConfigFilePath))
         {
             return new ResolvedSource(PrimaryProvider, options);
         }
 
         return ResolveFallbackSource(options) ?? new ResolvedSource(PrimaryProvider, options);
+    }
+
+    private static void RestorePrimaryBackupIfNeeded(IWritableOptionsConfiguration options)
+    {
+        if (
+            !options.FileProvider.FileExists(options.ConfigFilePath)
+            && options.FileProvider is CommonFileProvider fileProvider
+        )
+        {
+            fileProvider.TryRestoreLatestBackup(options.ConfigFilePath, options.Logger);
+        }
     }
 
     private ResolvedSource? ResolveFallbackSource(IWritableOptionsConfiguration options)

@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
+using Configuration.Writable.Internal;
 using Configuration.Writable.Migration;
+using Configuration.Writable.Options;
 using Shouldly;
 using Xunit;
 
@@ -138,6 +140,109 @@ public class FallbackFormatProviderTests
         Should.Throw<InvalidOperationException>(() =>
             builder.AddFallbackFormatProvider(new JsonFormatProvider())
         );
+    }
+
+    [Fact]
+    public async Task FallbackFormat_ShouldRestoreCanonicalBackupBeforeSelectingFallback()
+    {
+        using var testFile = new TemporaryFile();
+        var fileProvider = new CommonFileProvider { BackupDirectory = "/" };
+        var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
+        {
+            FilePath = testFile.FilePath,
+            FileProvider = fileProvider,
+            FormatProvider = new JsonFormatProvider(),
+        };
+        builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
+        var options = builder.BuildOptions("");
+
+        await fileProvider.SaveToFileAsync(
+            options.ConfigFilePath,
+            Encoding.UTF8.GetBytes("{\"Name\":\"canonical backup\"}")
+        );
+        await fileProvider.SaveToFileAsync(
+            options.ConfigFilePath,
+            Encoding.UTF8.GetBytes("{\"Name\":\"current canonical\"}")
+        );
+        File.Delete(options.ConfigFilePath);
+
+        var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy");
+        await fileProvider.SaveToFileAsync(
+            fallbackPath,
+            Encoding.UTF8.GetBytes("{\"Name\":\"stale fallback\"}")
+        );
+
+        var result = options.FormatProvider.LoadWithMigration(options);
+
+        result.Name.ShouldBe("canonical backup");
+    }
+
+    [Fact]
+    public async Task FallbackFormat_ShouldRecoverSelectedFallbackBeforeReadingMetadata()
+    {
+        using var testFile = new TemporaryFile();
+        var fileProvider = new CommonFileProvider { BackupDirectory = "/" };
+        var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.MySettingsV2>
+        {
+            FilePath = testFile.FilePath,
+            FileProvider = fileProvider,
+            FormatProvider = new JsonFormatProvider(),
+        };
+        builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
+        builder.UseMigration<
+            MigrationSupportTests.MySettingsV1,
+            MigrationSupportTests.MySettingsV2
+        >(source => new MigrationSupportTests.MySettingsV2 { Names = [source.Name] });
+        var options = builder.BuildOptions("");
+
+        var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy");
+        await fileProvider.SaveToFileAsync(
+            fallbackPath,
+            Encoding.UTF8.GetBytes("{\"Version\":1,\"Name\":\"recoverable fallback\"}")
+        );
+        await fileProvider.SaveToFileAsync(fallbackPath, Encoding.UTF8.GetBytes("{"));
+
+        var result = options.FormatProvider.LoadWithMigration(options);
+
+        result.Names.ShouldBe(["recoverable fallback"]);
+    }
+
+    [Fact]
+    public async Task FallbackFormat_ShouldWatchSelectedFallbackForChanges()
+    {
+        using var testFile = new TemporaryFile();
+        var fileProvider = new CommonFileProvider();
+        var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
+        {
+            FilePath = testFile.FilePath,
+            FileProvider = fileProvider,
+            FormatProvider = new JsonFormatProvider(),
+            SectionName = "First",
+            OnChangeDebounce = TimeSpan.Zero,
+        };
+        builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
+        var options = builder.BuildOptions("");
+        var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy");
+        await fileProvider.SaveToFileAsync(
+            fallbackPath,
+            Encoding.UTF8.GetBytes("{\"First\":{\"Name\":\"before\"}}")
+        );
+
+        var registry =
+            new WritableOptionsConfigRegistryImpl<MigrationSupportTests.SettingsWithoutVersion>([
+                options,
+            ]);
+        using var monitor = new OptionsMonitorImpl<MigrationSupportTests.SettingsWithoutVersion>(
+            registry
+        );
+        MigrationSupportTests.SettingsWithoutVersion? changed = null;
+        using var registration = monitor.OnChange((value, _) => changed = value);
+
+        File.WriteAllText(fallbackPath, "{\"First\":{\"Name\":\"after\"}}");
+
+        var changedResult = await Utility.FileWatcherTestHelper.WaitForNonNullAsync(() => changed);
+        changedResult.ShouldNotBeNull();
+        changedResult.Name.ShouldBe("after");
     }
 
     private sealed class LegacyJsonFormatProvider(string extension) : JsonFormatProvider

@@ -326,11 +326,12 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             return;
         }
 
-        if (!options.FileProvider.FileExists(options.ConfigFilePath))
+        var selectedFilePath = GetSelectedFilePath(options);
+        if (!options.FileProvider.FileExists(selectedFilePath))
         {
             var exception = new FileNotFoundException(
-                $"Configuration file was deleted: {options.ConfigFilePath}",
-                options.ConfigFilePath
+                $"Configuration file was deleted: {selectedFilePath}",
+                selectedFilePath
             );
             options.Logger?.LogError(exception, "Configuration file was deleted.");
             NotifyReloadFailure(instanceName, exception);
@@ -355,9 +356,17 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         ReloadAndNotify(instanceName);
     }
 
-    private static string GetWatchPath(WritableOptionsConfiguration<T> options) =>
-        options.FileProvider is IPhysicalFileProvider physicalFileProvider
-            ? physicalFileProvider.GetPhysicalFilePath(options.ConfigFilePath)
+    private static string GetWatchPath(WritableOptionsConfiguration<T> options)
+    {
+        var selectedFilePath = GetSelectedFilePath(options);
+        return options.FileProvider is IPhysicalFileProvider physicalFileProvider
+            ? physicalFileProvider.GetPhysicalFilePath(selectedFilePath)
+            : selectedFilePath;
+    }
+
+    private static string GetSelectedFilePath(WritableOptionsConfiguration<T> options) =>
+        options.FormatProvider is FormatProvider.FallbackFormatProvider fallbackProvider
+            ? fallbackProvider.GetSelectedFilePath(options)
             : options.ConfigFilePath;
 
     private static StringComparison GetPathComparison() =>

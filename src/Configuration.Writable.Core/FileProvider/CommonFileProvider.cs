@@ -327,7 +327,7 @@ public class CommonFileProvider
             normalizedPath,
             FileMode.Open,
             FileAccess.Read,
-            FileShare.ReadWrite,
+            FileShare.ReadWrite | FileShare.Delete,
             bufferSize: 4096,
             FileOptions.Asynchronous | FileOptions.SequentialScan
         );
