@@ -1095,13 +1095,6 @@ Change detection is done by registering a callback with the `OnChange(Action<T, 
 
 This is identical to MS.E.O.'s [`IOptionsMonitor`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1).
 
-### `IReadOnlyOptionsMonitor<T>` / `IWritableOptionsMonitor<T>`
-These interfaces combine the functionalities of `IReadOnlyOptions`, `IReadOnlyNamedOptions`, and `IOptionsMonitor<T>` (and their writable counterparts).
-They are provided mainly to ensure compatibility with codebases that already use `IOptionsMonitor<T>`.  
-Therefore, you typically do not need to use these interfaces explicitly.
-
-<img src="./assets/interfaces.drawio.svg" alt="Interfaces Diagram" width="600"/>
-
 </details>
 
 ## License
