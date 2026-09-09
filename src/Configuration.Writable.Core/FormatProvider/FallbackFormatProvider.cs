@@ -120,10 +120,14 @@ internal sealed class FallbackFormatProvider
 
     internal void ValidateConfigurationPath(string canonicalPath)
     {
+        var pathComparison = Path.DirectorySeparatorChar == '\\'
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
         foreach (var provider in _fallbackProviders)
         {
             var fallbackPath = Path.ChangeExtension(canonicalPath, provider.FileExtension);
-            if (!string.Equals(canonicalPath, fallbackPath, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(canonicalPath, fallbackPath, pathComparison))
             {
                 continue;
             }
