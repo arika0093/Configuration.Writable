@@ -48,6 +48,7 @@ namespace Configuration.Writable.Configure
         public bool RegisterAsSingleton { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
+        public void AddFallbackFormatProvider(params Configuration.Writable.FormatProvider.IWritableFormatProvider[] formatProviders) { }
         public void AddFilePath(string path, int priority = 0) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
