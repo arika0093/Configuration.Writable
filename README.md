@@ -785,6 +785,40 @@ By simply writing the above, the migration process is handled automatically!
 > For compatible changes such as simply adding or removing parameters, there is no need to update the version. If you only add properties, old version configuration files can still be read as they are.  
 > It is recommended to increase the version only when making incompatible changes such as renaming items or changing types (for example, from `string` to `List<string>`).
 
+
+<details>
+<summary>Migration from other formats</summary>
+
+For example, if you want to change the format from JSON in v1 to YAML in v2, register the old format using `AddFallbackFormatProvider`.
+
+```csharp
+builder.Services.AddWritableOptions(conf => {
+    // use YAML format for the current version
+    conf.FormatProvider = new YamlFormatProvider();
+    // support fallback to JSON format for older versions
+    conf.AddFallbackFormatProvider(
+        new JsonAotFormatProvider(MyJsonContext.Default)
+    );
+    conf.Add<UserSetting>(c => {
+        // Do not include the file extension
+        // (the provider automatically determines json or yaml)
+        c.UseFile("usersettings");
+    });
+});
+```
+
+When registered this way, it works as follows.
+
+#### When V2 (YAML) exists
+
+It is loaded as is.
+
+#### When only V1 (JSON) exists
+
+V1 is loaded first, migrated to V2, and then immediately saved as V2 (YAML). The old file is saved under a different name as a backup.
+
+</details>
+
 <details>
 <summary>Stop supporting older configurations</summary>
 
