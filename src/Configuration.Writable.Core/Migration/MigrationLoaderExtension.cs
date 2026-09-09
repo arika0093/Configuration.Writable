@@ -28,7 +28,11 @@ internal static class MigrationLoaderExtension
         var targetVersion = targetMetadata?.Version;
         if (targetVersion is null)
         {
-            return (T)formatProvider.LoadConfiguration(typeof(T), options);
+            return PromoteIfNeeded(
+                formatProvider,
+                options,
+                (T)formatProvider.LoadConfiguration(typeof(T), options)
+            );
         }
 
         var metadataProvider = formatProvider as IOptionsSchemaMetadataProvider;
@@ -44,7 +48,11 @@ internal static class MigrationLoaderExtension
         // Missing documents or sections are initialized directly as the target type.
         if (fileMetadata is null)
         {
-            return (T)formatProvider.LoadConfiguration(typeof(T), options);
+            return PromoteIfNeeded(
+                formatProvider,
+                options,
+                (T)formatProvider.LoadConfiguration(typeof(T), options)
+            );
         }
 
         var fileVersion = fileMetadata.Version ?? 1;
@@ -52,7 +60,11 @@ internal static class MigrationLoaderExtension
         // The file declares a version. If it already matches the target, load directly.
         if (fileVersion == targetVersion)
         {
-            return (T)formatProvider.LoadConfiguration(typeof(T), options);
+            return PromoteIfNeeded(
+                formatProvider,
+                options,
+                (T)formatProvider.LoadConfiguration(typeof(T), options)
+            );
         }
 
         // The file declares a version that is newer than the target. This is an unsupported scenario.
@@ -93,7 +105,26 @@ internal static class MigrationLoaderExtension
             return new T();
         }
 
-        return ApplyMigrationChain<T>(formatProvider, options, migrationLookup, currentType);
+        return PromoteIfNeeded(
+            formatProvider,
+            options,
+            ApplyMigrationChain<T>(formatProvider, options, migrationLookup, currentType)
+        );
+    }
+
+    private static T PromoteIfNeeded<T>(
+        IWritableFormatProvider formatProvider,
+        WritableOptionsConfiguration<T> options,
+        T value
+    )
+        where T : class, new()
+    {
+        if (formatProvider is FallbackFormatProvider fallbackFormatProvider)
+        {
+            fallbackFormatProvider.PromoteIfNeeded(value, options);
+        }
+
+        return value;
     }
 
     private static void ValidateFileMetadata(OptionsSchemaMetadata? fileMetadata)

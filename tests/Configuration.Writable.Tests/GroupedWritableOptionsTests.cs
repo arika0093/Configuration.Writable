@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -86,6 +87,40 @@ public partial class GroupedWritableOptionsTests
     }
 
     [Fact]
+    public void GroupedRegistration_ClonesFallbackProvidersPerType()
+    {
+        var provider = new InMemoryFileProvider();
+        var services = new ServiceCollection();
+        services.AddWritableOptions(options =>
+        {
+            options.FileProvider = provider;
+            options.UseFile("shared.json");
+            options.Add<FirstSettings>(builder =>
+                builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("first"))
+            );
+            options.Add<SecondSettings>(builder =>
+                builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("second"))
+            );
+        });
+
+        using var serviceProvider = services.BuildServiceProvider();
+        var first = serviceProvider
+            .GetRequiredService<IWritableOptionsConfigRegistry<FirstSettings>>()
+            .Get(string.Empty);
+        var second = serviceProvider
+            .GetRequiredService<IWritableOptionsConfigRegistry<SecondSettings>>()
+            .Get(string.Empty);
+        var firstProvider = first.FormatProvider.ShouldBeOfType<FallbackFormatProvider>();
+        var secondProvider = second.FormatProvider.ShouldBeOfType<FallbackFormatProvider>();
+
+        firstProvider.ShouldNotBeSameAs(secondProvider);
+        firstProvider.FallbackProviders.Count.ShouldBe(1);
+        secondProvider.FallbackProviders.Count.ShouldBe(1);
+        firstProvider.FallbackProviders[0].FileExtension.ShouldBe("first");
+        secondProvider.FallbackProviders[0].FileExtension.ShouldBe("second");
+    }
+
+    [Fact]
     public void StaticGroupedInitialization_RetainsEveryNamedRegistration()
     {
         var provider = new InMemoryFileProvider();
@@ -152,5 +187,10 @@ public partial class GroupedWritableOptionsTests
     private sealed class RejectingFileProvider : CommonFileProvider
     {
         public override bool EnsureDirectoryExists(string path) => false;
+    }
+
+    private sealed class LegacyJsonFormatProvider(string extension) : JsonFormatProvider
+    {
+        public override string FileExtension => extension;
     }
 }
