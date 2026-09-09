@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Configuration.Writable.Configure;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Shouldly;
 using Xunit;
