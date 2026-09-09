@@ -18,8 +18,14 @@ public static class WritableOptionsConfigBuilderFallbackExtensions
         IWritableFormatProvider formatProvider
     )
     {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(formatProvider);
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+        if (formatProvider is null)
+        {
+            throw new ArgumentNullException(nameof(formatProvider));
+        }
 
         if (builder.FormatProvider is not FallbackFormatProvider fallbackProvider)
         {
