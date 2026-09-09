@@ -135,7 +135,7 @@ internal class SaveLocationManager
 
         if (formatProvider is FormatProvider.FallbackFormatProvider fallbackProvider)
         {
-            fallbackProvider.ValidateConfigurationPath(resultPath);
+            fallbackProvider.ValidateConfigurationPath(resultPath, fileProvider);
         }
 
         return resultPath;
