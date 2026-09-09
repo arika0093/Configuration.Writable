@@ -111,6 +111,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         true,
         helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr010"
     );
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var sourceModels = context
@@ -227,10 +228,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 
             context.AddSource(
                 model.HintName,
-                SourceText.From(
-                    GenerateMetadata(model, previous),
-                    Encoding.UTF8
-                )
+                SourceText.From(GenerateMetadata(model, previous), Encoding.UTF8)
             );
         }
     }
@@ -408,10 +406,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     private static bool Implements(INamedTypeSymbol type, string interfaceName) =>
         type.AllInterfaces.Any(@interface => @interface.ToDisplayString() == interfaceName);
 
-    private static string GenerateMetadata(
-        SourceModelInfo model,
-        ModelReference? previous
-    )
+    private static string GenerateMetadata(SourceModelInfo model, ModelReference? previous)
     {
         var builder = new IndentedStringBuilder();
         builder.AppendLine(
@@ -454,11 +449,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             """
         );
         builder.IncreaseIndent();
-        if (
-            previous != null
-            && model.Id != null
-            && model.SchemaVersion is not null
-        )
+        if (previous != null && model.Id != null && model.SchemaVersion is not null)
         {
             builder.AppendLine(
                 $$"""
