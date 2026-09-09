@@ -4,12 +4,12 @@ using Configuration.Writable.Configure;
 using Configuration.Writable.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
-namespace Configuration.Writable.Testing;
+namespace Configuration.Writable.Internal;
 
 /// <summary>
 /// Provides methods to initialize and retrieve writable configuration instances for a specified options type.
 /// </summary>
-public class WritableOptionsSimpleInstance<T>
+internal class WritableOptionsSimpleInstanceCore<T>
     where T : class, new()
 {
     private readonly List<WritableOptionsConfiguration<T>> _options = [];

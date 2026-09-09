@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using Configuration.Writable.FormatProvider;
+using Configuration.Writable.Testing;
 using PublicApiGenerator;
 
 namespace Configuration.Writable.Tests.PublicApi;
@@ -44,6 +45,9 @@ public class PublicApiCheckTest
 
     [Fact]
     public void Core() => PublicApiCheck.Check<JsonFormatProvider>();
+
+    [Fact]
+    public void Testing() => PublicApiCheck.Check<WritableOptionsSimpleInstance<object>>();
 
     [Fact]
     public void Xml() => PublicApiCheck.Check<XmlFormatProvider>();

@@ -50,6 +50,9 @@
     <Using Include="Configuration.Writable.Testing" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Configuration.Writable.Testing\Configuration.Writable.Testing.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Configuration.Writable.Generator\Configuration.Writable.Generator.csproj">
       <OutputItemType>Analyzer</OutputItemType>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

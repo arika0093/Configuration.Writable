@@ -987,6 +987,14 @@ public class MyService(IWritableNamedOptions<UserSetting> options) {
 ```
 
 ## Testing
+
+The testing helpers are provided by the separate [`Configuration.Writable.Testing`](https://www.nuget.org/packages/Configuration.Writable.Testing/) package.
+Install it alongside `Configuration.Writable` to use the examples below:
+
+```shell
+dotnet add package Configuration.Writable.Testing
+```
+
 ### Using a Mock
 If you simply want to obtain `IReadOnlyOptions<T>` or `IWritableOptions<T>`, using `WritableOptionsStub` is straightforward.
 

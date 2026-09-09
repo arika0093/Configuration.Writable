@@ -15,6 +15,7 @@
       Path="src/Configuration.Writable.Generator/Configuration.Writable.Generator.csproj"
       Id="318f5fd4-ce24-4fd7-81ee-5f7b428bde4b"
     />
+    <Project Path="src/Configuration.Writable.Testing/Configuration.Writable.Testing.csproj" />
     <Project Path="src/Configuration.Writable/Configuration.Writable.csproj" />
   </Folder>
   <Folder Name="/src/providers/">
