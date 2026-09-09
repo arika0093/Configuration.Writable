@@ -31,7 +31,11 @@ internal sealed class FallbackFormatProvider : IWritableFormatProvider, IOptions
 
     internal void AddFallback(IWritableFormatProvider provider)
     {
-        ArgumentNullException.ThrowIfNull(provider);
+        if (provider is null)
+        {
+            throw new ArgumentNullException(nameof(provider));
+        }
+
         var extension = NormalizeExtension(provider.FileExtension);
         if (string.IsNullOrEmpty(extension))
         {
@@ -86,8 +90,7 @@ internal sealed class FallbackFormatProvider : IWritableFormatProvider, IOptions
             return;
         }
 
-        var fallback = ResolveFallbackSource(options);
-        if (fallback is null)
+        if (ResolveFallbackSource(options) is null)
         {
             return;
         }
