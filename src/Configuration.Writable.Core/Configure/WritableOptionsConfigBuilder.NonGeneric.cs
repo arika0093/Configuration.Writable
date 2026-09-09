@@ -63,6 +63,28 @@ public class WritableOptionsConfigBuilder
         SaveLocationManager = new SaveLocationManager(source.SaveLocationManager);
     }
 
+    /// <summary>
+    /// Registers an additional format provider that may be used to load an existing configuration
+    /// when the canonical file for <see cref="FormatProvider"/> does not exist.
+    /// A successfully loaded fallback configuration is promoted to the canonical format after schema migration.
+    /// </summary>
+    /// <param name="formatProvider">The fallback format provider.</param>
+    public void AddFallbackFormatProvider(IWritableFormatProvider formatProvider)
+    {
+        if (formatProvider is null)
+        {
+            throw new ArgumentNullException(nameof(formatProvider));
+        }
+
+        if (FormatProvider is not FallbackFormatProvider fallbackProvider)
+        {
+            fallbackProvider = new FallbackFormatProvider(FormatProvider);
+            FormatProvider = fallbackProvider;
+        }
+
+        fallbackProvider.AddFallback(formatProvider);
+    }
+
     /// <summary>Uses a specific file path and clears all previously configured locations.</summary>
     public void UseFile(string? path)
     {
