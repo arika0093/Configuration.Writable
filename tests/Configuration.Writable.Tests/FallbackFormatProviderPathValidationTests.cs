@@ -45,6 +45,22 @@ public class FallbackFormatProviderPathValidationTests
         Path.GetExtension(options.ConfigFilePath).ShouldBe(".conf");
     }
 
+    [Fact]
+    public void BuildOptions_ShouldAllowCaseDistinctFallbackPathForLogicalFileProvider()
+    {
+        var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
+        {
+            FilePath = "settings.JSON",
+            FileProvider = new InMemoryFileProvider(),
+            FormatProvider = new ExtensionJsonFormatProvider("yaml"),
+        };
+        builder.AddFallbackFormatProvider(new JsonFormatProvider());
+
+        var options = builder.BuildOptions("");
+
+        Path.GetExtension(options.ConfigFilePath).ShouldBe(".JSON");
+    }
+
     private sealed class ExtensionJsonFormatProvider(string extension) : JsonFormatProvider
     {
         public override string FileExtension => extension;
