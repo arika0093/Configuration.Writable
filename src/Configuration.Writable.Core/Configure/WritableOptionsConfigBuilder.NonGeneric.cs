@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
@@ -52,7 +53,9 @@ public class WritableOptionsConfigBuilder
 
     internal void CopyFrom(WritableOptionsConfigBuilder source)
     {
-        FormatProvider = source.FormatProvider;
+        FormatProvider = source.FormatProvider is FallbackFormatProvider fallbackProvider
+            ? fallbackProvider.Clone()
+            : source.FormatProvider;
         FileProvider = source.FileProvider;
         OnChangeDebounce = source.OnChangeDebounce;
         RegisterAsSingleton = source.RegisterAsSingleton;
@@ -64,16 +67,26 @@ public class WritableOptionsConfigBuilder
     }
 
     /// <summary>
-    /// Registers an additional format provider that may be used to load an existing configuration
+    /// Registers additional format providers that may be used to load an existing configuration
     /// when the canonical file for <see cref="FormatProvider"/> does not exist.
     /// A successfully loaded fallback configuration is promoted to the canonical format after schema migration.
     /// </summary>
-    /// <param name="formatProvider">The fallback format provider.</param>
-    public void AddFallbackFormatProvider(IWritableFormatProvider formatProvider)
+    /// <param name="formatProviders">The fallback format providers, in resolution order.</param>
+    public void AddFallbackFormatProvider(params IWritableFormatProvider[] formatProviders)
     {
-        if (formatProvider is null)
+        if (formatProviders is null)
         {
-            throw new ArgumentNullException(nameof(formatProvider));
+            throw new ArgumentNullException(nameof(formatProviders));
+        }
+
+        if (formatProviders.Any(formatProvider => formatProvider is null))
+        {
+            throw new ArgumentNullException(nameof(formatProviders));
+        }
+
+        if (formatProviders.Length == 0)
+        {
+            return;
         }
 
         if (FormatProvider is not FallbackFormatProvider fallbackProvider)
@@ -82,7 +95,7 @@ public class WritableOptionsConfigBuilder
             FormatProvider = fallbackProvider;
         }
 
-        fallbackProvider.AddFallback(formatProvider);
+        fallbackProvider.AddFallbacks(formatProviders);
     }
 
     /// <summary>Uses a specific file path and clears all previously configured locations.</summary>

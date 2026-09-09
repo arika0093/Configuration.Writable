@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Shouldly;
@@ -22,7 +26,7 @@ public class FallbackFormatProviderTests
             FileProvider = fileProvider,
             FormatProvider = new JsonFormatProvider(),
         };
-        builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider());
+        builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
         builder.UseMigration<
             MigrationSupportTests.MySettingsV1,
             MigrationSupportTests.MySettingsV2
@@ -44,6 +48,86 @@ public class FallbackFormatProviderTests
     }
 
     [Fact]
+    public async Task FallbackFormat_ShouldTryProvidersInRegistrationOrder()
+    {
+        var fileProvider = new InMemoryFileProvider();
+        var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
+        {
+            FilePath = "fallback-settings",
+            FileProvider = fileProvider,
+            FormatProvider = new JsonFormatProvider(),
+        };
+        builder.AddFallbackFormatProvider(
+            new LegacyJsonFormatProvider("legacy1"),
+            new LegacyJsonFormatProvider("legacy2")
+        );
+
+        var options = builder.BuildOptions("");
+        var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy2");
+        await fileProvider.SaveToFileAsync(
+            fallbackPath,
+            Encoding.UTF8.GetBytes("""{"Name":"second fallback"}""")
+        );
+
+        var result = options.FormatProvider.LoadWithMigration(options);
+
+        result.Name.ShouldBe("second fallback");
+    }
+
+    [Fact]
+    public async Task FallbackFormat_ShouldKeepFallbackDocumentForSectionedConfigurations()
+    {
+        var fileProvider = new InMemoryFileProvider();
+        var firstBuilder =
+            new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
+            {
+                FilePath = "sectioned-settings",
+                FileProvider = fileProvider,
+                FormatProvider = new JsonFormatProvider(),
+                SectionName = "First",
+            };
+        firstBuilder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
+
+        var firstOptions = firstBuilder.BuildOptions("");
+        var fallbackPath = Path.ChangeExtension(firstOptions.ConfigFilePath, "legacy");
+        await fileProvider.SaveToFileAsync(
+            fallbackPath,
+            Encoding.UTF8.GetBytes("""{"First":{"Name":"first"},"Second":{"Name":"second"}}""")
+        );
+
+        var first = firstOptions.FormatProvider.LoadWithMigration(firstOptions);
+
+        first.Name.ShouldBe("first");
+        fileProvider.FileExists(firstOptions.ConfigFilePath).ShouldBeFalse();
+
+        var secondBuilder =
+            new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
+            {
+                FilePath = "sectioned-settings",
+                FileProvider = fileProvider,
+                FormatProvider = new JsonFormatProvider(),
+                SectionName = "Second",
+            };
+        secondBuilder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
+        var secondOptions = secondBuilder.BuildOptions("");
+
+        secondOptions.FormatProvider.LoadWithMigration(secondOptions).Name.ShouldBe("second");
+    }
+
+    [Fact]
+    public void FallbackFormat_ShouldRequireMetadataSupportForVersionedOptions()
+    {
+        var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.MySettingsV2>
+        {
+            FormatProvider = new JsonFormatProvider(),
+        };
+
+        builder.AddFallbackFormatProvider(new MetadataUnsupportedFormatProvider());
+
+        Should.Throw<InvalidOperationException>(() => builder.BuildOptions(""));
+    }
+
+    [Fact]
     public void AddFallbackFormatProvider_ShouldRejectDuplicateExtension()
     {
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
@@ -56,8 +140,32 @@ public class FallbackFormatProviderTests
         );
     }
 
-    private sealed class LegacyJsonFormatProvider : JsonFormatProvider
+    private sealed class LegacyJsonFormatProvider(string extension) : JsonFormatProvider
+    {
+        public override string FileExtension => extension;
+    }
+
+    private sealed class MetadataUnsupportedFormatProvider : FormatProviderBase
     {
         public override string FileExtension => "legacy";
+
+        public override ValueTask<object> LoadConfigurationAsync(
+            Type type,
+            PipeReader reader,
+            List<string> sectionNameParts,
+            CancellationToken cancellationToken = default
+        ) =>
+            new JsonFormatProvider().LoadConfigurationAsync(
+                type,
+                reader,
+                sectionNameParts,
+                cancellationToken
+            );
+
+        public override Task SaveAsync<T>(
+            T config,
+            IWritableOptionsConfiguration options,
+            CancellationToken cancellationToken = default
+        ) => new JsonFormatProvider().SaveAsync(config, options, cancellationToken);
     }
 }

@@ -344,7 +344,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         var configFilePath = SaveLocationManager.Build(FormatProvider, fileProvider, instanceName);
         var validator = BuildValidator();
         var schemaMetadata = OptionsMetadataResolver.Resolve<T>();
-        if (schemaMetadata is not null && FormatProvider is not IOptionsSchemaMetadataProvider)
+        if (schemaMetadata is not null && !SupportsSchemaMetadata(FormatProvider))
         {
             throw new InvalidOperationException(
                 $"Format provider {FormatProvider.GetType().Name} does not support options schema metadata required by {typeof(T).Name}."
@@ -393,6 +393,13 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                     : new MigrationLookup(typeof(T), schemaMetadata, migrationSteps),
         };
     }
+
+    private static bool SupportsSchemaMetadata(
+        FormatProvider.IWritableFormatProvider formatProvider
+    ) =>
+        formatProvider is FallbackFormatProvider fallbackProvider
+            ? fallbackProvider.SupportsSchemaMetadata
+            : formatProvider is IOptionsSchemaMetadataProvider;
 
     private static void ValidateMigrationSteps(
         OptionsSchemaMetadata? targetMetadata,

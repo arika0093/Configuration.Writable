@@ -14,44 +14,68 @@ namespace Configuration.Writable.FormatProvider;
 /// Wraps the canonical format provider with additional providers that may be used to read
 /// an existing configuration when the canonical file does not exist.
 /// </summary>
-internal sealed class FallbackFormatProvider : IWritableFormatProvider, IOptionsSchemaMetadataProvider
+internal sealed class FallbackFormatProvider
+    : IWritableFormatProvider,
+        IOptionsSchemaMetadataProvider
 {
     private readonly List<IWritableFormatProvider> _fallbackProviders = [];
 
     internal FallbackFormatProvider(IWritableFormatProvider primaryProvider)
     {
-        PrimaryProvider = primaryProvider ?? throw new ArgumentNullException(nameof(primaryProvider));
+        PrimaryProvider =
+            primaryProvider ?? throw new ArgumentNullException(nameof(primaryProvider));
     }
 
     internal IWritableFormatProvider PrimaryProvider { get; }
 
     internal IReadOnlyList<IWritableFormatProvider> FallbackProviders => _fallbackProviders;
 
+    internal bool SupportsSchemaMetadata =>
+        SupportsProviderSchemaMetadata(PrimaryProvider)
+        && _fallbackProviders.All(SupportsProviderSchemaMetadata);
+
     public string FileExtension => PrimaryProvider.FileExtension;
 
-    internal void AddFallback(IWritableFormatProvider provider)
+    internal FallbackFormatProvider Clone()
     {
-        if (provider is null)
+        var clone = new FallbackFormatProvider(PrimaryProvider);
+        clone._fallbackProviders.AddRange(_fallbackProviders);
+        return clone;
+    }
+
+    internal void AddFallbacks(IEnumerable<IWritableFormatProvider> providers)
+    {
+        var candidates = providers.ToList();
+        var knownExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            throw new ArgumentNullException(nameof(provider));
+            NormalizeExtension(PrimaryProvider.FileExtension),
+        };
+
+        foreach (var existing in _fallbackProviders)
+        {
+            knownExtensions.Add(NormalizeExtension(existing.FileExtension));
         }
 
-        var extension = NormalizeExtension(provider.FileExtension);
-        if (string.IsNullOrEmpty(extension))
+        foreach (var provider in candidates)
         {
-            throw new ArgumentException("Fallback format providers must declare a file extension.", nameof(provider));
+            var extension = NormalizeExtension(provider.FileExtension);
+            if (string.IsNullOrEmpty(extension))
+            {
+                throw new ArgumentException(
+                    "Fallback format providers must declare a file extension.",
+                    nameof(providers)
+                );
+            }
+
+            if (!knownExtensions.Add(extension))
+            {
+                throw new InvalidOperationException(
+                    $"A format provider for '.{extension}' is already registered."
+                );
+            }
         }
 
-        if (string.Equals(extension, NormalizeExtension(PrimaryProvider.FileExtension), StringComparison.OrdinalIgnoreCase)
-            || _fallbackProviders.Any(existing => string.Equals(
-                extension,
-                NormalizeExtension(existing.FileExtension),
-                StringComparison.OrdinalIgnoreCase)))
-        {
-            throw new InvalidOperationException($"A format provider for '.{extension}' is already registered.");
-        }
-
-        _fallbackProviders.Add(provider);
+        _fallbackProviders.AddRange(candidates);
     }
 
     public object LoadConfiguration(Type type, IWritableOptionsConfiguration options)
@@ -85,7 +109,13 @@ internal sealed class FallbackFormatProvider : IWritableFormatProvider, IOptions
     internal void PromoteIfNeeded<T>(T config, IWritableOptionsConfiguration options)
         where T : class, new()
     {
-        if (options.FileProvider.FileExists(options.ConfigFilePath))
+        // A partial write against a missing canonical file cannot preserve sibling sections
+        // from the fallback document. Keep resolving the fallback until a complete document
+        // can be promoted by the normal save path.
+        if (
+            options.SectionNameParts.Count > 0
+            || options.FileProvider.FileExists(options.ConfigFilePath)
+        )
         {
             return;
         }
@@ -108,8 +138,7 @@ internal sealed class FallbackFormatProvider : IWritableFormatProvider, IOptions
             return new ResolvedSource(PrimaryProvider, options);
         }
 
-        return ResolveFallbackSource(options)
-            ?? new ResolvedSource(PrimaryProvider, options);
+        return ResolveFallbackSource(options) ?? new ResolvedSource(PrimaryProvider, options);
     }
 
     private ResolvedSource? ResolveFallbackSource(IWritableOptionsConfiguration options)
@@ -132,6 +161,11 @@ internal sealed class FallbackFormatProvider : IWritableFormatProvider, IOptions
     }
 
     private static string NormalizeExtension(string extension) => extension.Trim().TrimStart('.');
+
+    private static bool SupportsProviderSchemaMetadata(IWritableFormatProvider provider) =>
+        provider is FallbackFormatProvider fallbackProvider
+            ? fallbackProvider.SupportsSchemaMetadata
+            : provider is IOptionsSchemaMetadataProvider;
 
     private sealed record ResolvedSource(
         IWritableFormatProvider Provider,
