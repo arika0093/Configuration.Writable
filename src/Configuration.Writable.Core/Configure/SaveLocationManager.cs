@@ -175,7 +175,9 @@ internal class LocationBuilderInternal : ILocationBuilder
         return this;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Sets the configuration folder to the standard save location for the specified application.
+    /// </summary>
     public ILocationBuilder UseStandardSaveDirectory(string applicationId)
     {
         var root = StandardSaveLocationUtility.GetConfigDirectory();
@@ -183,28 +185,36 @@ internal class LocationBuilderInternal : ILocationBuilder
         return this;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Sets the configuration folder to the directory where the executable is located. (default behavior)
+    /// </summary>
     public ILocationBuilder UseCurrentDirectory()
     {
         configFolder = Directory.GetCurrentDirectory();
         return this;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Sets the configuration folder to the current working directory.
+    /// </summary>
     public ILocationBuilder UseExecutableDirectory()
     {
         configFolder = AppContext.BaseDirectory;
         return this;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Sets the configuration folder to a special folder defined by <see cref="Environment.SpecialFolder"/>.
+    /// </summary>
     public ILocationBuilder UseSpecialFolder(Environment.SpecialFolder folder)
     {
         configFolder = Environment.GetFolderPath(folder);
         return this;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Sets the configuration folder to a custom folder path.
+    /// </summary>
     public ILocationBuilder UseCustomDirectory(string directoryPath)
     {
         configFolder = directoryPath;
