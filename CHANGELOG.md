@@ -1,3 +1,19 @@
+## [0.7.1] - 2026-09-09
+
+### 🚀 Features
+
+- Support fallback format providers with canonical promotion (#109)
+- Add migration support for fallback format providers in README
+- Reintroduce IGeneratedOptionsMetadata and IOptionsMigrationRegistrar interfaces
+
+### 🚜 Refactor
+
+- Remove IReadOnlyOptionsMonitor and related diagram from README
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.7.0
+- Update version to 0.7.1 in version.json
 ## [0.7.0] - 2026-09-07
 
 ### 🚀 Features
