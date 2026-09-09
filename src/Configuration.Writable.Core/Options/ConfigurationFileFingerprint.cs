@@ -34,7 +34,11 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
 
         try
         {
-            var path = physicalFileProvider.GetPhysicalFilePath(options.ConfigFilePath);
+            var configFilePath = options.FormatProvider
+                is FormatProvider.FallbackFormatProvider fallbackProvider
+                ? fallbackProvider.GetSelectedFilePath(options)
+                : options.ConfigFilePath;
+            var path = physicalFileProvider.GetPhysicalFilePath(configFilePath);
             if (!File.Exists(path))
             {
                 return new ConfigurationFileFingerprint(false, 0, 0, null);

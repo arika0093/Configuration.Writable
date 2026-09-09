@@ -250,7 +250,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         var filePath = GetWatchPath(options);
         var directory = Path.GetDirectoryName(filePath);
-        var fileName = Path.GetFileName(filePath);
+        var fileName =
+            options.FormatProvider is FormatProvider.FallbackFormatProvider
+                ? "*"
+                : Path.GetFileName(filePath);
 
         if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName))
         {
@@ -284,13 +287,18 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 EnableRaisingEvents = true,
             };
 
-            watcher.Changed += (sender, args) => OnFileChanged(options.InstanceName, args);
-            watcher.Created += (sender, args) => OnFileChanged(options.InstanceName, args);
-            watcher.Deleted += (sender, args) => OnFileChanged(options.InstanceName, args);
-            watcher.Renamed += (sender, args) => OnFileChanged(options.InstanceName, args);
+            watcher.Changed += (sender, args) =>
+                OnFileChanged(options.InstanceName, args, filePath);
+            watcher.Created += (sender, args) =>
+                OnFileChanged(options.InstanceName, args, filePath);
+            watcher.Deleted += (sender, args) =>
+                OnFileChanged(options.InstanceName, args, filePath);
+            watcher.Renamed += (sender, args) =>
+                OnFileChanged(options.InstanceName, args, filePath);
             watcher.Error += (sender, args) => OnWatcherError(options.InstanceName, args);
 
             dataSource.Watcher = watcher;
+            dataSource.WatchedPath = filePath;
             dataSource.WatcherRecoveryAttempts = 0;
             dataSource.WatcherRecoveryTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             return true;
@@ -302,6 +310,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 $"Configuration file watcher could not be started: {fileName}"
             );
             dataSource.Watcher = null;
+            dataSource.WatchedPath = null;
             return false;
         }
         catch (UnauthorizedAccessException ex)
@@ -311,15 +320,19 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 $"Configuration file watcher could not be started: {fileName}"
             );
             dataSource.Watcher = null;
+            dataSource.WatchedPath = null;
             return false;
         }
     }
 
     // Called when the configuration file changes
-    private void OnFileChanged(string instanceName, FileSystemEventArgs args)
+    private void OnFileChanged(string instanceName, FileSystemEventArgs args, string watchedPath)
     {
         var options = _optionsRegistry.Get(instanceName);
-        if (!string.Equals(GetWatchPath(options), args.FullPath, GetPathComparison()))
+        if (
+            !_dataSources.TryGetValue(instanceName, out var dataSource)
+            || !IsRelevantFileChange(options, watchedPath, args.FullPath)
+        )
         {
             // Ignore changes to other files in the same directory
             // e.g. temporary file (foobar.json~ABCDEF.TMP)
@@ -335,6 +348,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             );
             options.Logger?.LogError(exception, "Configuration file was deleted.");
             NotifyReloadFailure(instanceName, exception);
+            RebindFileWatcher(options, dataSource);
             return;
         }
 
@@ -354,6 +368,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         );
 
         ReloadAndNotify(instanceName);
+        RebindFileWatcher(options, dataSource);
     }
 
     private static string GetWatchPath(WritableOptionsConfiguration<T> options)
@@ -368,6 +383,60 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         options.FormatProvider is FormatProvider.FallbackFormatProvider fallbackProvider
             ? fallbackProvider.GetSelectedFilePath(options)
             : options.ConfigFilePath;
+
+    private static bool IsRelevantFileChange(
+        WritableOptionsConfiguration<T> options,
+        string watchedPath,
+        string changedPath
+    )
+    {
+        var pathComparison = GetPathComparison();
+        if (string.Equals(watchedPath, changedPath, pathComparison))
+        {
+            return true;
+        }
+
+        if (options.FormatProvider is not FormatProvider.FallbackFormatProvider)
+        {
+            return false;
+        }
+
+        var canonicalPath = GetPhysicalPath(options, options.ConfigFilePath);
+        var selectedPath = GetWatchPath(options);
+        if (
+            string.Equals(canonicalPath, changedPath, pathComparison)
+            || string.Equals(selectedPath, changedPath, pathComparison)
+        )
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string GetPhysicalPath(
+        WritableOptionsConfiguration<T> options,
+        string configFilePath
+    ) =>
+        options.FileProvider is IPhysicalFileProvider physicalFileProvider
+            ? physicalFileProvider.GetPhysicalFilePath(configFilePath)
+            : configFilePath;
+
+    private void RebindFileWatcher(
+        WritableOptionsConfiguration<T> options,
+        OptionsMonitorDataSource dataSource
+    )
+    {
+        var currentWatchPath = GetWatchPath(options);
+        if (string.Equals(dataSource.WatchedPath, currentWatchPath, GetPathComparison()))
+        {
+            return;
+        }
+
+        dataSource.Watcher?.Dispose();
+        dataSource.Watcher = null;
+        SetupFileWatcher(options, dataSource);
+    }
 
     private static StringComparison GetPathComparison() =>
         Path.DirectorySeparatorChar == '\\'
@@ -651,6 +720,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public List<Action<Exception, string?>> FailureListeners { get; } = [];
         private object ListenersLock { get; } = new();
         public FileSystemWatcher? Watcher { get; set; }
+        public string? WatchedPath { get; set; }
         public Timer? DebounceTimer { get; set; }
         public Timer? WatcherRecoveryTimer { get; set; }
         public int WatcherRecoveryAttempts { get; set; }

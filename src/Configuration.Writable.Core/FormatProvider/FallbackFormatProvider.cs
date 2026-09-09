@@ -96,7 +96,13 @@ internal sealed class FallbackFormatProvider
         IWritableOptionsConfiguration options,
         CancellationToken cancellationToken = default
     )
-        where T : class, new() => PrimaryProvider.SaveAsync(config, options, cancellationToken);
+        where T : class, new()
+    {
+        var source = ResolveReadSource(options);
+        return options.SectionNameParts.Count > 0 && source.Provider != PrimaryProvider
+            ? source.Provider.SaveAsync(config, source.Options, cancellationToken)
+            : PrimaryProvider.SaveAsync(config, options, cancellationToken);
+    }
 
     public OptionsSchemaMetadata? ReadSchemaMetadata(IWritableOptionsConfiguration options)
     {
