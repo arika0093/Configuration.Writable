@@ -19,6 +19,12 @@ namespace Configuration.Writable
         public void ResetToLoaded(System.Action<T, T> reset) { }
         public void Update(System.Action<T> updater) { }
     }
+    public interface IGeneratedOptionsMetadata
+    {
+        string? ModelId { get; }
+        int? Version { get; }
+        void RegisterMigrations(Configuration.Writable.IOptionsMigrationRegistrar registrar);
+    }
     [System.Obsolete("This interface is deprecated. Use [OptionsModel(Version = x)] instead.")]
     public interface IHasVersion
     {
@@ -31,6 +37,12 @@ namespace Configuration.Writable
         string ReadPath { get; }
         System.Collections.Generic.IReadOnlyList<string> SectionNameParts { get; }
         string WritePath { get; }
+    }
+    public interface IOptionsMigrationRegistrar
+    {
+        void Register<TOld, TNew>(System.Func<TOld, TNew> migrator, string modelId, int oldVersion, int newVersion)
+            where TOld :  class, new ()
+            where TNew :  class, new ();
     }
     public interface IProfiledReadOnlyOptions<T>
         where T :  class, new ()

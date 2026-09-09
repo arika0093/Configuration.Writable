@@ -197,18 +197,6 @@ namespace Configuration.Writable.FormatProvider
 }
 namespace Configuration.Writable
 {
-    public interface IGeneratedOptionsMetadata
-    {
-        string? ModelId { get; }
-        int? Version { get; }
-        void RegisterMigrations(Configuration.Writable.IOptionsMigrationRegistrar registrar);
-    }
-    public interface IOptionsMigrationRegistrar
-    {
-        void Register<TOld, TNew>(System.Func<TOld, TNew> migrator, string modelId, int oldVersion, int newVersion)
-            where TOld :  class, new ()
-            where TNew :  class, new ();
-    }
     public interface IWritableOptionsConfigRegistry<T>
         where T :  class, new ()
     {
