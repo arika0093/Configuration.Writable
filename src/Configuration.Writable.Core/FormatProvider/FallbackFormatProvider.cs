@@ -118,6 +118,38 @@ internal sealed class FallbackFormatProvider
     internal string GetSelectedFilePath(IWritableOptionsConfiguration options) =>
         ResolveReadSource(options).Options.ConfigFilePath;
 
+    internal void ValidateConfigurationPath(string canonicalPath)
+    {
+        foreach (var provider in _fallbackProviders)
+        {
+            var fallbackPath = Path.ChangeExtension(canonicalPath, provider.FileExtension);
+            if (!string.Equals(canonicalPath, fallbackPath, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var canonicalExtension = NormalizeExtension(PrimaryProvider.FileExtension);
+            var fallbackExtension = NormalizeExtension(provider.FileExtension);
+            var extensionlessPath = Path.ChangeExtension(canonicalPath, null);
+
+            throw new InvalidOperationException(
+                $"""
+                The canonical configuration path '{canonicalPath}' conflicts with the registered fallback format '.{fallbackExtension}'.
+
+                Canonical path: '{canonicalPath}'
+                Fallback path:  '{fallbackPath}'
+
+                Both resolve to the same file, so the fallback provider can never be selected.
+
+                Canonical format: '.{canonicalExtension}'
+                Fallback format:  '.{fallbackExtension}'
+
+                Use an extensionless file path such as '{extensionlessPath}', or specify a file extension that does not conflict with any registered fallback format.
+                """
+            );
+        }
+    }
+
     internal void PromoteIfNeeded<T>(T config, IWritableOptionsConfiguration options)
         where T : class, new()
     {
