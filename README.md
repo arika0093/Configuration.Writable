@@ -85,9 +85,6 @@ Install `Configuration.Writable` from NuGet.
 dotnet add package Configuration.Writable
 ```
 
-> [!NOTE]
-> If you only need type definitions, you can use `Configuration.Writable.Abstractions`.
-
 Then, prepare a class (`UserSetting`) in advance that you want to read and write as settings.
 
 ```csharp
@@ -194,7 +191,6 @@ Reading and writing settings is performed in the same way as described above in 
 - [FormatProvider](#formatprovider)
 - [FileProvider](#fileprovider)
 - [Change Detection](#change-detection)
-- [RegisterAsSingleton](#registerassingleton)
 - [Logging](#logging)
 - [SectionName](#sectionname)
 - [Validation](#validation)
@@ -356,7 +352,7 @@ Currently, the following providers are available:
 
 #### YAML
 
-To read and write YAML, you need to use [VYaml](https://github.com/hadashiA/VYaml). Therefore, you need to add `[YamlObject]` to your settings class.
+To read and write YAML, you need to add `[YamlObject]` to your settings class.
 
 ```csharp
 [OptionsModel(Id = "SampleSetting", Version = 1), YamlObject] // add [YamlObject] and mark as partial class
@@ -640,23 +636,6 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 ## Json Schema Support
 Configuration.Writable can generate [JSON Schema](https://json-schema.org/) files for versioned options models and add schema references to root JSON and YAML files.
 
-### What is JSON Schema
-
-JSON Schema is a specification for describing the structure of JSON data.
-It allows you to define data types, required properties, descriptions, and more.
-You can prepare a JSON file in advance like the following:
-
-```jsonc
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "MySettings.v1.json",
-  // schema definition for MySettings
-}
-```
-
-By embedding this at the beginning of the configuration file,
-when users open a JSON file in a compatible editor like VSCode, code completion and validation based on the schema will be performed.
-
 ### Generating JSON Schema
 
 First, add the following configuration in your code:
@@ -738,9 +717,9 @@ builder.Services.AddWritableOptions(conf => {
 
 ### Yaml support
 
-Yamlの場合でも同様に、スキーマ情報を埋め込むことができます。
-ただし、VYamlの初期設定ではcamelCaseで各項目が書き込まれる一方、JSON スキーマの初期設定ではPascalCaseで書き込まれるため、
-どちらかの設定を変更する必要があります。
+You can embed schema information in YAML files in the same way.
+However, VYaml's default configuration writes items in camelCase, while JSON Schema's default configuration writes in PascalCase.
+Therefore, you need to change one of these settings.
 
 ```csharp
 builder.Services.AddWritableOptions(conf => {
@@ -748,7 +727,7 @@ builder.Services.AddWritableOptions(conf => {
     conf.Add<SampleSetting>();
     // format provider (YAML)
     conf.FormatProvider = new YamlFormatProvider {
-        // 明示的に指定する場合,以下のようにNamingConventionを指定する
+        // When explicitly specifying, set NamingConvention as follows
         SerializerOptions = new YamlSerializerOptions {
             NamingConvention = YamlNamingConvention.CamelCase
         }
@@ -759,13 +738,13 @@ builder.Services.AddWritableOptions(conf => {
     conf.SchemaBaseUri = "./schemas/";
 });
 
-// JSONスキーマ側をcamelCaseに変更
+// Change JSON Schema side to camelCase
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(SampleSetting))]
 public partial class SampleSettingSerializerContext : JsonSerializerContext;
 ```
 
-以下のように、YAMLファイルの先頭にスキーマ情報が埋め込まれます。
+Schema information is embedded at the beginning of the YAML file as follows.
 
 ```yaml
 # yaml-language-server: $schema=./schemas/MySettings.v1.json
