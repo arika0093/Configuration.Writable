@@ -36,8 +36,8 @@ public class XmlSourceGeneratedVersioningTests
 
         var document = XDocument.Parse(_fileProvider.ReadAllText(fileName));
         var section = document.Root!.Element("Application")!.Element("Settings")!;
-        section.Element("ModelId")!.Value.ShouldBe("XmlGeneratedSettings");
         section.Element("Version")!.Value.ShouldBe("2");
+        section.Element("ModelId").ShouldBeNull();
         section.Element("Names")!.Elements("string").Single().Value.ShouldBe("xml");
     }
 

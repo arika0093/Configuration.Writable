@@ -154,6 +154,8 @@ namespace Configuration.Writable.FormatProvider
     {
         protected FormatProviderBase() { }
         public abstract string FileExtension { get; }
+        public virtual System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public virtual string SchemaVersionProperty { get; set; }
         public object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options) { }
         public abstract System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
         public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
@@ -167,6 +169,8 @@ namespace Configuration.Writable.FormatProvider
     public interface IWritableFormatProvider
     {
         string FileExtension { get; }
+        System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        string SchemaVersionProperty { get; set; }
         object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options);
         System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
@@ -178,6 +182,8 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; init; }
+        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public override string SchemaVersionProperty { get; set; }
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
@@ -189,6 +195,8 @@ namespace Configuration.Writable.FormatProvider
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
         public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
+        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public override string SchemaVersionProperty { get; set; }
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
@@ -222,8 +230,6 @@ namespace Configuration.Writable
     }
     public sealed class OptionsSchemaMetadata : System.IEquatable<Configuration.Writable.OptionsSchemaMetadata>
     {
-        public const string ModelIdPropertyName = "ModelId";
-        public const string VersionPropertyName = "Version";
         public OptionsSchemaMetadata(string? ModelId, int? Version) { }
         public string? ModelId { get; init; }
         public int? Version { get; init; }

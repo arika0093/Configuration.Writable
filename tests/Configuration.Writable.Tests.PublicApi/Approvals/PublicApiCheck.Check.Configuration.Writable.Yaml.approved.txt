@@ -6,6 +6,8 @@ namespace Configuration.Writable.FormatProvider
         public YamlFormatProvider() { }
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }
+        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public override string SchemaVersionProperty { get; set; }
         public VYaml.Serialization.YamlSerializerOptions SerializerOptions { get; init; }
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
         public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -47,6 +48,12 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
     public Encoding Encoding { get; init; } = Encoding.UTF8;
 
     /// <inheritdoc />
+    public override string SchemaVersionProperty { get; set; } = "$version";
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } = ["Version"];
+
+    /// <inheritdoc />
     public override string FileExtension => "json";
 
     /// <inheritdoc />
@@ -84,13 +91,8 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
                 );
             }
 
-            var modelId = ReadOptionalString(
-                current,
-                OptionsSchemaMetadata.ModelIdPropertyName,
-                serializerOptions
-            );
             var version = ReadOptionalVersion(current, serializerOptions) ?? 1;
-            return new OptionsSchemaMetadata(modelId, version);
+            return new OptionsSchemaMetadata(null, version);
         }
         finally
         {
@@ -101,45 +103,30 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         }
     }
 
-    private static string? ReadOptionalString(
-        JsonElement element,
-        string propertyName,
-        JsonSerializerOptions options
-    )
+    private int? ReadOptionalVersion(JsonElement element, JsonSerializerOptions options)
     {
-        if (!TryGetMetadataProperty(element, propertyName, options, out var value))
-        {
-            return null;
-        }
-
-        if (value.ValueKind != JsonValueKind.String)
-        {
-            throw new FormatException($"JSON metadata property '{propertyName}' must be a string.");
-        }
-
-        return value.GetString();
-    }
-
-    private static int? ReadOptionalVersion(JsonElement element, JsonSerializerOptions options)
-    {
-        if (
-            !TryGetMetadataProperty(
-                element,
-                OptionsSchemaMetadata.VersionPropertyName,
-                options,
-                out var value
-            )
+        foreach (
+            var propertyName in new[] { SchemaVersionProperty }
+                .Concat(SchemaVersionFallbackProperties)
+                .Distinct(StringComparer.Ordinal)
         )
         {
-            return null;
+            if (!TryGetMetadataProperty(element, propertyName, options, out var value))
+            {
+                continue;
+            }
+
+            if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var version))
+            {
+                throw new FormatException(
+                    $"JSON metadata property '{propertyName}' must be an integer."
+                );
+            }
+
+            return version;
         }
 
-        if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out var version))
-        {
-            throw new FormatException("JSON metadata property 'Version' must be an integer.");
-        }
-
-        return version;
+        return null;
     }
 
     private static bool TryGetMetadataProperty(
@@ -274,7 +261,8 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         var serializeAction = JsonWriterHelper.AddSchemaMetadata(
             CreateSerializeAction<T>(typeInfo),
             options.SchemaMetadata,
-            config is not IHasVersion
+            config is not IHasVersion,
+            SchemaVersionProperty
         );
         var writerOptions = new JsonWriterOptions
         {

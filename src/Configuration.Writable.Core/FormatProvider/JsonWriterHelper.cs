@@ -91,7 +91,8 @@ internal static class JsonWriterHelper
     public static JsonSerializeAction<T> AddSchemaMetadata<T>(
         JsonSerializeAction<T> serializeAction,
         OptionsSchemaMetadata? metadata,
-        bool persistVersion
+        bool persistVersion,
+        string schemaVersionProperty
     )
     {
         if (metadata is null)
@@ -117,16 +118,9 @@ internal static class JsonWriterHelper
             }
 
             writer.WriteStartObject();
-            if (metadata.ModelId is not null)
-            {
-                writer.WriteString(OptionsSchemaMetadata.ModelIdPropertyName, metadata.ModelId);
-            }
             if (persistVersion && metadata.Version is not null)
             {
-                writer.WriteNumber(
-                    OptionsSchemaMetadata.VersionPropertyName,
-                    metadata.Version.Value
-                );
+                writer.WriteNumber(schemaVersionProperty, metadata.Version.Value);
             }
 
             foreach (var property in document.RootElement.EnumerateObject())

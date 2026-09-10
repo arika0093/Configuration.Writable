@@ -1,7 +1,7 @@
 {
   "ApplicationSettings": {
     "Database": {
-      "Version": 1,
+      "$version": 1,
       "stringValue": "TestString",
       "intValue": 42,
       "doubleValue": 3.14159,

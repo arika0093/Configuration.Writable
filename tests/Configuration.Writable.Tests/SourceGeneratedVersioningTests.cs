@@ -112,6 +112,35 @@ public class SourceGeneratedVersioningTests
     }
 
     [Fact]
+    public async Task GeneratedMigration_ShouldUseConfiguredSchemaVersionFallback()
+    {
+        const string fileName = "generated-custom-version.json";
+        await _fileProvider.SaveToFileAsync(
+            fileName,
+            Encoding.UTF8.GetBytes("""{"$version":1,"Name":"legacy"}""")
+        );
+        var provider = new JsonFormatProvider
+        {
+            SchemaVersionProperty = "$cwVersion",
+            SchemaVersionFallbackProperties = ["$version", "Version"],
+        };
+        var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
+        {
+            FilePath = fileName,
+            FileProvider = _fileProvider,
+            FormatProvider = provider,
+        };
+
+        var result = provider.LoadWithMigration(builder.BuildOptions(""));
+
+        result.Names.ShouldBe(["legacy"]);
+
+        var options = builder.BuildOptions("");
+        await provider.SaveAsync(result, options);
+        _fileProvider.ReadAllText(fileName).ShouldContain("\"$cwVersion\":3");
+    }
+
+    [Fact]
     public async Task DisabledMigrationSupport_ShouldUseDefaultsForOlderVersion()
     {
         const string fileName = "generated-cutoff.json";
@@ -175,8 +204,8 @@ public class SourceGeneratedVersioningTests
 
         using var document = JsonDocument.Parse(_fileProvider.ReadAllText(fileName));
         var section = document.RootElement.GetProperty("Application").GetProperty("Settings");
-        section.GetProperty("ModelId").GetString().ShouldBe("GeneratedSettings");
-        section.GetProperty("Version").GetInt32().ShouldBe(3);
+        section.TryGetProperty("ModelId", out _).ShouldBeFalse();
+        section.GetProperty("$version").GetInt32().ShouldBe(3);
         section.GetProperty("Names")[0].GetString().ShouldBe("one");
     }
 
@@ -197,17 +226,17 @@ public class SourceGeneratedVersioningTests
         var loaded = provider.LoadWithMigration(options);
 
         loaded.Names.ShouldBe(["aot"]);
-        _fileProvider.ReadAllText(fileName).ShouldContain("\"ModelId\"");
-        _fileProvider.ReadAllText(fileName).ShouldContain("\"Version\"");
+        _fileProvider.ReadAllText(fileName).ShouldNotContain("\"ModelId\"");
+        _fileProvider.ReadAllText(fileName).ShouldContain("\"$version\"");
     }
 
     [Fact]
-    public async Task Load_ShouldRejectDifferentModelId()
+    public async Task Load_ShouldIgnoreModelId()
     {
         const string fileName = "wrong-model.json";
         await _fileProvider.SaveToFileAsync(
             fileName,
-            Encoding.UTF8.GetBytes("""{"ModelId":"OtherSettings","Version":3,"Names":[]}""")
+            Encoding.UTF8.GetBytes("""{"ModelId":"OtherSettings","$version":3,"Names":[]}""")
         );
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
         {
@@ -215,12 +244,9 @@ public class SourceGeneratedVersioningTests
             FileProvider = _fileProvider,
         };
 
-        var exception = Should.Throw<InvalidOperationException>(() =>
-            new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""))
-        );
+        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
 
-        exception.Message.ShouldContain("OtherSettings");
-        exception.Message.ShouldContain("GeneratedSettings");
+        result.Names.ShouldBeEmpty();
     }
 
     [Fact]
@@ -252,8 +278,8 @@ public class SourceGeneratedVersioningTests
         );
 
         var json = _fileProvider.ReadAllText("unversioned.json");
-        json.ShouldContain("\"ModelId\":\"GeneratedDefaultVersion\"");
-        json.ShouldContain("\"Version\":1");
+        json.ShouldNotContain("\"ModelId\"");
+        json.ShouldContain("\"$version\":1");
     }
 
     [Fact]
@@ -297,11 +323,15 @@ public class SourceGeneratedVersioningTests
             .GetOptions<GeneratedDefaultVersionSettings>()
             .SaveAsync(new GeneratedDefaultVersionSettings { Value = "static" });
 
-        _fileProvider.ReadAllText(fileName).ShouldContain("GeneratedDefaultVersion");
+        _fileProvider.ReadAllText(fileName).ShouldContain("\"$version\"");
     }
 
     private sealed class MetadataUnsupportedProvider : IWritableFormatProvider
     {
+        public string SchemaVersionProperty { get; set; } = "Version";
+
+        public IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } = [];
+
         public string FileExtension => "test";
 
         public object LoadConfiguration(Type type, IWritableOptionsConfiguration options) =>
@@ -337,10 +367,6 @@ public class OptionsVersioningGeneratorTests
         "CWWR005"
     )]
     [InlineData(
-        "[OptionsModel(Id = \"Model\")] public partial class Model { public int Version { get; set; } }",
-        "CWWR006"
-    )]
-    [InlineData(
         "[OptionsModel(Id = \"Model\")] public partial class Model : IHasVersion { public int Version { get; set; } = 1; }",
         "CWWR007"
     )]
@@ -358,7 +384,7 @@ public class OptionsVersioningGeneratorTests
     }
 
     [Fact]
-    public void Generator_ShouldDetectDuplicateAndSerializedReservedNames()
+    public void Generator_ShouldAllowVersionAndModelIdProperties()
     {
         var result = RunGenerator(
             """
@@ -376,11 +402,11 @@ public class OptionsVersioningGeneratorTests
         );
 
         result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldContain("CWWR004");
-        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldContain("CWWR006");
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldNotContain("CWWR006");
     }
 
     [Fact]
-    public void Generator_ShouldIgnoreUnrelatedAttributeStringArguments()
+    public void Generator_ShouldAllowSerializedVersionProperty()
     {
         var result = RunGenerator(
             """
@@ -391,25 +417,6 @@ public class OptionsVersioningGeneratorTests
             {
                 [DefaultValue("Version")]
                 public string SchemaRevision { get; set; } = "";
-            }
-            """
-        );
-
-        result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldNotContain("CWWR006");
-    }
-
-    [Fact]
-    public void Generator_ShouldIgnoreReservedNameOnIgnoredMember()
-    {
-        var result = RunGenerator(
-            """
-            using System.Text.Json.Serialization;
-            using Configuration.Writable;
-            [OptionsModel(Id = "Model", Version = 1)]
-            public partial class Model
-            {
-                [JsonIgnore]
-                public string Version { get; set; } = "";
             }
             """
         );

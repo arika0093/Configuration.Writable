@@ -66,15 +66,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         true,
         helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr005"
     );
-    private static readonly DiagnosticDescriptor ReservedNameCollision = new(
-        "CWWR006",
-        "Options model member uses a reserved metadata name",
-        "Member '{0}' serializes as reserved schema metadata name '{1}'",
-        "Configuration.Writable.Versioning",
-        DiagnosticSeverity.Error,
-        true,
-        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr006"
-    );
     private static readonly DiagnosticDescriptor LegacyVersioning = new(
         "CWWR007",
         "IHasVersion is legacy versioning",
@@ -545,7 +536,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                         "CWWR001" => MissingId,
                         "CWWR002" => InvalidId,
                         "CWWR003" => InvalidVersion,
-                        "CWWR006" => ReservedNameCollision,
                         "CWWR007" => LegacyVersioning,
                         "CWWR008" => PartialRequired,
                         "CWWR009" => UnsupportedModel,
@@ -639,37 +629,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             )
                 diagnostics.Add(new("CWWR009", location, type.Name));
 
-            foreach (var member in GetSerializableMembers(type, cancellationToken))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                foreach (var serializedName in GetSerializedNames(member, cancellationToken))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (
-                        serializedName is "ModelId" or "Version"
-                        && !(
-                            serializedName == "Version"
-                            && usesLegacyVersion
-                            && !versionSpecified
-                            && member.Name == "Version"
-                        )
-                    )
-                    {
-                        diagnostics.Add(
-                            new(
-                                "CWWR006",
-                                DiagnosticLocation.Create(
-                                    member.Locations.FirstOrDefault() ?? location.ToLocation()
-                                ),
-                                member.Name,
-                                serializedName
-                            )
-                        );
-                        break;
-                    }
-                }
-            }
-
             var containingTypes = new Stack<string>();
             for (
                 var current = type.ContainingType;
@@ -705,114 +664,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 new EquatableArray<GeneratorDiagnostic>(diagnostics)
             );
         }
-
-        private static IEnumerable<ISymbol> GetSerializableMembers(
-            INamedTypeSymbol type,
-            CancellationToken cancellationToken
-        )
-        {
-            for (var current = type; current != null; current = current.BaseType)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                foreach (var member in current.GetMembers())
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (member.IsStatic || member.DeclaredAccessibility != Accessibility.Public)
-                    {
-                        continue;
-                    }
-                    if (member is IPropertySymbol { IsIndexer: false } or IFieldSymbol)
-                    {
-                        yield return member;
-                    }
-                }
-            }
-        }
-
-        private static IEnumerable<string> GetSerializedNames(
-            ISymbol member,
-            CancellationToken cancellationToken
-        )
-        {
-            if (HasSerializationIgnoreAttribute(member))
-            {
-                yield break;
-            }
-
-            yield return member.Name;
-            foreach (var attribute in member.GetAttributes())
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var attributeName = attribute.AttributeClass?.ToDisplayString();
-                if (attributeName == "System.Text.Json.Serialization.JsonPropertyNameAttribute")
-                {
-                    if (attribute.ConstructorArguments.FirstOrDefault().Value is string name)
-                    {
-                        yield return name;
-                    }
-                }
-                else if (attributeName == "System.Runtime.Serialization.DataMemberAttribute")
-                {
-                    if (GetNamedStringArgument(attribute, "Name") is { } name)
-                    {
-                        yield return name;
-                    }
-                }
-                else if (attributeName == "System.Xml.Serialization.XmlElementAttribute")
-                {
-                    if (attribute.ConstructorArguments.FirstOrDefault().Value is string name)
-                    {
-                        yield return name;
-                    }
-                    if (GetNamedStringArgument(attribute, "ElementName") is { } elementName)
-                    {
-                        yield return elementName;
-                    }
-                }
-                else if (
-                    attributeName
-                    is "YamlDotNet.Serialization.YamlMemberAttribute"
-                        or "VYaml.Annotations.YamlMemberAttribute"
-                )
-                {
-                    if (GetNamedStringArgument(attribute, "Alias") is { } alias)
-                    {
-                        yield return alias;
-                    }
-                    if (GetNamedStringArgument(attribute, "Name") is { } name)
-                    {
-                        yield return name;
-                    }
-                }
-            }
-        }
-
-        private static bool HasSerializationIgnoreAttribute(ISymbol member) =>
-            member.GetAttributes().Any(IsAlwaysIgnoredAttribute);
-
-        private static bool IsAlwaysIgnoredAttribute(AttributeData attribute)
-        {
-            var attributeName = attribute.AttributeClass?.ToDisplayString();
-            if (attributeName == "System.Text.Json.Serialization.JsonIgnoreAttribute")
-            {
-                var condition = attribute.NamedArguments.FirstOrDefault(argument =>
-                    argument.Key == "Condition"
-                );
-                return condition.Key is null
-                    || condition.Value.Value is not int conditionValue
-                    || conditionValue == 0;
-            }
-
-            return attributeName
-                is "System.Xml.Serialization.XmlIgnoreAttribute"
-                    or "System.Runtime.Serialization.IgnoreDataMemberAttribute"
-                    or "YamlDotNet.Serialization.YamlIgnoreAttribute"
-                    or "VYaml.Annotations.YamlIgnoreAttribute";
-        }
-
-        private static string? GetNamedStringArgument(AttributeData attribute, string name) =>
-            attribute.NamedArguments.FirstOrDefault(argument => argument.Key == name).Value.Value
-            as string;
 
         private static bool HasAccessibleParameterlessConstructor(
             INamedTypeSymbol type,

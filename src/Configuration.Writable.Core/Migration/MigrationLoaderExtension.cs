@@ -43,7 +43,6 @@ internal static class MigrationLoaderExtension
                 () => metadataProvider.ReadSchemaMetadata(options)
             );
         ValidateFileMetadata(fileMetadata);
-        ValidateModelId(targetMetadata, fileMetadata);
 
         // Missing documents or sections are initialized directly as the target type.
         if (fileMetadata is null)
@@ -129,30 +128,9 @@ internal static class MigrationLoaderExtension
 
     private static void ValidateFileMetadata(OptionsSchemaMetadata? fileMetadata)
     {
-        if (fileMetadata?.ModelId is not null && string.IsNullOrWhiteSpace(fileMetadata.ModelId))
-        {
-            throw new FormatException("Configuration model ID cannot be empty.");
-        }
         if (fileMetadata?.Version is <= 0)
         {
             throw new FormatException("Configuration schema version must be greater than zero.");
-        }
-    }
-
-    private static void ValidateModelId(
-        OptionsSchemaMetadata? targetMetadata,
-        OptionsSchemaMetadata? fileMetadata
-    )
-    {
-        if (
-            targetMetadata?.ModelId is not null
-            && fileMetadata?.ModelId is not null
-            && targetMetadata.ModelId != fileMetadata.ModelId
-        )
-        {
-            throw new InvalidOperationException(
-                $"Configuration model ID '{fileMetadata.ModelId}' does not match expected model ID '{targetMetadata.ModelId}'."
-            );
         }
     }
 

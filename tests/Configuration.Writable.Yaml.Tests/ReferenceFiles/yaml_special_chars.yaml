@@ -1,4 +1,4 @@
-Version: 1
+$version: 1
 stringValue: "Test with \"quotes\" and: colons"
 intValue: 42
 doubleValue: 3.14159

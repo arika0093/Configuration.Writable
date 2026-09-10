@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.IO;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,20 +55,25 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
             }
         }
 
-        var modelId = current.Element(OptionsSchemaMetadata.ModelIdPropertyName)?.Value;
-        var versionElement = current.Element(OptionsSchemaMetadata.VersionPropertyName);
+        var versionElement = new[] { SchemaVersionProperty }
+            .Concat(SchemaVersionFallbackProperties)
+            .Distinct(StringComparer.Ordinal)
+            .Select(name => current.Element(name))
+            .FirstOrDefault(element => element != null);
         var version = 1;
         if (versionElement != null)
         {
             if (!int.TryParse(versionElement.Value, out var parsedVersion))
             {
-                throw new FormatException("XML metadata element 'Version' must be an integer.");
+                throw new FormatException(
+                    $"XML metadata element '{versionElement.Name}' must be an integer."
+                );
             }
 
             version = parsedVersion;
         }
 
-        return new OptionsSchemaMetadata(modelId, version);
+        return new OptionsSchemaMetadata(null, version);
     }
 
     /// <inheritdoc />
@@ -147,7 +153,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
     /// <summary>
     /// Gets the save contents for the configuration.
     /// </summary>
-    private static ReadOnlyMemory<byte> GetSaveContents<T>(
+    private ReadOnlyMemory<byte> GetSaveContents<T>(
         T config,
         IWritableOptionsConfiguration options
     )
@@ -175,7 +181,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         {
             throw new InvalidOperationException("Failed to serialize configuration to XML");
         }
-        AddSchemaMetadata(configElement, config, options.SchemaMetadata);
+        AddSchemaMetadata(configElement, config, options.SchemaMetadata, SchemaVersionProperty);
 
         // Build nested XML structure with innerXml
         var innerXml = configElement.InnerXml;
@@ -191,7 +197,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
     /// Gets the save contents for partial write (when SectionName is specified).
     /// Reads existing file and merges the new configuration into the specified section.
     /// </summary>
-    private static ReadOnlyMemory<byte> GetPartialSaveContents<T>(
+    private ReadOnlyMemory<byte> GetPartialSaveContents<T>(
         T config,
         IWritableOptionsConfiguration options
     )
@@ -200,7 +206,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         var parts = options.SectionNameParts;
         var existingDoc = LoadExistingDocument(options);
         var configElement = SerializeConfiguration(config);
-        AddSchemaMetadata(configElement, config, options.SchemaMetadata);
+        AddSchemaMetadata(configElement, config, options.SchemaMetadata, SchemaVersionProperty);
         var resultDoc =
             existingDoc?.Root == null
                 ? CreatePartialDocument(configElement, parts, options)
@@ -255,7 +261,8 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
     private static void AddSchemaMetadata<T>(
         XmlElement configElement,
         T config,
-        OptionsSchemaMetadata? metadata
+        OptionsSchemaMetadata? metadata,
+        string schemaVersionProperty
     )
     {
         if (metadata == null)
@@ -266,17 +273,11 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         var document = configElement.OwnerDocument;
         if (metadata.Version is not null && config is not IHasVersion)
         {
-            var version = document.CreateElement(OptionsSchemaMetadata.VersionPropertyName);
+            var version = document.CreateElement(schemaVersionProperty);
             version.InnerText = metadata.Version.Value.ToString(
                 System.Globalization.CultureInfo.InvariantCulture
             );
             configElement.PrependChild(version);
-        }
-        if (metadata.ModelId is not null)
-        {
-            var modelId = document.CreateElement(OptionsSchemaMetadata.ModelIdPropertyName);
-            modelId.InnerText = metadata.ModelId;
-            configElement.PrependChild(modelId);
         }
     }
 

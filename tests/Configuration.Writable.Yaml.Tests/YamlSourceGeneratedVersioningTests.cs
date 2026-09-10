@@ -43,8 +43,8 @@ public class YamlSourceGeneratedVersioningTests
         )!;
         var application = (Dictionary<object, object>)document["Application"];
         var section = (Dictionary<object, object>)application["Settings"];
-        section["ModelId"].ShouldBe("YamlGeneratedSettings");
-        section["Version"].ToString().ShouldBe("2");
+        section.ContainsKey("ModelId").ShouldBeFalse();
+        section["$version"].ToString().ShouldBe("2");
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class YamlSourceGeneratedVersioningTests
             fileName,
             Encoding.UTF8.GetBytes(
                 """
-                Version: true
+                $version: true
                 Names: []
                 """
             )

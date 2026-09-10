@@ -12,6 +12,16 @@ namespace Configuration.Writable.FormatProvider;
 public interface IWritableFormatProvider
 {
     /// <summary>
+    /// Gets the property name used to persist the configuration schema version.
+    /// </summary>
+    string SchemaVersionProperty { get; set; }
+
+    /// <summary>
+    /// Gets the property names accepted when reading schema versions saved with earlier settings.
+    /// </summary>
+    System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+
+    /// <summary>
     /// Gets the file extension associated with the current file, excluding the leading period (e.g., "txt").
     /// </summary>
     string FileExtension { get; }

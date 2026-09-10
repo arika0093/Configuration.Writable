@@ -15,6 +15,12 @@ namespace Configuration.Writable.FormatProvider;
 public abstract class FormatProviderBase : IWritableFormatProvider
 {
     /// <inheritdoc />
+    public virtual string SchemaVersionProperty { get; set; } = "Version";
+
+    /// <inheritdoc />
+    public virtual IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } = [];
+
+    /// <inheritdoc />
     public abstract string FileExtension { get; }
 
     /// <inheritdoc />

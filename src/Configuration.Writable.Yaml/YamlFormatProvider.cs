@@ -42,6 +42,12 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
     public Encoding Encoding { get; init; } = Encoding.UTF8;
 
     /// <inheritdoc />
+    public override string SchemaVersionProperty { get; set; } = "$version";
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } = ["Version"];
+
+    /// <inheritdoc />
     public override string FileExtension => "yaml";
 
     /// <inheritdoc />
@@ -104,23 +110,8 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             }
         }
 
-        var modelId = TryGetMetadataValue(
-            metadata,
-            OptionsSchemaMetadata.ModelIdPropertyName,
-            out var modelIdValue
-        )
-            ? modelIdValue as string
-                ?? throw new FormatException("YAML metadata property 'ModelId' must be a string.")
-            : null;
-        var version = TryGetMetadataValue(
-            metadata,
-            OptionsSchemaMetadata.VersionPropertyName,
-            out var versionValue
-        )
-            ? ConvertVersion(versionValue)
-            : 1;
-
-        return new OptionsSchemaMetadata(modelId, version);
+        var version = ReadOptionalVersion(metadata) ?? 1;
+        return new OptionsSchemaMetadata(null, version);
     }
 
     private static bool TryGetMetadataValue(
@@ -138,7 +129,26 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return metadata.TryGetValue(camelCaseName, out value!);
     }
 
-    private static int ConvertVersion(object? value)
+    private int? ReadOptionalVersion(Dictionary<string, object> metadata)
+    {
+        foreach (
+            var propertyName in new[] { SchemaVersionProperty }
+                .Concat(SchemaVersionFallbackProperties)
+                .Distinct(StringComparer.Ordinal)
+        )
+        {
+            if (!TryGetMetadataValue(metadata, propertyName, out var value))
+            {
+                continue;
+            }
+
+            return ConvertVersion(value, propertyName);
+        }
+
+        return null;
+    }
+
+    private static int ConvertVersion(object? value, string propertyName)
     {
         switch (value)
         {
@@ -159,7 +169,9 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             case ulong version when version <= int.MaxValue:
                 return (int)version;
             default:
-                throw new FormatException("YAML metadata property 'Version' must be an integer.");
+                throw new FormatException(
+                    $"YAML metadata property '{propertyName}' must be an integer."
+                );
         }
     }
 
@@ -462,7 +474,8 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         configDict = AddSchemaMetadata(
             configDict,
             options.SchemaMetadata,
-            config is not IHasVersion
+            config is not IHasVersion,
+            SchemaVersionProperty
         );
 
         Dictionary<string, object> resultDict;
@@ -523,13 +536,19 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             ?? throw new FormatException(
                 "Options schema metadata can only be written for YAML mappings."
             );
-        return AddSchemaMetadata(dictionary, metadata, config is not IHasVersion);
+        return AddSchemaMetadata(
+            dictionary,
+            metadata,
+            config is not IHasVersion,
+            SchemaVersionProperty
+        );
     }
 
     private static Dictionary<string, object> AddSchemaMetadata(
         Dictionary<string, object> values,
         OptionsSchemaMetadata? metadata,
-        bool persistVersion
+        bool persistVersion,
+        string schemaVersionProperty
     )
     {
         if (metadata == null)
@@ -538,13 +557,9 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         }
 
         var result = new Dictionary<string, object>();
-        if (metadata.ModelId is not null)
-        {
-            result[OptionsSchemaMetadata.ModelIdPropertyName] = metadata.ModelId;
-        }
         if (persistVersion && metadata.Version is not null)
         {
-            result[OptionsSchemaMetadata.VersionPropertyName] = metadata.Version.Value;
+            result[schemaVersionProperty] = metadata.Version.Value;
         }
         foreach (var item in values)
         {

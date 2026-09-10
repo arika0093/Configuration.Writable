@@ -34,6 +34,18 @@ internal sealed class FallbackFormatProvider
         SupportsProviderSchemaMetadata(PrimaryProvider)
         && _fallbackProviders.All(SupportsProviderSchemaMetadata);
 
+    public string SchemaVersionProperty
+    {
+        get => PrimaryProvider.SchemaVersionProperty;
+        set => PrimaryProvider.SchemaVersionProperty = value;
+    }
+
+    public IReadOnlyList<string> SchemaVersionFallbackProperties
+    {
+        get => PrimaryProvider.SchemaVersionFallbackProperties;
+        set => PrimaryProvider.SchemaVersionFallbackProperties = value;
+    }
+
     public string FileExtension => PrimaryProvider.FileExtension;
 
     internal FallbackFormatProvider Clone()
