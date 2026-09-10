@@ -42,13 +42,6 @@ A versioned options model has no accessible immediately preceding version with t
 Start at version 1 and include every version in the chain.
 Models in referenced assemblies must be public to participate in the chain.
 
-## CWWR006
-
-**Severity:** Error
-
-A model member serializes as `ModelId` or `Version`.
-These names are reserved for schema metadata. Rename the member or change its serialized name.
-
 ## CWWR007
 
 **Severity:** Warning
@@ -86,4 +79,3 @@ version should be explicit so future schema changes can be tracked reliably.
 [OptionsModel(Id = "UserSetting", Version = 1)]
 public partial class UserSetting;
 ```
-

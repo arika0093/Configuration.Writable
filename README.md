@@ -93,12 +93,11 @@ Then, prepare a class (`UserSetting`) in advance that you want to read and write
 using Configuration.Writable;
 
 // Add [OptionsModel] to the class and mark it as partial class.
-// * Id is a stable identifier shared by every version of this settings model.
-// * Version is a positive schema version that starts at 1 and increases consecutively.
 [OptionsModel(Id = "UserSetting", Version = 1)]
 public partial class UserSetting
 {
-    public string Name { get; set; } = "default name"; // default value can be specified here
+    // default value can be specified
+    public string Name { get; set; } = "default name";
     public int Age { get; set; } = 20;
 }
 ```
@@ -669,13 +668,22 @@ You can adopt this library while keeping existing configuration files.
 
 ### Inspect the Existing Schema
 
-Configuration.Writable uses the following schema metadata in configuration files:
+The JSON and YAML providers use the `$version` key for internal schema versioning.
+Therefore, you need to verify the following points beforehand:
 
-* `ModelId`: a string that identifies the settings model.
-* `Version`: a positive integer that represents the configuration schema version.
+* Is `$version` already used in the configuration file, 
+* Is schema versioning already performed under a different name?
 
-If an existing configuration file does not contain `Version`, Configuration.Writable treats it as Version 1.
-Set `Version = 1` on the model that represents the existing schema.
+If it matches, you can change the schema name for version management.
+
+```csharp
+// By default, "$version" is used.
+conf.FormatProvider.SchemaVersionProperty = "$schema_version";
+// If an older version used a different name, you can also specify a Fallback.
+// By default, "Version" is referenced as a fallback (for compatibility up to Ver 0.8)
+// If it's already used for another purpose, explicitly override it.
+conf.FormatProvider.SchemaVersionFallbackProperties = ["my_version"];
+```
 
 ### Mark the Root Settings Model
 
@@ -695,6 +703,8 @@ public class ChildSetting
     public string Name { get; set; } = "default";
 }
 ```
+
+If the current configuration file does not contain a schema version property, it is treated as Version 1.
 
 > [!NOTE]
 > You can also change the settings model while adopting this library.  
@@ -731,7 +741,7 @@ In this case, keep the current class as `V1` with a different name, and update t
 ```csharp
 // Version 2 (New Version)
 [OptionsModel(Id = "UserSetting", Version = 2)]  // <- change the version to 2
-public partial class UserSetting                 // <- keep class name as UserSetting
+public partial class UserSetting
 {
     public string Name { get; set; } = "default name";
     public int Age { get; set; } = 20;
@@ -739,7 +749,7 @@ public partial class UserSetting                 // <- keep class name as UserSe
 
 // Version 1 (Old Version)
 [OptionsModel(Id = "UserSetting", Version = 1)]  // <- keep the version as 1
-public partial class UserSettingV1               // <- rename UserSetting to UserSettingV1
+public partial class UserSettingV1 // <- rename UserSetting to UserSettingV1
 {
     public string FirstName { get; set; } = "first";
     public string LastName { get; set; } = "last";
@@ -780,6 +790,8 @@ the library automatically converts to the latest version by calling `Migrate` se
 If you want to intentionally stop supporting older versions, you can start a new compatibility chain.
 
 ```csharp
+// Add "SupportMigration = false" to the OptionsModel attribute
+// to indicate that migration from older versions is not supported.
 [OptionsModel(Id = "UserSetting", Version = 5, SupportMigration = false)]
 public partial class UserSetting
 {
@@ -802,7 +814,7 @@ builder.Services.AddWritableOptions(conf => {
         // 1. first, try to load from the new location
         c.UseStandardSaveDirectory("MyAppId")
             .AddFilePath("usersettings");
-        // 2. fallback to the old location if the new one does not exist
+        // 2. fallback to the old location
         c.UseExecutableDirectory()
             .AddFilePath("usersettings");
     });
@@ -832,7 +844,7 @@ builder.Services.AddWritableOptions(conf => {
 });
 ```
 
-> [!NOTE]
+> [!WARNING]
 > Do not include the file extension when specifying the filename. The provider automatically detects and appends it.
 
 This automatically performs the following:
@@ -842,6 +854,9 @@ This automatically performs the following:
 * If only V2 (JSON) or V1 (JSON) exists
   * Load V1, migrate to V2, and immediately save as V2 (YAML).
   * The old file is backed up and then deleted.
+
+> [!NOTE]
+> If `SectionName` is used, format changes will not be applied to avoid breaking settings in other sections.
 
 ## Utility APIs
 ### Edit Settings Before Saving
