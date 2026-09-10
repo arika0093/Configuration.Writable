@@ -45,11 +45,13 @@ namespace Configuration.Writable.Configure
         public Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public System.TimeSpan OnChangeDebounce { get; set; }
+        public bool PromoteSaveLocationEnabled { get; }
         public bool RegisterAsSingleton { get; set; }
         public string SectionName { get; set; }
         public bool UseDataAnnotationsValidation { get; set; }
         public void AddFallbackFormatProvider(params Configuration.Writable.FormatProvider.IWritableFormatProvider[] formatProviders) { }
         public void AddFilePath(string path, int priority = 0) { }
+        public void EnablePromoteSaveLocation(bool enabled = true) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
         public Configuration.Writable.Configure.ILocationBuilder UseExecutableDirectory() { }
@@ -72,6 +74,7 @@ namespace Configuration.Writable.Configure
         public new bool UseDataAnnotationsValidation { get; set; }
         public new void AddFilePath(string path, int priority = 0) { }
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
+        public new void EnablePromoteSaveLocation(bool enabled = true) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
@@ -245,6 +248,8 @@ namespace Configuration.Writable
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required System.TimeSpan OnChangeDebounce { get; init; }
+        public required bool PromoteSaveLocationEnabled { get; init; }
+        public required string ReadFilePath { get; init; }
         public Configuration.Writable.OptionsSchemaMetadata? SchemaMetadata { get; init; }
         public required System.Collections.Generic.List<string> SectionNameParts { get; init; }
         public System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult>? Validator { get; init; }
