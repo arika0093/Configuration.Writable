@@ -17,7 +17,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     private const string AttributeName = "Configuration.Writable.OptionsModelAttribute";
     private const string MetadataInterfaceName = "Configuration.Writable.IGeneratedOptionsMetadata";
     private const string MigrationInterfaceName = "Configuration.Writable.IOptionsMigration";
-    private const string LegacyInterfaceName = "Configuration.Writable.IHasVersion";
     private const string DiagnosticsDocumentationUrl =
         "https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Generator/README.md";
 
@@ -65,15 +64,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         DiagnosticSeverity.Error,
         true,
         helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr005"
-    );
-    private static readonly DiagnosticDescriptor LegacyVersioning = new(
-        "CWWR007",
-        "IHasVersion is legacy versioning",
-        "Options model '{0}' uses IHasVersion; declare Version on OptionsModelAttribute instead",
-        "Configuration.Writable.Versioning",
-        DiagnosticSeverity.Warning,
-        true,
-        helpLinkUri: DiagnosticsDocumentationUrl + "#cwwr007"
     );
     private static readonly DiagnosticDescriptor PartialRequired = new(
         "CWWR008",
@@ -357,8 +347,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 }
             }
 
-            var usesLegacyVersion = Implements(type, LegacyInterfaceName);
-            if (!versionSpecified && !usesLegacyVersion)
+            if (!versionSpecified)
             {
                 version = 1;
             }
@@ -374,7 +363,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation()
                         ?? type.Locations.FirstOrDefault()
                         ?? Location.None,
-                    usesLegacyVersion,
                     supportMigration
                 )
             );
@@ -393,9 +381,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             reference.GetSyntax() is TypeDeclarationSyntax declaration
             && declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
         );
-
-    private static bool Implements(INamedTypeSymbol type, string interfaceName) =>
-        type.AllInterfaces.Any(@interface => @interface.ToDisplayString() == interfaceName);
 
     private static string GenerateMetadata(SourceModelInfo model, ModelReference? previous)
     {
@@ -488,7 +473,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         bool isSource,
         bool isPartial,
         Location location,
-        bool usesLegacyVersion,
         bool supportMigration
     )
     {
@@ -499,7 +483,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         public bool IsSource { get; } = isSource;
         public bool HasPartialModifier { get; } = isPartial;
         public Location Location { get; } = location;
-        public bool UsesLegacyVersion { get; } = usesLegacyVersion;
         public bool SupportMigration { get; } = supportMigration;
     }
 
@@ -536,7 +519,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                         "CWWR001" => MissingId,
                         "CWWR002" => InvalidId,
                         "CWWR003" => InvalidVersion,
-                        "CWWR007" => LegacyVersioning,
                         "CWWR008" => PartialRequired,
                         "CWWR009" => UnsupportedModel,
                         _ => MissingVersion,
@@ -591,8 +573,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     supportMigration = argument.Value.Value as bool? ?? true;
             }
 
-            var usesLegacyVersion = Implements(type, LegacyInterfaceName);
-            if (!versionSpecified && !usesLegacyVersion)
+            if (!versionSpecified)
                 version = 1;
 
             var location = DiagnosticLocation.Create(
@@ -609,8 +590,6 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 diagnostics.Add(new("CWWR003", location, type.Name));
             else if (!versionSpecified)
                 diagnostics.Add(new("CWWR010", location, type.Name));
-            if (usesLegacyVersion)
-                diagnostics.Add(new("CWWR007", location, type.Name));
             if (
                 type.DeclaringSyntaxReferences.Length == 0
                 || !type.DeclaringSyntaxReferences.All(reference =>

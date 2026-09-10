@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
-#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// Writable configuration implementation for JSON files.
 /// </summary>
@@ -241,7 +240,6 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         var serializeAction = JsonWriterHelper.AddSchemaMetadata(
             CreateSerializeAction<T>(JsonSerializerOptions),
             options.SchemaMetadata,
-            config is not IHasVersion,
             SchemaVersionProperty
         );
         var writerOptions = new JsonWriterOptions

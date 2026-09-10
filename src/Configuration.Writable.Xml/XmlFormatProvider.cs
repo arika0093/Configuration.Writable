@@ -14,7 +14,6 @@ using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
-#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// Writable configuration implementation for XML files.
 /// </summary>
@@ -181,7 +180,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         {
             throw new InvalidOperationException("Failed to serialize configuration to XML");
         }
-        AddSchemaMetadata(configElement, config, options.SchemaMetadata, SchemaVersionProperty);
+        AddSchemaMetadata(configElement, options.SchemaMetadata, SchemaVersionProperty);
 
         // Build nested XML structure with innerXml
         var innerXml = configElement.InnerXml;
@@ -206,7 +205,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         var parts = options.SectionNameParts;
         var existingDoc = LoadExistingDocument(options);
         var configElement = SerializeConfiguration(config);
-        AddSchemaMetadata(configElement, config, options.SchemaMetadata, SchemaVersionProperty);
+        AddSchemaMetadata(configElement, options.SchemaMetadata, SchemaVersionProperty);
         var resultDoc =
             existingDoc?.Root == null
                 ? CreatePartialDocument(configElement, parts, options)
@@ -258,9 +257,8 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
             ?? throw new InvalidOperationException("Failed to serialize configuration to XML");
     }
 
-    private static void AddSchemaMetadata<T>(
+    private static void AddSchemaMetadata(
         XmlElement configElement,
-        T config,
         OptionsSchemaMetadata? metadata,
         string schemaVersionProperty
     )
@@ -271,7 +269,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         }
 
         var document = configElement.OwnerDocument;
-        if (metadata.Version is not null && config is not IHasVersion)
+        if (metadata.Version is not null)
         {
             var version = document.CreateElement(schemaVersionProperty);
             version.InnerText = metadata.Version.Value.ToString(

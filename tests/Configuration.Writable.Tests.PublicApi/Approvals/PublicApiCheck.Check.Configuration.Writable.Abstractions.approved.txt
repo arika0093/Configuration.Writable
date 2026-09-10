@@ -25,11 +25,6 @@ namespace Configuration.Writable
         int? Version { get; }
         void RegisterMigrations(Configuration.Writable.IOptionsMigrationRegistrar registrar);
     }
-    [System.Obsolete("This interface is deprecated. Use [OptionsModel(Version = x)] instead.")]
-    public interface IHasVersion
-    {
-        int Version { get; set; }
-    }
     public interface IOptionsConfigurationInfo
     {
         string FormatFileExtension { get; }

@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
 
-#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// AOT-compatible writable configuration implementation for JSON files using JsonSerializerContext.
 /// This provider uses source-generated JSON serialization to support Native AOT scenarios.
@@ -261,7 +260,6 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         var serializeAction = JsonWriterHelper.AddSchemaMetadata(
             CreateSerializeAction<T>(typeInfo),
             options.SchemaMetadata,
-            config is not IHasVersion,
             SchemaVersionProperty
         );
         var writerOptions = new JsonWriterOptions

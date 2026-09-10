@@ -14,7 +14,6 @@ using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
-#pragma warning disable CS0618 // IHasVersion remains supported for backward compatibility.
 /// <summary>
 /// Writable configuration implementation for Yaml files using VYaml.
 /// This provider is AOT-compatible when user types are annotated with <c>[YamlObject]</c>.
@@ -474,7 +473,6 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         configDict = AddSchemaMetadata(
             configDict,
             options.SchemaMetadata,
-            config is not IHasVersion,
             SchemaVersionProperty
         );
 
@@ -539,7 +537,6 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return AddSchemaMetadata(
             dictionary,
             metadata,
-            config is not IHasVersion,
             SchemaVersionProperty
         );
     }
@@ -547,7 +544,6 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
     private static Dictionary<string, object> AddSchemaMetadata(
         Dictionary<string, object> values,
         OptionsSchemaMetadata? metadata,
-        bool persistVersion,
         string schemaVersionProperty
     )
     {
@@ -557,7 +553,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         }
 
         var result = new Dictionary<string, object>();
-        if (persistVersion && metadata.Version is not null)
+        if (metadata.Version is not null)
         {
             result[schemaVersionProperty] = metadata.Version.Value;
         }

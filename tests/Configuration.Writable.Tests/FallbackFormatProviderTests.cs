@@ -29,11 +29,6 @@ public class FallbackFormatProviderTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
-        builder.UseMigration<
-            MigrationSupportTests.MySettingsV1,
-            MigrationSupportTests.MySettingsV2
-        >(source => new MigrationSupportTests.MySettingsV2 { Names = [source.Name] });
-
         var options = builder.BuildOptions("");
         var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy");
         await fileProvider.SaveToFileAsync(
@@ -61,11 +56,6 @@ public class FallbackFormatProviderTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
-        builder.UseMigration<
-            MigrationSupportTests.MySettingsV1,
-            MigrationSupportTests.MySettingsV2
-        >(source => new MigrationSupportTests.MySettingsV2 { Names = [source.Name] });
-
         var options = builder.BuildOptions("");
         var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy");
         await fileProvider.SaveToFileAsync(
@@ -282,10 +272,6 @@ public class FallbackFormatProviderTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("legacy"));
-        builder.UseMigration<
-            MigrationSupportTests.MySettingsV1,
-            MigrationSupportTests.MySettingsV2
-        >(source => new MigrationSupportTests.MySettingsV2 { Names = [source.Name] });
         var options = builder.BuildOptions("");
 
         var fallbackPath = Path.ChangeExtension(options.ConfigFilePath, "legacy");

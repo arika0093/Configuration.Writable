@@ -42,18 +42,6 @@ A versioned options model has no accessible immediately preceding version with t
 Start at version 1 and include every version in the chain.
 Models in referenced assemblies must be public to participate in the chain.
 
-## CWWR007
-
-**Severity:** Warning
-
-The options model implements the legacy `IHasVersion` interface.
-Remove the interface and its mutable `Version` property, then specify the schema version on `OptionsModel`.
-
-```csharp
-[OptionsModel(Id = "UserSetting", Version = 1)]
-public partial class UserSetting;
-```
-
 ## CWWR008
 
 **Severity:** Error

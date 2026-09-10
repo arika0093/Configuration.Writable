@@ -80,11 +80,6 @@ namespace Configuration.Writable.Configure
         public new void UseFile(string? path) { }
         public void UseJsonCloneStrategy() { }
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
-        [System.Obsolete("This method is deprecated. Declare versions with [OptionsModel] and implement IOp" +
-            "tionsMigration instead.")]
-        public void UseMigration<TOld, TNew>(System.Func<TOld, TNew> migrator)
-            where TOld :  class, new ()
-            where TNew :  class, new () { }
         public new Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
         public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }

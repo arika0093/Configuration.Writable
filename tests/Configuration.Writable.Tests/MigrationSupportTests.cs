@@ -17,108 +17,6 @@ public partial class MigrationSupportTests
     private readonly InMemoryFileProvider _fileProvider = new();
 
     [Fact]
-    public void UseMigration_ShouldThrowException_WhenDowngradeDetected()
-    {
-        // Arrange
-        var builder = new WritableOptionsConfigBuilder<MySettingsV3>();
-
-        // Act & Assert
-        var exception = Should.Throw<InvalidOperationException>(() =>
-        {
-            builder.UseMigration<MySettingsV3, MySettingsV2>(v3 => new MySettingsV2());
-        });
-
-        exception.Message.ShouldContain("downgrade", Case.Insensitive);
-        exception.Message.ShouldContain("version 3");
-        exception.Message.ShouldContain("version 2");
-    }
-
-    [Fact]
-    public void UseMigration_ShouldThrowException_WhenSameVersionMigration()
-    {
-        // Arrange
-        var builder = new WritableOptionsConfigBuilder<MySettingsV2>();
-
-        // Act & Assert
-        var exception = Should.Throw<InvalidOperationException>(() =>
-        {
-            builder.UseMigration<MySettingsV2, MySettingsV2>(v2 => new MySettingsV2());
-        });
-
-        exception.Message.ShouldContain("downgrade", Case.Insensitive);
-    }
-
-    [Fact]
-    public void UseMigration_ShouldRegisterMigrationStep()
-    {
-        // Arrange
-        var builder = new WritableOptionsConfigBuilder<MySettingsV3>();
-
-        // Act
-        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
-        {
-            Names = [v1.Name],
-        });
-
-        var options = builder.BuildOptions("");
-
-        // Assert
-        options.MigrationSteps.Count.ShouldBe(1);
-        options.MigrationSteps[0].FromType.ShouldBe(typeof(MySettingsV1));
-        options.MigrationSteps[0].ToType.ShouldBe(typeof(MySettingsV2));
-    }
-
-    [Fact]
-    public void UseMigration_ShouldRegisterMultipleMigrationSteps()
-    {
-        // Arrange
-        var builder = new WritableOptionsConfigBuilder<MySettingsV3>();
-
-        // Act
-        builder.Logger = ConsoleLoggerFactory.Create();
-        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
-        {
-            Names = [v1.Name],
-        });
-        builder.UseMigration<MySettingsV2, MySettingsV3>(v2 => new MySettingsV3
-        {
-            Configs = v2.Names.Select(name => new FooConfig { Name = name }).ToArray(),
-        });
-
-        var options = builder.BuildOptions("");
-
-        // Assert
-        options.MigrationSteps.Count.ShouldBe(2);
-        options.MigrationSteps[0].FromType.ShouldBe(typeof(MySettingsV1));
-        options.MigrationSteps[0].ToType.ShouldBe(typeof(MySettingsV2));
-        options.MigrationSteps[1].FromType.ShouldBe(typeof(MySettingsV2));
-        options.MigrationSteps[1].ToType.ShouldBe(typeof(MySettingsV3));
-    }
-
-    [Fact]
-    public void BuildOptions_ShouldCacheMigrationLookups()
-    {
-        // Arrange
-        var builder = new WritableOptionsConfigBuilder<MySettingsV2>();
-        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
-        {
-            Names = [v1.Name],
-        });
-
-        // Act
-        var options = builder.BuildOptions("");
-
-        // Assert
-        options.MigrationLookup.ShouldNotBeNull();
-        var lookup = options.MigrationLookup;
-        lookup.TargetVersion.ShouldBe(2);
-        lookup.TryGetType(1, out var versionOneType).ShouldBeTrue();
-        versionOneType.ShouldBe(typeof(MySettingsV1));
-        lookup.TryGetMigration(typeof(MySettingsV1), out var migration).ShouldBeTrue();
-        migration.ToType.ShouldBe(typeof(MySettingsV2));
-    }
-
-    [Fact]
     public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenVersionMatches()
     {
         // Arrange
@@ -148,7 +46,6 @@ public partial class MigrationSupportTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Version.ShouldBe(3);
         result.Configs.Length.ShouldBe(1);
         result.Configs[0].Name.ShouldBe("Test");
     }
@@ -173,11 +70,6 @@ public partial class MigrationSupportTests
         };
         builder.FileProvider = _fileProvider;
 
-        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
-        {
-            Names = [v1.Name],
-        });
-
         var options = builder.BuildOptions("");
         var provider = new JsonFormatProvider();
 
@@ -186,7 +78,6 @@ public partial class MigrationSupportTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Version.ShouldBe(2);
         result.Names.Length.ShouldBe(1);
         result.Names[0].ShouldBe("TestName");
     }
@@ -210,15 +101,6 @@ public partial class MigrationSupportTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
-        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
-        {
-            Names = [v1.Name],
-        });
-        builder.UseMigration<MySettingsV2, MySettingsV3>(v2 => new MySettingsV3
-        {
-            Configs = v2.Names.Select(name => new FooConfig { Name = name }).ToArray(),
-        });
-
         var options = builder.BuildOptions("");
         var provider = new JsonFormatProvider();
 
@@ -227,7 +109,6 @@ public partial class MigrationSupportTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Version.ShouldBe(3);
         result.Configs.Length.ShouldBe(1);
         result.Configs[0].Name.ShouldBe("TestName");
     }
@@ -262,7 +143,7 @@ public partial class MigrationSupportTests
     }
 
     [Fact]
-    public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenTypeDoesNotImplementIHasVersion()
+    public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenTargetIsUnversioned()
     {
         // Arrange
         var fileName = "settings5.json";
@@ -314,25 +195,27 @@ public partial class MigrationSupportTests
     }
 
     // Test model classes
-    [OptionsModel]
-    public partial class MySettingsV1 : IHasVersion
+    [OptionsModel(Id = "MigrationSupportSettings", Version = 1)]
+    public partial class MySettingsV1
     {
-        public int Version { get; set; } = 1;
         public string Name { get; set; } = "";
     }
 
-    [OptionsModel]
-    public partial class MySettingsV2 : IHasVersion
+    [OptionsModel(Id = "MigrationSupportSettings", Version = 2)]
+    public partial class MySettingsV2
     {
-        public int Version { get; set; } = 2;
         public string[] Names { get; set; } = [];
+
+        public MySettingsV2 Migrate(MySettingsV1 source) => new() { Names = [source.Name] };
     }
 
-    [OptionsModel]
-    public partial class MySettingsV3 : IHasVersion
+    [OptionsModel(Id = "MigrationSupportSettings", Version = 3)]
+    public partial class MySettingsV3
     {
-        public int Version { get; set; } = 3;
         public FooConfig[] Configs { get; set; } = [];
+
+        public MySettingsV3 Migrate(MySettingsV2 source) =>
+            new() { Configs = source.Names.Select(name => new FooConfig { Name = name }).ToArray() };
     }
 
     [OptionsModel]
@@ -371,11 +254,6 @@ public partial class MigrationSupportTests
             FormatProvider = new JsonFormatProvider(),
         };
         builder.FileProvider = _fileProvider;
-        builder.UseMigration<MySettingsV1, MySettingsV2>(v1 => new MySettingsV2
-        {
-            Names = [v1.Name],
-        });
-
         var options = builder.BuildOptions("");
         var provider = new JsonFormatProvider();
 
@@ -384,7 +262,6 @@ public partial class MigrationSupportTests
 
         // Assert
         result.ShouldNotBeNull();
-        result.Version.ShouldBe(2);
         result.Names.Length.ShouldBe(1);
         result.Names[0].ShouldBe("TestName");
     }

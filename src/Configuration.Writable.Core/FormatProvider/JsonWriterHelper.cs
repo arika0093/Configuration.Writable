@@ -91,7 +91,6 @@ internal static class JsonWriterHelper
     public static JsonSerializeAction<T> AddSchemaMetadata<T>(
         JsonSerializeAction<T> serializeAction,
         OptionsSchemaMetadata? metadata,
-        bool persistVersion,
         string schemaVersionProperty
     )
     {
@@ -118,7 +117,7 @@ internal static class JsonWriterHelper
             }
 
             writer.WriteStartObject();
-            if (persistVersion && metadata.Version is not null)
+            if (metadata.Version is not null)
             {
                 writer.WriteNumber(schemaVersionProperty, metadata.Version.Value);
             }

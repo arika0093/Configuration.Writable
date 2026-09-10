@@ -366,10 +366,6 @@ public class OptionsVersioningGeneratorTests
         "[OptionsModel(Id = \"Model\", Version = 2)] public partial class Model {}",
         "CWWR005"
     )]
-    [InlineData(
-        "[OptionsModel(Id = \"Model\")] public partial class Model : IHasVersion { public int Version { get; set; } = 1; }",
-        "CWWR007"
-    )]
     public void Generator_ShouldReportExpectedDiagnostic(string declaration, string diagnosticId)
     {
         var result = RunGenerator(
@@ -586,8 +582,7 @@ public class OptionsVersioningGeneratorTests
             ?? throw new InvalidOperationException("Trusted platform assemblies are unavailable.");
         var paths = platformAssemblies
             .Split(Path.PathSeparator)
-            .Append(typeof(OptionsModelAttribute).Assembly.Location)
-            .Append(typeof(IHasVersion).Assembly.Location);
+            .Append(typeof(OptionsModelAttribute).Assembly.Location);
         return paths.Distinct().Select(path => MetadataReference.CreateFromFile(path));
     }
 }

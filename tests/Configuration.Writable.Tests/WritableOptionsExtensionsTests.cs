@@ -21,19 +21,20 @@ public partial class WritableOptionsExtensionsTests
         public bool IsEnabled { get; set; } = true;
     }
 
-    [OptionsModel]
-    public partial class TestSettingsV1 : IHasVersion
+    [OptionsModel(Id = "TestSettings", Version = 1)]
+    public partial class TestSettingsV1
     {
-        public int Version { get; set; } = 1;
         public string OldName { get; set; } = "old_default";
     }
 
-    [OptionsModel]
-    public partial class TestSettingsV2 : IHasVersion
+    [OptionsModel(Id = "TestSettings", Version = 2)]
+    public partial class TestSettingsV2
     {
-        public int Version { get; set; } = 2;
         public string Name { get; set; } = "default";
         public int Value { get; set; } = 42;
+
+        public TestSettingsV2 Migrate(TestSettingsV1 source) =>
+            new() { Name = source.OldName, Value = 100 };
     }
 
     [OptionsModel]
@@ -204,18 +205,12 @@ public partial class WritableOptionsExtensionsTests
         {
             options.FilePath = testFileName;
             options.UseInMemoryFileProvider(_FileProvider);
-            options.UseMigration<TestSettingsV1, TestSettingsV2>(v1 => new TestSettingsV2
-            {
-                Name = v1.OldName,
-                Value = 100,
-            });
         });
 
         var host = builder.Build();
         var writableOptions = host.Services.GetRequiredService<IWritableOptions<TestSettingsV2>>();
 
         var currentValue = writableOptions.CurrentValue;
-        currentValue.Version.ShouldBe(2);
         currentValue.Name.ShouldBe("migrated_value");
         currentValue.Value.ShouldBe(100);
     }
