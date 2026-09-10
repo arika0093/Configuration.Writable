@@ -663,6 +663,148 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
+## Migration
+Configuration files are meant to evolve over time.  
+This library provides a mechanism to facilitate easy migration of configuration files.
+
+### Adding or Removing Properties
+This is straightforward. Simply add or remove properties from the configuration class. Most providers handle this without issues.
+When adding properties, it is recommended to provide default values.
+
+```csharp
+[OptionsModel(Id = "UserSetting", Version = 1)]
+public partial class UserSetting
+{
+    public string FirstName { get; set; } = "first";
+    public string LastName { get; set; } = "last";
+    // Add new property with default value
+    public int Age { get; set; } = 20;
+    // Remove old property
+    // public bool OldProperty { get; set; } = false;
+}
+```
+
+### Incompatible Changes
+When schema changes are incompatible, you need to increment the version.
+
+For example, consider consolidating `FirstName` and `LastName` into a single `Name` property.
+In this case, keep the current class as `V1` with a different name, and update the existing class to `Version = 2`.
+
+```csharp
+// Version 2 (New Version)
+[OptionsModel(Id = "UserSetting", Version = 2)]  // <- change the version to 2
+public partial class UserSetting                 // <- keep class name as UserSetting
+{
+    public string Name { get; set; } = "default name";
+    public int Age { get; set; } = 20;
+}
+
+// Version 1 (Old Version)
+[OptionsModel(Id = "UserSetting", Version = 1)]  // <- keep the version as 1
+public partial class UserSettingV1               // <- rename UserSetting to UserSettingV1
+{
+    public string FirstName { get; set; } = "first";
+    public string LastName { get; set; } = "last";
+    public int Age { get; set; } = 20;
+}
+```
+
+Then implement the migration method. The interface will be automatically provided, so you just need to implement it.
+
+```csharp
+public partial class UserSetting
+{
+    public UserSetting Migrate(UserSettingV1 source)
+    {
+        return new UserSetting() {
+            // combine FirstName and LastName into Name
+            Name = $"{source.FirstName} {source.LastName}",
+            // Make sure to copy other properties as well.
+            Age = source.Age,
+        };
+    }
+}
+```
+
+With just this, the library automatically handles the following:
+
+* Load the configuration file and check the `Version`.
+* If `Version = 1`, load as `UserSettingV1`, then call `Migrate` to convert to `UserSetting`.
+* If `Version = 2`, load directly as `UserSetting`.
+* When saving, automatically convert to the latest version.
+
+Even if versions up to `Version = 10` exist,
+the library automatically converts to the latest version by calling `Migrate` sequentially from `Version = 1`.
+
+<details>
+<summary>When ending support for older configurations</summary>
+
+If you want to intentionally stop supporting older versions, you can start a new compatibility chain.
+
+```csharp
+[OptionsModel(Id = "UserSetting", Version = 5, SupportMigration = false)]
+public partial class UserSetting
+{
+    public string NewConfiguration { get; set; } = "default";
+
+    // No need to implement the Migrate method.
+}
+```
+
+</details>
+
+### Changing the Save Location
+Suppose you previously saved to `./usersettings.json` but now want to save to `{UseStandardSaveDirectory}/usersettings.json`.
+
+First, configure the system to read both files with priority.
+
+```csharp
+builder.Services.AddWritableOptions(conf => {
+    conf.Add<UserSetting>(c => {
+        // 1. first, try to load from the new location
+        c.UseStandardSaveDirectory("MyAppId")
+            .AddFilePath("usersettings");
+        // 2. fallback to the old location if the new one does not exist
+        c.UseExecutableDirectory()
+            .AddFilePath("usersettings");
+    });
+    // 3. automatically promote settings loaded from the old location at startup
+    conf.EnablePromoteSaveLocation();
+});
+```
+
+After that, it will automatically migrate to the new location when the application starts.
+
+### Changing the Format Provider
+For example, suppose v1 used JSON format but v2 switched to YAML format.
+In this case, register the old format as a fallback using `AddFallbackFormatProvider` in addition to the standard FileProvider.
+
+```csharp
+builder.Services.AddWritableOptions(conf => {
+    // use YAML format for the new version
+    conf.FormatProvider = new YamlFormatProvider();
+    // support fallback to JSON format for older versions
+    conf.AddFallbackFormatProvider(
+        new JsonAotFormatProvider(MyJsonContext.Default)
+    );
+    conf.Add<UserSetting>(c => {
+        // Do not include the file extension
+        c.UseFile("usersettings");
+    });
+});
+```
+
+> [!NOTE]
+> Do not include the file extension when specifying the filename. The provider automatically detects and appends it.
+
+This automatically performs the following:
+
+* If V2 (YAML) exists
+  * Load it as is.
+* If only V2 (JSON) or V1 (JSON) exists
+  * Load V1, migrate to V2, and immediately save as V2 (YAML).
+  * The old file is backed up and then deleted.
+
 ## Utility APIs
 ### Edit Settings Before Saving
 Use `BeginConfigure` when a settings screen needs to apply several changes together. The
@@ -754,90 +896,6 @@ The resulting JSON is structured as follows:
   }
 }
 ```
-
-### Migrating Existing Configurations
-Provides a mechanism for automatically migrating old version configuration files to the new version when the structure of the configuration file changes.
-The source generator emits schema metadata and adds an `IOptionsMigration<TOld, TNew>` implementation to the next generation.
-
-```csharp
-// Version 1
-[OptionsModel(Id = "UserSetting", Version = 1)]
-public partial class UserSettingV1
-{
-    public string Name { get; set; } = "default name";
-}
-
-// Version 2
-[OptionsModel(Id = "UserSetting", Version = 2)]
-public partial class UserSettingV2
-{
-    public List<string> Names { get; set; } = [];
-
-    // The source generator adds IOptionsMigration<UserSettingV1, UserSettingV2>.
-    public UserSettingV2 Migrate(UserSettingV1 source) =>
-        new() { Names = [source.Name] };
-}
-```
-
-By simply writing the above, the migration process is handled automatically!
-
-> [!NOTE]
-> For compatible changes such as simply adding or removing parameters, there is no need to update the version. If you only add properties, old version configuration files can still be read as they are.  
-> It is recommended to increase the version only when making incompatible changes such as renaming items or changing types (for example, from `string` to `List<string>`).
-
-
-<details>
-<summary>Migration from other formats</summary>
-
-For example, if you want to change the format from JSON in v1 to YAML in v2, register the old format using `AddFallbackFormatProvider`.
-
-```csharp
-builder.Services.AddWritableOptions(conf => {
-    // use YAML format for the current version
-    conf.FormatProvider = new YamlFormatProvider();
-    // support fallback to JSON format for older versions
-    conf.AddFallbackFormatProvider(
-        new JsonAotFormatProvider(MyJsonContext.Default)
-    );
-    conf.Add<UserSetting>(c => {
-        // Do not include the file extension
-        // (the provider automatically determines json or yaml)
-        c.UseFile("usersettings");
-    });
-});
-```
-
-When registered this way, it works as follows.
-
-#### When V2 (YAML) exists
-
-It is loaded as is.
-
-#### When only V1 (JSON) exists
-
-V1 is loaded first, migrated to V2, and then immediately saved as V2 (YAML). The old file is saved under a different name as a backup.
-
-</details>
-
-<details>
-<summary>Stop supporting older configurations</summary>
-
-To intentionally stop supporting older configurations, start a new compatibility chain:
-
-```csharp
-[OptionsModel(Id = "UserSetting", Version = 5, SupportMigration = false)]
-public partial class UserSetting
-{
-    public List<string> Names { get; set; } = [];
-}
-```
-
-The generator does not require versions 1 through 4 or a `Migrate` method for this model.
-When an unsupported older version is loaded, the file provider attempts to create a backup
-and the application continues with the current model's default values. A warning is logged
-whether or not the provider supports backups.
-
-</details>
 
 ## Advanced Usage
 ### Support NativeAOT
