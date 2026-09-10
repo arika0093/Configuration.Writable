@@ -663,6 +663,44 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
+## Adopting Existing Settings
+
+You can adopt this library while keeping existing configuration files.
+
+### Inspect the Existing Schema
+
+Configuration.Writable uses the following schema metadata in configuration files:
+
+* `ModelId`: a string that identifies the settings model.
+* `Version`: a positive integer that represents the configuration schema version.
+
+If an existing configuration file does not contain `Version`, Configuration.Writable treats it as Version 1.
+Set `Version = 1` on the model that represents the existing schema.
+
+### Mark the Root Settings Model
+
+Add `OptionsModelAttribute` and the `partial` modifier to the root model that represents the entire configuration file.
+
+```csharp
+[OptionsModel(Id = "UserSetting", Version = 1)]
+public partial class UserSetting // mark as partial
+{
+    public string Theme { get; set; } = "System";
+    public ChildSetting Child { get; set; } = new();
+}
+
+// Nested models do not need `OptionsModelAttribute`.
+public class ChildSetting
+{
+    public string Name { get; set; } = "default";
+}
+```
+
+> [!NOTE]
+> You can also change the settings model while adopting this library.  
+> Define the existing schema as Version 1 and the new schema as Version 2.  
+> See [Migration](#migration) for details.
+
 ## Migration
 Configuration files are meant to evolve over time.  
 This library provides a mechanism to facilitate easy migration of configuration files.
