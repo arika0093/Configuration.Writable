@@ -123,8 +123,10 @@ internal static class JsonSchemaGeneration
                     : "/" + fileName
             ).ToString();
 #pragma warning restore S1075
-        var basePath = schemaBaseUri ?? throw new InvalidOperationException();
-        return basePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+#if NETSTANDARD2_0
+        schemaBaseUri = schemaBaseUri ?? throw new InvalidOperationException();
+#endif
+        return schemaBaseUri.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + Path.DirectorySeparatorChar
             + fileName;
     }
