@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileProvider;
@@ -40,6 +41,39 @@ public partial class IOptionsIntegrationTests
         settings.Name.ShouldBe("default");
         settings.Value.ShouldBe(42);
         settings.IsEnabled.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task EnablePromoteSaveLocation_ShouldCopyExistingSettingsDuringStartup()
+    {
+        var newDirectory = Path.GetRandomFileName();
+        var oldDirectory = Path.GetRandomFileName();
+        const string fileName = "settings";
+        var oldPath = Path.GetFullPath(Path.Combine(oldDirectory, $"{fileName}.json"));
+        var newPath = Path.GetFullPath(Path.Combine(newDirectory, $"{fileName}.json"));
+        await _FileProvider.SaveToFileAsync(
+            oldPath,
+            Encoding.UTF8.GetBytes("""{"Name":"legacy"}""")
+        );
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddWritableOptions(conf =>
+        {
+            conf.FileProvider = _FileProvider;
+            conf.EnablePromoteSaveLocation();
+            conf.UseCustomDirectory(newDirectory).AddFilePath(fileName);
+            conf.UseCustomDirectory(oldDirectory).AddFilePath(fileName);
+            conf.Add<TestSettings>();
+        });
+
+        using var host = builder.Build();
+        var options = host.Services.GetRequiredService<IWritableOptions<TestSettings>>();
+
+        options.CurrentValue.Name.ShouldBe("legacy");
+        options.ConfigurationInfo.ReadPath.ShouldBe(oldPath);
+        options.ConfigurationInfo.WritePath.ShouldBe(newPath);
+        _FileProvider.FileExists(newPath).ShouldBeTrue();
+        _FileProvider.ReadAllText(newPath).ShouldContain("legacy");
     }
 
     [Fact]

@@ -30,9 +30,19 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     public required IWritableFileProvider FileProvider { get; init; }
 
     /// <summary>
-    /// Gets the full file path to the configuration file, combining config folder and file name.
+    /// Gets the full file path used to save the configuration file.
     /// </summary>
     public required string ConfigFilePath { get; init; }
+
+    /// <summary>
+    /// Gets the full file path used to load the configuration file.
+    /// </summary>
+    public required string ReadFilePath { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the loaded configuration is promoted to <see cref="ConfigFilePath"/>.
+    /// </summary>
+    public required bool PromoteSaveLocationEnabled { get; init; }
 
     /// <summary>
     /// Gets or sets the name of the configuration instance. Defaults to Options.DefaultName ("").

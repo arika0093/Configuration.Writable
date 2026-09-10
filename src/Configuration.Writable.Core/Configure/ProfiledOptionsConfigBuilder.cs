@@ -55,6 +55,8 @@ public class ProfiledOptionsConfigBuilder<T> : WritableOptionsConfigBuilder<T>
             FormatProvider = template.FormatProvider,
             FileProvider = template.FileProvider,
             ConfigFilePath = template.ConfigFilePath,
+            ReadFilePath = template.ReadFilePath,
+            PromoteSaveLocationEnabled = template.PromoteSaveLocationEnabled,
             InstanceName = "",
             SectionNameParts = catalogSectionParts,
             SchemaMetadata = null,

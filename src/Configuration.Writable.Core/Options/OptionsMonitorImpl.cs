@@ -232,8 +232,22 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         _semaphore.Wait();
         try
         {
-            // Use the provider to load configuration (provider will check file existence via its FileProvider)
-            var value = options.FormatProvider.LoadWithMigration<T>(options);
+            var readOptions = options with { ConfigFilePath = options.ReadFilePath };
+            var value = readOptions.FormatProvider.LoadWithMigration<T>(readOptions);
+            if (
+                options.PromoteSaveLocationEnabled
+                && !string.Equals(
+                    options.ReadFilePath,
+                    options.ConfigFilePath,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                options.Logger?.ZLogInformation(
+                    $"Promoting configuration from {options.ReadFilePath} to {options.ConfigFilePath}"
+                );
+                options.FormatProvider.SaveAsync(value, options).GetAwaiter().GetResult();
+            }
             return new LoadedConfiguration(value, ConfigurationFileFingerprint.Capture(options));
         }
         finally

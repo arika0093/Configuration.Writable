@@ -50,50 +50,48 @@ internal class SaveLocationManager
     }
 
     /// <summary>
-    /// Builds the save location by evaluating the added location providers in order.
+    /// Builds the write location by evaluating the added location providers in order.
     /// </summary>
     /// <param name="formatProvider">The format provider to determine the file extension.</param>
     /// <param name="instanceName">The instance name for default location.</param>
     /// <param name="fileProvider">The file provider to check file and directory access.</param>
+    /// <param name="promoteSaveLocationEnabled">
+    /// Whether an existing file should be ignored when selecting the preferred write location.
+    /// </param>
     /// <returns>The first valid save location path found, or null if none are available.</returns>
     public string Build(
         FormatProvider.IWritableFormatProvider formatProvider,
         IWritableFileProvider fileProvider,
-        string instanceName
+        string instanceName,
+        bool promoteSaveLocationEnabled
     )
     {
-        string resultPath = "";
-        // if nothing configured, use default location
-        if (LocationBuilders.Count == 0)
-        {
-            var filePathInDefault = GetDefaultLocationPath(instanceName);
-            var lb = new LocationBuilderInternal();
-            lb.UseExecutableDirectory().AddFilePath(filePathInDefault);
-            LocationBuilders.Add(lb);
-        }
-
+        var targetPaths = GetTargetPaths(instanceName);
         // Decide the write destination based on the following priorities
         // 1. Explicit priority (descending)
-        // 2. Target file already exists and able to open with write access
+        // 2. When promotion is disabled, target file already exists and able to open with write access
         // 3. Target directory can be written to (or created if it doesn't exist)
         // 4. Registration order (ascending)
-        var targetPath = LocationBuilders
-            .SelectMany(p => p.SaveLocationPaths)
-            .Where(p => !string.IsNullOrEmpty(p.Path))
+        var targetPath = targetPaths
             .Select(
                 (p, i) =>
                     new
                     {
-                        p.Path,
+                        Path = GetPathWithExtension(p.Path, formatProvider),
                         p.Priority,
                         Index = i,
-                        CanWriteFile = fileProvider.CanWriteToFile(p.Path),
+                        CanWriteFile = !promoteSaveLocationEnabled
+                            && fileProvider.CanWriteToFile(
+                                GetPathWithExtension(p.Path, formatProvider)
+                            ),
                         // A directory is considered writable if:
                         // 1. It exists and is writable (verified by CanWriteToDirectory), OR
                         // 2. The path is relative to the current directory (no explicit directory part)
                         //    and the current directory itself is writable (use full path to avoid
                         //    provider inferring directory from a filename-only argument)
-                        CanWriteDir = fileProvider.CanWriteToDirectory(p.Path)
+                        CanWriteDir = fileProvider.CanWriteToDirectory(
+                            GetPathWithExtension(p.Path, formatProvider)
+                        )
                             || (
                                 string.IsNullOrEmpty(Path.GetDirectoryName(p.Path))
                                 && fileProvider.CanWriteToDirectory(Path.GetFullPath("."))
@@ -122,16 +120,7 @@ internal class SaveLocationManager
             );
         }
 
-        // if no file extension, add from format provider
-        var fileName = Path.GetFileName(targetPath.Path);
-        if (!fileName.Contains('.') && !string.IsNullOrWhiteSpace(formatProvider.FileExtension))
-        {
-            resultPath = $"{targetPath.Path}.{formatProvider.FileExtension}";
-        }
-        else
-        {
-            resultPath = targetPath.Path;
-        }
+        var resultPath = targetPath.Path;
 
         if (formatProvider is FormatProvider.FallbackFormatProvider fallbackProvider)
         {
@@ -139,6 +128,74 @@ internal class SaveLocationManager
         }
 
         return resultPath;
+    }
+
+    /// <summary>
+    /// Gets the highest-priority existing location suitable for reading.
+    /// </summary>
+    public string? BuildReadPath(
+        FormatProvider.IWritableFormatProvider formatProvider,
+        IWritableFileProvider fileProvider,
+        string instanceName,
+        bool promoteSaveLocationEnabled
+    )
+    {
+        var targetPath = GetTargetPaths(instanceName)
+            .Select(
+                (path, index) =>
+                    new
+                    {
+                        Path = GetPathWithExtension(path.Path, formatProvider),
+                        path.Priority,
+                        Index = index,
+                        CanWriteFile = !promoteSaveLocationEnabled
+                            && fileProvider.CanWriteToFile(
+                                GetPathWithExtension(path.Path, formatProvider)
+                            ),
+                        CanWriteDir = fileProvider.CanWriteToDirectory(
+                            GetPathWithExtension(path.Path, formatProvider)
+                        )
+                            || (
+                                string.IsNullOrEmpty(Path.GetDirectoryName(path.Path))
+                                && fileProvider.CanWriteToDirectory(Path.GetFullPath("."))
+                            ),
+                    }
+            )
+            .Where(path => fileProvider.FileExists(path.Path))
+            .OrderByDescending(path => path.Priority)
+            .ThenByDescending(path => path.CanWriteFile)
+            .ThenByDescending(path => path.CanWriteDir)
+            .ThenBy(path => path.Index)
+            .FirstOrDefault();
+
+        return targetPath?.Path;
+    }
+
+    private IEnumerable<LocationPathInfo> GetTargetPaths(string instanceName)
+    {
+        // if nothing configured, use default location
+        if (LocationBuilders.Count == 0)
+        {
+            var filePathInDefault = GetDefaultLocationPath(instanceName);
+            var lb = new LocationBuilderInternal();
+            lb.UseExecutableDirectory().AddFilePath(filePathInDefault);
+            LocationBuilders.Add(lb);
+        }
+
+        return LocationBuilders
+            .SelectMany(builder => builder.SaveLocationPaths)
+            .Where(path => !string.IsNullOrEmpty(path.Path));
+    }
+
+    private static string GetPathWithExtension(
+        string path,
+        FormatProvider.IWritableFormatProvider formatProvider
+    )
+    {
+        var fileName = Path.GetFileName(path);
+        return !fileName.Contains('.') && !string.IsNullOrWhiteSpace(formatProvider.FileExtension)
+            ? $"{path}.{formatProvider.FileExtension}"
+            : path;
     }
 
     /// <summary>

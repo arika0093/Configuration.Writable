@@ -89,6 +89,10 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <inheritdoc />
+    public new void EnablePromoteSaveLocation(bool enabled = true) =>
+        base.EnablePromoteSaveLocation(enabled);
+
+    /// <inheritdoc />
     public new void UseFile(string? path) => base.UseFile(path);
 
     /// <inheritdoc />
@@ -341,7 +345,21 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
         var fileProvider = FileProvider ?? new CommonFileProvider();
-        var configFilePath = SaveLocationManager.Build(FormatProvider, fileProvider, instanceName);
+        var configFilePath = SaveLocationManager.Build(
+            FormatProvider,
+            fileProvider,
+            instanceName,
+            PromoteSaveLocationEnabled
+        );
+        var readFilePath = PromoteSaveLocationEnabled
+            ? SaveLocationManager.BuildReadPath(
+                FormatProvider,
+                fileProvider,
+                instanceName,
+                PromoteSaveLocationEnabled
+            )
+                ?? configFilePath
+            : configFilePath;
         var validator = BuildValidator();
         var schemaMetadata = OptionsMetadataResolver.Resolve<T>();
         if (schemaMetadata is not null && !SupportsSchemaMetadata(FormatProvider))
@@ -378,6 +396,8 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             FormatProvider = FormatProvider,
             FileProvider = fileProvider,
             ConfigFilePath = configFilePath,
+            ReadFilePath = readFilePath,
+            PromoteSaveLocationEnabled = PromoteSaveLocationEnabled,
             InstanceName = instanceName,
             SectionNameParts = sectionNamePart,
             SchemaMetadata = schemaMetadata,

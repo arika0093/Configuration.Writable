@@ -40,7 +40,7 @@ internal sealed class OptionsConfigurationInfo : IOptionsConfigurationInfo
         where T : class, new() =>
         new OptionsConfigurationInfo(
             options.InstanceName,
-            options.ConfigFilePath,
+            options.ReadFilePath,
             options.ConfigFilePath,
             options.FormatProvider.FileExtension,
             options.SectionNameParts

@@ -51,6 +51,11 @@ public class WritableOptionsConfigBuilder
     /// <summary>Gets or sets the configuration section name.</summary>
     public string SectionName { get; set; } = "";
 
+    /// <summary>
+    /// Gets a value indicating whether existing settings are promoted to the preferred save location during startup.
+    /// </summary>
+    public bool PromoteSaveLocationEnabled { get; private set; }
+
     internal void CopyFrom(WritableOptionsConfigBuilder source)
     {
         FormatProvider = source.FormatProvider is FallbackFormatProvider fallbackProvider
@@ -63,6 +68,7 @@ public class WritableOptionsConfigBuilder
         Logger = source.Logger;
         ConflictResolution = source.ConflictResolution;
         SectionName = source.SectionName;
+        PromoteSaveLocationEnabled = source.PromoteSaveLocationEnabled;
         SaveLocationManager = new SaveLocationManager(source.SaveLocationManager);
     }
 
@@ -97,6 +103,12 @@ public class WritableOptionsConfigBuilder
 
         fallbackProvider.AddFallbacks(formatProviders);
     }
+
+    /// <summary>
+    /// Enables or disables promotion of an existing configuration file to the preferred save location during startup.
+    /// </summary>
+    public void EnablePromoteSaveLocation(bool enabled = true) =>
+        PromoteSaveLocationEnabled = enabled;
 
     /// <summary>Uses a specific file path and clears all previously configured locations.</summary>
     public void UseFile(string? path)

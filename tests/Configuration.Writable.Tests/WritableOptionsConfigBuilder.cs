@@ -1,9 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.Configure;
+using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable.Tests;
 
@@ -31,6 +34,31 @@ public partial class WritableOptionsConfigBuilderTests
 
         var path = options.BuildOptions("").ConfigFilePath;
         Path.GetFileName(path).ShouldBe("custom.json");
+    }
+
+    [Fact]
+    public async Task EnablePromoteSaveLocation_ShouldResolveExistingReadPathSeparately()
+    {
+        var fileProvider = new InMemoryFileProvider();
+        var newPath = Path.Combine("new", "settings");
+        var oldPath = Path.Combine("old", "settings");
+        await fileProvider.SaveToFileAsync($"{oldPath}.json", Encoding.UTF8.GetBytes("{}"));
+
+        var options = new WritableOptionsConfigBuilder<TestSettings>
+        {
+            FileProvider = fileProvider,
+        };
+        options.UseCustomDirectory("new").AddFilePath("settings");
+        options.UseCustomDirectory("old").AddFilePath("settings");
+
+        var withoutPromotion = options.BuildOptions("");
+        withoutPromotion.ReadFilePath.ShouldBe(withoutPromotion.ConfigFilePath);
+        withoutPromotion.ConfigFilePath.ShouldBe(Path.GetFullPath($"{oldPath}.json"));
+
+        options.EnablePromoteSaveLocation();
+        var withPromotion = options.BuildOptions("");
+        withPromotion.ConfigFilePath.ShouldBe(Path.GetFullPath($"{newPath}.json"));
+        withPromotion.ReadFilePath.ShouldBe(Path.GetFullPath($"{oldPath}.json"));
     }
 
     [Fact]
