@@ -50,7 +50,8 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
     public override string SchemaVersionProperty { get; set; } = "$version";
 
     /// <inheritdoc />
-    public override IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } = ["Version"];
+    public override IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } =
+    ["Version"];
 
     /// <inheritdoc />
     public override string FileExtension => "json";

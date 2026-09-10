@@ -422,7 +422,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             {
                 get
                 {
-                    {{(model.Id is not null && model.SchemaVersion is > 0 ? $"global::Configuration.Writable.GeneratedOptionsSchemaRegistry.Register(typeof({model.FullName}), {model.IdLiteral}, {model.VersionValue});" : "")}}
+                    {{(
+                model.Id is not null && model.SchemaVersion is > 0
+                    ? $"global::Configuration.Writable.GeneratedOptionsSchemaRegistry.Register(typeof({model.FullName}), {model.IdLiteral}, {model.VersionValue});"
+                    : ""
+            )}}
                     return {{model.IdLiteral}};
                 }
             }

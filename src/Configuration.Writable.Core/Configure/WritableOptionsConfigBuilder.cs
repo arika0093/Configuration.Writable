@@ -307,8 +307,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 fileProvider,
                 instanceName,
                 PromoteSaveLocationEnabled
-            )
-                ?? configFilePath
+            ) ?? configFilePath
             : configFilePath;
         var validator = BuildValidator();
         var schemaMetadata = OptionsMetadataResolver.Resolve<T>();

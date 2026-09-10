@@ -215,7 +215,10 @@ public partial class MigrationSupportTests
         public FooConfig[] Configs { get; set; } = [];
 
         public MySettingsV3 Migrate(MySettingsV2 source) =>
-            new() { Configs = source.Names.Select(name => new FooConfig { Name = name }).ToArray() };
+            new()
+            {
+                Configs = source.Names.Select(name => new FooConfig { Name = name }).ToArray(),
+            };
     }
 
     [OptionsModel]

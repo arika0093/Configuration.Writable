@@ -24,6 +24,8 @@ internal static class OptionsMetadataResolver
                 $"Schema model ID for {typeof(T).Name} cannot be empty."
             );
         }
-        return modelId is null && version is null ? null : new OptionsSchemaMetadata(modelId, version);
+        return modelId is null && version is null
+            ? null
+            : new OptionsSchemaMetadata(modelId, version);
     }
 }

@@ -44,7 +44,8 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
     public override string SchemaVersionProperty { get; set; } = "$version";
 
     /// <inheritdoc />
-    public override IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } = ["Version"];
+    public override IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } =
+    ["Version"];
 
     /// <inheritdoc />
     public override string FileExtension => "yaml";
@@ -480,11 +481,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
                 configYamlBytes,
                 SerializerOptions
             ) ?? new Dictionary<string, object>();
-        configDict = AddSchemaMetadata(
-            configDict,
-            options.SchemaMetadata,
-            SchemaVersionProperty
-        );
+        configDict = AddSchemaMetadata(configDict, options.SchemaMetadata, SchemaVersionProperty);
 
         Dictionary<string, object> resultDict;
 
@@ -526,7 +523,8 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         yaml = Encoding.UTF8.GetString(utf8Bytes.Span);
 #endif
         if (schemaReference is not null)
-            yaml = "# yaml-language-server: $schema=" + schemaReference + Environment.NewLine + yaml;
+            yaml =
+                "# yaml-language-server: $schema=" + schemaReference + Environment.NewLine + yaml;
         return Encoding.GetBytes(yaml);
     }
 
@@ -542,11 +540,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             ?? throw new FormatException(
                 "Options schema metadata can only be written for YAML mappings."
             );
-        return AddSchemaMetadata(
-            dictionary,
-            metadata,
-            SchemaVersionProperty
-        );
+        return AddSchemaMetadata(dictionary, metadata, SchemaVersionProperty);
     }
 
     private static Dictionary<string, object> AddSchemaMetadata(

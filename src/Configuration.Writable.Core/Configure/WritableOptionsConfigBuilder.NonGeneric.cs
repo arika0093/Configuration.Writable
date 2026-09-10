@@ -92,8 +92,8 @@ public class WritableOptionsConfigBuilder
     /// <summary>Enables command-line JSON schema generation using a JSON type-info resolver.</summary>
     public void EnableJsonSchemaGeneration(IJsonTypeInfoResolver typeInfoResolver)
     {
-        JsonSchemaTypeInfoResolver = typeInfoResolver
-            ?? throw new ArgumentNullException(nameof(typeInfoResolver));
+        JsonSchemaTypeInfoResolver =
+            typeInfoResolver ?? throw new ArgumentNullException(nameof(typeInfoResolver));
         JsonSchemaGenerationEnabled = true;
     }
 

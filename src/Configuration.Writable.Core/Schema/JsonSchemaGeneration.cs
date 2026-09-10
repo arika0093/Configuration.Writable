@@ -58,8 +58,11 @@ internal static class JsonSchemaGeneration
         {
             TransformSchemaNode = static (context, node) =>
             {
-                var description = context.PropertyInfo?.AttributeProvider?
-                    .GetCustomAttributes(typeof(DescriptionAttribute), true)
+                var description = context
+                    .PropertyInfo?.AttributeProvider?.GetCustomAttributes(
+                        typeof(DescriptionAttribute),
+                        true
+                    )
                     .OfType<DescriptionAttribute>()
                     .FirstOrDefault();
                 if (description is not null && node is JsonObject schema)
@@ -68,16 +71,20 @@ internal static class JsonSchemaGeneration
             },
         };
 
-        foreach (var model in GeneratedOptionsSchemaRegistry.RegisteredModels
-            .OrderBy(model => model.ModelId, StringComparer.Ordinal)
-            .ThenBy(model => model.Version))
+        foreach (
+            var model in GeneratedOptionsSchemaRegistry
+                .RegisteredModels.OrderBy(model => model.ModelId, StringComparer.Ordinal)
+                .ThenBy(model => model.Version)
+        )
         {
             ValidateModelId(model.ModelId);
-            var typeInfo = effectiveResolver.GetTypeInfo(model.ModelType, jsonOptions)
+            var typeInfo =
+                effectiveResolver.GetTypeInfo(model.ModelType, jsonOptions)
                 ?? throw new InvalidOperationException(
                     $"The configured JSON type-info resolver does not provide metadata for '{model.ModelType.FullName}'."
                 );
-            var schema = JsonSchemaExporter.GetJsonSchemaAsNode(typeInfo, exporterOptions)
+            var schema =
+                JsonSchemaExporter.GetJsonSchemaAsNode(typeInfo, exporterOptions)
                 ?? throw new InvalidOperationException(
                     $"The JSON schema exporter returned no schema for '{model.ModelType.FullName}'."
                 );
@@ -86,7 +93,8 @@ internal static class JsonSchemaGeneration
             var path = Path.Combine(outputDirectory, fileName);
             File.WriteAllText(
                 path,
-                schema.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine
+                schema.ToJsonString(new JsonSerializerOptions { WriteIndented = true })
+                    + Environment.NewLine
             );
         }
         Environment.Exit(0);
@@ -98,23 +106,25 @@ internal static class JsonSchemaGeneration
         OptionsSchemaMetadata? metadata
     )
     {
-        if (string.IsNullOrWhiteSpace(schemaBaseUri)
+        if (
+            string.IsNullOrWhiteSpace(schemaBaseUri)
             || metadata?.ModelId is null
-            || metadata.Version is not > 0)
+            || metadata.Version is not > 0
+        )
             return null;
         ValidateModelId(metadata.ModelId);
         var fileName = GetSchemaFileName(metadata.ModelId, metadata.Version.Value);
         if (Uri.TryCreate(schemaBaseUri, UriKind.Absolute, out var baseUri))
 #pragma warning disable S1075
-                return new Uri(
-                    baseUri,
-                    baseUri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
-                        ? fileName
-                        : "/" + fileName
-                ).ToString();
+            return new Uri(
+                baseUri,
+                baseUri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
+                    ? fileName
+                    : "/" + fileName
+            ).ToString();
 #pragma warning restore S1075
-            var basePath = schemaBaseUri ?? throw new InvalidOperationException();
-            return basePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+        var basePath = schemaBaseUri ?? throw new InvalidOperationException();
+        return basePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + Path.DirectorySeparatorChar
             + fileName;
     }
@@ -149,12 +159,13 @@ internal static class JsonSchemaGeneration
 
     private static void ValidateModelId(string modelId)
     {
-        if (string.IsNullOrWhiteSpace(modelId)
+        if (
+            string.IsNullOrWhiteSpace(modelId)
             || modelId is "." or ".."
-            || modelId.IndexOfAny(new[] { '/', '\\', ':', '*', '?', '"', '<', '>', '|' }) >= 0)
+            || modelId.IndexOfAny(new[] { '/', '\\', ':', '*', '?', '"', '<', '>', '|' }) >= 0
+        )
             throw new InvalidOperationException(
                 $"Options model ID '{modelId}' cannot be used as a schema file name."
             );
     }
-
 }

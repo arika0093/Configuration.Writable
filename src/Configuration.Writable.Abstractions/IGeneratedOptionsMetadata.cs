@@ -27,7 +27,8 @@ public sealed record GeneratedOptionsModelMetadata(Type ModelType, string ModelI
 /// </summary>
 public static class GeneratedOptionsSchemaRegistry
 {
-    private static readonly System.Collections.Generic.List<GeneratedOptionsModelMetadata> Models = [];
+    private static readonly System.Collections.Generic.List<GeneratedOptionsModelMetadata> Models =
+    [];
     private static readonly object SyncRoot = new();
 
     /// <summary>Gets the models registered by source-generated metadata.</summary>
