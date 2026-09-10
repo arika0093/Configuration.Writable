@@ -34,6 +34,11 @@ public class WritableOptionsBuilder : WritableOptionsConfigBuilder
     {
         foreach (var registration in registrations)
             registration();
+        JsonSchemaGeneration.GenerateIfRequested(
+            JsonSchemaGenerationEnabled,
+            JsonSchemaTypeInfoResolver,
+            SchemaBaseUri
+        );
     }
 
     /// <summary>Processes a collected registration.</summary>

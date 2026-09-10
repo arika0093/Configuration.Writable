@@ -91,14 +91,16 @@ internal static class JsonWriterHelper
     public static JsonSerializeAction<T> AddSchemaMetadata<T>(
         JsonSerializeAction<T> serializeAction,
         OptionsSchemaMetadata? metadata,
-        string schemaVersionProperty
+        string schemaVersionProperty,
+        string? schemaReference = null
     )
     {
-        if (metadata is null)
+        if (metadata is null && schemaReference is null)
         {
             return serializeAction;
         }
 
+        var effectiveMetadata = metadata;
         return (writer, value) =>
         {
             var serialized = new ArrayBufferWriter<byte>();
@@ -117,13 +119,19 @@ internal static class JsonWriterHelper
             }
 
             writer.WriteStartObject();
-            if (metadata.Version is not null)
+            if (schemaReference is not null)
             {
-                writer.WriteNumber(schemaVersionProperty, metadata.Version.Value);
+                writer.WriteString("$schema", schemaReference);
+            }
+            if (effectiveMetadata?.Version is not null)
+            {
+                writer.WriteNumber(schemaVersionProperty, effectiveMetadata.Version.Value);
             }
 
             foreach (var property in document.RootElement.EnumerateObject())
             {
+                if (schemaReference is not null && property.Name == "$schema")
+                    continue;
                 property.WriteTo(writer);
             }
             writer.WriteEndObject();

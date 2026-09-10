@@ -260,7 +260,13 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         var serializeAction = JsonWriterHelper.AddSchemaMetadata(
             CreateSerializeAction<T>(typeInfo),
             options.SchemaMetadata,
-            SchemaVersionProperty
+            SchemaVersionProperty,
+            options.SectionNameParts.Count == 0
+                ? JsonSchemaGeneration.ResolveSchemaReference(
+                    options.SchemaBaseUri,
+                    options.SchemaMetadata
+                )
+                : null
         );
         var writerOptions = new JsonWriterOptions
         {

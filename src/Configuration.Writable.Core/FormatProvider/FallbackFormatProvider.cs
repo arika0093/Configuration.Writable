@@ -296,6 +296,7 @@ internal sealed class FallbackFormatProvider
         public string InstanceName => source.InstanceName;
         public List<string> SectionNameParts => source.SectionNameParts;
         public OptionsSchemaMetadata? SchemaMetadata => source.SchemaMetadata;
+        public string? SchemaBaseUri => source.SchemaBaseUri;
         public TimeSpan OnChangeDebounce => source.OnChangeDebounce;
         public ILogger? Logger => source.Logger;
     }

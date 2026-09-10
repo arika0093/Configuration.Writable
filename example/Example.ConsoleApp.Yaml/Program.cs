@@ -11,8 +11,19 @@ SampleSetting.__RegisterVYamlFormatter();
 // initialize the writable config system with YAML format
 WritableOptions.Initialize(conf =>
 {
+    // enable JSON schema generation for the configuration classes
+    // $ dotnet run -- --cw-generate-json-schema ./schema
+    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
+    conf.SchemaBaseUri = "../schema/";
+
     // shared configuration for all options types
-    conf.FormatProvider = new YamlFormatProvider();
+    conf.FormatProvider = new YamlFormatProvider
+    {
+        SerializerOptions = new VYaml.Serialization.YamlSerializerOptions
+        {
+            NamingConvention = VYaml.Annotations.NamingConvention.LowerCamelCase,
+        },
+    };
 
     // if you want to standard system configuration location, use conf.UseStandardSaveDirectory("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows

@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.*" />
     <PackageReference Include="ZLogger" Version="2.*" />
     <PackageReference Include="System.IO.Pipelines" Version="10.*" />
+    <PackageReference Include="System.Text.Json" Version="10.*" />
   </ItemGroup>
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
@@ -19,10 +20,12 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Configuration.Writable.Testing</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Configuration.Writable.Yaml</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.*" />
-    <PackageReference Include="System.Text.Json" Version="10.*" />
   </ItemGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="\" />

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
@@ -51,6 +52,12 @@ public class WritableOptionsConfigBuilder
     /// <summary>Gets or sets the configuration section name.</summary>
     public string SectionName { get; set; } = "";
 
+    /// <summary>Gets or sets the base URI used for schema references in saved documents.</summary>
+    public string? SchemaBaseUri { get; set; }
+
+    internal bool JsonSchemaGenerationEnabled { get; private set; }
+    internal IJsonTypeInfoResolver? JsonSchemaTypeInfoResolver { get; private set; }
+
     /// <summary>
     /// Gets a value indicating whether existing settings are promoted to the preferred save location during startup.
     /// </summary>
@@ -68,8 +75,26 @@ public class WritableOptionsConfigBuilder
         Logger = source.Logger;
         ConflictResolution = source.ConflictResolution;
         SectionName = source.SectionName;
+        SchemaBaseUri = source.SchemaBaseUri;
+        JsonSchemaGenerationEnabled = source.JsonSchemaGenerationEnabled;
+        JsonSchemaTypeInfoResolver = source.JsonSchemaTypeInfoResolver;
         PromoteSaveLocationEnabled = source.PromoteSaveLocationEnabled;
         SaveLocationManager = new SaveLocationManager(source.SaveLocationManager);
+    }
+
+    /// <summary>Enables command-line JSON schema generation using the runtime JSON contract.</summary>
+    public void EnableJsonSchemaGeneration()
+    {
+        JsonSchemaGenerationEnabled = true;
+        JsonSchemaTypeInfoResolver = null;
+    }
+
+    /// <summary>Enables command-line JSON schema generation using a JSON type-info resolver.</summary>
+    public void EnableJsonSchemaGeneration(IJsonTypeInfoResolver typeInfoResolver)
+    {
+        JsonSchemaTypeInfoResolver = typeInfoResolver
+            ?? throw new ArgumentNullException(nameof(typeInfoResolver));
+        JsonSchemaGenerationEnabled = true;
     }
 
     /// <summary>

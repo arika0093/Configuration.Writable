@@ -240,7 +240,13 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         var serializeAction = JsonWriterHelper.AddSchemaMetadata(
             CreateSerializeAction<T>(JsonSerializerOptions),
             options.SchemaMetadata,
-            SchemaVersionProperty
+            SchemaVersionProperty,
+            options.SectionNameParts.Count == 0
+                ? JsonSchemaGeneration.ResolveSchemaReference(
+                    options.SchemaBaseUri,
+                    options.SchemaMetadata
+                )
+                : null
         );
         var writerOptions = new JsonWriterOptions
         {

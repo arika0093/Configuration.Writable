@@ -418,7 +418,14 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         builder.IncreaseIndent();
         builder.AppendLine(
             $$"""
-            string? global::{{MetadataInterfaceName}}.ModelId => {{model.IdLiteral}};
+            string? global::{{MetadataInterfaceName}}.ModelId
+            {
+                get
+                {
+                    {{(model.Id is not null && model.SchemaVersion is > 0 ? $"global::Configuration.Writable.GeneratedOptionsSchemaRegistry.Register(typeof({model.FullName}), {model.IdLiteral}, {model.VersionValue});" : "")}}
+                    return {{model.IdLiteral}};
+                }
+            }
             int? global::{{MetadataInterfaceName}}.Version => {{model.VersionValue}};
             void global::{{MetadataInterfaceName}}.RegisterMigrations(global::Configuration.Writable.IOptionsMigrationRegistrar registrar)
             {

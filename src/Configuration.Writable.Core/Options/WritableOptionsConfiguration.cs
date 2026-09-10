@@ -60,6 +60,9 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// </summary>
     public OptionsSchemaMetadata? SchemaMetadata { get; init; }
 
+    /// <summary>Gets the base URI used for schema references in saved documents.</summary>
+    public string? SchemaBaseUri { get; init; }
+
     /// <summary>
     /// Gets the debounce duration for change events.
     /// This delays event firing until rapid changes have stopped.

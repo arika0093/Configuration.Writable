@@ -39,6 +39,11 @@ internal class WritableOptionsSimpleInstanceCore<T>
         var optionBuilder = new WritableOptionsConfigBuilder<T>();
         configurationOptions(optionBuilder);
         var option = optionBuilder.BuildOptions(instanceName);
+        JsonSchemaGeneration.GenerateIfRequested(
+            optionBuilder.JsonSchemaGenerationEnabled,
+            optionBuilder.JsonSchemaTypeInfoResolver,
+            optionBuilder.SchemaBaseUri
+        );
         _options.Clear();
         _options.Add(option);
     }

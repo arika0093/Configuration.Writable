@@ -10,6 +10,7 @@ Yet another configuration library with features including: type-safe operations,
 * Simple API that can be easily used in applications both [with](#host-application-with-di) and [without](#simple-application-without-di) DI.
 * Partial updates to settings make it usable even with [ASP.NET Core](#sectionname).
 * Works with [NativeAOT](#support-nativeaot) environments!
+* Automatically [generate JSON schema](#generating-json-schema) and [embed schema information](#embedding-schema-information) in generated configuration files.
 * Highly [customizable configuration](#customization) methods, save locations, file formats, validation, logging, and more.
 
 ## Quick Start
@@ -218,6 +219,8 @@ builder.Services.AddWritableOptions(conf => {
     });
 });
 ```
+
+Under the following, the parts written as `builder.Services.AddWritableOptions(...)` can be read as `WritableOptions.Initialize(...)`.
 
 ### Save Location
 Default behavior is to save to `{AppContext.BaseDirectory}/usersettings.json` (in general, the same directory as the executable).
@@ -447,34 +450,6 @@ conf.OnChangeDebounce = TimeSpan.FromMilliseconds(500); // customize to 500ms
 conf.OnChangeDebounce = TimeSpan.Zero;                  // disable debouncing
 ```
 
-### RegisterAsSingleton
-If you want to directly reference the settings class, specify `conf.RegisterAsSingleton = true`.
-
-> [!NOTE]
-> The dynamic update functionality provided by `IReadOnlyOptions<T>` will no longer be available.
-> Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
-
-```csharp
-builder.Services.AddWritableOptions(conf => {
-    conf.Add<UserSetting>(c => c.RegisterAsSingleton = true);
-});
-
-// you can use UserSetting directly
-public class MyService(UserSetting setting) {
-    public void Print() {
-        Console.WriteLine($">> Name: {setting.Name}");
-    }
-}
-
-// and you can also use IReadOnlyOptions<T> as usual
-public class MyOtherService(IReadOnlyOptions<UserSetting> options) {
-    public void Print() {
-        var setting = options.CurrentValue;
-        Console.WriteLine($">> Name: {setting.Name}");
-    }
-}
-```
-
 ### Logging
 Logging is enabled by default in DI environments.  
 If you are not using DI, or if you want to override the logging settings, you can enable logging by specifying `conf.Logger`.
@@ -662,8 +637,144 @@ internal class MyCustomValidator : IValidateOptions<UserSetting>
 > [!NOTE]
 > Validation at startup is intentionally not provided. The reason is that in the case of user settings, it is preferable to prompt for correction rather than prevent startup when a validation error occurs.
 
-## Adopting Existing Settings
+## Json Schema Support
+Configuration.Writable can generate [JSON Schema](https://json-schema.org/) files for versioned options models and add schema references to root JSON and YAML files.
 
+### What is JSON Schema
+
+JSON Schema is a specification for describing the structure of JSON data.
+It allows you to define data types, required properties, descriptions, and more.
+You can prepare a JSON file in advance like the following:
+
+```jsonc
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "MySettings.v1.json",
+  // schema definition for MySettings
+}
+```
+
+By embedding this at the beginning of the configuration file,
+when users open a JSON file in a compatible editor like VSCode, code completion and validation based on the schema will be performed.
+
+### Generating JSON Schema
+
+First, add the following configuration in your code:
+
+```csharp
+conf.EnableJsonSchemaGeneration();
+// For NativeAOT, you need to specify JsonSerializerContext.
+conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
+```
+
+Then, when you build the application, a feature to generate schemas using the `--cw-generate-json-schema` option is embedded.
+
+```sh
+# generate JSON schema files in ./artifacts/schemas
+./MyApplication.exe --cw-generate-json-schema ./artifacts/schemas
+#  > ./artifacts/schemas/MySettings.v1.json
+#  > ./artifacts/schemas/MySettings.v2.json
+#  > ...
+```
+
+> [!NOTE]
+> When `--cw-generate-json-schema` is specified, the application exits immediately after schema generation is complete.
+> This enables automatic schema generation in CI/CD pipelines and similar scenarios.
+
+You are free to decide where to host this file. For example, consider these approaches:
+
+* Place it on the `main` branch of a GitHub repository.
+* Host it on a CDN or your own web server.
+* Include it with release binaries.
+
+### Embedding Schema Information
+
+Similarly, enable this through configuration. You can configure it freely based on the URI where you will distribute the schema.
+
+```csharp
+// relative path to the schema files (include release assets)
+conf.SchemaBaseUri = "./schemas/";
+// hosted on GitHub
+conf.SchemaBaseUri = "https://raw.githubusercontent.com/username/repo/main/schemas/";
+// hosted on your own server
+conf.SchemaBaseUri = "https://example.com/schemas/";
+```
+
+> [!NOTE]
+> Do not specify a concrete filename in this URI. The filename is added automatically.
+
+Then, when you save the configuration normally, schema information is automatically embedded at the beginning of the JSON/YAML file.
+
+```jsonc
+{
+  "$schema": "./schemas/MySettings.v1.json",
+  "$version": 1,
+  "Name": "custom name",
+  "Age": 30
+}
+```
+
+> [!WARNING]
+> If you specify `SectionName`, schema information will not be embedded in the generated JSON/YAML file.  
+> This is because it is difficult to specify an accurate JSON schema due to the nature of writing to a part of the settings.  
+> However, schema generation itself is functional, so you can refer to it as needed.
+
+### Summary
+
+Schema generation and embedding are enabled with the following configuration:
+
+```csharp
+builder.Services.AddWritableOptions(conf => {
+    // class registration
+    conf.Add<SampleSetting>();
+    // format provider (JSON AOT)
+    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+    // support JSON Schema generation (--cw-generate-json-schema)
+    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
+    // embedding schema information in generated files
+    conf.SchemaBaseUri = "./schemas/";
+});
+```
+
+### Yaml support
+
+Yamlの場合でも同様に、スキーマ情報を埋め込むことができます。
+ただし、VYamlの初期設定ではcamelCaseで各項目が書き込まれる一方、JSON スキーマの初期設定ではPascalCaseで書き込まれるため、
+どちらかの設定を変更する必要があります。
+
+```csharp
+builder.Services.AddWritableOptions(conf => {
+    // class registration
+    conf.Add<SampleSetting>();
+    // format provider (YAML)
+    conf.FormatProvider = new YamlFormatProvider {
+        // 明示的に指定する場合,以下のようにNamingConventionを指定する
+        SerializerOptions = new YamlSerializerOptions {
+            NamingConvention = YamlNamingConvention.CamelCase
+        }
+    };
+    // support JSON Schema generation (--cw-generate-json-schema)
+    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
+    // embedding schema information in generated files
+    conf.SchemaBaseUri = "./schemas/";
+});
+
+// JSONスキーマ側をcamelCaseに変更
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(SampleSetting))]
+public partial class SampleSettingSerializerContext : JsonSerializerContext;
+```
+
+以下のように、YAMLファイルの先頭にスキーマ情報が埋め込まれます。
+
+```yaml
+# yaml-language-server: $schema=./schemas/MySettings.v1.json
+$version: 1
+name: custom name
+age: 30
+```
+
+## Adopting Existing Settings
 You can adopt this library while keeping existing configuration files.
 
 ### Inspect the Existing Schema
@@ -1062,6 +1173,37 @@ public class MyService([FromKeyedService("First")] UserSetting options) {
 > [!NOTE]
 > When not using DI (direct use of WritableOptions), managing multiple configurations is intentionally not supported.
 > This is to avoid complicating usage.
+
+### RegisterAsSingleton
+If you want to directly reference the settings class, specify `conf.RegisterAsSingleton = true`.
+
+> [!TIP]
+> The dynamic update functionality provided by `IReadOnlyOptions<T>` will no longer be available.
+> Be mindful of lifecycle management, as settings applied during instance creation will be reflected.
+
+```csharp
+builder.Services.AddWritableOptions(conf => {
+    conf.Add<UserSetting>(c => c.RegisterAsSingleton = true);
+});
+
+// you can use UserSetting directly
+public class MyService(UserSetting setting) {
+    public void Print() {
+        Console.WriteLine($">> Name: {setting.Name}");
+    }
+}
+
+// and you can also use IReadOnlyOptions<T> as usual
+public class MyOtherService(IReadOnlyOptions<UserSetting> options) {
+    public void Print() {
+        var setting = options.CurrentValue;
+        Console.WriteLine($">> Name: {setting.Name}");
+    }
+}
+```
+
+> [!NOTE]
+> Of course, this feature can only be used in a DI environment.
 
 ### Dynamic Add/Remove Options
 You can dynamically add or remove writable options at runtime using `IWritableOptionsConfigRegistry`.

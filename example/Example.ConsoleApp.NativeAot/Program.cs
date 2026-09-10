@@ -7,6 +7,11 @@ WritableOptions.Initialize(conf =>
 {
     // shared configuration for all options types
 
+    // enable JSON schema generation for the configuration classes
+    // $ dotnet run -- --cw-generate-json-schema ./schema
+    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
+    conf.SchemaBaseUri = "../schema/";
+
     // JsonAotFormatProvider is the recommended format provider for NativeAOT scenarios
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
 

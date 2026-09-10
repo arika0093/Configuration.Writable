@@ -40,6 +40,9 @@ public interface IWritableOptionsConfiguration
     /// </summary>
     OptionsSchemaMetadata? SchemaMetadata { get; }
 
+    /// <summary>Gets the base URI used for schema references in saved documents.</summary>
+    string? SchemaBaseUri { get; }
+
     /// <summary>
     /// The debounce duration for change notifications.
     /// </summary>

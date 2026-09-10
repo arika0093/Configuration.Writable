@@ -7,6 +7,11 @@ WritableOptions.Initialize(conf =>
 {
     // shared configuration for all options types
 
+    // enable JSON schema generation for the configuration classes
+    // $ dotnet run -- --cw-generate-json-schema ./schema
+    conf.EnableJsonSchemaGeneration();
+    conf.SchemaBaseUri = "../schema/";
+
     // customize the format provider
     // you can use Json, Xml, Yaml, or your original format by implementing IWritableFormatProvider
     conf.FormatProvider = new JsonFormatProvider()

@@ -19,6 +19,18 @@ namespace Configuration.Writable
         public void ResetToLoaded(System.Action<T, T> reset) { }
         public void Update(System.Action<T> updater) { }
     }
+    public sealed class GeneratedOptionsModelMetadata : System.IEquatable<Configuration.Writable.GeneratedOptionsModelMetadata>
+    {
+        public GeneratedOptionsModelMetadata(System.Type ModelType, string ModelId, int Version) { }
+        public string ModelId { get; init; }
+        public System.Type ModelType { get; init; }
+        public int Version { get; init; }
+    }
+    public static class GeneratedOptionsSchemaRegistry
+    {
+        public static System.Collections.Generic.IReadOnlyList<Configuration.Writable.GeneratedOptionsModelMetadata> RegisteredModels { get; }
+        public static void Register(System.Type modelType, string modelId, int version) { }
+    }
     public interface IGeneratedOptionsMetadata
     {
         string? ModelId { get; }

@@ -418,9 +418,19 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         {
             var contents =
                 options.SchemaMetadata == null
-                    ? SerializeForFile(config)
+                    ? SerializeForFile(
+                        config,
+                        JsonSchemaGeneration.ResolveSchemaReference(
+                            options.SchemaBaseUri,
+                            options.SchemaMetadata
+                        )
+                    )
                     : SerializeForFile(
-                        CreateSchemaMetadataDictionary(config, options.SchemaMetadata)
+                        CreateSchemaMetadataDictionary(config, options.SchemaMetadata),
+                        JsonSchemaGeneration.ResolveSchemaReference(
+                            options.SchemaBaseUri,
+                            options.SchemaMetadata
+                        )
                     );
             return new ValueTask<ReadOnlyMemory<byte>>(contents);
         }
@@ -506,19 +516,17 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return SerializeForFile(resultDict);
     }
 
-    private ReadOnlyMemory<byte> SerializeForFile<T>(T value)
+    private ReadOnlyMemory<byte> SerializeForFile<T>(T value, string? schemaReference = null)
     {
         var utf8Bytes = YamlSerializer.Serialize(value, SerializerOptions);
-        if (Encoding.CodePage == Encoding.UTF8.CodePage)
-        {
-            return utf8Bytes;
-        }
-
+        string yaml;
 #if NETSTANDARD2_0
-        var yaml = Encoding.UTF8.GetString(utf8Bytes.ToArray());
+        yaml = Encoding.UTF8.GetString(utf8Bytes.ToArray());
 #else
-        var yaml = Encoding.UTF8.GetString(utf8Bytes.Span);
+        yaml = Encoding.UTF8.GetString(utf8Bytes.Span);
 #endif
+        if (schemaReference is not null)
+            yaml = "# yaml-language-server: $schema=" + schemaReference + Environment.NewLine + yaml;
         return Encoding.GetBytes(yaml);
     }
 

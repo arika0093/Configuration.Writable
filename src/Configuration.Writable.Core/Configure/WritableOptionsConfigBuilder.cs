@@ -89,6 +89,20 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <inheritdoc />
+    public new string? SchemaBaseUri
+    {
+        get => base.SchemaBaseUri;
+        set => base.SchemaBaseUri = value;
+    }
+
+    /// <inheritdoc />
+    public new void EnableJsonSchemaGeneration() => base.EnableJsonSchemaGeneration();
+
+    /// <inheritdoc />
+    public new void EnableJsonSchemaGeneration(IJsonTypeInfoResolver typeInfoResolver) =>
+        base.EnableJsonSchemaGeneration(typeInfoResolver);
+
+    /// <inheritdoc />
     public new void EnablePromoteSaveLocation(bool enabled = true) =>
         base.EnablePromoteSaveLocation(enabled);
 
@@ -298,6 +312,14 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             : configFilePath;
         var validator = BuildValidator();
         var schemaMetadata = OptionsMetadataResolver.Resolve<T>();
+        if (schemaMetadata?.ModelId is not null && schemaMetadata.Version is not null)
+        {
+            GeneratedOptionsSchemaRegistry.Register(
+                typeof(T),
+                schemaMetadata.ModelId,
+                schemaMetadata.Version.Value
+            );
+        }
         if (schemaMetadata is not null && !SupportsSchemaMetadata(FormatProvider))
         {
             throw new InvalidOperationException(
@@ -337,6 +359,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             InstanceName = instanceName,
             SectionNameParts = sectionNamePart,
             SchemaMetadata = schemaMetadata,
+            SchemaBaseUri = SchemaBaseUri,
             OnChangeDebounce = OnChangeDebounce,
             ConflictResolution = ConflictResolution,
             CloneMethod = cloneMethod,
