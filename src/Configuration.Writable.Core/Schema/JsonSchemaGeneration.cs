@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -18,6 +19,18 @@ internal static class JsonSchemaGeneration
 {
     private const string CommandLineOption = "--cw-generate-json-schema";
 
+#if NET
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026",
+        Justification = "The default resolver is only created when dynamic code is supported; AOT callers must provide a source-generated resolver."
+    )]
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL3050",
+        Justification = "The default resolver is only created when dynamic code is supported; AOT callers must provide a source-generated resolver."
+    )]
+#endif
     public static void GenerateIfRequested(
         bool enabled,
         IJsonTypeInfoResolver? resolver,

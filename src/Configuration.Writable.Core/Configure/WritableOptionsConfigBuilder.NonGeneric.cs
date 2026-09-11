@@ -5,6 +5,7 @@ using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
 #if NET
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 #endif
 
@@ -16,7 +17,22 @@ public class WritableOptionsConfigBuilder
     internal SaveLocationManager SaveLocationManager { get; private set; } = new();
 
     /// <summary>Gets or sets the format provider.</summary>
-    public IWritableFormatProvider FormatProvider { get; set; } = new JsonFormatProvider();
+    public IWritableFormatProvider FormatProvider { get; set; } = CreateDefaultFormatProvider();
+
+#if NET
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026",
+        Justification = "The default provider intentionally uses runtime JSON metadata; callers can provide JsonAotFormatProvider for NativeAOT."
+    )]
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL3050",
+        Justification = "The default provider intentionally uses runtime JSON metadata; callers can provide JsonAotFormatProvider for NativeAOT."
+    )]
+#endif
+    private static IWritableFormatProvider CreateDefaultFormatProvider() =>
+        new JsonFormatProvider();
 
     /// <summary>Gets or sets the file provider.</summary>
     public IWritableFileProvider? FileProvider { get; set; }
@@ -35,7 +51,16 @@ public class WritableOptionsConfigBuilder
     public bool RegisterAsSingleton { get; set; }
 
     /// <summary>Gets or sets whether Data Annotations validation is enabled.</summary>
-    public bool UseDataAnnotationsValidation { get; set; } =
+    public bool UseDataAnnotationsValidation
+    {
+        get;
+#if NET
+        [RequiresUnreferencedCode(
+            "Data Annotations validation may require types that cannot be statically analyzed."
+        )]
+#endif
+        set;
+    } =
 #if NET
         RuntimeFeature.IsDynamicCodeSupported;
 #else
@@ -63,6 +88,11 @@ public class WritableOptionsConfigBuilder
     /// </summary>
     public bool PromoteSaveLocationEnabled { get; private set; }
 
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026",
+        Justification = "Copying the configured validation mode preserves the existing runtime behavior."
+    )]
     internal void CopyFrom(WritableOptionsConfigBuilder source)
     {
         FormatProvider = source.FormatProvider is FallbackFormatProvider fallbackProvider
@@ -82,7 +112,18 @@ public class WritableOptionsConfigBuilder
         SaveLocationManager = new SaveLocationManager(source.SaveLocationManager);
     }
 
-    /// <summary>Enables command-line JSON schema generation using the runtime JSON contract.</summary>
+    /// <summary>
+    /// Enables command-line JSON schema generation using the runtime JSON contract.
+    /// This is not compatible with trimming or NativeAOT.
+    /// </summary>
+#if NET
+    [RequiresUnreferencedCode(
+        "The runtime JSON contract may require types that cannot be statically analyzed."
+    )]
+    [RequiresDynamicCode(
+        "The runtime JSON contract may require runtime code generation and is not compatible with NativeAOT."
+    )]
+#endif
     public void EnableJsonSchemaGeneration()
     {
         JsonSchemaGenerationEnabled = true;

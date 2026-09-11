@@ -23,6 +23,19 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 #endif
 
     /// <summary>
+    /// Initializes a JSON format provider that uses runtime JSON metadata.
+    /// </summary>
+#if NET
+    [RequiresUnreferencedCode(
+        "Runtime JSON metadata may require types that cannot be statically analyzed."
+    )]
+    [RequiresDynamicCode(
+        "Runtime JSON metadata may require runtime code generation and is not compatible with NativeAOT."
+    )]
+#endif
+    public JsonFormatProvider() { }
+
+    /// <summary>
     /// Gets or sets the options to use when serializing and deserializing JSON data.
     /// </summary>
     public JsonSerializerOptions JsonSerializerOptions { get; init; } =

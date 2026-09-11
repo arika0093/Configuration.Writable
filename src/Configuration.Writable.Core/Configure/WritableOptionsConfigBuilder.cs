@@ -64,6 +64,11 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     public new bool UseDataAnnotationsValidation
     {
         get => base.UseDataAnnotationsValidation;
+#if NET
+        [RequiresUnreferencedCode(
+            "Data Annotations validation may require types that cannot be statically analyzed."
+        )]
+#endif
         set => base.UseDataAnnotationsValidation = value;
     }
 
@@ -96,6 +101,14 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <inheritdoc />
+#if NET
+    [RequiresUnreferencedCode(
+        "The runtime JSON contract may require types that cannot be statically analyzed."
+    )]
+    [RequiresDynamicCode(
+        "The runtime JSON contract may require runtime code generation and is not compatible with NativeAOT."
+    )]
+#endif
     public new void EnableJsonSchemaGeneration() => base.EnableJsonSchemaGeneration();
 
     /// <inheritdoc />
@@ -192,6 +205,18 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <summary>Creates a builder with default settings.</summary>
+#if NET
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026",
+        Justification = "The default JSON provider is retained for non-AOT applications; AOT callers can replace it with JsonAotFormatProvider."
+    )]
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL3050",
+        Justification = "The default JSON provider is retained for non-AOT applications; AOT callers can replace it with JsonAotFormatProvider."
+    )]
+#endif
     public WritableOptionsConfigBuilder() { }
 
     /// <summary>
