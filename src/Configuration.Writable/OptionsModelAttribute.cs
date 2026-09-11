@@ -23,6 +23,11 @@ public sealed class OptionsModelAttribute : Attribute
     public int Version { get; set; }
 
     /// <summary>
+    /// Gets or sets the model type to migrate from instead of discovering the immediately preceding version by <see cref="Id"/>.
+    /// </summary>
+    public Type? PreviousModel { get; set; }
+
+    /// <summary>
     /// Gets or sets whether migration from the immediately preceding version is supported.
     /// Set this to <see langword="false"/> to start a new compatibility chain at this version.
     /// </summary>

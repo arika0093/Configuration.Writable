@@ -395,25 +395,12 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 $"Target type {typeof(T).Name} does not declare a schema version."
             );
 
-        foreach (var step in migrationSteps)
+        if (migrationSteps.Any(step => step.ToVersion > targetVersion))
         {
-            if (
-                targetMetadata.ModelId is not null
-                && step.ModelId is not null
-                && targetMetadata.ModelId != step.ModelId
-            )
-            {
-                throw new InvalidOperationException(
-                    $"Migration for model ID '{step.ModelId}' cannot be registered for '{targetMetadata.ModelId}'."
-                );
-            }
-
-            if (step.ToVersion > targetVersion)
-            {
-                throw new InvalidOperationException(
-                    $"Migration to version {step.ToVersion} exceeds target version {targetVersion}."
-                );
-            }
+            var step = migrationSteps.First(step => step.ToVersion > targetVersion);
+            throw new InvalidOperationException(
+                $"Migration to version {step.ToVersion} exceeds target version {targetVersion}."
+            );
         }
     }
 

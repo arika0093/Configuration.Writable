@@ -63,6 +63,25 @@ public partial class GeneratedDefaultVersionSettings
     public string Value { get; set; } = "";
 }
 
+[OptionsModel(Id = "LegacySettings", Version = 1)]
+public partial class RenamedSettingsV1
+{
+    public string LegacyValue { get; set; } = "";
+}
+
+[OptionsModel(
+    Id = "RenamedSettings",
+    Version = 2,
+    PreviousModel = typeof(RenamedSettingsV1)
+)]
+public partial class RenamedSettingsV2
+{
+    public string Value { get; set; } = "";
+
+    public RenamedSettingsV2 Migrate(RenamedSettingsV1 source) =>
+        new() { Value = source.LegacyValue };
+}
+
 [JsonSerializable(typeof(GeneratedSettingsV1))]
 [JsonSerializable(typeof(GeneratedSettingsV2))]
 [JsonSerializable(typeof(GeneratedSettingsV3))]
@@ -109,6 +128,25 @@ public class SourceGeneratedVersioningTests
         var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
 
         result.Names.ShouldBe(["legacy"]);
+    }
+
+    [Fact]
+    public async Task GeneratedMigration_ShouldUseExplicitPreviousModel()
+    {
+        const string fileName = "generated-renamed.json";
+        await _fileProvider.SaveToFileAsync(
+            fileName,
+            Encoding.UTF8.GetBytes("""{"Version":1,"LegacyValue":"legacy"}""")
+        );
+        var builder = new WritableOptionsConfigBuilder<RenamedSettingsV2>
+        {
+            FilePath = fileName,
+            FileProvider = _fileProvider,
+        };
+
+        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+
+        result.Value.ShouldBe("legacy");
     }
 
     [Fact]

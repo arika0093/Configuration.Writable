@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -70,14 +69,13 @@ internal static class JsonWriterHelper
     {
         logger?.Log(LogLevel.Trace, "Serializing configuration directly without section nesting");
 
-        // Use ArrayBufferWriter for better memory efficiency
-        var bufferWriter = new ArrayBufferWriter<byte>();
+        using var bufferWriter = new MemoryStream();
         using var writer = new Utf8JsonWriter(bufferWriter, writerOptions);
 
         serializeAction(writer, config);
         writer.Flush();
 
-        var bytes = bufferWriter.WrittenMemory;
+        var bytes = bufferWriter.ToArray();
 
         logger?.Log(
             LogLevel.Trace,
@@ -103,14 +101,14 @@ internal static class JsonWriterHelper
         var effectiveMetadata = metadata;
         return (writer, value) =>
         {
-            var serialized = new ArrayBufferWriter<byte>();
+            using var serialized = new MemoryStream();
             using (var valueWriter = new Utf8JsonWriter(serialized))
             {
                 serializeAction(valueWriter, value);
                 valueWriter.Flush();
             }
 
-            using var document = JsonDocument.Parse(serialized.WrittenMemory);
+            using var document = JsonDocument.Parse(serialized.ToArray());
             if (document.RootElement.ValueKind != JsonValueKind.Object)
             {
                 throw new InvalidOperationException(
@@ -183,8 +181,7 @@ internal static class JsonWriterHelper
             );
         }
 
-        // Use ArrayBufferWriter for better memory efficiency
-        var bufferWriter = new ArrayBufferWriter<byte>();
+        using var bufferWriter = new MemoryStream();
         using var writer = new Utf8JsonWriter(bufferWriter, writerOptions);
 
         if (existingDocument != null)
@@ -217,7 +214,7 @@ internal static class JsonWriterHelper
         }
 
         writer.Flush();
-        var bytes = bufferWriter.WrittenMemory;
+        var bytes = bufferWriter.ToArray();
 
         logger?.Log(
             LogLevel.Trace,

@@ -129,7 +129,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 model.FullName,
                 model.Name,
                 model.Namespace,
-                true
+                true,
+                model.PreviousModelFullName
             ))
             .Concat(
                 referencedModels.Select(static model => new ModelReference(
@@ -141,7 +142,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     model.IsPublic
                 ))
             );
-        var groups = models
+        var allModels = models.ToList();
+        var groups = allModels
             .Where(model => !string.IsNullOrWhiteSpace(model.Id) && model.Version is not null)
             .GroupBy(model => model.Id!, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
@@ -181,7 +183,26 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         foreach (var model in sourceModels)
         {
             ModelReference? previous = null;
-            if (model.SupportMigration && model.SchemaVersion is > 1 && model.Id is not null)
+            if (model.PreviousModelFullName is not null)
+            {
+                previous = allModels.FirstOrDefault(candidate =>
+                    candidate.FullName == model.PreviousModelFullName && candidate.IsSourceOrPublic
+                );
+                if (previous is null)
+                {
+                    context.ReportDiagnostic(
+                        Diagnostic.Create(
+                            MissingPreviousVersion,
+                            model.DiagnosticLocation.ToLocation(),
+                            model.Name,
+                            model.SchemaVersion,
+                            model.PreviousModelFullName,
+                            "(explicit PreviousModel)"
+                        )
+                    );
+                }
+            }
+            else if (model.SupportMigration && model.SchemaVersion is > 1 && model.Id is not null)
             {
                 groups.TryGetValue(model.Id, out var candidates);
                 previous = candidates?.FirstOrDefault(candidate =>
@@ -295,6 +316,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             int? version = null;
             var versionSpecified = false;
             var supportMigration = true;
+            string? previousModelFullName = null;
             foreach (var argument in attribute.NamedArguments)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -310,6 +332,12 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 else if (argument.Key == "SupportMigration")
                 {
                     supportMigration = argument.Value.Value as bool? ?? true;
+                }
+                else if (argument.Key == "PreviousModel")
+                {
+                    previousModelFullName = (
+                        argument.Value.Value as INamedTypeSymbol
+                    )?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 }
             }
             if (
@@ -327,20 +355,25 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                         argument.Expression,
                         cancellationToken
                     );
-                    if (!constant.HasValue)
+                    if (name == "PreviousModel")
                     {
-                        continue;
+                        previousModelFullName = semanticModel
+                            .GetTypeInfo(argument.Expression, cancellationToken)
+                            .Type
+                            is INamedTypeSymbol previousType
+                            ? previousType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                            : null;
                     }
-                    if (name == "Id")
+                    else if (constant.HasValue && name == "Id")
                     {
                         id = constant.Value as string;
                     }
-                    else if (name == "Version")
+                    else if (constant.HasValue && name == "Version")
                     {
                         versionSpecified = true;
                         version = constant.Value as int?;
                     }
-                    else if (name == "SupportMigration")
+                    else if (constant.HasValue && name == "SupportMigration")
                     {
                         supportMigration = constant.Value as bool? ?? true;
                     }
@@ -363,7 +396,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                     attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation()
                         ?? type.Locations.FirstOrDefault()
                         ?? Location.None,
-                    supportMigration
+                    supportMigration,
+                    previousModelFullName
                 )
             );
         }
@@ -484,7 +518,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         bool isSource,
         bool isPartial,
         Location location,
-        bool supportMigration
+        bool supportMigration,
+        string? previousModelFullName
     )
     {
         public INamedTypeSymbol Symbol { get; } = symbol;
@@ -495,6 +530,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         public bool HasPartialModifier { get; } = isPartial;
         public Location Location { get; } = location;
         public bool SupportMigration { get; } = supportMigration;
+        public string? PreviousModelFullName { get; } = previousModelFullName;
     }
 
     private static EquatableArray<ReferencedModelInfo> CollectReferencedModels(
@@ -556,7 +592,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         string IdLiteral,
         string VersionValue,
         DiagnosticLocation DiagnosticLocation,
-        EquatableArray<GeneratorDiagnostic> Diagnostics
+        EquatableArray<GeneratorDiagnostic> Diagnostics,
+        string? PreviousModelFullName
     )
     {
         public static SourceModelInfo Create(
@@ -570,6 +607,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             int? version = null;
             var versionSpecified = false;
             var supportMigration = true;
+            string? previousModelFullName = null;
             foreach (var argument in attribute.NamedArguments)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -582,6 +620,10 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 }
                 else if (argument.Key == "SupportMigration")
                     supportMigration = argument.Value.Value as bool? ?? true;
+                else if (argument.Key == "PreviousModel")
+                    previousModelFullName = (
+                        argument.Value.Value as INamedTypeSymbol
+                    )?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             }
 
             if (!versionSpecified)
@@ -651,7 +693,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
                 id is null ? "null" : SymbolDisplay.FormatLiteral(id, true),
                 version?.ToString() ?? "null",
                 location,
-                new EquatableArray<GeneratorDiagnostic>(diagnostics)
+                new EquatableArray<GeneratorDiagnostic>(diagnostics),
+                previousModelFullName
             );
         }
 
@@ -746,7 +789,8 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         string FullName,
         string Name,
         string? Namespace,
-        bool IsSourceOrPublic
+        bool IsSourceOrPublic,
+        string? PreviousModelFullName = null
     );
 
     private sealed record ReferencedModelInfo(
