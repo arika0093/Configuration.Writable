@@ -48,6 +48,23 @@ internal sealed class FallbackFormatProvider
 
     public string FileExtension => PrimaryProvider.FileExtension;
 
+    internal void RegisterType<T>()
+        where T : class, new()
+    {
+        if (PrimaryProvider is FormatProviderBase primaryProvider)
+        {
+            primaryProvider.RegisterType<T>();
+        }
+
+        foreach (var fallbackProvider in _fallbackProviders)
+        {
+            if (fallbackProvider is FormatProviderBase provider)
+            {
+                provider.RegisterType<T>();
+            }
+        }
+    }
+
     internal FallbackFormatProvider Clone()
     {
         var clone = new FallbackFormatProvider(PrimaryProvider);

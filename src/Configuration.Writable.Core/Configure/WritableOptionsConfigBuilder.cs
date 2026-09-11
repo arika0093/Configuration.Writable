@@ -319,6 +319,15 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
+        if (FormatProvider is FormatProviderBase typeRegistrationProvider)
+        {
+            typeRegistrationProvider.RegisterType<T>();
+        }
+        else if (FormatProvider is FallbackFormatProvider fallbackFormatProvider)
+        {
+            fallbackFormatProvider.RegisterType<T>();
+        }
+
         var fileProvider = FileProvider ?? new CommonFileProvider();
         var configFilePath = SaveLocationManager.Build(
             FormatProvider,

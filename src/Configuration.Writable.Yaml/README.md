@@ -32,7 +32,10 @@ builder.Services.AddWritableOptions<UserSecretSetting>(conf => {
 ### Requirements
 
 1. Annotate your settings class with `[YamlObject]` (from `VYaml.Annotations`) and declare it as `partial`
-2. Call the generated `__RegisterVYamlFormatter()` method at program startup to ensure formatters are not trimmed
+2. Call the generated `__RegisterVYamlFormatter()` method at program startup
+
+When `YamlFormatProvider` is used through `WritableOptionsConfigBuilder<T>`, the provider's typed deserializer is registered automatically while the options are being built.
+No additional `YamlFormatProvider.Register<T>()` call is required.
 
 ```csharp
 using VYaml.Annotations;

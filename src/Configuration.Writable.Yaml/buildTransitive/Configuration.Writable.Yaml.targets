@@ -1,0 +1,6 @@
+<Project>
+  <!-- VYaml 1.x reports aggregate warnings until its NativeAOT support is released. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);IL2104;IL3053</NoWarn>
+  </PropertyGroup>
+</Project>

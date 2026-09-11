@@ -1,6 +1,8 @@
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
@@ -9,6 +11,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using VYaml.Emitter;
+using VYaml.Parser;
 using VYaml.Serialization;
 
 namespace Configuration.Writable.FormatProvider;
@@ -28,6 +32,24 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             && m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
         );
     private static readonly ConcurrentDictionary<Type, MethodInfo> DeserializeMethods = new();
+    private static readonly ConcurrentDictionary<
+        Type,
+        Func<ReadOnlyMemory<byte>, YamlSerializerOptions, object>
+    > AotDeserializers = new();
+
+    /// <summary>
+    /// Registers a source-generated YAML deserializer for NativeAOT applications.
+    /// </summary>
+    internal static void Register<T>()
+        where T : class, new()
+    {
+        AotDeserializers.TryAdd(
+            typeof(T),
+            static (bytes, options) => YamlSerializer.Deserialize<T>(bytes, options)
+        );
+    }
+
+    internal override void RegisterType<T>() => Register<T>();
 
     /// <summary>
     /// Gets or sets the serializer options used for serialization and deserialization.
@@ -68,13 +90,10 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             return null;
         }
 
-        Dictionary<string, object>? data;
+        IYamlValue? data;
         try
         {
-            data = YamlSerializer.Deserialize<Dictionary<string, object>>(
-                yamlBytes,
-                SerializerOptions
-            );
+            data = ParseYaml(yamlBytes);
         }
         catch (Exception ex)
         {
@@ -85,50 +104,50 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             return null;
         }
 
-        object current = data;
+        var current = data;
         foreach (var section in options.SectionNameParts)
         {
-            if (!TryGetSectionValue(current, section, out var sectionValue) || sectionValue == null)
+            if (
+                current is not YamlMapping mapping
+                || !mapping.Values.TryGetValue(section, out current)
+            )
             {
                 return null;
             }
-            current = sectionValue;
         }
 
-        if (current is not Dictionary<string, object> metadata)
+        if (current is not YamlMapping metadata)
         {
-            if (current is Dictionary<object, object> objectMetadata)
-            {
-                metadata = DeepCopyObjectDictionary(objectMetadata);
-            }
-            else
-            {
-                throw new FormatException(
-                    "Options schema metadata must be stored in a YAML mapping."
-                );
-            }
+            throw new FormatException("Options schema metadata must be stored in a YAML mapping.");
         }
 
         var version = ReadOptionalVersion(metadata) ?? 1;
         return new OptionsSchemaMetadata(null, version);
     }
 
-    private static bool TryGetMetadataValue(
-        Dictionary<string, object> metadata,
-        string name,
-        out object value
-    )
+    private static bool TryGetMetadataValue(YamlMapping metadata, string name, out string value)
     {
-        if (metadata.TryGetValue(name, out value!))
+        if (metadata.Values.TryGetValue(name, out var yamlValue) && yamlValue is YamlScalar scalar)
         {
+            value = scalar.Value;
             return true;
         }
 
         var camelCaseName = char.ToLowerInvariant(name[0]) + name.Substring(1);
-        return metadata.TryGetValue(camelCaseName, out value!);
+        if (
+            metadata.Values.TryGetValue(camelCaseName, out yamlValue)
+            && yamlValue is YamlScalar camelCaseScalar
+        )
+        {
+            value = camelCaseScalar.Value;
+            return true;
+        }
+
+        value = string.Empty;
+        return false;
     }
 
-    private int? ReadOptionalVersion(Dictionary<string, object> metadata)
+    private int? ReadOptionalVersion(YamlMapping metadata)
     {
         foreach (
             var propertyName in new[] { SchemaVersionProperty }
@@ -147,31 +166,25 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return null;
     }
 
-    private static int ConvertVersion(object? value, string propertyName)
+    private static int ConvertVersion(string value, string propertyName)
     {
-        switch (value)
+        if (
+            long.TryParse(
+                value,
+                System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var version
+            )
+        )
         {
-            case sbyte version:
-                return version;
-            case byte version:
-                return version;
-            case short version:
-                return version;
-            case ushort version:
-                return version;
-            case int version:
-                return version;
-            case uint version when version <= int.MaxValue:
-                return (int)version;
-            case long version when version is >= int.MinValue and <= int.MaxValue:
-                return (int)version;
-            case ulong version when version <= int.MaxValue:
-                return (int)version;
-            default:
-                throw new FormatException(
+            return version is >= int.MinValue and <= int.MaxValue
+                ? (int)version
+                : throw new FormatException(
                     $"YAML metadata property '{propertyName}' must be an integer."
                 );
         }
+
+        throw new FormatException($"YAML metadata property '{propertyName}' must be an integer.");
     }
 
     /// <inheritdoc />
@@ -189,12 +202,12 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
                 .ConfigureAwait(false);
             if (IsEmptyOrWhiteSpace(yamlBytes.Span))
             {
-                return Activator.CreateInstance(type)!;
+                return CreateInstance(type);
             }
 
             var targetBytes = GetSectionBytes(yamlBytes, sectionNameParts);
             return targetBytes == null
-                ? Activator.CreateInstance(type)!
+                ? CreateInstance(type)
                 : Deserialize(type, targetBytes.Value);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -207,7 +220,14 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         }
     }
 
-    private ReadOnlyMemory<byte>? GetSectionBytes(
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2067",
+        Justification = "Non-AOT callers retain the existing runtime type activation fallback; NativeAOT callers register source-generated deserializers."
+    )]
+    private static object CreateInstance(Type type) => Activator.CreateInstance(type)!;
+
+    private static ReadOnlyMemory<byte>? GetSectionBytes(
         ReadOnlyMemory<byte> yamlBytes,
         List<string> sectionNameParts
     )
@@ -217,91 +237,44 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             return yamlBytes;
         }
 
-        var data = YamlSerializer.Deserialize<Dictionary<string, object>>(
-            yamlBytes,
-            SerializerOptions
-        );
-        if (data == null || !TryGetSectionValue(data, sectionNameParts, out var value))
+        var value = ParseYaml(yamlBytes);
+        foreach (var section in sectionNameParts)
         {
-            return null;
+            if (value is not YamlMapping mapping || !mapping.Values.TryGetValue(section, out value))
+                return null;
         }
 
-        return YamlSerializer.Serialize(value, SerializerOptions);
+        return SerializeYaml(value);
     }
 
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2067",
+        Justification = "The reflection fallback is used only when a type was not explicitly registered for NativeAOT."
+    )]
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL3050",
+        Justification = "The reflection fallback is used only when a type was not explicitly registered for NativeAOT."
+    )]
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2060",
+        Justification = "The reflection fallback is used only when a type was not explicitly registered for NativeAOT."
+    )]
     private object Deserialize(Type type, ReadOnlyMemory<byte> yamlBytes)
     {
+        if (AotDeserializers.TryGetValue(type, out var deserializer))
+        {
+            return deserializer(yamlBytes, SerializerOptions);
+        }
+
         var genericMethod = DeserializeMethods.GetOrAdd(
             type,
             static type => DeserializeMethod.MakeGenericMethod(type)
         );
         var result = genericMethod.Invoke(null, new object[] { yamlBytes, SerializerOptions });
         return result ?? Activator.CreateInstance(type)!;
-    }
-
-    private static bool TryGetSectionValue(
-        Dictionary<string, object> data,
-        IEnumerable<string> sectionNameParts,
-        out object? value
-    )
-    {
-        object? current = data;
-        foreach (var section in sectionNameParts)
-        {
-            if (!TryGetSectionValue(current, section, out current))
-            {
-                value = null;
-                return false;
-            }
-        }
-
-        value = current;
-        return true;
-    }
-
-    private static bool TryGetSectionValue(object? value, string section, out object? sectionValue)
-    {
-        if (value is Dictionary<string, object> dictionary)
-        {
-            return dictionary.TryGetValue(section, out sectionValue);
-        }
-
-        if (value is Dictionary<object, object> objectDictionary)
-        {
-            return TryGetSectionValue(objectDictionary, section, out sectionValue);
-        }
-
-        sectionValue = null;
-        return false;
-    }
-
-    private static bool TryGetSectionValue(
-        Dictionary<object, object> dictionary,
-        string section,
-        out object? value
-    )
-    {
-        if (dictionary.TryGetValue(section, out value))
-        {
-            return true;
-        }
-
-        using var enumerator = dictionary.GetEnumerator();
-        while (enumerator.MoveNext())
-        {
-            var item = enumerator.Current;
-            if (
-                item.Key is not string
-                && string.Equals(item.Key?.ToString(), section, StringComparison.Ordinal)
-            )
-            {
-                value = item.Value;
-                return true;
-            }
-        }
-
-        value = null;
-        return false;
     }
 
     private async ValueTask<ReadOnlyMemory<byte>> ReadYamlBytesAsync(
@@ -426,7 +399,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
                         )
                     )
                     : SerializeForFile(
-                        CreateSchemaMetadataDictionary(config, options.SchemaMetadata),
+                        (IYamlValue)CreateSchemaMetadataDictionary(config, options.SchemaMetadata),
                         JsonSchemaGeneration.ResolveSchemaReference(
                             options.SchemaBaseUri,
                             options.SchemaMetadata
@@ -451,7 +424,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         where T : class, new()
     {
         var sections = options.SectionNameParts;
-        Dictionary<string, object>? existingDict = null;
+        YamlMapping? existingDocument = null;
 
         // A malformed existing file must never be replaced with a new partial document.
         // Propagating the parse error preserves the original file for recovery.
@@ -464,10 +437,9 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 
             if (!IsEmptyOrWhiteSpace(yamlBytes.Span))
             {
-                existingDict = YamlSerializer.Deserialize<Dictionary<string, object>>(
-                    yamlBytes,
-                    SerializerOptions
-                );
+                existingDocument =
+                    ParseYaml(yamlBytes) as YamlMapping
+                    ?? throw new FormatException("YAML document must be a mapping.");
                 options.Logger?.LogTrace("Loaded existing YAML file for partial update");
             }
         }
@@ -475,16 +447,14 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         // Serialize config to YAML then deserialize to dictionary
         // This goes through YAML to avoid type boxing issues (e.g. decimal)
         var configYamlBytes = YamlSerializer.Serialize(config, SerializerOptions);
-        var configDict =
-            YamlSerializer.Deserialize<Dictionary<string, object>>(
-                configYamlBytes,
-                SerializerOptions
-            ) ?? new Dictionary<string, object>();
-        configDict = AddSchemaMetadata(configDict, options.SchemaMetadata, SchemaVersionProperty);
+        var configValue = ParseYaml(configYamlBytes);
+        if (configValue is not YamlMapping configMapping)
+            throw new FormatException("YAML configuration must be a mapping.");
+        AddSchemaMetadata(configMapping, options.SchemaMetadata, SchemaVersionProperty);
 
-        Dictionary<string, object> resultDict;
+        YamlMapping resultDocument;
 
-        if (existingDict == null)
+        if (existingDocument == null)
         {
             // No existing file, create new nested structure
             options.Logger?.LogTrace(
@@ -492,10 +462,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
                 string.Join(":", sections)
             );
 
-            var nestedSectionValue = CreateNestedSection(sections, configDict);
-            resultDict =
-                nestedSectionValue as Dictionary<string, object>
-                ?? new Dictionary<string, object>();
+            resultDocument = CreateNestedSection(sections, configMapping);
         }
         else
         {
@@ -505,18 +472,31 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
                 string.Join(":", sections)
             );
 
-            resultDict = existingDict;
-            MergeSection(resultDict, sections, 0, configDict);
+            resultDocument = existingDocument;
+            MergeSection(resultDocument, sections, 0, configMapping);
         }
 
         options.Logger?.LogTrace("Partial YAML serialization completed successfully");
 
-        return SerializeForFile(resultDict);
+        return SerializeForFile((IYamlValue)resultDocument);
     }
 
     private ReadOnlyMemory<byte> SerializeForFile<T>(T value, string? schemaReference = null)
     {
         var utf8Bytes = YamlSerializer.Serialize(value, SerializerOptions);
+        return AddSchemaReference(utf8Bytes, schemaReference);
+    }
+
+    private ReadOnlyMemory<byte> SerializeForFile(IYamlValue value, string? schemaReference = null)
+    {
+        return AddSchemaReference(SerializeYaml(value), schemaReference);
+    }
+
+    private ReadOnlyMemory<byte> AddSchemaReference(
+        ReadOnlyMemory<byte> utf8Bytes,
+        string? schemaReference
+    )
+    {
         string yaml;
 #if NETSTANDARD2_0
         yaml = Encoding.UTF8.GetString(utf8Bytes.ToArray());
@@ -529,103 +509,46 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return Encoding.GetBytes(yaml);
     }
 
-    private Dictionary<string, object> CreateSchemaMetadataDictionary<T>(
-        T config,
-        OptionsSchemaMetadata metadata
-    )
+    private YamlMapping CreateSchemaMetadataDictionary<T>(T config, OptionsSchemaMetadata metadata)
         where T : class, new()
     {
         var yamlBytes = YamlSerializer.Serialize(config, SerializerOptions);
-        var dictionary =
-            YamlSerializer.Deserialize<Dictionary<string, object>>(yamlBytes, SerializerOptions)
+        var mapping =
+            ParseYaml(yamlBytes) as YamlMapping
             ?? throw new FormatException(
                 "Options schema metadata can only be written for YAML mappings."
             );
-        return AddSchemaMetadata(dictionary, metadata, SchemaVersionProperty);
+        AddSchemaMetadata(mapping, metadata, SchemaVersionProperty);
+        return mapping;
     }
 
-    private static Dictionary<string, object> AddSchemaMetadata(
-        Dictionary<string, object> values,
+    private static void AddSchemaMetadata(
+        YamlMapping values,
         OptionsSchemaMetadata? metadata,
         string schemaVersionProperty
     )
     {
         if (metadata == null)
         {
-            return values;
+            return;
         }
 
-        var result = new Dictionary<string, object>();
         if (metadata.Version is not null)
         {
-            result[schemaVersionProperty] = metadata.Version.Value;
+            values.Values[schemaVersionProperty] = new YamlScalar(
+                metadata.Version.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            );
         }
-        foreach (var item in values)
-        {
-            result[item.Key] = item.Value;
-        }
-        return result;
     }
 
     /// <summary>
-    /// Deep copies a dictionary, including nested dictionaries.
-    /// </summary>
-    private static Dictionary<string, object> DeepCopyDictionary(Dictionary<string, object> source)
-    {
-        var result = new Dictionary<string, object>();
-        foreach (var kvp in source)
-        {
-            if (kvp.Value is Dictionary<string, object> nestedStringDict)
-            {
-                result[kvp.Key] = DeepCopyDictionary(nestedStringDict);
-            }
-            else if (kvp.Value is Dictionary<object, object> nestedObjectDict)
-            {
-                result[kvp.Key] = DeepCopyObjectDictionary(nestedObjectDict);
-            }
-            else
-            {
-                result[kvp.Key] = kvp.Value;
-            }
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Deep copies a Dictionary&lt;object, object&gt; to Dictionary&lt;string, object&gt;.
-    /// </summary>
-    private static Dictionary<string, object> DeepCopyObjectDictionary(
-        Dictionary<object, object> source
-    )
-    {
-        var result = new Dictionary<string, object>();
-        foreach (var kvp in source)
-        {
-            var key = kvp.Key.ToString() ?? string.Empty;
-            if (kvp.Value is Dictionary<object, object> nestedDict)
-            {
-                result[key] = DeepCopyObjectDictionary(nestedDict);
-            }
-            else if (kvp.Value is Dictionary<string, object> nestedStringDict)
-            {
-                result[key] = DeepCopyDictionary(nestedStringDict);
-            }
-            else
-            {
-                result[key] = kvp.Value;
-            }
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Merges a new configuration into an existing dictionary at the specified section path.
+    /// Merges a new configuration into an existing mapping at the specified section path.
     /// </summary>
     private static void MergeSection(
-        Dictionary<string, object> existingDict,
+        YamlMapping existingMapping,
         List<string> sections,
         int currentIndex,
-        object newValue
+        IYamlValue newValue
     )
     {
         if (currentIndex >= sections.Count)
@@ -638,36 +561,147 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         if (currentIndex == sections.Count - 1)
         {
             // This is the final section - replace or add the value
-            existingDict[sectionName] = newValue;
+            existingMapping.Values[sectionName] = newValue;
         }
         else
         {
-            // Navigate deeper or create intermediate sections
-            object? existing = null;
-            Dictionary<string, object>? nestedDict = null;
-
-            if (existingDict.TryGetValue(sectionName, out existing))
+            if (!existingMapping.Values.TryGetValue(sectionName, out var existing))
             {
-                if (existing is Dictionary<string, object> stringDict)
-                {
-                    nestedDict = stringDict;
-                }
-                else if (existing is Dictionary<object, object> objectDict)
-                {
-                    // Convert Dictionary<object, object> to Dictionary<string, object>
-                    nestedDict = DeepCopyObjectDictionary(objectDict);
-                    existingDict[sectionName] = nestedDict;
-                }
+                existing = new YamlMapping();
+                existingMapping.Values[sectionName] = existing;
             }
 
-            if (nestedDict == null)
+            if (existing is not YamlMapping nestedMapping)
             {
-                // Create new nested dictionary
-                nestedDict = new Dictionary<string, object>();
-                existingDict[sectionName] = nestedDict;
+                nestedMapping = new YamlMapping();
+                existingMapping.Values[sectionName] = nestedMapping;
             }
 
-            MergeSection(nestedDict, sections, currentIndex + 1, newValue);
+            MergeSection(nestedMapping, sections, currentIndex + 1, newValue);
         }
+    }
+
+    private static YamlMapping CreateNestedSection(
+        IReadOnlyList<string> sections,
+        YamlMapping value
+    )
+    {
+        YamlMapping current = value;
+        for (var index = sections.Count - 1; index >= 0; index--)
+        {
+            current = new YamlMapping { Values = { [sections[index]] = current } };
+        }
+
+        return current;
+    }
+
+    private static IYamlValue ParseYaml(ReadOnlyMemory<byte> yamlBytes)
+    {
+        var parser = YamlParser.FromSequence(new ReadOnlySequence<byte>(yamlBytes));
+        parser.SkipHeader();
+        return ParseValue(ref parser);
+    }
+
+    private static IYamlValue ParseValue(ref YamlParser parser)
+    {
+        return parser.CurrentEventType switch
+        {
+            ParseEventType.Scalar => ParseScalar(ref parser),
+            ParseEventType.MappingStart => ParseMapping(ref parser),
+            ParseEventType.SequenceStart => ParseSequence(ref parser),
+            _ => throw new FormatException($"Unexpected YAML event: {parser.CurrentEventType}."),
+        };
+    }
+
+    private static YamlScalar ParseScalar(ref YamlParser parser)
+    {
+        var value = parser.GetScalarAsString() ?? "null";
+        parser.ReadWithVerify(ParseEventType.Scalar);
+        return new YamlScalar(value);
+    }
+
+    private static YamlMapping ParseMapping(ref YamlParser parser)
+    {
+        var mapping = new YamlMapping();
+        parser.ReadWithVerify(ParseEventType.MappingStart);
+        while (!parser.End && parser.CurrentEventType != ParseEventType.MappingEnd)
+        {
+            if (parser.CurrentEventType != ParseEventType.Scalar)
+                throw new FormatException("YAML mapping keys must be scalar values.");
+
+            var key = parser.GetScalarAsString() ?? string.Empty;
+            parser.ReadWithVerify(ParseEventType.Scalar);
+            mapping.Values[key] = ParseValue(ref parser);
+        }
+
+        parser.ReadWithVerify(ParseEventType.MappingEnd);
+        return mapping;
+    }
+
+    private static YamlSequence ParseSequence(ref YamlParser parser)
+    {
+        var sequence = new YamlSequence();
+        parser.ReadWithVerify(ParseEventType.SequenceStart);
+        while (!parser.End && parser.CurrentEventType != ParseEventType.SequenceEnd)
+        {
+            sequence.Values.Add(ParseValue(ref parser));
+        }
+
+        parser.ReadWithVerify(ParseEventType.SequenceEnd);
+        return sequence;
+    }
+
+    private static ReadOnlyMemory<byte> SerializeYaml(IYamlValue value)
+    {
+        var writer = new ArrayBufferWriter<byte>();
+        var emitter = new Utf8YamlEmitter(writer);
+        WriteYaml(ref emitter, value);
+        return writer.WrittenMemory;
+    }
+
+    private static void WriteYaml(ref Utf8YamlEmitter emitter, IYamlValue value)
+    {
+        switch (value)
+        {
+            case YamlScalar scalar:
+                emitter.WriteScalar(Encoding.UTF8.GetBytes(scalar.Value));
+                break;
+            case YamlMapping mapping:
+                emitter.BeginMapping();
+                foreach (var item in mapping.Values)
+                {
+                    emitter.WriteString(item.Key);
+                    WriteYaml(ref emitter, item.Value);
+                }
+                emitter.EndMapping();
+                break;
+            case YamlSequence sequence:
+                emitter.BeginSequence();
+                foreach (var item in sequence.Values)
+                {
+                    WriteYaml(ref emitter, item);
+                }
+                emitter.EndSequence();
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported YAML value: {value.GetType()}.");
+        }
+    }
+
+    private interface IYamlValue;
+
+    private sealed class YamlScalar(string value) : IYamlValue
+    {
+        public string Value { get; } = value;
+    }
+
+    private sealed class YamlMapping : IYamlValue
+    {
+        public Dictionary<string, IYamlValue> Values { get; } = new(StringComparer.Ordinal);
+    }
+
+    private sealed class YamlSequence : IYamlValue
+    {
+        public List<IYamlValue> Values { get; } = [];
     }
 }

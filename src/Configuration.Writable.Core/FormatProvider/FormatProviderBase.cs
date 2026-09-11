@@ -39,6 +39,9 @@ public abstract class FormatProviderBase : IWritableFormatProvider
     )
         where T : class, new();
 
+    internal virtual void RegisterType<T>()
+        where T : class, new() { }
+
     /// <inheritdoc />
     public object LoadConfiguration(Type type, IWritableOptionsConfiguration options)
     {

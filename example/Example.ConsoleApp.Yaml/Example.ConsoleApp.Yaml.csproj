@@ -4,6 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishAot>true</PublishAot>
+    <!-- VYaml 1.x reports aggregate warnings until its NativeAOT support is released. -->
+    <NoWarn>$(NoWarn);IL2104;IL3053</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="VYaml" Version="1.*" />
