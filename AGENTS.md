@@ -1,26 +1,26 @@
 # CLAUDE.md
-## Project Overview
-Configuration.Writable is a .NET library that provides read/write functionality for user settings with extensive customization options. It extends the Microsoft.Extensions.Options interfaces to enable both reading and writing configuration files in various formats (JSON, XML, YAML, encrypted).
-More details can be found in the README.md file.
 
 ## Testing
-### Setup
-Be sure to run the following commands to restore dependencies and tools:
-```bash
-dotnet restore
-dotnet tool restore
-```
+Tests use Microsoft.Testing.Platform through TUnit.
 
-### Running Tests
-Tests use Microsoft.Testing.Platform through TUnit:
+You should run tests whenever you make changes.
+It is recommended to run all tests, including NativeAOT tests.
+
+### Normal Tests
 
 ```bash
+# export TFMS=net8.0;net10.0
 dotnet test -- --retry-failed-tests 3 --report-trx --no-progress
 ```
 
-### Specific Target Framework
-You can set the `TFMS` environment variable to run tests for specific target frameworks. If not specified, the latest target framework will be used.
+Make sure to specify --retry-failed-tests 3. This will retry failed tests up to 3 times, reducing test failures due to temporary environmental issues.
+
+### NativeAOT Tests
 
 ```bash
-export TFMS=net8.0;net10.0
+dotnet publish tests\Configuration.Writable.Tests\Configuration.Writable.Tests.csproj -f net10.0 -r win-x64 -o ./publish
+./publish/Configuration.Writable.Tests.exe --retry-failed-tests 3 --report-trx --no-progress
 ```
+
+The TFM and runtime need to be adjusted according to the environment in which the tests are being run. 
+Each test project needs to be executed separately.
