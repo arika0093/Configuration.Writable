@@ -20,6 +20,14 @@
     <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
     <SonarQubeExclude>true</SonarQubeExclude>
     <NoWarn>$(NoWarn);CWWR001;CWWR010</NoWarn>
+    <!--
+      The NativeAOT test binary contains tests for the reflection-based and
+      runtime-JSON APIs, as well as the normal managed test infrastructure.
+      Those paths are intentionally not AOT-compatible and are not executed
+      by the NativeAOT test filter. Suppress their publish-time diagnostics;
+      the product projects continue to report these diagnostics normally.
+    -->
+    <NoWarn Condition="'$(PublishAot)' == 'true'">$(NoWarn);IL2026;IL2070;IL2104;IL3000;IL3050;IL3053</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Shouldly" Version="4.*" />
