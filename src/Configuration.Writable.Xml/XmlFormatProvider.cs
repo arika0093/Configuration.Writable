@@ -10,7 +10,6 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -230,14 +229,14 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
 #else
             var document = XDocument.Load(stream);
 #endif
-            options.Logger?.ZLogTrace($"Loaded existing XML file for partial update");
+            options.Logger?.LogTrace("Loaded existing XML file for partial update");
             return document;
         }
         catch (XmlException ex)
         {
-            options.Logger?.ZLogWarning(
+            options.Logger?.LogWarning(
                 ex,
-                $"Failed to parse existing XML file, will create new file structure"
+                "Failed to parse existing XML file, will create new file structure"
             );
             return null;
         }
@@ -282,8 +281,9 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         IWritableOptionsConfiguration options
     )
     {
-        options.Logger?.ZLogTrace(
-            $"Creating new nested section structure for section: {string.Join(":", parts)}"
+        options.Logger?.LogTrace(
+            "Creating new nested section structure for section: {Section}",
+            string.Join(":", parts)
         );
 
         var innerXml = configElement.InnerXml;
@@ -307,8 +307,9 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         IWritableOptionsConfiguration options
     )
     {
-        options.Logger?.ZLogTrace(
-            $"Merging with existing XML file for section: {string.Join(":", parts)}"
+        options.Logger?.LogTrace(
+            "Merging with existing XML file for section: {Section}",
+            string.Join(":", parts)
         );
 
         var root =
@@ -370,7 +371,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         document.WriteTo(xmlWriter);
         xmlWriter.Flush();
 
-        options.Logger?.ZLogTrace($"Partial XML serialization completed successfully");
+        options.Logger?.LogTrace("Partial XML serialization completed successfully");
 
         return Encoding.UTF8.GetBytes(resultWriter.ToString());
     }

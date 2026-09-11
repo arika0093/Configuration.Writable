@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using VYaml.Serialization;
-using ZLogger;
 
 namespace Configuration.Writable.FormatProvider;
 
@@ -469,7 +468,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
                     yamlBytes,
                     SerializerOptions
                 );
-                options.Logger?.ZLogTrace($"Loaded existing YAML file for partial update");
+                options.Logger?.LogTrace("Loaded existing YAML file for partial update");
             }
         }
 
@@ -488,8 +487,9 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         if (existingDict == null)
         {
             // No existing file, create new nested structure
-            options.Logger?.ZLogTrace(
-                $"Creating new nested section structure for section: {string.Join(":", sections)}"
+            options.Logger?.LogTrace(
+                "Creating new nested section structure for section: {Section}",
+                string.Join(":", sections)
             );
 
             var nestedSectionValue = CreateNestedSection(sections, configDict);
@@ -500,15 +500,16 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         else
         {
             // Merge with existing document
-            options.Logger?.ZLogTrace(
-                $"Merging with existing YAML file for section: {string.Join(":", sections)}"
+            options.Logger?.LogTrace(
+                "Merging with existing YAML file for section: {Section}",
+                string.Join(":", sections)
             );
 
             resultDict = existingDict;
             MergeSection(resultDict, sections, 0, configDict);
         }
 
-        options.Logger?.ZLogTrace($"Partial YAML serialization completed successfully");
+        options.Logger?.LogTrace("Partial YAML serialization completed successfully");
 
         return SerializeForFile(resultDict);
     }

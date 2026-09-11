@@ -8,7 +8,6 @@ using Configuration.Writable.Diagnostics;
 using Configuration.Writable.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ZLogger;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
@@ -192,7 +191,10 @@ internal sealed class WritableOptionsImpl<T>(
                 }
             }
 
-            options.Logger?.ZLogDebug($"Saving configuration to {options.ConfigFilePath}");
+            options.Logger?.LogDebug(
+                "Saving configuration to {ConfigFilePath}",
+                options.ConfigFilePath
+            );
 
             // Save to file
             await options
@@ -208,7 +210,10 @@ internal sealed class WritableOptionsImpl<T>(
             );
 
             var fileName = Path.GetFileName(options.ConfigFilePath);
-            options.Logger?.ZLogInformation($"Configuration saved successfully to {fileName}");
+            options.Logger?.LogInformation(
+                "Configuration saved successfully to {FileName}",
+                fileName
+            );
             ConfigurationWritableEventSource.Log.SaveSucceeded(stopwatch.Elapsed.TotalMilliseconds);
         }
         catch

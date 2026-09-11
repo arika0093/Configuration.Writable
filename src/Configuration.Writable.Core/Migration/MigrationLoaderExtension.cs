@@ -1,7 +1,7 @@
 using System;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
-using ZLogger;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.Migration;
 
@@ -91,14 +91,19 @@ internal static class MigrationLoaderExtension
                 );
             if (success)
             {
-                options.Logger?.ZLogWarning(
-                    $"Configuration schema version {fileVersion} is no longer supported by {typeof(T).Name}. Using defaults. The original configuration was backed up to: {backupPath}"
+                options.Logger?.LogWarning(
+                    "Configuration schema version {FileVersion} is no longer supported by {TypeName}. Using defaults. The original configuration was backed up to: {BackupPath}",
+                    fileVersion,
+                    typeof(T).Name,
+                    backupPath
                 );
             }
             else
             {
-                options.Logger?.ZLogWarning(
-                    $"Configuration schema version {fileVersion} is no longer supported by {typeof(T).Name}. Using defaults without a backup."
+                options.Logger?.LogWarning(
+                    "Configuration schema version {FileVersion} is no longer supported by {TypeName}. Using defaults without a backup.",
+                    fileVersion,
+                    typeof(T).Name
                 );
             }
             return new T();
@@ -160,8 +165,12 @@ internal static class MigrationLoaderExtension
             var fromVersion = migration.FromVersion ?? 0;
             var toVersion = migration.ToVersion;
 
-            options.Logger?.ZLogInformation(
-                $"Applying migration from {migration.FromType.Name} (v{fromVersion}) to {migration.ToType.Name} (v{toVersion})"
+            options.Logger?.LogInformation(
+                "Applying migration from {FromType} (v{FromVersion}) to {ToType} (v{ToVersion})",
+                migration.FromType.Name,
+                fromVersion,
+                migration.ToType.Name,
+                toVersion
             );
 
             current = migration.Migrate(current);

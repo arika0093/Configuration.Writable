@@ -25,7 +25,7 @@ WritableOptions.Initialize(conf =>
 
     // if you want to use logging, set Logger
     // conf.Logger = LoggerFactory
-    //    .Create(builder => builder.AddZLoggerConsole())
+    //    .Create(builder => builder.AddSimpleConsole())
     //    .CreateLogger("UserConfig");
 
     // if you want to standard system configuration location, use conf.UseStandardSaveDirectory("your-app-id");

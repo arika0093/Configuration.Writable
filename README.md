@@ -453,8 +453,8 @@ If you are not using DI, or if you want to override the logging settings, you ca
 ```csharp
 // without DI
 conf.Logger = LoggerFactory
-    // enable console logging with ZLogger
-    .Create(builder => builder.AddZLoggerConsole())
+    // enable console logging
+    .Create(builder => builder.AddSimpleConsole())
     .CreateLogger("Configuration.Writable");
 
 // with DI

@@ -8,7 +8,6 @@ using Configuration.Writable.FileProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ZLogger;
 using MEOptions = Microsoft.Extensions.Options.Options;
 
 namespace Configuration.Writable;
@@ -243,8 +242,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 )
             )
             {
-                options.Logger?.ZLogInformation(
-                    $"Promoting configuration from {options.ReadFilePath} to {options.ConfigFilePath}"
+                options.Logger?.LogInformation(
+                    "Promoting configuration from {ReadFilePath} to {ConfigFilePath}",
+                    options.ReadFilePath,
+                    options.ConfigFilePath
                 );
                 options.FormatProvider.SaveAsync(value, options).GetAwaiter().GetResult();
             }
@@ -284,9 +285,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
             catch (Exception ex)
             {
-                options.Logger?.ZLogWarning(
+                options.Logger?.LogWarning(
                     ex,
-                    $"Configuration directory could not be created for watcher: {directory}"
+                    "Configuration directory could not be created for watcher: {Directory}",
+                    directory
                 );
                 dataSource.Watcher = null;
                 return false;
@@ -319,9 +321,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
         catch (IOException ex)
         {
-            options.Logger?.ZLogWarning(
+            options.Logger?.LogWarning(
                 ex,
-                $"Configuration file watcher could not be started: {fileName}"
+                "Configuration file watcher could not be started: {FileName}",
+                fileName
             );
             dataSource.Watcher = null;
             dataSource.WatchedPath = null;
@@ -329,9 +332,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
         catch (UnauthorizedAccessException ex)
         {
-            options.Logger?.ZLogWarning(
+            options.Logger?.LogWarning(
                 ex,
-                $"Configuration file watcher could not be started: {fileName}"
+                "Configuration file watcher could not be started: {FileName}",
+                fileName
             );
             dataSource.Watcher = null;
             dataSource.WatchedPath = null;
@@ -371,14 +375,18 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         if (options.OnChangeDebounce > TimeSpan.Zero)
         {
             DebounceReload(instanceName, options.OnChangeDebounce);
-            options.Logger?.ZLogDebug(
-                $"Configuration file change detected and queued for debounce: {fileName} ({args.ChangeType})"
+            options.Logger?.LogDebug(
+                "Configuration file change detected and queued for debounce: {FileName} ({ChangeType})",
+                fileName,
+                args.ChangeType
             );
             return;
         }
 
-        options.Logger?.ZLogInformation(
-            $"Configuration file change detected: {fileName} ({args.ChangeType})"
+        options.Logger?.LogInformation(
+            "Configuration file change detected: {FileName} ({ChangeType})",
+            fileName,
+            args.ChangeType
         );
 
         ReloadAndNotify(instanceName);
@@ -461,9 +469,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         var exception = args.GetException();
         var options = _optionsRegistry.Get(instanceName);
-        options.Logger?.ZLogWarning(
+        options.Logger?.LogWarning(
             exception,
-            $"Configuration file watcher failed and will be recreated: {options.ConfigFilePath}"
+            "Configuration file watcher failed and will be recreated: {ConfigFilePath}",
+            options.ConfigFilePath
         );
         NotifyReloadFailure(instanceName, exception);
 
@@ -589,9 +598,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     {
         ConfigurationWritableEventSource.Log.ReloadFailed();
         var options = _optionsRegistry.Get(instanceName);
-        options.Logger?.ZLogError(
+        options.Logger?.LogError(
             exception,
-            $"Configuration reload failed; the last valid value will be retained: {options.ConfigFilePath}"
+            "Configuration reload failed; the last valid value will be retained: {ConfigFilePath}",
+            options.ConfigFilePath
         );
         NotifyReloadFailure(instanceName, exception);
     }
@@ -629,9 +639,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 catch (Exception ex)
                 {
                     var options = _optionsRegistry.Get(instanceName);
-                    options.Logger?.ZLogError(
+                    options.Logger?.LogError(
                         ex,
-                        $"Configuration change listener failed: {options.ConfigFilePath}"
+                        "Configuration change listener failed: {ConfigFilePath}",
+                        options.ConfigFilePath
                     );
                 }
             }
@@ -651,9 +662,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 catch (Exception listenerException)
                 {
                     var options = _optionsRegistry.Get(instanceName);
-                    options.Logger?.ZLogError(
+                    options.Logger?.LogError(
                         listenerException,
-                        $"Configuration reload failure listener failed: {options.ConfigFilePath}"
+                        "Configuration reload failure listener failed: {ConfigFilePath}",
+                        options.ConfigFilePath
                     );
                 }
             }

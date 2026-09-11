@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Internal;
 using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace Configuration.Writable.FileProvider;
 
@@ -60,7 +59,7 @@ public class CommonFileProvider
         do
         {
             cancellationToken.ThrowIfCancellationRequested();
-            logger?.ZLogTrace($"Attempt {retryCount + 1} to write file: {path}");
+            logger?.LogTrace("Attempt {Attempt} to write file: {Path}", retryCount + 1, path);
             var shouldRetry = false;
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -69,9 +68,9 @@ public class CommonFileProvider
                 var directory = Path.GetDirectoryName(path)!;
                 if (!Directory.Exists(directory))
                 {
-                    logger?.ZLogTrace($"Creating directory: {directory}");
+                    logger?.LogTrace("Creating directory: {Directory}", directory);
                     Directory.CreateDirectory(directory);
-                    logger?.ZLogTrace($"Directory created: {directory}");
+                    logger?.LogTrace("Directory created: {Directory}", directory);
                 }
 
                 GenerateBackupFile(path, logger);
@@ -79,19 +78,22 @@ public class CommonFileProvider
                 string temporaryFilePath = GetTemporaryFilePath(path);
                 using (new TemporaryFile(temporaryFilePath))
                 {
-                    logger?.ZLogDebug($"Writing to temporary file: {temporaryFilePath}");
+                    logger?.LogDebug(
+                        "Writing to temporary file: {TemporaryFilePath}",
+                        temporaryFilePath
+                    );
                     // Write to temporary file first
                     await WriteContentToFileAsync(temporaryFilePath, content, cancellationToken)
                         .ConfigureAwait(false);
                     // Replace original file
                     if (File.Exists(path))
                     {
-                        logger?.ZLogDebug($"Replacing original file: {path}");
+                        logger?.LogDebug("Replacing original file: {Path}", path);
                         File.Replace(temporaryFilePath, path, null);
                     }
                     else
                     {
-                        logger?.ZLogDebug($"Moving temporary file to: {path}");
+                        logger?.LogDebug("Moving temporary file to: {Path}", path);
                         File.Move(temporaryFilePath, path);
                     }
                     // Exit if successful
@@ -104,9 +106,11 @@ public class CommonFileProvider
             }
             catch (Exception ex)
             {
-                logger?.ZLogWarning(
+                logger?.LogWarning(
                     ex,
-                    $"Failed to write file on attempt {retryCount + 1}: {path}"
+                    "Failed to write file on attempt {Attempt}: {Path}",
+                    retryCount + 1,
+                    path
                 );
                 lastException = ex;
                 retryCount++;
@@ -151,13 +155,13 @@ public class CommonFileProvider
         }
         catch (IOException ex)
         {
-            logger?.ZLogError(ex, $"Failed to create configuration backup: {path}");
+            logger?.LogError(ex, "Failed to create configuration backup: {Path}", path);
             backupPath = null;
             return false;
         }
         catch (UnauthorizedAccessException ex)
         {
-            logger?.ZLogError(ex, $"Failed to create configuration backup: {path}");
+            logger?.LogError(ex, "Failed to create configuration backup: {Path}", path);
             backupPath = null;
             return false;
         }
@@ -181,12 +185,12 @@ public class CommonFileProvider
     {
         if (!File.Exists(path))
         {
-            logger?.ZLogTrace($"File does not exist, skipping backup: {path}");
+            logger?.LogTrace("File does not exist, skipping backup: {Path}", path);
             return null;
         }
         if (BackupMaxCount == 0)
         {
-            logger?.ZLogTrace($"BackupMaxCount is 0, skipping backup: {path}");
+            logger?.LogTrace("BackupMaxCount is 0, skipping backup: {Path}", path);
             return null;
         }
 
@@ -194,14 +198,18 @@ public class CommonFileProvider
             .OrderBy(file => file.CreationTimeUtc)
             .ToList();
 
-        logger?.ZLogTrace($"Found {backupFilesOrderByCreated.Count} backup files for {path}");
+        logger?.LogTrace(
+            "Found {BackupFileCount} backup files for {Path}",
+            backupFilesOrderByCreated.Count,
+            path
+        );
         if (backupFilesOrderByCreated.Count >= BackupMaxCount)
         {
             // delete oldest files
             var deleteCount = backupFilesOrderByCreated.Count - BackupMaxCount + 1;
             foreach (var file in backupFilesOrderByCreated.Take(deleteCount))
             {
-                logger?.ZLogDebug($"Deleting old backup file: {file.FullName}");
+                logger?.LogDebug("Deleting old backup file: {BackupFilePath}", file.FullName);
                 file.Delete();
             }
         }
@@ -210,7 +218,7 @@ public class CommonFileProvider
         SetHiddenOnWindows(backupDirectory);
 
         var backupFilePath = Path.Combine(backupDirectory, GetBackupFileName(path));
-        logger?.ZLogDebug($"Creating backup file for: {backupFilePath}");
+        logger?.LogDebug("Creating backup file for: {BackupFilePath}", backupFilePath);
         File.Copy(path, backupFilePath);
         SetHiddenOnWindows(backupFilePath);
         return backupFilePath;
@@ -322,12 +330,12 @@ public class CommonFileProvider
         }
         catch (IOException ex)
         {
-            logger?.ZLogWarning(ex, $"Failed to delete file: {path}");
+            logger?.LogWarning(ex, "Failed to delete file: {Path}", path);
             return false;
         }
         catch (UnauthorizedAccessException ex)
         {
-            logger?.ZLogWarning(ex, $"Failed to delete file: {path}");
+            logger?.LogWarning(ex, "Failed to delete file: {Path}", path);
             return false;
         }
     }
@@ -385,17 +393,28 @@ public class CommonFileProvider
             {
                 File.Move(temporaryFilePath, path);
             }
-            logger?.ZLogWarning($"Restored configuration from backup: {backupFilePath}");
+            logger?.LogWarning(
+                "Restored configuration from backup: {BackupFilePath}",
+                backupFilePath
+            );
             return true;
         }
         catch (IOException ex)
         {
-            logger?.ZLogError(ex, $"Failed to restore configuration backup: {backupFilePath}");
+            logger?.LogError(
+                ex,
+                "Failed to restore configuration backup: {BackupFilePath}",
+                backupFilePath
+            );
             return false;
         }
         catch (UnauthorizedAccessException ex)
         {
-            logger?.ZLogError(ex, $"Failed to restore configuration backup: {backupFilePath}");
+            logger?.LogError(
+                ex,
+                "Failed to restore configuration backup: {BackupFilePath}",
+                backupFilePath
+            );
             return false;
         }
         finally

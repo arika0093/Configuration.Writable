@@ -14,7 +14,7 @@ builder.Services.AddWritableOptions(services =>
 
     // if you want to use logging, set Logger
     // services.Logger = LoggerFactory
-    //    .Create(builder => builder.AddZLoggerConsole())
+    //    .Create(builder => builder.AddSimpleConsole())
     //    .CreateLogger("UserConfig");
 
     // if you want to standard system configuration location, use services.UseStandardSaveDirectory("your-app-id");
