@@ -653,10 +653,51 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 
     private static ReadOnlyMemory<byte> SerializeYaml(IYamlValue value)
     {
-        var writer = new ArrayBufferWriter<byte>();
+        var writer = new ByteBufferWriter();
         var emitter = new Utf8YamlEmitter(writer);
         WriteYaml(ref emitter, value);
         return writer.WrittenMemory;
+    }
+
+    private sealed class ByteBufferWriter : IBufferWriter<byte>
+    {
+        private byte[] buffer = new byte[256];
+        private int written;
+
+        public ReadOnlyMemory<byte> WrittenMemory => buffer.AsMemory(0, written);
+
+        public void Advance(int count)
+        {
+            if (count < 0 || count > buffer.Length - written)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            written += count;
+        }
+
+        public Memory<byte> GetMemory(int sizeHint = 0)
+        {
+            EnsureCapacity(sizeHint);
+            return buffer.AsMemory(written);
+        }
+
+        public Span<byte> GetSpan(int sizeHint = 0)
+        {
+            EnsureCapacity(sizeHint);
+            return buffer.AsSpan(written);
+        }
+
+        private void EnsureCapacity(int sizeHint)
+        {
+            if (sizeHint < 0)
+                throw new ArgumentOutOfRangeException(nameof(sizeHint));
+
+            var requiredLength = written + Math.Max(sizeHint, 1);
+            if (requiredLength <= buffer.Length)
+                return;
+
+            var newLength = Math.Max(requiredLength, buffer.Length * 2);
+            Array.Resize(ref buffer, newLength);
+        }
     }
 
     private static void WriteYaml(ref Utf8YamlEmitter emitter, IYamlValue value)
