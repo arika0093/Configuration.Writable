@@ -1,4 +1,3 @@
-$version: 1
 stringValue: TestString
 intValue: 42
 doubleValue: 3.14159
@@ -7,8 +6,9 @@ arrayValue:
 - item1
 - item2
 - item3
-dateTimeValue: "2023-12-25T10:30:45.0000000Z"
+dateTimeValue: 2023-12-25T10:30:45.0000000Z
 nested:
   description: Nested description
   price: 99.99
   isActive: false
+$version: 1

@@ -49,9 +49,12 @@ namespace Configuration.Writable.Configure
         public bool RegisterAsSingleton { get; set; }
         public string? SchemaBaseUri { get; set; }
         public string SectionName { get; set; }
+        [set: System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Data Annotations validation may require types that cannot be statically analyzed.")]
         public bool UseDataAnnotationsValidation { get; set; }
         public void AddFallbackFormatProvider(params Configuration.Writable.FormatProvider.IWritableFormatProvider[] formatProviders) { }
         public void AddFilePath(string path, int priority = 0) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("The runtime JSON contract may require runtime code generation and is not compatib" +
+            "le with NativeAOT.")]
         public void EnableJsonSchemaGeneration() { }
         public void EnableJsonSchemaGeneration(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
         public void EnablePromoteSaveLocation(bool enabled = true) { }
@@ -65,6 +68,10 @@ namespace Configuration.Writable.Configure
     public class WritableOptionsConfigBuilder<T> : Configuration.Writable.Configure.WritableOptionsConfigBuilder
         where T :  class, new ()
     {
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="The default JSON provider is retained for non-AOT applications; AOT callers can r" +
+            "eplace it with JsonAotFormatProvider.")]
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="The default JSON provider is retained for non-AOT applications; AOT callers can r" +
+            "eplace it with JsonAotFormatProvider.")]
         public WritableOptionsConfigBuilder() { }
         public new Configuration.Writable.Configure.ConfigurationConflictResolution ConflictResolution { get; set; }
         public new string? FilePath { get; set; }
@@ -75,9 +82,12 @@ namespace Configuration.Writable.Configure
         public new bool RegisterAsSingleton { get; set; }
         public new string? SchemaBaseUri { get; set; }
         public new string SectionName { get; set; }
+        [set: System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Data Annotations validation may require types that cannot be statically analyzed.")]
         public new bool UseDataAnnotationsValidation { get; set; }
         public new void AddFilePath(string path, int priority = 0) { }
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("The runtime JSON contract may require runtime code generation and is not compatib" +
+            "le with NativeAOT.")]
         public new void EnableJsonSchemaGeneration() { }
         public new void EnableJsonSchemaGeneration(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
         public new void EnablePromoteSaveLocation(bool enabled = true) { }
@@ -195,6 +205,8 @@ namespace Configuration.Writable.FormatProvider
     }
     public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
     {
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Runtime JSON metadata may require runtime code generation and is not compatible w" +
+            "ith NativeAOT.")]
         public JsonFormatProvider() { }
         public System.Text.Encoding Encoding { get; init; }
         public override string FileExtension { get; }

@@ -173,8 +173,10 @@ public class CommonFileProviderTests
     [Test]
     public async Task SaveToFileAsync_WithBackupMaxCount_ShouldLimitBackupFiles()
     {
-        var directoryPath = Path.GetTempPath();
-        using var testFile = new TemporaryFile(directoryPath, $"{Guid.NewGuid():N}.sample");
+        using var testFile = new TemporaryFile(
+            Guid.NewGuid().ToString("N"),
+            $"{Guid.NewGuid():N}.sample"
+        );
         var writer = new CommonFileProvider { BackupMaxCount = 2 };
 
         // Create multiple versions to exceed backup limit

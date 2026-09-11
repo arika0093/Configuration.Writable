@@ -10,7 +10,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <PublishAot Condition="'$(TargetFramework)' != 'net6.0' and '$(TargetFramework)' != 'net48'">true</PublishAot>
+    <PublishAot Condition="'$(Configuration)' == 'Release' and '$(TargetFramework)' != 'net6.0' and '$(TargetFramework)' != 'net48'">true</PublishAot>
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <EnableAotAnalyzer>false</EnableAotAnalyzer>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
