@@ -37,7 +37,7 @@ public class YamlOutputFormatStabilityTests
 
     // TestConfiguration and NestedConfiguration are in TestModels.cs
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.yaml";
@@ -67,7 +67,7 @@ public class YamlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.yaml";
@@ -98,7 +98,7 @@ public class YamlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.yaml";
@@ -133,7 +133,7 @@ public class YamlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_EmptyValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.yaml";
@@ -169,7 +169,7 @@ public class YamlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_NumericValues_ShouldBeStable()
     {
         const string testFileName = "stability_numeric_test.yaml";
@@ -205,7 +205,7 @@ public class YamlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_MultipleSections_ShouldBeStable()
     {
         const string testFileName = "stability_multi_section_test.yaml";

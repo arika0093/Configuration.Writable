@@ -13,7 +13,7 @@ namespace Configuration.Writable.Tests;
 
 public partial class WritableOptionsSaveCoordinationTests
 {
-    [Fact]
+    [Test]
     public async Task SaveAsync_ClonesInputBeforePublishingCache()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -33,7 +33,7 @@ public partial class WritableOptionsSaveCoordinationTests
         options.CurrentValue.Value.ShouldBe("saved");
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_SerializesSavesForTheSameNormalizedPathAcrossOptionTypes()
     {
         var provider = new BlockingFormatProvider(expectedSaveCount: 2);
@@ -56,7 +56,7 @@ public partial class WritableOptionsSaveCoordinationTests
         Dispose(second);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_AllowsDifferentFilesToSaveInParallel()
     {
         var provider = new BlockingFormatProvider(expectedSaveCount: 2);
@@ -75,7 +75,7 @@ public partial class WritableOptionsSaveCoordinationTests
         Dispose(second);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_DeletesSidecarLockAfterSaving()
     {
         var provider = new BlockingFormatProvider(expectedSaveCount: 1);
@@ -99,7 +99,7 @@ public partial class WritableOptionsSaveCoordinationTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_RejectsExternalChangesByDefault()
     {
         var path = GetFilePath();
@@ -132,7 +132,7 @@ public partial class WritableOptionsSaveCoordinationTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_CanUseLastWriteWinsForExternalChanges()
     {
         var path = GetFilePath();

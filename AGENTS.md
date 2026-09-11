@@ -12,10 +12,10 @@ dotnet tool restore
 ```
 
 ### Running Tests
-Tests may fail sporadically if run in parallel, so always use **test-rerun**:
+Tests use Microsoft.Testing.Platform through TUnit:
 
 ```bash
-dotnet test-rerun --verbosity normal --deleteReports 
+dotnet test -- --retry-failed-tests 3 --report-trx --no-progress
 ```
 
 ### Specific Target Framework

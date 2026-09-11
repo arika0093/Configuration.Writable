@@ -13,7 +13,7 @@ public class WritableOptionsSimpleInstanceTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    [Fact]
+    [Test]
     public void Initialize_ShouldCreateConfiguration()
     {
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
@@ -27,7 +27,7 @@ public class WritableOptionsSimpleInstanceTests
         settings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void GetOption_ShouldReturnWritableConfig()
     {
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
@@ -37,7 +37,7 @@ public class WritableOptionsSimpleInstanceTests
         option.ShouldBeAssignableTo<IWritableOptions<TestSettings>>();
     }
 
-    [Fact]
+    [Test]
     public void GetOption_ShouldThrowIfNotInitialized()
     {
         var uninitializedInstance = new WritableOptionsSimpleInstance<TestSettings>();
@@ -47,7 +47,7 @@ public class WritableOptionsSimpleInstanceTests
         });
     }
 
-    [Fact]
+    [Test]
     public async Task Save_ShouldPersistConfiguration()
     {
         var testFileName = Path.GetRandomFileName();
@@ -77,7 +77,7 @@ public class WritableOptionsSimpleInstanceTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_ShouldPersistConfiguration()
     {
         var testFileName = Path.GetRandomFileName();
@@ -107,7 +107,7 @@ public class WritableOptionsSimpleInstanceTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveWithAction_ShouldUpdateConfiguration()
     {
         var testFileName = Path.GetRandomFileName();
@@ -133,7 +133,7 @@ public class WritableOptionsSimpleInstanceTests
         loadedSettings.Value.ShouldBe(300);
     }
 
-    [Fact]
+    [Test]
     public async Task BeginConfigure_ShouldEditAndResetConfiguration()
     {
         var testFileName = Path.GetRandomFileName();
@@ -182,7 +182,7 @@ public class WritableOptionsSimpleInstanceTests
         session.ResetToLoaded();
     }
 
-    [Fact]
+    [Test]
     public void GetConfigFilePath_ShouldReturnCorrectPath()
     {
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
@@ -194,7 +194,7 @@ public class WritableOptionsSimpleInstanceTests
         path.ShouldEndWith(".json");
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithColonSeparatedSectionName_ShouldCreateNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
@@ -232,7 +232,7 @@ public class WritableOptionsSimpleInstanceTests
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
@@ -270,7 +270,7 @@ public class WritableOptionsSimpleInstanceTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
@@ -309,7 +309,7 @@ public class WritableOptionsSimpleInstanceTests
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithMixedSeparators_ShouldCreateNestedJson()
     {
         var testFileName = Path.GetRandomFileName();
@@ -347,7 +347,7 @@ public class WritableOptionsSimpleInstanceTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void SaveAsync_OnSynchronizationContext_ShouldNotDeadlock()
     {
         var testFileName = Path.GetRandomFileName();
@@ -393,7 +393,7 @@ public class WritableOptionsSimpleInstanceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task OnChange_DefaultInstance_ShouldReceiveNotificationAfterSave()
     {
         // Arrange
@@ -454,7 +454,7 @@ public class WritableOptionsSimpleInstanceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task OnChange_WithInstanceName_ShouldReceiveNotificationWithName()
     {
         // Arrange
@@ -516,7 +516,7 @@ public class WritableOptionsSimpleInstanceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task OnChange_MultipleListeners_ShouldAllReceiveNotifications()
     {
         // Arrange
@@ -573,7 +573,7 @@ public class WritableOptionsSimpleInstanceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task OnChange_MultipleSaves_ShouldReceiveMultipleNotifications()
     {
         // Arrange
@@ -642,7 +642,7 @@ public class WritableOptionsSimpleInstanceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task OnChange_Dispose_ShouldStopReceivingNotifications()
     {
         // Arrange
@@ -694,7 +694,7 @@ public class WritableOptionsSimpleInstanceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task OnChange_CurrentValue_ShouldReflectLatestChanges()
     {
         // Arrange

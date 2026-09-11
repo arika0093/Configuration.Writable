@@ -1,0 +1,3 @@
+using TUnit;
+
+[assembly: NotInParallel]

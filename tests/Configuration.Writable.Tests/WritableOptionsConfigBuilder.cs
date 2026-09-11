@@ -18,7 +18,7 @@ public partial class WritableOptionsConfigBuilderTests
         public string Name { get; set; } = "default";
     }
 
-    [Fact]
+    [Test]
     public void ConfigFilePath_WithDefaultSettings_ShouldUseDefaultFileName()
     {
         var options = new WritableOptionsConfigBuilder<TestSettings>();
@@ -27,7 +27,7 @@ public partial class WritableOptionsConfigBuilderTests
         Path.GetFileName(path).ShouldBe("usersettings.json");
     }
 
-    [Fact]
+    [Test]
     public void ConfigFilePath_WithCustomFileName_ShouldUseCustomFileName()
     {
         var options = new WritableOptionsConfigBuilder<TestSettings> { FilePath = "custom" };
@@ -36,7 +36,7 @@ public partial class WritableOptionsConfigBuilderTests
         Path.GetFileName(path).ShouldBe("custom.json");
     }
 
-    [Fact]
+    [Test]
     public async Task EnablePromoteSaveLocation_ShouldResolveExistingReadPathSeparately()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -61,7 +61,7 @@ public partial class WritableOptionsConfigBuilderTests
         withPromotion.ReadFilePath.ShouldBe(Path.GetFullPath($"{oldPath}.json"));
     }
 
-    [Fact]
+    [Test]
     public void SectionName_WithDefaultSettings_ShouldReturnEmpty()
     {
         var options = new WritableOptionsConfigBuilder<TestSettings>();
@@ -69,7 +69,7 @@ public partial class WritableOptionsConfigBuilderTests
         options.SectionName.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void UseDataAnnotationsValidation_WithDefaultSettings_ShouldMatchDynamicCodeSupport()
     {
         var options = new WritableOptionsConfigBuilder<TestSettings>();
@@ -86,7 +86,7 @@ public partial class WritableOptionsConfigBuilderTests
 #endif
     }
 
-    [Fact]
+    [Test]
     public void ConfigFilePath_WithRelativePath_ShouldUseRuntimeFolderAsBase()
     {
         var originalCurrentDirectory = Directory.GetCurrentDirectory();
@@ -138,7 +138,7 @@ public partial class WritableOptionsConfigBuilderTests
         }
     }
 
-    [Fact]
+    [Test]
     public void UseExecutableDirectory_ShouldSetConfigFolderToBaseDirectory()
     {
         var options = new WritableOptionsConfigBuilder<TestSettings>();
@@ -148,7 +148,7 @@ public partial class WritableOptionsConfigBuilderTests
         options.BuildOptions("").ConfigFilePath.ShouldBe(expectedPath);
     }
 
-    [Fact]
+    [Test]
     public void UseCurrentDirectory_ShouldSetConfigFolderToBaseDirectory()
     {
         var options = new WritableOptionsConfigBuilder<TestSettings>();
@@ -158,7 +158,7 @@ public partial class WritableOptionsConfigBuilderTests
         options.BuildOptions("").ConfigFilePath.ShouldBe(expectedPath);
     }
 
-    [Fact]
+    [Test]
     public void UseCustomDirectory_WithNonExistentDirectory_ShouldCreateDirectoryAndResolvePath()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -185,7 +185,7 @@ public partial class WritableOptionsConfigBuilderTests
         }
     }
 
-    [Fact]
+    [Test]
     public void UseStandardSaveDirectory_WithNonExistentDirectory_ShouldCreateDirectoryAndResolvePath()
     {
         // Use a unique application ID that should not exist

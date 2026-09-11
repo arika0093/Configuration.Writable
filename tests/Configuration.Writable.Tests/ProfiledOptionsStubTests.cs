@@ -5,7 +5,7 @@ namespace Configuration.Writable.Tests;
 
 public class ProfiledOptionsStubTests
 {
-    [Fact]
+    [Test]
     public async Task Profiles_ShouldCreateCopySwitchAndUpdateActiveProfile()
     {
         var profiles = ProfiledOptionsStub.Create(

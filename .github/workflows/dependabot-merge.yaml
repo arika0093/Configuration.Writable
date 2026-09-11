@@ -23,9 +23,6 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Setup dotnet-rerun
-        run: dotnet tool install --global dotnet-test-rerun
-
       - name: Restore dependencies
         run: dotnet restore
 
@@ -33,7 +30,7 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests only for .NET 10.0
-        run: test-rerun --no-build --verbosity normal --deleteReports --logger trx --logger GitHubActions
+        run: dotnet test --no-build -- --retry-failed-tests 3 --report-trx --no-progress
   
   dependabot:
     runs-on: ubuntu-latest

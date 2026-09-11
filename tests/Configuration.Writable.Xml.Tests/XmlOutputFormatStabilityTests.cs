@@ -57,7 +57,7 @@ public partial class XmlOutputFormatStabilityTests
         public bool IsActive { get; set; } = false;
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.xml";
@@ -87,7 +87,7 @@ public partial class XmlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.xml";
@@ -118,7 +118,7 @@ public partial class XmlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.xml";
@@ -153,7 +153,7 @@ public partial class XmlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_EmptyValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.xml";
@@ -189,7 +189,7 @@ public partial class XmlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_NumericValues_ShouldBeStable()
     {
         const string testFileName = "stability_numeric_test.xml";
@@ -225,7 +225,7 @@ public partial class XmlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_MultipleSections_ShouldBeStable()
     {
         const string testFileName = "stability_multi_section_test.xml";
@@ -256,7 +256,7 @@ public partial class XmlOutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_WithoutSectionName_ShouldBeStable()
     {
         const string testFileName = "stability_no_section_test.xml";

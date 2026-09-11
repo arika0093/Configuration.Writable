@@ -26,7 +26,7 @@ public class XmlSourceGeneratedVersioningTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_ShouldPersistMetadataInsideSection()
     {
         const string fileName = "xml-versioned.xml";
@@ -41,7 +41,7 @@ public class XmlSourceGeneratedVersioningTests
         section.Element("Names")!.Elements("string").Single().Value.ShouldBe("xml");
     }
 
-    [Fact]
+    [Test]
     public async Task XmlProvider_ShouldTreatMissingVersionAsVersionOne()
     {
         const string fileName = "xml-legacy.xml";

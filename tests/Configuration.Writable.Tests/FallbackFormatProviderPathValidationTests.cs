@@ -4,13 +4,12 @@ using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Shouldly;
-using Xunit;
 
 namespace Configuration.Writable.Tests;
 
 public class FallbackFormatProviderPathValidationTests
 {
-    [Fact]
+    [Test]
     public void BuildOptions_ShouldRejectCanonicalPathThatCollidesWithFallbackFormat()
     {
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
@@ -30,7 +29,7 @@ public class FallbackFormatProviderPathValidationTests
         exception.Message.ShouldContain("Use an extensionless file path");
     }
 
-    [Fact]
+    [Test]
     public void BuildOptions_ShouldAllowCustomCanonicalExtensionThatDoesNotCollide()
     {
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
@@ -46,7 +45,7 @@ public class FallbackFormatProviderPathValidationTests
         Path.GetExtension(options.ConfigFilePath).ShouldBe(".conf");
     }
 
-    [Fact]
+    [Test]
     public void BuildOptions_ShouldAllowCaseDistinctFallbackPathForLogicalFileProvider()
     {
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>

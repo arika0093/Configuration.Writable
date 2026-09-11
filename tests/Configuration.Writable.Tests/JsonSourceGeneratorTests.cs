@@ -60,7 +60,7 @@ public class JsonSourceGeneratorTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_ShouldSerializeCorrectly()
     {
         const string testFileName = "sourcegen_test.json";
@@ -102,7 +102,7 @@ public class JsonSourceGeneratorTests
         savedContent.ShouldContain("2.71");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_ShouldDeserializeCorrectly()
     {
         const string testFileName = "sourcegen_load_test.json";
@@ -163,7 +163,7 @@ public class JsonSourceGeneratorTests
         loadedConfig.Nested.Value.ShouldBe(1.41);
     }
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_AndSectionName_ShouldWork()
     {
         const string testFileName = "sourcegen_section_test.json";
@@ -198,7 +198,7 @@ public class JsonSourceGeneratorTests
         savedContent.ShouldContain("123");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_SectionName_LoadSaveRoundTrip()
     {
         const string testFileName = "sourcegen_section_roundtrip.json";
@@ -282,7 +282,7 @@ public class JsonSourceGeneratorTests
         reloadedConfig.Nested.Description.ShouldBe("Prod settings");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_SectionName_WithUnderscoreSeparator()
     {
         const string testFileName = "sourcegen_section_underscore.json";
@@ -337,7 +337,7 @@ public class JsonSourceGeneratorTests
         loadedConfig.Count.ShouldBe(456);
     }
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_RoundTrip_ShouldPreserveData()
     {
         const string testFileName = "sourcegen_roundtrip_test.json";
@@ -386,7 +386,7 @@ public class JsonSourceGeneratorTests
         secondLoad.Nested.Description.ShouldBe("Nested description");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_CamelCase_ShouldWork()
     {
         const string testFileName = "sourcegen_camelcase_test.json";
@@ -427,7 +427,7 @@ public class JsonSourceGeneratorTests
         savedContent.ShouldContain("25");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonFormatProvider_SourceGeneratorVsReflection_ShouldProduceSameResult()
     {
         const string sourceGenFileName = "comparison_sourcegen.json";

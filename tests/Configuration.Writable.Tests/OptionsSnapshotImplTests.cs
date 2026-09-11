@@ -27,7 +27,7 @@ public partial class OptionsSnapshotImplTests
         return builder.BuildOptions(instanceName);
     }
 
-    [Fact]
+    [Test]
     public void Value_ShouldReturnSnapshotValue()
     {
         // Arrange
@@ -51,7 +51,7 @@ public partial class OptionsSnapshotImplTests
         value.Value.ShouldBe(42);
     }
 
-    [Fact]
+    [Test]
     public void Get_WithDefaultName_ShouldReturnSnapshotValue()
     {
         // Arrange
@@ -75,7 +75,7 @@ public partial class OptionsSnapshotImplTests
         value.Value.ShouldBe(42);
     }
 
-    [Fact]
+    [Test]
     public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
@@ -98,7 +98,7 @@ public partial class OptionsSnapshotImplTests
         value.Value.ShouldBe(999);
     }
 
-    [Fact]
+    [Test]
     public void Snapshot_ShouldNotReflectChangesAfterCreation()
     {
         // Arrange
@@ -133,7 +133,7 @@ public partial class OptionsSnapshotImplTests
         monitorValue.Value.ShouldBe(100);
     }
 
-    [Fact]
+    [Test]
     public async Task Snapshot_WithMultipleInstances_ShouldSnapshotAllInstances()
     {
         // Arrange
@@ -167,7 +167,7 @@ public partial class OptionsSnapshotImplTests
         value2.Value.ShouldBe(222);
     }
 
-    [Fact]
+    [Test]
     public void Snapshot_MultipleCalls_ShouldReturnSameValue()
     {
         // Arrange
@@ -191,7 +191,7 @@ public partial class OptionsSnapshotImplTests
         value1.ShouldBeEquivalentTo(value2);
     }
 
-    [Fact]
+    [Test]
     public void Snapshot_AfterMonitorUpdate_NewSnapshotShouldStillHaveFirstValue()
     {
         // Arrange
@@ -226,7 +226,7 @@ public partial class OptionsSnapshotImplTests
         monitorValue.Value.ShouldBe(200);
     }
 
-    [Fact]
+    [Test]
     public void Get_WithNull_ShouldThrow()
     {
         // Arrange
@@ -245,7 +245,7 @@ public partial class OptionsSnapshotImplTests
         Should.Throw<Exception>(() => snapshot.Get(null!));
     }
 
-    [Fact]
+    [Test]
     public async Task Snapshot_ShouldCaptureAllInstancesAtCreationTime()
     {
         // Arrange

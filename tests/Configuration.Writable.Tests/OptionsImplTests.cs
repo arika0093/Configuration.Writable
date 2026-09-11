@@ -16,7 +16,7 @@ public partial class OptionsImplTests
         public int Value { get; set; } = 42;
     }
 
-    [Fact]
+    [Test]
     public void Value_ShouldReturnDefaultValueFromMonitor()
     {
         // Arrange
@@ -38,7 +38,7 @@ public partial class OptionsImplTests
         value.Value.ShouldBe(42);
     }
 
-    [Fact]
+    [Test]
     public void Value_ShouldReturnSameValueOnMultipleCalls()
     {
         // Arrange
@@ -60,7 +60,7 @@ public partial class OptionsImplTests
         value1.ShouldBeEquivalentTo(value2);
     }
 
-    [Fact]
+    [Test]
     public void Value_WithCustomInstanceName_ShouldThrow()
     {
         // Arrange
@@ -77,7 +77,7 @@ public partial class OptionsImplTests
         Should.Throw<InvalidOperationException>(() => options.Value);
     }
 
-    [Fact]
+    [Test]
     public async Task Value_WithPreloadedData_ShouldReturnLoadedData()
     {
         // Arrange

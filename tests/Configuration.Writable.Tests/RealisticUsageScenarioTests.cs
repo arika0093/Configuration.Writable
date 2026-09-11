@@ -50,7 +50,7 @@ public class RealisticUsageScenarioTests : IDisposable
     /// Simulates a realistic scenario using WritableConfig (non-DI approach).
     /// A user application would initialize once, then repeatedly read and update settings.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task WritableConfig_RepeatedSaveAndRetrieve_ShouldPersistAllChanges()
     {
         var testFilePath = Path.Combine(_testDirectory, "test1.json");
@@ -146,7 +146,7 @@ public class RealisticUsageScenarioTests : IDisposable
     /// Simulates a realistic scenario using DI approach (ASP.NET Core, Worker Service, etc.).
     /// The same instance is injected into services and used repeatedly throughout the application lifecycle.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task DI_RepeatedSaveAndRetrieve_ShouldPersistAllChanges()
     {
         var testFilePath = Path.Combine(_testDirectory, "test2.json");
@@ -243,7 +243,7 @@ public class RealisticUsageScenarioTests : IDisposable
     /// Simulates concurrent access to the same configuration instance,
     /// as might occur in a multi-threaded application.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task WritableConfig_ConcurrentSaves_ShouldHandleThreadSafety()
     {
         var testFilePath = Path.Combine(_testDirectory, "test3.json");
@@ -290,7 +290,7 @@ public class RealisticUsageScenarioTests : IDisposable
     /// Simulates a WPF or WinForms scenario where user changes settings,
     /// reads them back to update UI, and repeats this multiple times.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task WritableConfig_UIScenario_RepeatedReadWriteCycles()
     {
         var testFilePath = Path.Combine(_testDirectory, "test4.json");

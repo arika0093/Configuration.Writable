@@ -62,7 +62,7 @@ public class JsonAotFormatProviderTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_ShouldSerializeCorrectly()
     {
         const string testFileName = "aot_serialize_test.json";
@@ -97,7 +97,7 @@ public class JsonAotFormatProviderTests
         savedContent.ShouldContain("2.71");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_ShouldDeserializeCorrectly()
     {
         const string testFileName = "aot_deserialize_test.json";
@@ -144,7 +144,7 @@ public class JsonAotFormatProviderTests
         loadedConfig.Nested.Value.ShouldBe(1.41);
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_WithSectionName_ShouldWork()
     {
         const string testFileName = "aot_section_test.json";
@@ -172,7 +172,7 @@ public class JsonAotFormatProviderTests
         savedContent.ShouldContain("123");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_SectionName_LoadSaveRoundTrip()
     {
         const string testFileName = "aot_section_roundtrip.json";
@@ -242,7 +242,7 @@ public class JsonAotFormatProviderTests
         reloadedConfig.Nested.Description.ShouldBe("Prod settings");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_SectionName_WithUnderscoreSeparator()
     {
         const string testFileName = "aot_section_underscore.json";
@@ -283,7 +283,7 @@ public class JsonAotFormatProviderTests
         loadedConfig.Count.ShouldBe(456);
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_RoundTrip_ShouldPreserveData()
     {
         const string testFileName = "aot_roundtrip_test.json";
@@ -325,7 +325,7 @@ public class JsonAotFormatProviderTests
         secondLoad.Nested.Description.ShouldBe("Nested description");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_WithCamelCaseNamingPolicy_ShouldWork()
     {
         const string testFileName = "aot_camelcase_test.json";
@@ -359,7 +359,7 @@ public class JsonAotFormatProviderTests
         savedContent.ShouldContain("25");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_VsJsonFormatProvider_ShouldProduceSameResult()
     {
         const string aotFileName = "aot_comparison.json";
@@ -416,13 +416,13 @@ public class JsonAotFormatProviderTests
             );
     }
 
-    [Fact]
+    [Test]
     public void JsonAotFormatProvider_Constructor_WithNullResolver_ShouldThrow()
     {
         Should.Throw<ArgumentNullException>(() => new JsonAotFormatProvider(null!));
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_WithCustomJsonSerializerOptions_ShouldOverrideContextOptions()
     {
         const string testFileName = "aot_custom_options.json";
@@ -456,7 +456,7 @@ public class JsonAotFormatProviderTests
         savedContent.ShouldContain("Custom Options Test");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_SectionWithMissingSection_ShouldReturnDefaultInstance()
     {
         const string testFileName = "aot_missing_section.json";
@@ -484,7 +484,7 @@ public class JsonAotFormatProviderTests
         loadedConfig.IsEnabled.ShouldBe(true);
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotFormatProvider_PartialUpdate_ShouldPreserveOtherSections()
     {
         const string testFileName = "aot_partial_preserve.json";
@@ -517,7 +517,7 @@ public class JsonAotFormatProviderTests
         savedContent.ShouldContain("999");
     }
 
-    [Fact]
+    [Test]
     public void JsonAotFormatProvider_FileExtension_ShouldBeJson()
     {
         var provider = new JsonAotFormatProvider(AotTestConfigContext.Default);

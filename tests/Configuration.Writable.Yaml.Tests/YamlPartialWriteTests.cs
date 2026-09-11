@@ -20,7 +20,7 @@ public class YamlPartialWriteTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithExistingFile_ShouldPreserveOtherSections()
     {
         // Arrange
@@ -83,7 +83,7 @@ public class YamlPartialWriteTests
         otherSection["value"].ShouldBe("ShouldBePreserved");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithNestedSection_ShouldUpdateCorrectly()
     {
         // Arrange
@@ -140,7 +140,7 @@ public class YamlPartialWriteTests
         other["value"].ShouldBe("Preserved");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_NoExistingFile_ShouldCreateNewStructure()
     {
         // Arrange
@@ -178,7 +178,7 @@ public class YamlPartialWriteTests
         appSettings["revision"].ToString().ShouldBe("1");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithMalformedExistingFile_ShouldNotOverwriteIt()
     {
         const string testFileName = "malformed-partial.yaml";
@@ -202,7 +202,7 @@ public class YamlPartialWriteTests
         _fileProvider.ReadAllText(testFileName).ShouldBe(malformedContent);
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_SectionDoesNotExist_ShouldAddNewSection()
     {
         // Arrange
@@ -251,7 +251,7 @@ public class YamlPartialWriteTests
         existingSection["value"].ShouldBe("Exists");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithNonUtf8Encoding_ShouldPreserveOtherSections()
     {
         const string testFileName = "utf16_partial.yaml";
@@ -286,7 +286,7 @@ public class YamlPartialWriteTests
         resultContent.ShouldContain("Keep");
     }
 
-    [Fact]
+    [Test]
     public async Task FullWrite_NoSectionName_ShouldWriteDirectly()
     {
         // Arrange - No existing file

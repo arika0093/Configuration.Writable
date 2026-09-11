@@ -20,7 +20,7 @@ public partial class AbstractionsPackageTests
         public string Name { get; set; } = "default";
     }
 
-    [Fact]
+    [Test]
     public void AbstractionsAssembly_HasOnlyFrameworkDependencies()
     {
         var assembly = typeof(IReadOnlyOptions<>).Assembly;
@@ -36,7 +36,7 @@ public partial class AbstractionsPackageTests
             );
     }
 
-    [Fact]
+    [Test]
     public void AbstractionsAssembly_PublicApiDoesNotExposeForbiddenDependencies()
     {
         var forbiddenNamespacePrefixes = new[]
@@ -61,7 +61,7 @@ public partial class AbstractionsPackageTests
         );
     }
 
-    [Fact]
+    [Test]
     public void ReadOnlyOptionsMonitor_DoesNotInheritMicrosoftOptionsMonitor()
     {
         typeof(IOptionsMonitor<TestSettings>)
@@ -69,7 +69,7 @@ public partial class AbstractionsPackageTests
             .ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void CoreRegistrations_ExposeStandardCustomAndConfigurationContracts()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -133,7 +133,7 @@ public partial class AbstractionsPackageTests
         keyedInfo.InstanceName.ShouldBe("named");
     }
 
-    [Fact]
+    [Test]
     public async Task StandardAndCustomMonitors_ShareChangeNotificationSemantics()
     {
         var filePath = Path.Combine(
@@ -182,7 +182,7 @@ public partial class AbstractionsPackageTests
         }
     }
 
-    [Fact]
+    [Test]
     public void TestingStub_RequiresAndReturnsExplicitConfigurationInfo()
     {
         var stub = new WritableOptionsStub<TestSettings>(new TestSettings());

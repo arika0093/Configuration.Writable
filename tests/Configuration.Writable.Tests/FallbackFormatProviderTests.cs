@@ -12,13 +12,12 @@ using Configuration.Writable.Internal;
 using Configuration.Writable.Migration;
 using Configuration.Writable.Options;
 using Shouldly;
-using Xunit;
 
 namespace Configuration.Writable.Tests;
 
 public class FallbackFormatProviderTests
 {
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldLoadMigrateAndPromoteToCanonicalFormat()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -44,7 +43,7 @@ public class FallbackFormatProviderTests
         fileProvider.FileExists(fallbackPath).ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldBackUpFallbackBeforePromotingToCanonicalFormat()
     {
         using var testFile = new TemporaryFile();
@@ -73,7 +72,7 @@ public class FallbackFormatProviderTests
         File.Exists(fallbackPath).ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldTryProvidersInRegistrationOrder()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -100,7 +99,7 @@ public class FallbackFormatProviderTests
         result.Name.ShouldBe("second fallback");
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldSaveSectionToFallbackWithoutDroppingSiblings()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -132,7 +131,7 @@ public class FallbackFormatProviderTests
         savedFallback.ShouldContain("\"sibling\"");
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldFingerprintSelectedFallbackFile()
     {
         using var testFile = new TemporaryFile();
@@ -159,7 +158,7 @@ public class FallbackFormatProviderTests
         before.ShouldNotBe(after);
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldKeepFallbackDocumentForSectionedConfigurations()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -199,7 +198,7 @@ public class FallbackFormatProviderTests
         secondOptions.FormatProvider.LoadWithMigration(secondOptions).Name.ShouldBe("second");
     }
 
-    [Fact]
+    [Test]
     public void FallbackFormat_ShouldRequireMetadataSupportForVersionedOptions()
     {
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.MySettingsV2>
@@ -212,7 +211,7 @@ public class FallbackFormatProviderTests
         Should.Throw<InvalidOperationException>(() => builder.BuildOptions(""));
     }
 
-    [Fact]
+    [Test]
     public void AddFallbackFormatProvider_ShouldRejectDuplicateExtension()
     {
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
@@ -225,7 +224,7 @@ public class FallbackFormatProviderTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldRestoreCanonicalBackupBeforeSelectingFallback()
     {
         using var testFile = new TemporaryFile();
@@ -260,7 +259,7 @@ public class FallbackFormatProviderTests
         result.Name.ShouldBe("canonical backup");
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldRecoverSelectedFallbackBeforeReadingMetadata()
     {
         using var testFile = new TemporaryFile();
@@ -286,7 +285,7 @@ public class FallbackFormatProviderTests
         result.Names.ShouldBe(["recoverable fallback"]);
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldWatchSelectedFallbackForChanges()
     {
         using var testFile = new TemporaryFile();
@@ -324,7 +323,7 @@ public class FallbackFormatProviderTests
         changedResult.Name.ShouldBe("after");
     }
 
-    [Fact]
+    [Test]
     public async Task FallbackFormat_ShouldRebindWatcherWhenCanonicalFileAppears()
     {
         using var testFile = new TemporaryFile();

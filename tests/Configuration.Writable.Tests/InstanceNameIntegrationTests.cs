@@ -19,7 +19,7 @@ public partial class InstanceNameIntegrationTests
         public int Age { get; set; } = 20;
     }
 
-    [Fact]
+    [Test]
     public async Task MultipleInstanceNames_ShouldManageSeparateSettings()
     {
         var firstFileName = Path.GetRandomFileName();
@@ -102,7 +102,7 @@ public partial class InstanceNameIntegrationTests
         host.Dispose();
     }
 
-    [Fact]
+    [Test]
     public async Task MultipleInstanceNames_ShouldSaveToSeparateFiles()
     {
         var firstFileName = Path.GetRandomFileName();
@@ -158,7 +158,7 @@ public partial class InstanceNameIntegrationTests
         host.Dispose();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithoutInstanceName_WithMultipleInstances_ShouldThrow()
     {
         var firstFileName = Path.GetRandomFileName();
@@ -195,7 +195,7 @@ public partial class InstanceNameIntegrationTests
         host.Dispose();
     }
 
-    [Fact]
+    [Test]
     public async Task SingleInstance_ShouldWorkWithoutSpecifyingInstanceName()
     {
         var fileName = Path.GetRandomFileName();
@@ -228,7 +228,7 @@ public partial class InstanceNameIntegrationTests
         host.Dispose();
     }
 
-    [Fact]
+    [Test]
     public void GetInstance_ShouldReturnBoundInstance()
     {
         var firstFileName = Path.GetRandomFileName();
@@ -272,7 +272,7 @@ public partial class InstanceNameIntegrationTests
         host.Dispose();
     }
 
-    [Fact]
+    [Test]
     public async Task GetInstance_CurrentValue_ShouldReturnCorrectInstance()
     {
         var firstFileName = Path.GetRandomFileName();
@@ -316,7 +316,7 @@ public partial class InstanceNameIntegrationTests
         host.Dispose();
     }
 
-    [Fact]
+    [Test]
     public async Task GetInstance_SaveAsync_ShouldSaveToCorrectInstance()
     {
         var firstFileName = Path.GetRandomFileName();
@@ -377,7 +377,7 @@ public partial class InstanceNameIntegrationTests
         host.Dispose();
     }
 
-    [Fact]
+    [Test]
     public void GetInstance_GetConfigurationInfo_ShouldReturnCorrectConfiguration()
     {
         var firstFileName = Path.GetRandomFileName();

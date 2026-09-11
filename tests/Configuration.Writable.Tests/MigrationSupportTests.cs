@@ -8,7 +8,6 @@ using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Shouldly;
-using Xunit;
 
 namespace Configuration.Writable.Tests;
 
@@ -16,7 +15,7 @@ public partial class MigrationSupportTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenVersionMatches()
     {
         // Arrange
@@ -50,7 +49,7 @@ public partial class MigrationSupportTests
         result.Configs[0].Name.ShouldBe("Test");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadWithMigration_ShouldApplySingleMigration_WhenVersionIsOlder()
     {
         // Arrange
@@ -82,7 +81,7 @@ public partial class MigrationSupportTests
         result.Names[0].ShouldBe("TestName");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadWithMigration_ShouldApplyMultipleMigrations_WhenVersionIsOlder()
     {
         // Arrange
@@ -113,7 +112,7 @@ public partial class MigrationSupportTests
         result.Configs[0].Name.ShouldBe("TestName");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenNoMigrationsRegistered()
     {
         // Arrange
@@ -142,7 +141,7 @@ public partial class MigrationSupportTests
         result.Name.ShouldBe("TestName");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenTargetIsUnversioned()
     {
         // Arrange
@@ -172,7 +171,7 @@ public partial class MigrationSupportTests
         result.Name.ShouldBe("TestName");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadWithMigration_ShouldNotReadSchemaMetadata_WhenTargetIsUnversioned()
     {
         const string fileName = "settings-unversioned.json";
@@ -239,7 +238,7 @@ public partial class MigrationSupportTests
         public string Name { get; set; } = "";
     }
 
-    [Fact]
+    [Test]
     public async Task LoadWithMigration_ShouldTreatMissingFileVersionAsVersionOne()
     {
         // Arrange

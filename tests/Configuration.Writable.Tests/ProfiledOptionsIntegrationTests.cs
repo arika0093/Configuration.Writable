@@ -11,7 +11,7 @@ public partial class ProfiledOptionsIntegrationTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task Profiles_ShouldPersistCatalogAndProfileValues()
     {
         var fileName = Path.GetRandomFileName();
@@ -58,7 +58,7 @@ public partial class ProfiledOptionsIntegrationTests
         profiles.ActiveProfileName.ShouldBe("default");
     }
 
-    [Fact]
+    [Test]
     public async Task Profiles_ShouldRestoreCatalogWhenApplicationRestarts()
     {
         var fileName = Path.GetRandomFileName();

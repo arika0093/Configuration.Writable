@@ -13,7 +13,7 @@ public class ValidationTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithValidationFunction_ShouldThrowWhenValidationFails()
     {
         var testFileName = Path.GetRandomFileName();
@@ -48,7 +48,7 @@ public class ValidationTests
         _FileProvider.FileExists(testFileName).ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithValidationFunction_ShouldSucceedWhenValidationPasses()
     {
         var testFileName = Path.GetRandomFileName();
@@ -80,7 +80,7 @@ public class ValidationTests
         loadedSettings.MaxConnections.ShouldBe(10);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithMultipleValidators_ShouldCombineErrors()
     {
         var testFileName = Path.GetRandomFileName();
@@ -118,7 +118,7 @@ public class ValidationTests
         exception.Failures.ShouldContain("Email is required");
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithIValidator_ShouldValidateCorrectly()
     {
         var testFileName = Path.GetRandomFileName();
@@ -143,7 +143,7 @@ public class ValidationTests
         exception.Failures.Count().ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithDataAnnotations_ShouldValidateCorrectly()
     {
         var testFileName = Path.GetRandomFileName();
@@ -172,7 +172,7 @@ public class ValidationTests
         exception.Failures.Count().ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithDataAnnotations_ShouldSucceedWhenValid()
     {
         var testFileName = Path.GetRandomFileName();
@@ -200,7 +200,7 @@ public class ValidationTests
         loadedSettings.MaxConnections.ShouldBe(50);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithDataAnnotationsAndCustomValidators_ShouldCombineAll()
     {
         var testFileName = Path.GetRandomFileName();
@@ -237,7 +237,7 @@ public class ValidationTests
         exception.Failures.ShouldContain("Name 'forbidden' is not allowed");
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithActionUpdater_ShouldStillValidate()
     {
         var testFileName = Path.GetRandomFileName();
@@ -268,7 +268,7 @@ public class ValidationTests
         exception.Failures.ShouldContain("MaxConnections must be positive");
     }
 
-    [Fact]
+    [Test]
     public void ValidateOptionsResult_Success_ShouldCreateSuccessfulResult()
     {
         var result = ValidateOptionsResult.Success;
@@ -276,7 +276,7 @@ public class ValidationTests
         result.Failed.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void ValidateOptionsResult_Failure_ShouldCreateFailedResult()
     {
         var result = ValidateOptionsResult.Fail(["Error 1", "Error 2"]);
@@ -287,7 +287,7 @@ public class ValidationTests
         result.Failures.ShouldContain("Error 2");
     }
 
-    [Fact]
+    [Test]
     public void ValidateOptionsResult_Failure_WithSingleError_ShouldCreateFailedResult()
     {
         var result = ValidateOptionsResult.Fail("Single error");
@@ -297,7 +297,7 @@ public class ValidationTests
         result.Failures.ShouldContain("Single error");
     }
 
-    [Fact]
+    [Test]
     public void OptionsValidationException_ShouldContainFailures()
     {
         var failures = new[] { "Error 1", "Error 2" };

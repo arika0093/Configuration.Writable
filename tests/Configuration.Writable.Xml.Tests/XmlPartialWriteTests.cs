@@ -29,7 +29,7 @@ public partial class XmlPartialWriteTests
         public bool Notifications { get; set; } = true;
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithExistingFile_ShouldPreserveOtherSections()
     {
         // Arrange
@@ -97,7 +97,7 @@ public partial class XmlPartialWriteTests
         otherSection.Element("Value")?.Value.ShouldBe("ShouldBePreserved");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithNestedSection_ShouldUpdateCorrectly()
     {
         // Arrange
@@ -159,7 +159,7 @@ public partial class XmlPartialWriteTests
         other.Element("Value")?.Value.ShouldBe("Preserved");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_NoExistingFile_ShouldCreateNewStructure()
     {
         // Arrange
@@ -196,7 +196,7 @@ public partial class XmlPartialWriteTests
         appSettings.Element("Revision")?.Value.ShouldBe("1");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_SectionDoesNotExist_ShouldAddNewSection()
     {
         // Arrange
@@ -248,7 +248,7 @@ public partial class XmlPartialWriteTests
         existingSection.Element("Value")?.Value.ShouldBe("Exists");
     }
 
-    [Fact]
+    [Test]
     public async Task FullWrite_NoSectionName_ShouldOverwriteEntireFile()
     {
         // Arrange

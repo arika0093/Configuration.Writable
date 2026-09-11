@@ -40,18 +40,18 @@ public static class PublicApiCheck
 
 public class PublicApiCheckTest
 {
-    [Fact]
+    [Test]
     public void Abstractions() => PublicApiCheck.Check<IOptionsConfigurationInfo>();
 
-    [Fact]
+    [Test]
     public void Core() => PublicApiCheck.Check<JsonFormatProvider>();
 
-    [Fact]
+    [Test]
     public void Testing() => PublicApiCheck.Check<WritableOptionsSimpleInstance<object>>();
 
-    [Fact]
+    [Test]
     public void Xml() => PublicApiCheck.Check<XmlFormatProvider>();
 
-    [Fact]
+    [Test]
     public void Yaml() => PublicApiCheck.Check<YamlFormatProvider>();
 }

@@ -19,14 +19,14 @@ public partial class XmlFormatProviderTests
         public string[] Items { get; set; } = ["item1", "item2"];
     }
 
-    [Fact]
+    [Test]
     public void XmlFormatProvider_ShouldHaveCorrectFileExtension()
     {
         var provider = new XmlFormatProvider();
         provider.FileExtension.ShouldBe("xml");
     }
 
-    [Fact]
+    [Test]
     public async Task Initialize_WithXmlProvider_ShouldCreateXmlFile()
     {
         var testFileName = Path.GetRandomFileName();
@@ -58,7 +58,7 @@ public partial class XmlFormatProviderTests
         fileContent.ShouldContain("<IsEnabled>false</IsEnabled>");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAndSave_WithXmlProvider_ShouldPreserveSimpleData()
     {
         var testFileName = Path.GetRandomFileName();
@@ -96,7 +96,7 @@ public partial class XmlFormatProviderTests
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAndSave_WithXmlProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
@@ -137,7 +137,7 @@ public partial class XmlFormatProviderTests
         // loadedSettings.Items.ShouldBe(new[] { "persist1", "persist2" });
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithXmlProvider_ShouldWork()
     {
         var testFileName = Path.GetRandomFileName();
@@ -164,7 +164,7 @@ public partial class XmlFormatProviderTests
         loadedSettings.Value.ShouldBe(777);
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithColonSeparatedSectionName_ShouldCreateNestedXml()
     {
         var testFileName = Path.GetRandomFileName();
@@ -205,7 +205,7 @@ public partial class XmlFormatProviderTests
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedXml()
     {
         var testFileName = Path.GetRandomFileName();
@@ -246,7 +246,7 @@ public partial class XmlFormatProviderTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedXml()
     {
         var testFileName = Path.GetRandomFileName();

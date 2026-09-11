@@ -35,10 +35,6 @@ jobs:
             8.0.x
             6.0.x
 
-      # https://github.com/joaoopereira/dotnet-test-rerun
-      - name: Setup dotnet-rerun
-        run: dotnet tool install --global dotnet-test-rerun
-
       - name: Restore dependencies
         run: dotnet restore
 
@@ -46,4 +42,31 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests
-        run: test-rerun --no-build --verbosity normal --deleteReports --logger trx --logger GitHubActions
+        run: dotnet test --no-build -- --retry-failed-tests 3 --report-trx --no-progress
+
+  native-aot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish NativeAOT tests
+        run: >
+          dotnet publish tests/Configuration.Writable.Tests/Configuration.Writable.Tests.csproj
+          --configuration Release
+          --framework net10.0
+          --runtime linux-x64
+          --self-contained true
+
+      - name: Run NativeAOT tests
+        run: >
+          tests/Configuration.Writable.Tests/bin/Release/net10.0/linux-x64/publish/Configuration.Writable.Tests
+          --treenode-filter '/*/*/*/*JsonAot*'
+          --no-progress

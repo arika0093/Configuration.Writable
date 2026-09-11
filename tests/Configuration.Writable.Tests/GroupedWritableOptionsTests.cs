@@ -33,7 +33,7 @@ public partial class GroupedWritableOptionsTests
         public string Value { get; set; } = "retained";
     }
 
-    [Fact]
+    [Test]
     public void GroupedRegistration_AppliesSharedConfigurationAfterRecipesAreCollected()
     {
         var provider = new InMemoryFileProvider();
@@ -61,7 +61,7 @@ public partial class GroupedWritableOptionsTests
         second.ConfigFilePath.ShouldBe(Path.GetFullPath(Path.Combine("grouped", "second.json")));
     }
 
-    [Fact]
+    [Test]
     public void GroupedRegistration_TypeConfigurationOverridesSharedConfiguration()
     {
         var provider = new InMemoryFileProvider();
@@ -86,7 +86,7 @@ public partial class GroupedWritableOptionsTests
         configuration.SectionNameParts.ShouldBe(["Specific"]);
     }
 
-    [Fact]
+    [Test]
     public void GroupedRegistration_ClonesFallbackProvidersPerType()
     {
         var provider = new InMemoryFileProvider();
@@ -120,7 +120,7 @@ public partial class GroupedWritableOptionsTests
         secondProvider.FallbackProviders[0].FileExtension.ShouldBe("second");
     }
 
-    [Fact]
+    [Test]
     public void StaticGroupedInitialization_RetainsEveryNamedRegistration()
     {
         var provider = new InMemoryFileProvider();
@@ -137,7 +137,7 @@ public partial class GroupedWritableOptionsTests
         writableOptions.Get("Second").ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void SimpleInstance_ReinitializationFailureRetainsPreviousConfiguration()
     {
         var provider = new InMemoryFileProvider();
@@ -161,7 +161,7 @@ public partial class GroupedWritableOptionsTests
             .ConfigurationInfo.WritePath.ShouldBe(Path.GetFullPath("existing.json"));
     }
 
-    [Fact]
+    [Test]
     public void StaticGroupedInitialization_FailureRetainsPreviousConfiguration()
     {
         var provider = new InMemoryFileProvider();

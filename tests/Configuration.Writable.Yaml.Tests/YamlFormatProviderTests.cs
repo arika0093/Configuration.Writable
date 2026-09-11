@@ -11,14 +11,14 @@ public class YamlFormatProviderTests
 {
     private readonly InMemoryFileProvider _FileProvider = new();
 
-    [Fact]
+    [Test]
     public void YamlFormatProvider_ShouldHaveCorrectFileExtension()
     {
         var provider = new YamlFormatProvider();
         provider.FileExtension.ShouldBe("yaml");
     }
 
-    [Fact]
+    [Test]
     public async Task Initialize_WithYamlProvider_ShouldCreateYamlFile()
     {
         var testFileName = Path.GetRandomFileName();
@@ -53,7 +53,7 @@ public class YamlFormatProviderTests
         fileContent.ShouldContain("99.99");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAndSave_WithYamlProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
@@ -97,7 +97,7 @@ public class YamlFormatProviderTests
         loadedSettings.Nested.Price.ShouldBe(123.45);
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAndSave_WithNonUtf8Encoding_ShouldPreserveData()
     {
         const string testFileName = "utf16_config.yaml";
@@ -138,7 +138,7 @@ public class YamlFormatProviderTests
         loadedSettings.Nested.Price.ShouldBe(12.5);
     }
 
-    [Fact]
+    [Test]
     public async Task Load_WithDefaultEncoding_ShouldHonorUtf16ByteOrderMark()
     {
         const string testFileName = "utf16_bom_config.yaml";
@@ -168,7 +168,7 @@ public class YamlFormatProviderTests
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task GetOptions_WithMalformedYaml_ShouldThrowInsteadOfReturningDefaults()
     {
         const string testFileName = "malformed.yaml";
@@ -187,7 +187,7 @@ public class YamlFormatProviderTests
         _FileProvider.ReadAllText(testFileName).ShouldBe(malformedContent);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WithYamlProvider_ShouldWork()
     {
         var testFileName = Path.GetRandomFileName();
@@ -216,7 +216,7 @@ public class YamlFormatProviderTests
         loadedSettings.Nested.Description.ShouldBe("async_nested");
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithColonSeparatedSectionName_ShouldCreateNestedYaml()
     {
         var testFileName = Path.GetRandomFileName();
@@ -255,7 +255,7 @@ public class YamlFormatProviderTests
         loadedSettings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithUnderscoreSeparatedSectionName_ShouldCreateNestedYaml()
     {
         var testFileName = Path.GetRandomFileName();
@@ -294,7 +294,7 @@ public class YamlFormatProviderTests
         loadedSettings.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task Save_WithMultiLevelNestedSectionName_ShouldCreateDeepNestedYaml()
     {
         var testFileName = Path.GetRandomFileName();

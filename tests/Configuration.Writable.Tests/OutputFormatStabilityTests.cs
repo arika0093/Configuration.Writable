@@ -53,7 +53,7 @@ public partial class OutputFormatStabilityTests
         public bool IsActive { get; set; } = false;
     }
 
-    [Fact]
+    [Test]
     public async Task JsonProvider_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_test.json";
@@ -86,7 +86,7 @@ public partial class OutputFormatStabilityTests
             .ShouldBeTrue("JSON output format should semantically match the reference file");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonProvider_WithSectionName_OutputFormat_ShouldBeStable()
     {
         const string testFileName = "stability_section_test.json";
@@ -122,7 +122,7 @@ public partial class OutputFormatStabilityTests
             );
     }
 
-    [Fact]
+    [Test]
     public async Task JsonProvider_CompactFormat_ShouldBeStable()
     {
         const string testFileName = "stability_compact_test.json";
@@ -156,7 +156,7 @@ public partial class OutputFormatStabilityTests
             );
     }
 
-    [Fact]
+    [Test]
     public async Task CommonFileProvider_OutputBytes_ShouldBeExact()
     {
         using var tempFile = new TemporaryFile();
@@ -186,7 +186,7 @@ public partial class OutputFormatStabilityTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task JsonProvider_SpecialCharacters_ShouldBeStable()
     {
         const string testFileName = "stability_special_chars_test.json";
@@ -226,7 +226,7 @@ public partial class OutputFormatStabilityTests
         actualOutput.ShouldContain("backslashes");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonProvider_EmptyAndNullValues_ShouldBeStable()
     {
         const string testFileName = "stability_empty_test.json";
@@ -266,7 +266,7 @@ public partial class OutputFormatStabilityTests
     /// Test to verify that the file format consistency across different scenarios
     /// by checking the actual byte-level output
     /// </summary>
-    [Fact]
+    [Test]
     public async Task JsonProvider_ByteLevel_ShouldBeStable()
     {
         const string testFileName = "stability_byte_test.json";

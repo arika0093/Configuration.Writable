@@ -60,7 +60,7 @@ public partial class WritableOptionsExtensionsTests
         }
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithServiceCollection_ShouldRegisterServices()
     {
         var services = new ServiceCollection();
@@ -72,7 +72,7 @@ public partial class WritableOptionsExtensionsTests
         readonlyOptions.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithServiceCollection_ShouldUseCustomConfiguration()
     {
         var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -91,7 +91,7 @@ public partial class WritableOptionsExtensionsTests
         writableOptions.ConfigurationInfo.WritePath.ShouldBe(testFilePath);
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithHostBuilder_ShouldRegisterServices()
     {
         var builder = Host.CreateApplicationBuilder();
@@ -105,7 +105,7 @@ public partial class WritableOptionsExtensionsTests
         readonlyOptions.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithCustomOptions_ShouldUseCustomConfiguration()
     {
         var testFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -123,7 +123,7 @@ public partial class WritableOptionsExtensionsTests
         writableOptions.ConfigurationInfo.WritePath.ShouldBe(testFilePath);
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptions_SaveAsync_ShouldPersistData()
     {
         var testFileName = Path.GetRandomFileName();
@@ -155,7 +155,7 @@ public partial class WritableOptionsExtensionsTests
         currentValue.IsEnabled.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptions_SaveAsyncWithAction_ShouldUpdateData()
     {
         var testFileName = Path.GetRandomFileName();
@@ -183,7 +183,7 @@ public partial class WritableOptionsExtensionsTests
         currentValue.Value.ShouldBe(600);
     }
 
-    [Fact]
+    [Test]
     public async Task AddWritableOptions_WithMigration_ShouldApplyMigration()
     {
         var testFileName = Path.GetRandomFileName();
@@ -215,7 +215,7 @@ public partial class WritableOptionsExtensionsTests
         currentValue.Value.ShouldBe(100);
     }
 
-    [Fact]
+    [Test]
     public async Task AddWritableOptions_WithValidation_ShouldValidateOnSave()
     {
         var testFileName = Path.GetRandomFileName();
@@ -247,7 +247,7 @@ public partial class WritableOptionsExtensionsTests
         exception.Message.ShouldContain("Name cannot be empty");
     }
 
-    [Fact]
+    [Test]
     public async Task AddWritableOptions_WithValidatorFunction_ShouldValidateOnSave()
     {
         var testFileName = Path.GetRandomFileName();

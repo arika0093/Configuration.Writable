@@ -29,7 +29,7 @@ public partial class JsonPartialWriteTests
         public bool Notifications { get; set; } = true;
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithExistingFile_ShouldPreserveOtherSections()
     {
         // Arrange
@@ -94,7 +94,7 @@ public partial class JsonPartialWriteTests
             .ShouldBe("ShouldBePreserved");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_WithNestedSection_ShouldUpdateCorrectly()
     {
         // Arrange
@@ -155,7 +155,7 @@ public partial class JsonPartialWriteTests
             .ShouldBe("Preserved");
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_NoExistingFile_ShouldCreateNewStructure()
     {
         // Arrange
@@ -191,7 +191,7 @@ public partial class JsonPartialWriteTests
         root.GetProperty("AppSettings").GetProperty("Revision").GetInt32().ShouldBe(1);
     }
 
-    [Fact]
+    [Test]
     public async Task PartialWrite_SectionDoesNotExist_ShouldAddNewSection()
     {
         // Arrange
@@ -239,7 +239,7 @@ public partial class JsonPartialWriteTests
         root.GetProperty("ExistingSection").GetProperty("Value").GetString().ShouldBe("Exists");
     }
 
-    [Fact]
+    [Test]
     public async Task FullWrite_NoSectionName_ShouldOverwriteEntireFile()
     {
         // Arrange

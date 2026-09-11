@@ -17,7 +17,7 @@ public partial class ConfigurationOptionsRegistryTests
         public int Value { get; set; }
     }
 
-    [Fact]
+    [Test]
     public void Constructor_InitializesWithProvidedOptions()
     {
         // Arrange
@@ -35,7 +35,7 @@ public partial class ConfigurationOptionsRegistryTests
         instanceNames.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [Test]
     public void Get_ReturnsCorrectOption()
     {
         // Arrange
@@ -54,7 +54,7 @@ public partial class ConfigurationOptionsRegistryTests
         retrieved2.ConfigFilePath.ShouldContain("file2.json");
     }
 
-    [Fact]
+    [Test]
     public void Get_ThrowsKeyNotFoundException_WhenInstanceNotFound()
     {
         // Arrange
@@ -64,7 +64,7 @@ public partial class ConfigurationOptionsRegistryTests
         Should.Throw<KeyNotFoundException>(() => registry.Get("nonexistent"));
     }
 
-    [Fact]
+    [Test]
     public void TryAdd_AddsNewOption_ReturnsTrue()
     {
         // Arrange
@@ -87,7 +87,7 @@ public partial class ConfigurationOptionsRegistryTests
         addedOption.ConfigFilePath.ShouldContain("new.json");
     }
 
-    [Fact]
+    [Test]
     public void TryAdd_WhenInstanceExists_ReturnsFalse()
     {
         // Arrange
@@ -109,7 +109,7 @@ public partial class ConfigurationOptionsRegistryTests
         option.ConfigFilePath.ShouldContain("existing.json"); // Should not be changed
     }
 
-    [Fact]
+    [Test]
     public void TryAdd_ConcurrentRequestsForSameInstance_AddsOnlyOnce()
     {
         var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
@@ -134,7 +134,7 @@ public partial class ConfigurationOptionsRegistryTests
         registry.GetInstanceNames().ShouldBe(["shared"]);
     }
 
-    [Fact]
+    [Test]
     public void TryAdd_TriggersOnAddedEvent()
     {
         // Arrange
@@ -157,7 +157,7 @@ public partial class ConfigurationOptionsRegistryTests
         addedOption.ConfigFilePath.ShouldContain("new.json");
     }
 
-    [Fact]
+    [Test]
     public void TryAdd_WhenFails_DoesNotTriggerOnAddedEvent()
     {
         // Arrange
@@ -179,7 +179,7 @@ public partial class ConfigurationOptionsRegistryTests
         eventTriggered.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void TryRemove_RemovesExistingOption_ReturnsTrue()
     {
         // Arrange
@@ -196,7 +196,7 @@ public partial class ConfigurationOptionsRegistryTests
         registry.GetInstanceNames().ShouldContain("instance2");
     }
 
-    [Fact]
+    [Test]
     public void TryRemove_WhenInstanceNotFound_ReturnsFalse()
     {
         // Arrange
@@ -209,7 +209,7 @@ public partial class ConfigurationOptionsRegistryTests
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void TryRemove_TriggersOnRemovedEvent()
     {
         // Arrange
@@ -225,7 +225,7 @@ public partial class ConfigurationOptionsRegistryTests
         removedInstanceName.ShouldBe("instance1");
     }
 
-    [Fact]
+    [Test]
     public void TryRemove_WhenFails_DoesNotTriggerOnRemovedEvent()
     {
         // Arrange
@@ -240,7 +240,7 @@ public partial class ConfigurationOptionsRegistryTests
         eventTriggered.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Clear_RemovesAllOptions()
     {
         // Arrange
@@ -260,7 +260,7 @@ public partial class ConfigurationOptionsRegistryTests
         registry.GetInstanceNames().ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void Clear_TriggersOnRemovedEventForEachItem()
     {
         // Arrange
@@ -285,7 +285,7 @@ public partial class ConfigurationOptionsRegistryTests
         removedInstances.ShouldContain("instance3");
     }
 
-    [Fact]
+    [Test]
     public void Clear_OnEmptyRegistry_DoesNothing()
     {
         // Arrange
@@ -301,7 +301,7 @@ public partial class ConfigurationOptionsRegistryTests
         registry.GetInstanceNames().ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void GetInstanceNames_ReturnsEmptyForEmptyRegistry()
     {
         // Arrange
@@ -314,7 +314,7 @@ public partial class ConfigurationOptionsRegistryTests
         names.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void MultipleEventHandlers_AllGetTriggered()
     {
         // Arrange
@@ -342,7 +342,7 @@ public partial class ConfigurationOptionsRegistryTests
         removedCount.ShouldBe(2);
     }
 
-    [Fact]
+    [Test]
     public void ComplexScenario_AddRemoveMultipleOperations()
     {
         // Arrange

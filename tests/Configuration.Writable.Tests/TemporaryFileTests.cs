@@ -6,7 +6,7 @@ namespace Configuration.Writable.Tests;
 
 public class TemporaryFileTests
 {
-    [FactOnWindows]
+    [Test, FactOnWindows]
     public void Constructor_WithValidFilePath_SetsPropertiesCorrectly()
     {
         var filePath = @"C:\temp\test.txt";
@@ -18,7 +18,7 @@ public class TemporaryFileTests
         tempFile.WithDirectory.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void DefaultConstructor_CreatesValidFilePath()
     {
         using var tempFile = new TemporaryFile();
@@ -29,7 +29,7 @@ public class TemporaryFileTests
         tempFile.WithDirectory.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void Constructor_WithDirectoryAndFileName_SetsPropertiesCorrectly()
     {
         var directory = "testdir";
@@ -42,7 +42,7 @@ public class TemporaryFileTests
         tempFile.WithDirectory.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void Constructor_WithRootDirectoryAndFileName_SetsPropertiesCorrectly()
     {
         var rootDirectory = Path.GetTempPath();
@@ -57,7 +57,7 @@ public class TemporaryFileTests
         tempFile.WithDirectory.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void Dispose_WhenFileExists_DeletesFile()
     {
         string filePath;
@@ -72,7 +72,7 @@ public class TemporaryFileTests
         File.Exists(filePath).ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Dispose_WithDirectoryTrue_DeletesDirectoryAndFile()
     {
         string filePath;
@@ -94,7 +94,7 @@ public class TemporaryFileTests
         Directory.Exists(directoryPath).ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Dispose_WithDirectoryFalse_DoesNotDeleteDirectory()
     {
         var tempDir = Path.GetTempPath();
@@ -110,7 +110,7 @@ public class TemporaryFileTests
         Directory.Exists(tempDir).ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void Dispose_WhenDirectoryContainsOtherFiles_DeletesOnlyOwnFiles()
     {
         var rootDir = Path.GetTempPath();
@@ -137,7 +137,7 @@ public class TemporaryFileTests
         Directory.Exists(testDir).ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void Dispose_WhenCalledMultipleTimes_DoesNotThrow()
     {
         var tempFile = new TemporaryFile();
@@ -153,7 +153,7 @@ public class TemporaryFileTests
         });
     }
 
-    [Fact]
+    [Test]
     public void Properties_ReturnsExpectedValues()
     {
         var filePath = Path.Combine("test", "directory", "file.txt");
@@ -163,7 +163,7 @@ public class TemporaryFileTests
         tempFile.DirectoryPath.ShouldBe(Path.Combine("test", "directory"));
     }
 
-    [Fact]
+    [Test]
     public void FileName_WithEmptyPath_ReturnsEmptyString()
     {
         using var tempFile = new TemporaryFile("test");
@@ -171,7 +171,7 @@ public class TemporaryFileTests
         tempFile.FileName.ShouldBe(fileName);
     }
 
-    [Fact]
+    [Test]
     public void DirectoryPath_WithRootPath_ReturnsEmptyString()
     {
         var rootPath = Path.GetPathRoot(Path.GetTempPath()) ?? "C:\\";

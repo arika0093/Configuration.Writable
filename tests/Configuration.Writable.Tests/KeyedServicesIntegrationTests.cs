@@ -20,7 +20,7 @@ public partial class KeyedServicesIntegrationTests
         public bool EnableLogging { get; set; } = true;
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithInstanceName_ShouldRegisterKeyedServices()
     {
         var services = new ServiceCollection();
@@ -46,7 +46,7 @@ public partial class KeyedServicesIntegrationTests
         readonlyOptions.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithoutInstanceName_ShouldNotRegisterKeyedServices()
     {
         var services = new ServiceCollection();
@@ -65,7 +65,7 @@ public partial class KeyedServicesIntegrationTests
         readonlyOptions.ShouldBeNull();
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithEmptyInstanceName_ShouldNotRegisterKeyedServices()
     {
         var services = new ServiceCollection();
@@ -81,7 +81,7 @@ public partial class KeyedServicesIntegrationTests
         writableOptions.ShouldBeNull();
     }
 
-    [Fact]
+    [Test]
     public void AddWritableOptions_WithMultipleInstances_ShouldRegisterMultipleKeyedServices()
     {
         var services = new ServiceCollection();
@@ -119,7 +119,7 @@ public partial class KeyedServicesIntegrationTests
         devOptions.ShouldNotBeSameAs(prodOptions);
     }
 
-    [Fact]
+    [Test]
     public async Task KeyedWritableOptions_CurrentValue_ShouldReturnCorrectValue()
     {
         var fileName = Path.GetRandomFileName();
@@ -152,7 +152,7 @@ public partial class KeyedServicesIntegrationTests
         current.Port.ShouldBe(9000);
     }
 
-    [Fact]
+    [Test]
     public async Task KeyedWritableOptions_SaveAsync_ShouldPersistData()
     {
         var fileName = Path.GetRandomFileName();
@@ -189,7 +189,7 @@ public partial class KeyedServicesIntegrationTests
         currentValue.EnableLogging.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task KeyedWritableOptions_SaveAsyncWithAction_ShouldUpdateData()
     {
         var fileName = Path.GetRandomFileName();
@@ -222,7 +222,7 @@ public partial class KeyedServicesIntegrationTests
         currentValue.Port.ShouldBe(8888);
     }
 
-    [Fact]
+    [Test]
     public async Task KeyedReadOnlyOptions_ShouldProvideReadAccess()
     {
         var fileName = Path.GetRandomFileName();
@@ -257,7 +257,7 @@ public partial class KeyedServicesIntegrationTests
         value.ApplicationName.ShouldBe("ReadOnlyApp");
     }
 
-    [Fact]
+    [Test]
     public async Task KeyedOptions_WithSeparateInstances_ShouldMaintainIndependence()
     {
         var file1 = Path.GetRandomFileName();
@@ -301,7 +301,7 @@ public partial class KeyedServicesIntegrationTests
         options2.CurrentValue.ApplicationName.ShouldBe("App2");
     }
 
-    [Fact]
+    [Test]
     public void KeyedOptions_GetConfigurationInfo_ShouldReturnCorrectConfiguration()
     {
         var fileName = Path.GetRandomFileName();
@@ -328,7 +328,7 @@ public partial class KeyedServicesIntegrationTests
         configOptions.WritePath.ShouldEndWith(fileName);
     }
 
-    [Fact]
+    [Test]
     public async Task KeyedOptions_OnChange_ShouldReceiveNotifications()
     {
         var testDirectory = Path.Combine(
@@ -394,7 +394,7 @@ public partial class KeyedServicesIntegrationTests
         }
     }
 
-    [Fact]
+    [Test]
     public void KeyedServices_WithDifferentKeys_ShouldBeIndependent()
     {
         var services = new ServiceCollection();

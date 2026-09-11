@@ -21,7 +21,7 @@ public partial class IOptionsIntegrationTests
         public bool IsEnabled { get; set; } = true;
     }
 
-    [Fact]
+    [Test]
     public void IOptions_ShouldProvideCurrentValue()
     {
         var testFileName = Path.GetRandomFileName();
@@ -43,7 +43,7 @@ public partial class IOptionsIntegrationTests
         settings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task EnablePromoteSaveLocation_ShouldCopyExistingSettingsDuringStartup()
     {
         var newDirectory = Path.GetRandomFileName();
@@ -76,7 +76,7 @@ public partial class IOptionsIntegrationTests
         _FileProvider.ReadAllText(newPath).ShouldContain("legacy");
     }
 
-    [Fact]
+    [Test]
     public void IOptionsSnapshot_ShouldProvideCurrentValue()
     {
         var testFileName = Path.GetRandomFileName();
@@ -102,7 +102,7 @@ public partial class IOptionsIntegrationTests
         settings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void IOptionsMonitor_ShouldProvideCurrentValue()
     {
         var testFileName = Path.GetRandomFileName();
@@ -124,7 +124,7 @@ public partial class IOptionsIntegrationTests
         settings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void IOptionsMonitor_Get_WithName_ShouldWork()
     {
         var testFileName = Path.GetRandomFileName();
@@ -149,7 +149,7 @@ public partial class IOptionsIntegrationTests
         settings.IsEnabled.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task IOptions_WithSavedConfiguration_ShouldReturnSavedValues()
     {
         var testFileName = Path.GetRandomFileName();

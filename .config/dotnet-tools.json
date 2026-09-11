@@ -15,13 +15,6 @@
         "csharpier"
       ],
       "rollForward": false
-    },
-    "dotnet-test-rerun": {
-      "version": "4.2.0",
-      "commands": [
-        "test-rerun"
-      ],
-      "rollForward": false
     }
   }
 }

@@ -28,7 +28,7 @@ public class CommonFileProviderTests
 #endif
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ShouldCreateFileWithContent()
     {
         using var testFile = new TemporaryFile();
@@ -42,7 +42,7 @@ public class CommonFileProviderTests
         savedContent.ShouldBe(content);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ShouldCreateDirectoryIfNotExists()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -68,7 +68,7 @@ public class CommonFileProviderTests
         File.Exists(testFile.FilePath).ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ShouldReplaceExistingFile()
     {
         using var testFile = new TemporaryFile();
@@ -87,7 +87,7 @@ public class CommonFileProviderTests
         secondSave.ShouldBe(newContent);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithBackup_ShouldCreateBackupFile()
     {
         using var testFile = new TemporaryFile();
@@ -137,7 +137,7 @@ public class CommonFileProviderTests
         currentContent.ShouldBe(newContent);
     }
 
-    [Fact]
+    [Test]
     public async Task TryBackup_ShouldReturnProviderDefinedBackupPath()
     {
         using var testFile = new TemporaryFile();
@@ -152,7 +152,7 @@ public class CommonFileProviderTests
         (await ReadAllBytesCompat(backupPath)).ShouldBe(content);
     }
 
-    [Fact]
+    [Test]
     public async Task TryRestoreLatestBackup_ShouldRestoreDeletedFile()
     {
         using var testFile = new TemporaryFile();
@@ -170,7 +170,7 @@ public class CommonFileProviderTests
         restoredContent.ShouldBe(originalContent);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithBackupMaxCount_ShouldLimitBackupFiles()
     {
         var directoryPath = Path.GetTempPath();
@@ -200,7 +200,7 @@ public class CommonFileProviderTests
         backupFiles.Length.ShouldBeLessThanOrEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithBackupDirectory_ShouldSaveBackupsToConfiguredDirectory()
     {
         using var testFile = new TemporaryFile();
@@ -218,7 +218,7 @@ public class CommonFileProviderTests
         Directory.GetFiles(directory, backupPattern).Length.ShouldBe(1);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithZeroBackupCount_ShouldNotCreateBackups()
     {
         using var testFile = new TemporaryFile();
@@ -236,7 +236,7 @@ public class CommonFileProviderTests
         backupFiles.Length.ShouldBe(0);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ConcurrentWrites_ShouldBeThreadSafe()
     {
         using var testFile = new TemporaryFile();
@@ -269,7 +269,7 @@ public class CommonFileProviderTests
         finalContent.ShouldStartWith("Content ");
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         using var testFile = new TemporaryFile();
@@ -291,7 +291,7 @@ public class CommonFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithEmptyContent_ShouldCreateEmptyFile()
     {
         using var testFile = new TemporaryFile();
@@ -305,7 +305,7 @@ public class CommonFileProviderTests
         fileInfo.Length.ShouldBe(0);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithLargeContent_ShouldHandleLargeFiles()
     {
         using var testFile = new TemporaryFile();
@@ -332,7 +332,7 @@ public class CommonFileProviderTests
         savedContent.ShouldBe(largeContent);
     }
 
-    [Fact]
+    [Test]
     public void EnsureDirectoryExists_ShouldCreateDirectoryIfNotExists()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -357,7 +357,7 @@ public class CommonFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public void EnsureDirectoryExists_ShouldReturnTrueForExistingDirectory()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -380,7 +380,7 @@ public class CommonFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public void EnsureDirectoryExists_ShouldReturnFalseForInvalidPath()
     {
         var writer = new CommonFileProvider();
@@ -403,7 +403,7 @@ public class CommonFileProviderTests
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void EnsureDirectoryExists_ShouldCreateNestedDirectories()
     {
         var topLevelDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -429,7 +429,7 @@ public class CommonFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public void CanWriteToDirectory_ShouldReturnFalseForNonExistentDirectory()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -452,7 +452,7 @@ public class CommonFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public void CanWriteToDirectory_ShouldReturnTrueAfterEnsureDirectoryExists()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

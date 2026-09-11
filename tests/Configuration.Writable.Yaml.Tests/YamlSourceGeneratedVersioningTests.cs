@@ -30,7 +30,7 @@ public class YamlSourceGeneratedVersioningTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_ShouldPersistMetadataInsideSection()
     {
         const string fileName = "yaml-versioned.yaml";
@@ -47,7 +47,7 @@ public class YamlSourceGeneratedVersioningTests
         section["$version"].ToString().ShouldBe("2");
     }
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_ShouldTreatMissingVersionAsVersionOne()
     {
         const string fileName = "yaml-legacy.yaml";
@@ -65,7 +65,7 @@ public class YamlSourceGeneratedVersioningTests
         loaded.Names.ShouldBe(["legacy"]);
     }
 
-    [Fact]
+    [Test]
     public async Task YamlProvider_ShouldRejectNonIntegralVersion()
     {
         const string fileName = "yaml-invalid-version.yaml";

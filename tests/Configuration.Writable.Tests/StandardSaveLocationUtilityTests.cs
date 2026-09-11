@@ -6,7 +6,7 @@ namespace Configuration.Writable.Tests;
 
 public class StandardSaveLocationUtilityTests
 {
-    [FactOnWindows]
+    [Test, FactOnWindows]
     public void GetConfigDirectory_OnWindows_ShouldReturnAppData()
     {
         var path = StandardSaveLocationUtility.GetConfigDirectory();
@@ -16,7 +16,7 @@ public class StandardSaveLocationUtilityTests
         path.ShouldContain("AppData");
     }
 
-    [FactOnMacOS]
+    [Test, FactOnMacOS]
     public void GetConfigDirectory_OnMacOS_WithXDGConfigHome_ShouldReturnXDGPath()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
@@ -36,7 +36,7 @@ public class StandardSaveLocationUtilityTests
         }
     }
 
-    [FactOnMacOS]
+    [Test, FactOnMacOS]
     public void GetConfigDirectory_OnMacOS_WithoutXDGConfigHome_ShouldReturnLibraryApplicationSupport()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
@@ -60,7 +60,7 @@ public class StandardSaveLocationUtilityTests
         }
     }
 
-    [FactOnLinux]
+    [Test, FactOnLinux]
     public void GetConfigDirectory_OnLinux_WithXDGConfigHome_ShouldReturnXDGPath()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
@@ -80,7 +80,7 @@ public class StandardSaveLocationUtilityTests
         }
     }
 
-    [FactOnLinux]
+    [Test, FactOnLinux]
     public void GetConfigDirectory_OnLinux_WithoutXDGConfigHome_ShouldReturnDotConfig()
     {
         var originalXdgConfig = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
@@ -104,7 +104,7 @@ public class StandardSaveLocationUtilityTests
         }
     }
 
-    [Fact]
+    [Test]
     public void GetConfigDirectory_ConsistentResults_ShouldReturnSamePathOnMultipleCalls()
     {
         var path1 = StandardSaveLocationUtility.GetConfigDirectory();

@@ -4,7 +4,7 @@ namespace Configuration.Writable.Tests;
 
 public class WritableOptionsStubTests
 {
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_UseReadonlyOptionServiceTest()
     {
         var setting = new UserSettings { Name = "InitialName", Age = 20 };
@@ -14,7 +14,7 @@ public class WritableOptionsStubTests
         act.ShouldBe("InitialName");
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_UseWritableOptionServiceTest()
     {
         var setting = new UserSettings { Name = "InitialName", Age = 20 };
@@ -25,7 +25,7 @@ public class WritableOptionsStubTests
         setting.Age.ShouldBe(30);
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_UseReadonlyOptionService_NoGenerics_Test()
     {
         var setting = new UserSettings { Name = "InitialName", Age = 20 };
@@ -35,7 +35,7 @@ public class WritableOptionsStubTests
         act.ShouldBe("InitialName");
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_UseWritableOptionService_NoGenerics_Test()
     {
         var setting = new UserSettings { Name = "InitialName", Age = 20 };
@@ -46,7 +46,7 @@ public class WritableOptionsStubTests
         setting.Age.ShouldBe(30);
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_OnChange_DefaultInstance_ShouldReceiveNotification()
     {
         // Arrange
@@ -75,7 +75,7 @@ public class WritableOptionsStubTests
         receivedValue.Age.ShouldBe(30);
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_OnChange_NamedInstance_ShouldReceiveNotification()
     {
         // Arrange
@@ -114,7 +114,7 @@ public class WritableOptionsStubTests
         receivedValue.Age.ShouldBe(35);
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_OnChange_NamedInstance_ShouldNotReceiveNotificationForOtherInstance()
     {
         // Arrange
@@ -148,7 +148,7 @@ public class WritableOptionsStubTests
         callCount.ShouldBe(0);
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_OnChange_WithInstanceName_ShouldReceiveAllNotifications()
     {
         // Arrange
@@ -182,7 +182,7 @@ public class WritableOptionsStubTests
         receivedNotifications[1].value.Name.ShouldBe("UpdatedCustomName");
     }
 
-    [Fact]
+    [Test]
     public async Task WritableOptionsStub_OnChange_MultipleListeners_ShouldAllReceiveNotifications()
     {
         // Arrange
@@ -205,7 +205,7 @@ public class WritableOptionsStubTests
         callCount3.ShouldBe(1);
     }
 
-    [Fact]
+    [Test]
     public void WritableOptionsStub_ChangeListeners_ShouldBeAccessible()
     {
         // Arrange

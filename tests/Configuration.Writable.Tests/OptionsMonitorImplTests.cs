@@ -29,7 +29,7 @@ public partial class OptionsMonitorImplTests
         return builder.BuildOptions(instanceName);
     }
 
-    [Fact]
+    [Test]
     public void CurrentValue_ShouldReturnDefaultValue()
     {
         // Arrange
@@ -52,7 +52,7 @@ public partial class OptionsMonitorImplTests
         value.Value.ShouldBe(42);
     }
 
-    [Fact]
+    [Test]
     public void Get_WithDefaultName_ShouldReturnCurrentValue()
     {
         // Arrange
@@ -75,7 +75,7 @@ public partial class OptionsMonitorImplTests
         value.Value.ShouldBe(42);
     }
 
-    [Fact]
+    [Test]
     public void Get_WithNull_ShouldReturnDefaultValue()
     {
         // Arrange
@@ -98,7 +98,7 @@ public partial class OptionsMonitorImplTests
         value.Value.ShouldBe(42);
     }
 
-    [Fact]
+    [Test]
     public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
@@ -120,7 +120,7 @@ public partial class OptionsMonitorImplTests
         value.Value.ShouldBe(999);
     }
 
-    [Fact]
+    [Test]
     public void Get_WithInvalidName_ShouldThrow()
     {
         // Arrange
@@ -138,7 +138,7 @@ public partial class OptionsMonitorImplTests
         Should.Throw<KeyNotFoundException>(() => monitor.Get("nonexistent"));
     }
 
-    [Fact]
+    [Test]
     public void Get_MultipleCalls_ShouldReturnCachedValue()
     {
         // Arrange
@@ -161,7 +161,7 @@ public partial class OptionsMonitorImplTests
         value1.ShouldBeEquivalentTo(value2);
     }
 
-    [Fact]
+    [Test]
     public void OnChange_ShouldRegisterListener()
     {
         // Arrange
@@ -204,7 +204,7 @@ public partial class OptionsMonitorImplTests
         cached.Value.ShouldBe(100);
     }
 
-    [Fact]
+    [Test]
     public void OnChange_DisposingListener_ShouldUnregister()
     {
         // Arrange
@@ -230,7 +230,7 @@ public partial class OptionsMonitorImplTests
         changeCount.ShouldBe(0);
     }
 
-    [Fact]
+    [Test]
     public void OnChange_RegisteredBeforeDynamicInstance_AddsListenerToNewInstance()
     {
         var fileProvider = new InMemoryFileProvider();
@@ -256,7 +256,7 @@ public partial class OptionsMonitorImplTests
         notifiedInstance.ShouldBe("added");
     }
 
-    [Fact]
+    [Test]
     public void UpdateCache_ShouldUpdateCacheWithoutNotifying()
     {
         // Arrange
@@ -284,7 +284,7 @@ public partial class OptionsMonitorImplTests
         value.Value.ShouldBe(200);
     }
 
-    [Fact]
+    [Test]
     public void ClearCache_ShouldRemoveCachedValue()
     {
         // Arrange
@@ -311,7 +311,7 @@ public partial class OptionsMonitorImplTests
         // Note: instances will be different due to new deserialization
     }
 
-    [Fact]
+    [Test]
     public void GetInstanceNames_ShouldReturnAllConfiguredNames()
     {
         // Arrange
@@ -333,7 +333,7 @@ public partial class OptionsMonitorImplTests
         names.ShouldContain("instance2");
     }
 
-    [Fact]
+    [Test]
     public async Task GetDefaultValue_ShouldReturnStoredDefaultValue()
     {
         // Arrange
@@ -362,7 +362,7 @@ public partial class OptionsMonitorImplTests
         defaultValue.Value.ShouldBe(555);
     }
 
-    [Fact]
+    [Test]
     public void GetDefaultValue_WithInvalidName_ShouldThrow()
     {
         // Arrange
@@ -380,7 +380,7 @@ public partial class OptionsMonitorImplTests
         Should.Throw<InvalidOperationException>(() => monitor.GetDefaultValue("nonexistent"));
     }
 
-    [Fact]
+    [Test]
     public void Dispose_ShouldCleanupResources()
     {
         // Arrange
@@ -404,7 +404,7 @@ public partial class OptionsMonitorImplTests
         // Note: Testing file watchers disposal would require more complex setup
     }
 
-    [Fact]
+    [Test]
     public async Task MultipleInstances_ShouldWorkIndependently()
     {
         // Arrange
@@ -437,7 +437,7 @@ public partial class OptionsMonitorImplTests
         value2.Value.ShouldBe(222);
     }
 
-    [Fact]
+    [Test]
     public void OnChangeDebounce_WithDefaultDebounce_ShouldReceiveOnlyFirstChange()
     {
         // Arrange
@@ -469,7 +469,7 @@ public partial class OptionsMonitorImplTests
         changeCount.ShouldBe(0);
     }
 
-    [Fact]
+    [Test]
     public void OnChangeDebounce_WithZeroDebounce_ShouldDisableDebouncing()
     {
         // Arrange
@@ -486,7 +486,7 @@ public partial class OptionsMonitorImplTests
         configOptions.OnChangeDebounce.ShouldBe(TimeSpan.Zero);
     }
 
-    [Fact]
+    [Test]
     public void OnChangeDebounce_Configuration_ShouldBeStoredCorrectly()
     {
         // Arrange & Act
@@ -503,7 +503,7 @@ public partial class OptionsMonitorImplTests
         configOptions.OnChangeDebounce.ShouldBe(TimeSpan.FromSeconds(2));
     }
 
-    [Fact]
+    [Test]
     public async Task OnChangeDebounce_MultipleInstances_ShouldHaveIndependentDebounce()
     {
         // Arrange

@@ -21,7 +21,7 @@ public class ZipFileProviderTests
 #endif
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ShouldCreateZipFileWithEntry()
     {
         using var testFile = new TemporaryFile();
@@ -44,7 +44,7 @@ public class ZipFileProviderTests
         savedContent.ShouldBe("Hello, World!");
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ShouldUpdateExistingEntry()
     {
         using var testFile = new TemporaryFile();
@@ -69,7 +69,7 @@ public class ZipFileProviderTests
         savedContent.ShouldBe("New content");
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithMultipleFiles_ShouldCreateMultipleEntries()
     {
         using var testFile1 = new TemporaryFile();
@@ -95,7 +95,7 @@ public class ZipFileProviderTests
         entry2.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithCustomZipFileName_ShouldUseCustomName()
     {
         using var testFile = new TemporaryFile();
@@ -108,7 +108,7 @@ public class ZipFileProviderTests
         File.Exists(customZipPath).ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithEntriesDirectory_ShouldCreateEntryInSubdirectory()
     {
         using var testFile = new TemporaryFile();
@@ -124,7 +124,7 @@ public class ZipFileProviderTests
         entry.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithEntriesDirectoryStartingWithSlash_ShouldCreateEntryInSubdirectory()
     {
         using var testFile = new TemporaryFile();
@@ -140,7 +140,7 @@ public class ZipFileProviderTests
         entry.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task FileExists_WhenEntryExists_ShouldReturnTrue()
     {
         using var testFile = new TemporaryFile();
@@ -153,7 +153,7 @@ public class ZipFileProviderTests
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void FileExists_WhenEntryDoesNotExist_ShouldReturnFalse()
     {
         using var testFile = new TemporaryFile();
@@ -163,7 +163,7 @@ public class ZipFileProviderTests
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void FileExists_WhenZipFileDoesNotExist_ShouldReturnFalse()
     {
         var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "test.json");
@@ -173,7 +173,7 @@ public class ZipFileProviderTests
         exists.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task GetFilePipeReader_WhenEntryExists_ShouldReturnPipeReader()
     {
         using var testFile = new TemporaryFile();
@@ -191,7 +191,7 @@ public class ZipFileProviderTests
         readContent.ShouldBe("Test content");
     }
 
-    [Fact]
+    [Test]
     public void GetFilePipeReader_WhenEntryDoesNotExist_ShouldReturnNull()
     {
         using var testFile = new TemporaryFile();
@@ -201,7 +201,7 @@ public class ZipFileProviderTests
         pipeReader.ShouldBeNull();
     }
 
-    [Fact]
+    [Test]
     public void GetFilePipeReader_WhenZipFileDoesNotExist_ShouldReturnNull()
     {
         var testPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "test.json");
@@ -211,7 +211,7 @@ public class ZipFileProviderTests
         pipeReader.ShouldBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ConcurrentWrites_ShouldBeThreadSafe()
     {
         using var testDir = new TemporaryFile(Guid.NewGuid().ToString("N"), "marker");
@@ -236,7 +236,7 @@ public class ZipFileProviderTests
         zip.Entries.Count.ShouldBe(10);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_ConcurrentProviderInstances_ShouldPreserveBothEntries()
     {
         using var testDir = new TemporaryFile(Guid.NewGuid().ToString("N"), "marker");
@@ -280,7 +280,7 @@ public class ZipFileProviderTests
         (await secondReader.ReadToEndAsync()).ShouldBe("Second configuration");
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         using var testFile = new TemporaryFile();
@@ -305,7 +305,7 @@ public class ZipFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithEmptyContent_ShouldCreateEmptyEntry()
     {
         using var testFile = new TemporaryFile();
@@ -321,7 +321,7 @@ public class ZipFileProviderTests
         entry.Length.ShouldBe(0);
     }
 
-    [Fact]
+    [Test]
     public async Task GetFilePipeReader_AfterDispose_ShouldStillWork()
     {
         using var testFile = new TemporaryFile();
@@ -348,7 +348,7 @@ public class ZipFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_MultipleTimes_ShouldOnlyKeepLatestVersion()
     {
         using var testFile = new TemporaryFile();
@@ -375,7 +375,7 @@ public class ZipFileProviderTests
         readContent.ShouldBe("Version 4");
     }
 
-    [Fact]
+    [Test]
     public async Task Dispose_ShouldReleaseResources()
     {
         using var testFile = new TemporaryFile();
@@ -391,7 +391,7 @@ public class ZipFileProviderTests
         File.Exists(zipPath).ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveToFileAsync_WithNestedEntriesDirectory_ShouldCreateNestedPath()
     {
         using var testFile = new TemporaryFile();
@@ -407,7 +407,7 @@ public class ZipFileProviderTests
         entry.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task FileExists_WithEntriesDirectory_ShouldFindEntry()
     {
         using var testFile = new TemporaryFile();
@@ -420,7 +420,7 @@ public class ZipFileProviderTests
         exists.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task GetFilePipeReader_WithEntriesDirectory_ShouldReturnPipeReader()
     {
         using var testFile = new TemporaryFile();
@@ -440,7 +440,7 @@ public class ZipFileProviderTests
         readContent.ShouldBe("Test content");
     }
 
-    [Fact]
+    [Test]
     public void EnsureDirectoryExists_ShouldCreateDirectoryForZipFile()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -465,7 +465,7 @@ public class ZipFileProviderTests
         }
     }
 
-    [Fact]
+    [Test]
     public void EnsureDirectoryExists_ShouldReturnTrueForExistingDirectory()
     {
         var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

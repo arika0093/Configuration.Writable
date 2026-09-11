@@ -88,11 +88,13 @@ public class WritableOptionsConfigBuilder
     /// </summary>
     public bool PromoteSaveLocationEnabled { get; private set; }
 
+#if NET
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2026",
         Justification = "Copying the configured validation mode preserves the existing runtime behavior."
     )]
+#endif
     internal void CopyFrom(WritableOptionsConfigBuilder source)
     {
         FormatProvider = source.FormatProvider is FallbackFormatProvider fallbackProvider

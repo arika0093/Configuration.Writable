@@ -45,7 +45,7 @@ public partial class OnChangeDebounceIntegrationTests : IDisposable
         public int Value { get; set; } = 0;
     }
 
-    [Fact]
+    [Test]
     public async Task OnChangeDebounce_RapidFileChanges_ShouldDebounceNotifications()
     {
         // Arrange

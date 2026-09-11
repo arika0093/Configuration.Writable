@@ -9,6 +9,13 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <PublishAot Condition="'$(TargetFramework)' != 'net6.0' and '$(TargetFramework)' != 'net48'">true</PublishAot>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+    <IlcTreatWarningsAsErrors>false</IlcTreatWarningsAsErrors>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
     <SonarQubeExclude>true</SonarQubeExclude>
@@ -16,24 +23,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Shouldly" Version="4.*" />
-    <!-- Microsoft.NET.Test.Sdk 18.x only supports net8.0+, use 17.x for net6.0 -->
-    <PackageReference
-      Include="Microsoft.NET.Test.Sdk"
-      Version="18.10.0"
-      Condition="'$(TargetFramework)' != 'net6.0'"
-    />
-    <PackageReference
-      Include="Microsoft.NET.Test.Sdk"
-      Version="17.12.0"
-      Condition="'$(TargetFramework)' == 'net6.0'"
-    />
-    <PackageReference Include="coverlet.collector" Version="*" />
-    <PackageReference Include="xunit" Version="2.*" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-      <NoWarn>NU1701</NoWarn>
-    </PackageReference>
+    <PackageReference Include="TUnit" Version="1.66.27" />
+    <PackageReference Include="Microsoft.Testing.Extensions.Retry" Version="2.4.0" />
     <PackageReference Include="PublicApiGenerator" Version="11.5.4" />
     <PackageReference Include="GitHubActionsTestLogger" Version="3.0.5" />
     <!-- PolySharp provides System.Index/System.Range polyfills for net48 only. -->
@@ -44,7 +35,8 @@
     />
   </ItemGroup>
   <ItemGroup>
-    <Using Include="Xunit" />
+    <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.cs" Link="AssemblyInfo.cs" />
+    <Using Include="TUnit" />
     <Using Include="Shouldly" />
     <Using Include="Configuration.Writable.Testing" />
   </ItemGroup>

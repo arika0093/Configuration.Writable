@@ -91,7 +91,7 @@ public class SourceGeneratedVersioningTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
 
-    [Fact]
+    [Test]
     public void GeneratedMetadata_ShouldExposeIdVersionAndMigrationChain()
     {
         var metadata = (IGeneratedOptionsMetadata)new GeneratedSettingsV3();
@@ -111,7 +111,7 @@ public class SourceGeneratedVersioningTests
         options.MigrationSteps.Select(step => step.ToVersion).ShouldBe([2, 3]);
     }
 
-    [Fact]
+    [Test]
     public async Task GeneratedMigration_ShouldLoadLegacyNumericVersionFile()
     {
         const string fileName = "generated-legacy.json";
@@ -130,7 +130,7 @@ public class SourceGeneratedVersioningTests
         result.Names.ShouldBe(["legacy"]);
     }
 
-    [Fact]
+    [Test]
     public async Task GeneratedMigration_ShouldUseExplicitPreviousModel()
     {
         const string fileName = "generated-renamed.json";
@@ -149,7 +149,7 @@ public class SourceGeneratedVersioningTests
         result.Value.ShouldBe("legacy");
     }
 
-    [Fact]
+    [Test]
     public async Task GeneratedMigration_ShouldUseConfiguredSchemaVersionFallback()
     {
         const string fileName = "generated-custom-version.json";
@@ -178,7 +178,7 @@ public class SourceGeneratedVersioningTests
         _fileProvider.ReadAllText(fileName).ShouldContain("\"$cwVersion\":3");
     }
 
-    [Fact]
+    [Test]
     public async Task DisabledMigrationSupport_ShouldUseDefaultsForOlderVersion()
     {
         const string fileName = "generated-cutoff.json";
@@ -200,7 +200,7 @@ public class SourceGeneratedVersioningTests
         _fileProvider.BackupAttemptCount.ShouldBe(1);
     }
 
-    [Fact]
+    [Test]
     public async Task MigrationLoad_ShouldRejectNewerVersion()
     {
         const string fileName = "generated-future.json";
@@ -223,7 +223,7 @@ public class SourceGeneratedVersioningTests
         exception.Message.ShouldContain("newer than supported");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonProvider_ShouldPersistMetadataInsideConfiguredSection()
     {
         const string fileName = "generated-section.json";
@@ -247,7 +247,7 @@ public class SourceGeneratedVersioningTests
         section.GetProperty("Names")[0].GetString().ShouldBe("one");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonAotProvider_ShouldPersistAndLoadGeneratedMetadata()
     {
         const string fileName = "generated-aot.json";
@@ -268,7 +268,7 @@ public class SourceGeneratedVersioningTests
         _fileProvider.ReadAllText(fileName).ShouldContain("\"$version\"");
     }
 
-    [Fact]
+    [Test]
     public async Task Load_ShouldIgnoreModelId()
     {
         const string fileName = "wrong-model.json";
@@ -287,7 +287,7 @@ public class SourceGeneratedVersioningTests
         result.Names.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void BuildOptions_ShouldRejectProviderWithoutSchemaMetadataCapability()
     {
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
@@ -300,7 +300,7 @@ public class SourceGeneratedVersioningTests
             .Message.ShouldContain("does not support options schema metadata");
     }
 
-    [Fact]
+    [Test]
     public async Task OmittedVersion_ShouldDefaultToOneAndPersistMetadata()
     {
         var builder = new WritableOptionsConfigBuilder<GeneratedDefaultVersionSettings>
@@ -320,7 +320,7 @@ public class SourceGeneratedVersioningTests
         json.ShouldContain("\"$version\":1");
     }
 
-    [Fact]
+    [Test]
     public void AggregatedAndProfiledBuilders_ShouldRegisterGeneratedMetadata()
     {
         var services = new ServiceCollection();
@@ -347,7 +347,7 @@ public class SourceGeneratedVersioningTests
         profiled.Template.MigrationSteps.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [Test]
     public async Task StaticInitialization_ShouldPersistGeneratedMetadata()
     {
         const string fileName = "static-generated.json";
@@ -393,14 +393,14 @@ public class SourceGeneratedVersioningTests
 
 public class OptionsVersioningGeneratorTests
 {
-    [Theory]
-    [InlineData("[OptionsModel] public partial class Model {}", "CWWR001")]
-    [InlineData("[OptionsModel(Id = \"Model\")] public partial class Model {}", "CWWR010")]
-    [InlineData(
+    [Test]
+    [Arguments("[OptionsModel] public partial class Model {}", "CWWR001")]
+    [Arguments("[OptionsModel(Id = \"Model\")] public partial class Model {}", "CWWR010")]
+    [Arguments(
         "[OptionsModel(Id = \"Model\", Version = 0)] public partial class Model {}",
         "CWWR003"
     )]
-    [InlineData(
+    [Arguments(
         "[OptionsModel(Id = \"Model\", Version = 2)] public partial class Model {}",
         "CWWR005"
     )]
@@ -417,7 +417,7 @@ public class OptionsVersioningGeneratorTests
         result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldContain(diagnosticId);
     }
 
-    [Fact]
+    [Test]
     public void Generator_ShouldAllowVersionAndModelIdProperties()
     {
         var result = RunGenerator(
@@ -439,7 +439,7 @@ public class OptionsVersioningGeneratorTests
         result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldNotContain("CWWR006");
     }
 
-    [Fact]
+    [Test]
     public void Generator_ShouldAllowSerializedVersionProperty()
     {
         var result = RunGenerator(
@@ -458,7 +458,7 @@ public class OptionsVersioningGeneratorTests
         result.Diagnostics.Select(diagnostic => diagnostic.Id).ShouldNotContain("CWWR006");
     }
 
-    [Fact]
+    [Test]
     public void Generator_ShouldDefaultOmittedVersionToOneAndWarn()
     {
         var result = RunGenerator(
@@ -477,7 +477,7 @@ public class OptionsVersioningGeneratorTests
             .ShouldContain(".Version => 1;");
     }
 
-    [Fact]
+    [Test]
     public void Generator_ShouldAllowStartingNewCompatibilityChain()
     {
         var result = RunGenerator(
@@ -496,7 +496,7 @@ public class OptionsVersioningGeneratorTests
             .ShouldNotContain(" Migrate(");
     }
 
-    [Fact]
+    [Test]
     public void Generator_ShouldAddMigrationInterfaceToCurrentVersion()
     {
         var result = RunGenerator(
@@ -522,7 +522,7 @@ public class OptionsVersioningGeneratorTests
         generated.ShouldNotContain("partial global::SettingsV2 Migrate");
     }
 
-    [Fact]
+    [Test]
     public void Generator_ShouldDiscoverPreviousVersionFromReferencedAssembly()
     {
         var versionOne = CompileReference(
