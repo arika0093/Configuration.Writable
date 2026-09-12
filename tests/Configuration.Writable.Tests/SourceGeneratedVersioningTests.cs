@@ -615,11 +615,14 @@ public class OptionsVersioningGeneratorTests
 
     private static IEnumerable<MetadataReference> GetReferences()
     {
-        var platformAssemblies =
-            (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")
-            ?? throw new InvalidOperationException("Trusted platform assemblies are unavailable.");
-        var paths = platformAssemblies
-            .Split(Path.PathSeparator)
+        var trustedPlatformAssemblies = (string?)AppContext.GetData(
+            "TRUSTED_PLATFORM_ASSEMBLIES"
+        );
+        var paths = (trustedPlatformAssemblies?.Split(Path.PathSeparator)
+                ?? AppDomain
+                    .CurrentDomain.GetAssemblies()
+                    .Where(assembly => !assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location))
+                    .Select(assembly => assembly.Location))
             .Append(typeof(OptionsModelAttribute).Assembly.Location);
         return paths.Distinct().Select(path => MetadataReference.CreateFromFile(path));
     }
