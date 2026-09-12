@@ -79,10 +79,11 @@ public partial class WritableOptionsConfigBuilderTests
 
     private static bool IsDynamicCodeSupported()
     {
-#if NET48
-        return false;
-#else
+#if NET8_0_OR_GREATER
         return RuntimeFeature.IsDynamicCodeSupported;
+#else
+        // net6.0 consumes the library's netstandard2.0 asset, whose default is false.
+        return false;
 #endif
     }
 
