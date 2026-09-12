@@ -1,3 +1,55 @@
+## [0.9.1] - 2026-09-12
+
+### 🚀 Features
+
+- Add CSharpier.MsBuild package reference for code formatting
+- Support YAML NativeAOT registration
+
+### 🐛 Bug Fixes
+
+- Ensure schemaBaseUri is not null in GetSchemaFileName method
+- Update YAML files to remove unnecessary quotes and ensure proper formatting
+- Add comments to clarify NativeAOT test binary diagnostics suppression
+- Update .gitignore to include publish and TestResults directories; modify project file for net10.0 target framework and adjust dynamic code support logic
+- Simplify file locking logic by removing NETSTANDARD2_0 preprocessor directives and using RuntimeInformation for OS checks
+- Update file locking logic to use OperatingSystem checks and refactor expected directory path in tests
+- Improve retrieval of trusted platform assemblies in test setup
+- Update GitHub Actions badge links in README.md
+- Update version to 0.9.1 in version.json
+
+### 📚 Documentation
+
+- Update testing instructions and remove setup section
+
+### 🚜 Refactor
+
+- Replace ZLogger with Microsoft.Extensions.Logging
+- Consolidate workflow triggers and remove obsolete test.yaml file
+
+### 🧪 Testing
+
+- Migrate tests to TUnit with NativeAOT retry support
+## [0.9.0] - 2026-09-10
+
+### 🚀 Features
+
+- Add PromoteSaveLocation feature to configuration options
+
+### 🐛 Bug Fixes
+
+- Reject fallback paths that collide with canonical configuration (#110)
+
+### 📚 Documentation
+
+- Add migration guidelines for configuration files
+- Add section on adopting existing settings and schema inspection
+- Update README to clarify schema versioning and remove obsolete error message
+- Remove note about using Configuration.Writable.Abstractions and clarify YAML usage
+
+### ⚙️ Miscellaneous Tasks
+
+- Update changelog for release 0.8.0
+- Update version to 0.9.0 in version.json
 ## [0.8.0] - 2026-09-09
 
 ### 🚀 Features
