@@ -9,7 +9,8 @@ on:
     paths:
       - '**.csproj'
       - '**.cs'
-      - '**./Directories.Build.props'
+      - '**/Directory.Build.props'
+      - 'version.json'
       - '.github/workflows/test.yaml'
 
 env:

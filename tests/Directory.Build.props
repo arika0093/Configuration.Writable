@@ -5,6 +5,7 @@
     <RestoreTreatWarningsAsErrors>true</RestoreTreatWarningsAsErrors>
     <TargetFrameworks Condition="'$(TFMS)' != ''">$(TFMS)</TargetFrameworks>
     <TargetFrameworks Condition="'$(TFMS)' == ''">net10.0</TargetFrameworks>
+    <RuntimeIdentifiers Condition="'$(TFMS)' == 'net48' and '$(OS)' == 'Windows_NT'">win-x86</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
