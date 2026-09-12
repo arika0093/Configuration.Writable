@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -95,14 +96,10 @@ internal static class AsyncFileSaveLock
 
     private static void Lock(FileStream stream)
     {
-#if NETSTANDARD2_0
-        stream.Lock(LockOffset, LockLength);
-#else
-        if (!OperatingSystem.IsMacOS())
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             stream.Lock(LockOffset, LockLength);
         }
-#endif
     }
 
     private static Task DisposeStreamAsync(FileStream stream)
@@ -221,14 +218,10 @@ internal static class AsyncFileSaveLock
 
         private static void Unlock(FileStream stream)
         {
-#if NETSTANDARD2_0
-            stream.Unlock(LockOffset, LockLength);
-#else
-            if (!OperatingSystem.IsMacOS())
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 stream.Unlock(LockOffset, LockLength);
             }
-#endif
         }
     }
 }
