@@ -4,8 +4,11 @@ on:
   workflow_call:
   workflow_dispatch:
   push:
-    branches:
-      - 'release-pr/*'
+    paths:
+      - '**.csproj'
+      - '**.cs'
+      - '**/Directory.Build.props'
+      - '.github/workflows/test.yaml'
 
 jobs:
   test:
