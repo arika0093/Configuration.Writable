@@ -12,12 +12,12 @@ internal sealed class FileStateResource<T> : IStateResource
     where T : class, new()
 {
     private readonly WritableOptionsConfiguration<T> _options;
-    private readonly LegacyFileStateWatcher<T> _watcher;
+    private readonly FileStateWatcher<T> _watcher;
 
     internal FileStateResource(WritableOptionsConfiguration<T> options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
-        _watcher = new LegacyFileStateWatcher<T>(_options);
+        _watcher = new FileStateWatcher<T>(_options);
     }
 
     internal WritableOptionsConfiguration<T> Options => _options;

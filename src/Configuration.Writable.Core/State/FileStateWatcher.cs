@@ -7,16 +7,13 @@ using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.State;
 
-/// <summary>
-/// Bridges the existing physical-file change notification behavior to the State watcher contract.
-/// </summary>
-/// <typeparam name="T">The options type.</typeparam>
-internal sealed class LegacyFileStateWatcher<T> : IStateWatcher
+/// <summary>Observes relevant changes for a file-backed state resource.</summary>
+internal sealed class FileStateWatcher<T> : IStateWatcher
     where T : class, new()
 {
     private readonly WritableOptionsConfiguration<T> _options;
 
-    internal LegacyFileStateWatcher(WritableOptionsConfiguration<T> options)
+    internal FileStateWatcher(WritableOptionsConfiguration<T> options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }
