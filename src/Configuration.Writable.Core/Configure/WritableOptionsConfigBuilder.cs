@@ -159,6 +159,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly List<MigrationStep> _migrationSteps = [];
     private readonly List<ConfiguredStateSource> _stateSources = [];
+    private string? _writeTargetId;
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
@@ -367,6 +368,20 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <summary>
+    /// Selects the source that receives saves. Without an explicit target, the highest-priority
+    /// writable source is used. Use <c>file</c> to route saves to the built-in file source.
+    /// </summary>
+    /// <param name="sourceId">The id supplied to <see cref="FromProvider(string?, IStateReader{T}, int, StateFallbackCondition)"/> or <c>file</c>.</param>
+    public void UseWriteTarget(string sourceId)
+    {
+        if (string.IsNullOrWhiteSpace(sourceId))
+        {
+            throw new ArgumentException("A state source id is required.", nameof(sourceId));
+        }
+        _writeTargetId = sourceId;
+    }
+
+    /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
@@ -437,6 +452,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         }
 
         var stateSources = _stateSources.ToArray();
+        var writeTargetId = _writeTargetId;
         return new WritableOptionsConfiguration<T>
         {
             FormatProvider = FormatProvider,
@@ -459,13 +475,14 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                     ? null
                     : new MigrationLookup(typeof(T), schemaMetadata, migrationSteps),
             StateSourceFactory = (options, acquireSaveLock) =>
-                CreateStateSource(options, stateSources, acquireSaveLock),
+                CreateStateSource(options, stateSources, writeTargetId, acquireSaveLock),
         };
     }
 
     private static IStateSource<T> CreateStateSource(
         WritableOptionsConfiguration<T> options,
         IReadOnlyList<ConfiguredStateSource> configuredSources,
+        string? writeTargetId,
         bool acquireSaveLock
     )
     {
@@ -495,7 +512,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 fallbackCondition: StateFallbackCondition.None
             )
         );
-        return new CompositeStateSource<T>(sources);
+        return new CompositeStateSource<T>(sources, writeTargetId);
     }
 
     private sealed record ConfiguredStateSource(

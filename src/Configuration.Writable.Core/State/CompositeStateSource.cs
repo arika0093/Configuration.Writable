@@ -15,8 +15,9 @@ namespace Configuration.Writable.State;
 internal sealed class CompositeStateSource<T> : IStateSource<T>
 {
     private readonly StateSource<T>[] _sources;
+    private readonly string? _writeTargetId;
 
-    internal CompositeStateSource(IEnumerable<StateSource<T>> sources)
+    internal CompositeStateSource(IEnumerable<StateSource<T>> sources, string? writeTargetId = null)
     {
         if (sources is null)
         {
@@ -40,6 +41,19 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         {
             throw new ArgumentException("State source ids must be unique.", nameof(sources));
         }
+        if (
+            writeTargetId is not null
+            && !_sources.Any(source =>
+                string.Equals(source.Id, writeTargetId, StringComparison.Ordinal)
+            )
+        )
+        {
+            throw new ArgumentException(
+                "The write target must be a registered state source.",
+                nameof(writeTargetId)
+            );
+        }
+        _writeTargetId = writeTargetId;
     }
 
     public async ValueTask<StateReadResult<T>> ReadAsync(
@@ -83,7 +97,11 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         CancellationToken cancellationToken = default
     )
     {
-        var source = _sources.FirstOrDefault(candidate => candidate.Writer is not null);
+        var source = _writeTargetId is null
+            ? _sources.FirstOrDefault(candidate => candidate.Writer is not null)
+            : _sources.First(candidate =>
+                string.Equals(candidate.Id, _writeTargetId, StringComparison.Ordinal)
+            );
         if (source?.Writer is null)
         {
             throw new InvalidOperationException("No writable state source is configured.");

@@ -105,6 +105,27 @@ public class CompositeStateSourceTests
     }
 
     [Test]
+    public async Task WriteAsync_UsesExplicitWriteTarget()
+    {
+        var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
+        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
+        var source = new CompositeStateSource<string>(
+        [
+            new StateSource<string>("primary", primary, primary, null, 100, StateFallbackCondition.NotFound),
+            new StateSource<string>("fallback", fallback, fallback, null, 0, StateFallbackCondition.NotFound),
+        ],
+            writeTargetId: "fallback"
+        );
+
+        await source.WriteAsync(new StateWriteRequest<string>("saved", null));
+
+        primary.LastWriteRequest.ShouldBeNull();
+        fallback.LastWriteRequest.ShouldNotBeNull();
+        var write = fallback.LastWriteRequest!.Value;
+        write.Value.ShouldBe("saved");
+    }
+
+    [Test]
     public async Task ReadAsync_DoesNotFallbackWhenTheConfiguredConditionDoesNotMatch()
     {
         var primary = new TestSource<string>(StateReadResult<string>.Unavailable());

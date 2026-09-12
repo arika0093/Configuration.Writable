@@ -93,6 +93,7 @@ namespace Configuration.Writable.Configure
         public new void EnablePromoteSaveLocation(bool enabled = true) { }
         public void FromProvider(Configuration.Writable.State.IStateReader<T> source, int priority = 100, Configuration.Writable.State.StateFallbackCondition fallbackCondition = 1) { }
         public void FromProvider(string? sourceId, Configuration.Writable.State.IStateReader<T> source, int priority = 100, Configuration.Writable.State.StateFallbackCondition fallbackCondition = 1) { }
+        public void UseWriteTarget(string sourceId) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
