@@ -4,6 +4,7 @@ using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -102,4 +103,19 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// Gets the migration lookups computed when these options were built.
     /// </summary>
     internal MigrationLookup? MigrationLookup { get; init; }
+
+    /// <summary>
+    /// Creates the state endpoint for this registration. The current factory preserves the
+    /// existing file-backed behavior; registrations can replace it with a composite source
+    /// without changing the options runtime.
+    /// </summary>
+    internal Func<
+        WritableOptionsConfiguration<T>,
+        bool,
+        IStateSource<T>
+    > StateSourceFactory { get; init; } =
+        static (options, acquireSaveLock) => new LegacyFileStateSource<T>(options, acquireSaveLock);
+
+    internal IStateSource<T> CreateStateSource(bool acquireSaveLock = true) =>
+        StateSourceFactory(this, acquireSaveLock);
 }

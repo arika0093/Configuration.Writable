@@ -11,7 +11,7 @@ namespace Configuration.Writable.State;
 /// Resolves prioritized state sources into one backend-neutral endpoint.
 /// </summary>
 /// <typeparam name="T">The state type.</typeparam>
-internal sealed class CompositeStateSource<T> : IStateReader<T>, IStateWriter<T>, IStateWatcher
+internal sealed class CompositeStateSource<T> : IStateSource<T>
 {
     private readonly StateSource<T>[] _sources;
     private readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, string?>> _revisions =

@@ -224,11 +224,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         _semaphore.Wait();
         try
         {
-            var result = new LegacyFileStateSource<T>(options)
-                .ReadAsync()
-                .AsTask()
-                .GetAwaiter()
-                .GetResult();
+            var result = options.CreateStateSource().ReadAsync().AsTask().GetAwaiter().GetResult();
             if (result.Status != StateReadStatus.Success || result.Value is null)
             {
                 throw new InvalidOperationException(
@@ -267,7 +263,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         CancellationToken cancellationToken
     )
     {
-        var source = new LegacyFileStateSource<T>(options);
+        var source = options.CreateStateSource();
         while (!cancellationToken.IsCancellationRequested)
         {
             try

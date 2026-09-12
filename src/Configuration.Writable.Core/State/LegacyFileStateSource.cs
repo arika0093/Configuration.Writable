@@ -13,7 +13,7 @@ namespace Configuration.Writable.State;
 /// Options runtime.
 /// </summary>
 /// <typeparam name="T">The options type.</typeparam>
-internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T>, IStateWatcher
+internal sealed class LegacyFileStateSource<T> : IStateSource<T>
     where T : class, new()
 {
     private readonly WritableOptionsConfiguration<T> _options;

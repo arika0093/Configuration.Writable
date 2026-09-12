@@ -178,7 +178,8 @@ internal sealed class WritableOptionsImpl<T>(
                 options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
                     ? optionMonitorInstance.GetFingerprint(options.InstanceName)?.ToRevision()
                     : null;
-            var writeResult = await new LegacyFileStateSource<T>(options, acquireSaveLock: false)
+            var writeResult = await options
+                .CreateStateSource(acquireSaveLock: false)
                 .WriteAsync(
                     new StateWriteRequest<T>(newConfig, expectedRevision),
                     cancellationToken
