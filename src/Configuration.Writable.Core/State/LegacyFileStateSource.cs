@@ -12,14 +12,16 @@ namespace Configuration.Writable.State;
 /// Options runtime.
 /// </summary>
 /// <typeparam name="T">The options type.</typeparam>
-internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T>
+internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T>, IStateWatcher
     where T : class, new()
 {
     private readonly WritableOptionsConfiguration<T> _options;
+    private readonly LegacyFileStateWatcher<T> _watcher;
 
     internal LegacyFileStateSource(WritableOptionsConfiguration<T> options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        _watcher = new LegacyFileStateWatcher<T>(_options);
     }
 
     public ValueTask<StateReadResult<T>> ReadAsync(CancellationToken cancellationToken = default)
@@ -38,6 +40,10 @@ internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T
         CancellationToken cancellationToken = default
     )
     {
+        using var fileLock = await AsyncFileSaveLock
+            .AcquireAsync(_options.ConfigFilePath, cancellationToken)
+            .ConfigureAwait(false);
+
         if (request.ExpectedRevision is not null)
         {
             var currentRevision = GetCurrentRevision();
@@ -59,6 +65,11 @@ internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T
             .ConfigureAwait(false);
         return new StateWriteResult(GetCurrentRevision());
     }
+
+    public ValueTask WaitForChangeAsync(
+        string? observedRevision,
+        CancellationToken cancellationToken = default
+    ) => _watcher.WaitForChangeAsync(observedRevision, cancellationToken);
 
     private void PromoteIfRequired(T value, CancellationToken cancellationToken)
     {
