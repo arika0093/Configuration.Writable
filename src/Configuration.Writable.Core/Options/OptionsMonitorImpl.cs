@@ -5,7 +5,7 @@ using System.IO;
 using System.Threading;
 using Configuration.Writable.Diagnostics;
 using Configuration.Writable.FileProvider;
-using Configuration.Writable.Migration;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -231,25 +231,21 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         _semaphore.Wait();
         try
         {
-            var readOptions = options with { ConfigFilePath = options.ReadFilePath };
-            var value = readOptions.FormatProvider.LoadWithMigration<T>(readOptions);
-            if (
-                options.PromoteSaveLocationEnabled
-                && !string.Equals(
-                    options.ReadFilePath,
-                    options.ConfigFilePath,
-                    StringComparison.Ordinal
-                )
-            )
+            var result = new LegacyFileStateSource<T>(options)
+                .ReadAsync()
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+            if (result.Status != StateReadStatus.Success || result.Value is null)
             {
-                options.Logger?.LogInformation(
-                    "Promoting configuration from {ReadFilePath} to {ConfigFilePath}",
-                    options.ReadFilePath,
-                    options.ConfigFilePath
+                throw new InvalidOperationException(
+                    $"State source did not return a value for options instance '{instanceName}'."
                 );
-                options.FormatProvider.SaveAsync(value, options).GetAwaiter().GetResult();
             }
-            return new LoadedConfiguration(value, ConfigurationFileFingerprint.Capture(options));
+            return new LoadedConfiguration(
+                result.Value,
+                ConfigurationFileFingerprint.Capture(options)
+            );
         }
         finally
         {
