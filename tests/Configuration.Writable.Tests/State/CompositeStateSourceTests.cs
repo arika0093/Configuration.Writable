@@ -156,11 +156,47 @@ public class CompositeStateSourceTests
         request.ExpectedRevision.ShouldBe("r1");
     }
 
-    private sealed class TestSource<T>(StateReadResult<T> readResult) : IStateReader<T>, IStateWriter<T>
+    [Test]
+    public async Task WaitForChangeAsync_WatchesActiveSourceAndHigherPrioritiesOnly()
+    {
+        var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
+        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
+        var source = new CompositeStateSource<string>(
+        [
+            new StateSource<string>(
+                "primary",
+                primary,
+                primary,
+                primary,
+                100,
+                StateFallbackCondition.NotFound
+            ),
+            new StateSource<string>(
+                "fallback",
+                fallback,
+                fallback,
+                fallback,
+                0,
+                StateFallbackCondition.NotFound
+            ),
+        ]
+        );
+
+        var read = await source.ReadAsync();
+        await source.WaitForChangeAsync(read.Revision);
+
+        primary.WatchCount.ShouldBe(1);
+        fallback.WatchCount.ShouldBe(0);
+    }
+
+    private sealed class TestSource<T>(StateReadResult<T> readResult)
+        : IStateReader<T>, IStateWriter<T>, IStateWatcher
     {
         internal int ReadCount { get; private set; }
 
         internal StateWriteRequest<T>? LastWriteRequest { get; private set; }
+
+        internal int WatchCount { get; private set; }
 
         public ValueTask<StateReadResult<T>> ReadAsync(
             CancellationToken cancellationToken = default
@@ -177,6 +213,15 @@ public class CompositeStateSourceTests
         {
             LastWriteRequest = request;
             return new ValueTask<StateWriteResult>(new StateWriteResult("written-r1"));
+        }
+
+        public ValueTask WaitForChangeAsync(
+            string? observedRevision,
+            CancellationToken cancellationToken = default
+        )
+        {
+            WatchCount++;
+            return ValueTask.CompletedTask;
         }
     }
 

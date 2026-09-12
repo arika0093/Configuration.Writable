@@ -114,7 +114,16 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         CancellationToken cancellationToken = default
     )
     {
-        var watchers = _sources.Where(source => source.Watcher is not null).ToArray();
+        var revision = ParseRevision(observedRevision);
+        var activeSource = revision?.ActiveSourceId is null
+            ? null
+            : _sources.FirstOrDefault(source =>
+                string.Equals(source.Id, revision.ActiveSourceId, StringComparison.Ordinal)
+            );
+        var minimumPriority = activeSource?.Priority ?? int.MinValue;
+        var watchers = _sources
+            .Where(source => source.Watcher is not null && source.Priority >= minimumPriority)
+            .ToArray();
         if (watchers.Length == 0)
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
