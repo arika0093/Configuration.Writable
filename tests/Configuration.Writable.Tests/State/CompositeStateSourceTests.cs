@@ -14,7 +14,7 @@ namespace Configuration.Writable.Tests.State;
 public class CompositeStateSourceTests
 {
     [Test]
-    public async Task LegacyFileStateSource_UsesRevisionForOptimisticConcurrency()
+    public async Task FileStateSource_UsesRevisionForOptimisticConcurrency()
     {
         using var file = new TemporaryFile();
         var options = new WritableOptionsConfigBuilder<TestSettings>
@@ -23,7 +23,7 @@ public class CompositeStateSourceTests
             FileProvider = new CommonFileProvider(),
             FormatProvider = new JsonFormatProvider(),
         }.BuildOptions("");
-        var source = new LegacyFileStateSource<TestSettings>(options);
+        var source = new FileStateSource<TestSettings>(options);
 
         await source.WriteAsync(new StateWriteRequest<TestSettings>(new TestSettings { Value = "one" }, null));
         var loaded = await source.ReadAsync();

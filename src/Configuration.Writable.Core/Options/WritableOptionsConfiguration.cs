@@ -114,7 +114,7 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
         bool,
         IStateSource<T>
     > StateSourceFactory { get; init; } =
-        static (options, acquireSaveLock) => new LegacyFileStateSource<T>(options, acquireSaveLock);
+        static (options, acquireSaveLock) => new FileStateSource<T>(options, acquireSaveLock);
 
     internal IStateSource<T> CreateStateSource(bool acquireSaveLock = true) =>
         StateSourceFactory(this, acquireSaveLock);
