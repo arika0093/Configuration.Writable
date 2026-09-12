@@ -191,10 +191,7 @@ public partial class WritableOptionsConfigBuilderTests
     {
         // Use a unique application ID that should not exist
         var appId = $"ConfigurationWritableTest_{Guid.NewGuid():N}";
-        var expectedDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            appId
-        );
+        var expectedDir = Path.Combine(StandardSaveLocationUtility.GetConfigDirectory(), appId);
         try
         {
             var options = new WritableOptionsConfigBuilder<TestSettings>();

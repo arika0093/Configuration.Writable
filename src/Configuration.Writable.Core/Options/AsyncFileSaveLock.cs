@@ -96,7 +96,11 @@ internal static class AsyncFileSaveLock
 
     private static void Lock(FileStream stream)
     {
+#if NETSTANDARD2_0
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+#else
+        if (!OperatingSystem.IsMacOS())
+#endif
         {
             stream.Lock(LockOffset, LockLength);
         }
@@ -218,7 +222,11 @@ internal static class AsyncFileSaveLock
 
         private static void Unlock(FileStream stream)
         {
+#if NETSTANDARD2_0
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+#else
+            if (!OperatingSystem.IsMacOS())
+#endif
             {
                 stream.Unlock(LockOffset, LockLength);
             }
