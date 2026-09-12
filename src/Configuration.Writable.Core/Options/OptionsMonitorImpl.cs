@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Configuration.Writable.Diagnostics;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.State;
@@ -207,8 +208,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             initial.Fingerprint
         );
         _dataSources[instanceName] = dataSource;
-        // Setup file watcher
-        SetupFileWatcher(opt, dataSource);
+        StartStateWatcher(opt, dataSource);
     }
 
     // Loads configuration from the provider and updates the cache.
@@ -250,6 +250,63 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         finally
         {
             _semaphore.Release();
+        }
+    }
+
+    private void StartStateWatcher(
+        WritableOptionsConfiguration<T> options,
+        OptionsMonitorDataSource dataSource
+    )
+    {
+        dataSource.WatcherCancellation?.Cancel();
+        dataSource.WatcherCancellation?.Dispose();
+        dataSource.WatcherCancellation = new CancellationTokenSource();
+        dataSource.WatcherTask = WatchStateChangesAsync(
+            options,
+            dataSource,
+            dataSource.WatcherCancellation.Token
+        );
+    }
+
+    private async Task WatchStateChangesAsync(
+        WritableOptionsConfiguration<T> options,
+        OptionsMonitorDataSource dataSource,
+        CancellationToken cancellationToken
+    )
+    {
+        var source = new LegacyFileStateSource<T>(options);
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await source
+                    .WaitForChangeAsync(dataSource.Fingerprint?.ToRevision(), cancellationToken)
+                    .ConfigureAwait(false);
+                if (options.OnChangeDebounce > TimeSpan.Zero)
+                {
+                    await Task.Delay(options.OnChangeDebounce, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
+                ReloadAndNotify(options.InstanceName);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                HandleReloadFailure(options.InstanceName, exception);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+            }
         }
     }
 
@@ -745,6 +802,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public string? WatchedPath { get; set; }
         public Timer? DebounceTimer { get; set; }
         public Timer? WatcherRecoveryTimer { get; set; }
+        public CancellationTokenSource? WatcherCancellation { get; set; }
+        public Task? WatcherTask { get; set; }
         public int WatcherRecoveryAttempts { get; set; }
         public bool HasPendingDebouncedChange { get; set; }
 
@@ -809,6 +868,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
         public void Dispose()
         {
+            WatcherCancellation?.Cancel();
+            WatcherCancellation?.Dispose();
             Watcher?.Dispose();
             DebounceTimer?.Dispose();
             WatcherRecoveryTimer?.Dispose();

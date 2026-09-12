@@ -93,10 +93,10 @@ internal sealed class LegacyFileStateWatcher<T> : IStateWatcher
             return string.Equals(changedPath, watchedPath, StringComparison.OrdinalIgnoreCase);
         }
 
-        return string.Equals(
-            Path.GetFileNameWithoutExtension(changedPath),
-            Path.GetFileNameWithoutExtension(_options.ConfigFilePath),
-            StringComparison.OrdinalIgnoreCase
-        );
+        var canonicalPath = _options.FileProvider is IPhysicalFileProvider physicalFileProvider
+            ? physicalFileProvider.GetPhysicalFilePath(_options.ConfigFilePath)
+            : _options.ConfigFilePath;
+        return string.Equals(changedPath, watchedPath, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(changedPath, canonicalPath, StringComparison.OrdinalIgnoreCase);
     }
 }
