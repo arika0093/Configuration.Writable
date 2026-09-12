@@ -93,7 +93,6 @@ namespace Configuration.Writable.Configure
         public new void EnablePromoteSaveLocation(bool enabled = true) { }
         public void FromProvider(Configuration.Writable.State.IStateReader<T> source, int priority = 100, Configuration.Writable.State.StateFallbackCondition fallbackCondition = 1) { }
         public void FromProvider(string? sourceId, Configuration.Writable.State.IStateReader<T> source, int priority = 100, Configuration.Writable.State.StateFallbackCondition fallbackCondition = 1) { }
-        public void UseWriteTarget(string sourceId) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
@@ -104,6 +103,7 @@ namespace Configuration.Writable.Configure
         public void UseJsonCloneStrategy(System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> jsonTypeInfo) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseSpecialFolder(System.Environment.SpecialFolder folder) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseStandardSaveDirectory(string applicationId, bool enabled = true) { }
+        public void UseWriteTarget(string sourceId) { }
         public void WithValidator(Microsoft.Extensions.Options.IValidateOptions<T> validator) { }
         public void WithValidator<TValidator>()
             where TValidator : Microsoft.Extensions.Options.IValidateOptions<T>, new () { }
