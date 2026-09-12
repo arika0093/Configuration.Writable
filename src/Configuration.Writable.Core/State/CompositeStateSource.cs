@@ -149,7 +149,7 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         }
         finally
         {
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
             await linkedCancellation.CancelAsync().ConfigureAwait(false);
 #else
             linkedCancellation.Cancel();
