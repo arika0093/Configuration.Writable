@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
+using Configuration.Writable.Diagnostics;
 using Configuration.Writable.Migration;
 
 namespace Configuration.Writable.State;
@@ -17,11 +18,16 @@ internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T
 {
     private readonly WritableOptionsConfiguration<T> _options;
     private readonly LegacyFileStateWatcher<T> _watcher;
+    private readonly bool _acquireSaveLock;
 
-    internal LegacyFileStateSource(WritableOptionsConfiguration<T> options)
+    internal LegacyFileStateSource(
+        WritableOptionsConfiguration<T> options,
+        bool acquireSaveLock = true
+    )
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _watcher = new LegacyFileStateWatcher<T>(_options);
+        _acquireSaveLock = acquireSaveLock;
     }
 
     public ValueTask<StateReadResult<T>> ReadAsync(CancellationToken cancellationToken = default)
@@ -40,10 +46,22 @@ internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T
         CancellationToken cancellationToken = default
     )
     {
+        if (!_acquireSaveLock)
+        {
+            return await WriteCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+
         using var fileLock = await AsyncFileSaveLock
             .AcquireAsync(_options.ConfigFilePath, cancellationToken)
             .ConfigureAwait(false);
+        return await WriteCoreAsync(request, cancellationToken).ConfigureAwait(false);
+    }
 
+    private async ValueTask<StateWriteResult> WriteCoreAsync(
+        StateWriteRequest<T> request,
+        CancellationToken cancellationToken
+    )
+    {
         if (request.ExpectedRevision is not null)
         {
             var currentRevision = GetCurrentRevision();
@@ -56,6 +74,7 @@ internal sealed class LegacyFileStateSource<T> : IStateReader<T>, IStateWriter<T
                 )
             )
             {
+                ConfigurationWritableEventSource.Log.ConflictDetected();
                 throw new ConfigurationConflictException(_options.ConfigFilePath);
             }
         }

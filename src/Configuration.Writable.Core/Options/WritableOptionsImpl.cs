@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
 using Configuration.Writable.Options;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -174,31 +174,15 @@ internal sealed class WritableOptionsImpl<T>(
                 }
             }
 
-            if (options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict)
-            {
-                var expectedFingerprint = optionMonitorInstance.GetFingerprint(
-                    options.InstanceName
-                );
-                var currentFingerprint = ConfigurationFileFingerprint.Capture(options);
-                if (
-                    expectedFingerprint != null
-                    && currentFingerprint != null
-                    && !expectedFingerprint.Equals(currentFingerprint)
+            var expectedRevision =
+                options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
+                    ? optionMonitorInstance.GetFingerprint(options.InstanceName)?.ToRevision()
+                    : null;
+            var writeResult = await new LegacyFileStateSource<T>(options, acquireSaveLock: false)
+                .WriteAsync(
+                    new StateWriteRequest<T>(newConfig, expectedRevision),
+                    cancellationToken
                 )
-                {
-                    ConfigurationWritableEventSource.Log.ConflictDetected();
-                    throw new ConfigurationConflictException(options.ConfigFilePath);
-                }
-            }
-
-            options.Logger?.LogDebug(
-                "Saving configuration to {ConfigFilePath}",
-                options.ConfigFilePath
-            );
-
-            // Save to file
-            await options
-                .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
                 .ConfigureAwait(false);
 
             // Update the monitor's cache (FileSystemWatcher will notify listeners)
@@ -209,10 +193,10 @@ internal sealed class WritableOptionsImpl<T>(
                 ConfigurationFileFingerprint.Capture(options)
             );
 
-            var fileName = Path.GetFileName(options.ConfigFilePath);
             options.Logger?.LogInformation(
-                "Configuration saved successfully to {FileName}",
-                fileName
+                "Configuration saved successfully for {InstanceName} at revision {Revision}",
+                options.InstanceName,
+                writeResult.Revision
             );
             ConfigurationWritableEventSource.Log.SaveSucceeded(stopwatch.Elapsed.TotalMilliseconds);
         }
