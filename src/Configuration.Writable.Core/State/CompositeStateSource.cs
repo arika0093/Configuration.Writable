@@ -70,8 +70,13 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
 
             if (result.Status == StateReadStatus.Success)
             {
+                var value =
+                    result.Value
+                    ?? throw new InvalidOperationException(
+                        $"State source '{source.Id}' returned Success without a value."
+                    );
                 return StateReadResult<T>.Success(
-                    result.Value,
+                    value,
                     StoreRevisions(revisions, source.Id, result.Revision)
                 );
             }
@@ -153,13 +158,19 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         );
         var waits = watchers
             .Select(source =>
-                source
-                    .Watcher.WaitForChangeAsync(
+            {
+                var watcher = source.Watcher;
+                if (watcher is null)
+                {
+                    return Task.CompletedTask;
+                }
+                return watcher
+                    .WaitForChangeAsync(
                         GetExpectedRevision(observedRevision, source.Id),
                         linkedCancellation.Token
                     )
-                    .AsTask()
-            )
+                    .AsTask();
+            })
             .ToArray();
         try
         {
