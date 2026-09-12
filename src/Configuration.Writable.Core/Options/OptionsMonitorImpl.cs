@@ -123,21 +123,29 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <param name="instanceName">The name of the instance to update.</param>
     /// <param name="value">The new value to cache.</param>
     /// <param name="fingerprint">The fingerprint associated with the cached value.</param>
+    /// <param name="stateRevision">The backend-neutral revision associated with the cached value.</param>
     internal void UpdateCache(
         string instanceName,
         T value,
-        ConfigurationFileFingerprint? fingerprint = null
+        ConfigurationFileFingerprint? fingerprint = null,
+        string? stateRevision = null
     )
     {
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
             dataSource.Cache = value;
             dataSource.Fingerprint = fingerprint;
+            dataSource.StateRevision = stateRevision;
         }
     }
 
     internal ConfigurationFileFingerprint? GetFingerprint(string instanceName) =>
         _dataSources.TryGetValue(instanceName, out var dataSource) ? dataSource.Fingerprint : null;
+
+    internal string? GetStateRevision(string instanceName) =>
+        _dataSources.TryGetValue(instanceName, out var dataSource)
+            ? dataSource.StateRevision
+            : null;
 
     /// <summary>
     /// Clears the cached value for the specified instance name.
@@ -198,7 +206,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         var dataSource = new OptionsMonitorDataSource(
             initial.Value,
             defaultValue,
-            initial.Fingerprint
+            initial.Fingerprint,
+            initial.Revision
         );
         _dataSources[instanceName] = dataSource;
         StartStateWatcher(opt, dataSource);
@@ -213,6 +222,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             // Don't notify listeners during explicit load, only file change events should notify
             dataSource.Cache = loaded.Value;
             dataSource.Fingerprint = loaded.Fingerprint;
+            dataSource.StateRevision = loaded.Revision;
         }
         return loaded.Value;
     }
@@ -233,7 +243,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
             return new LoadedConfiguration(
                 result.Value,
-                ConfigurationFileFingerprint.Capture(options)
+                ConfigurationFileFingerprint.Capture(options),
+                result.Revision
             );
         }
         finally
@@ -269,7 +280,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             try
             {
                 await source
-                    .WaitForChangeAsync(dataSource.Fingerprint?.ToRevision(), cancellationToken)
+                    .WaitForChangeAsync(dataSource.StateRevision, cancellationToken)
                     .ConfigureAwait(false);
                 if (options.OnChangeDebounce > TimeSpan.Zero)
                 {
@@ -473,6 +484,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public T Cache { get; set; }
         public T DefaultValue { get; set; }
         public ConfigurationFileFingerprint? Fingerprint { get; set; }
+        public string? StateRevision { get; set; }
         public List<Action<T, string?>> Listeners { get; } = [];
         public List<Action<Exception, string?>> FailureListeners { get; } = [];
         private object ListenersLock { get; } = new();
@@ -482,12 +494,14 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public OptionsMonitorDataSource(
             T cache,
             T defaultValue,
-            ConfigurationFileFingerprint? fingerprint
+            ConfigurationFileFingerprint? fingerprint,
+            string? stateRevision
         )
         {
             Cache = cache;
             DefaultValue = defaultValue;
             Fingerprint = fingerprint;
+            StateRevision = stateRevision;
         }
 
         public void AddListener(Action<T, string?> listener)
@@ -545,9 +559,14 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
     }
 
-    private sealed class LoadedConfiguration(T value, ConfigurationFileFingerprint? fingerprint)
+    private sealed class LoadedConfiguration(
+        T value,
+        ConfigurationFileFingerprint? fingerprint,
+        string? revision
+    )
     {
         internal T Value { get; } = value;
         internal ConfigurationFileFingerprint? Fingerprint { get; } = fingerprint;
+        internal string? Revision { get; } = revision;
     }
 }

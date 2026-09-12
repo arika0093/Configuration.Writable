@@ -10,6 +10,7 @@ using Configuration.Writable.Abstractions;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 #if NET
@@ -157,6 +158,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     private bool _usesDefaultJsonCloneFallback;
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly List<MigrationStep> _migrationSteps = [];
+    private readonly List<ConfiguredStateSource> _stateSources = [];
 
     /// <summary>
     /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
@@ -313,6 +315,58 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <summary>
+    /// Adds a backend-neutral state source. If the source also implements
+    /// <see cref="IStateWriter{T}"/> or <see cref="IStateWatcher"/>, those capabilities are
+    /// used automatically. The built-in file source remains available as the lowest-priority
+    /// fallback, preserving <see cref="UseFile"/> and location-builder behavior.
+    /// </summary>
+    /// <param name="source">The source used to read the typed state snapshot.</param>
+    /// <param name="priority">The read and default write priority. Higher values win.</param>
+    /// <param name="fallbackCondition">The conditions under which resolution continues to a lower-priority source.</param>
+    public void FromProvider(
+        IStateReader<T> source,
+        int priority = 100,
+        StateFallbackCondition fallbackCondition = StateFallbackCondition.NotFound
+    ) => FromProvider(null, source, priority, fallbackCondition);
+
+    /// <summary>
+    /// Adds a named backend-neutral state source. Source ids are diagnostic handles and must be
+    /// unique within this registration.
+    /// </summary>
+    /// <param name="sourceId">A stable source identifier, or <see langword="null"/> to generate one.</param>
+    /// <param name="source">The source used to read the typed state snapshot.</param>
+    /// <param name="priority">The read and default write priority. Higher values win.</param>
+    /// <param name="fallbackCondition">The conditions under which resolution continues to a lower-priority source.</param>
+    public void FromProvider(
+        string? sourceId,
+        IStateReader<T> source,
+        int priority = 100,
+        StateFallbackCondition fallbackCondition = StateFallbackCondition.NotFound
+    )
+    {
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        sourceId ??= $"provider-{_stateSources.Count}";
+        if (
+            string.Equals(sourceId, "file", StringComparison.Ordinal)
+            || _stateSources.Any(existing =>
+                string.Equals(existing.Id, sourceId, StringComparison.Ordinal)
+            )
+        )
+        {
+            throw new ArgumentException(
+                $"A state source named '{sourceId}' is already registered.",
+                nameof(sourceId)
+            );
+        }
+
+        _stateSources.Add(new ConfiguredStateSource(sourceId, source, priority, fallbackCondition));
+    }
+
+    /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
@@ -382,6 +436,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             }
         }
 
+        var stateSources = _stateSources.ToArray();
         return new WritableOptionsConfiguration<T>
         {
             FormatProvider = FormatProvider,
@@ -403,8 +458,52 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 migrationSteps.Count == 0 || schemaMetadata?.Version is null
                     ? null
                     : new MigrationLookup(typeof(T), schemaMetadata, migrationSteps),
+            StateSourceFactory = (options, acquireSaveLock) =>
+                CreateStateSource(options, stateSources, acquireSaveLock),
         };
     }
+
+    private static IStateSource<T> CreateStateSource(
+        WritableOptionsConfiguration<T> options,
+        IReadOnlyList<ConfiguredStateSource> configuredSources,
+        bool acquireSaveLock
+    )
+    {
+        var fileSource = new FileStateSource<T>(options, acquireSaveLock);
+        if (configuredSources.Count == 0)
+        {
+            return fileSource;
+        }
+
+        var sources = configuredSources
+            .Select(source => new StateSource<T>(
+                source.Id,
+                source.Reader,
+                source.Reader as IStateWriter<T>,
+                source.Reader as IStateWatcher,
+                source.Priority,
+                source.FallbackCondition
+            ))
+            .ToList();
+        sources.Add(
+            new StateSource<T>(
+                "file",
+                fileSource,
+                fileSource,
+                fileSource,
+                priority: int.MinValue,
+                fallbackCondition: StateFallbackCondition.None
+            )
+        );
+        return new CompositeStateSource<T>(sources);
+    }
+
+    private sealed record ConfiguredStateSource(
+        string Id,
+        IStateReader<T> Reader,
+        int Priority,
+        StateFallbackCondition FallbackCondition
+    );
 
     private static bool SupportsSchemaMetadata(
         FormatProvider.IWritableFormatProvider formatProvider

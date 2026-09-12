@@ -6,7 +6,7 @@ namespace Configuration.Writable.State;
 /// Specifies which non-successful read results may select a lower-priority state source.
 /// </summary>
 [Flags]
-internal enum StateFallbackCondition
+public enum StateFallbackCondition
 {
     /// <summary>Never select a lower-priority source.</summary>
     None = 0,

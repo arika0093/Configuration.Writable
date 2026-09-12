@@ -91,6 +91,8 @@ namespace Configuration.Writable.Configure
         public new void EnableJsonSchemaGeneration() { }
         public new void EnableJsonSchemaGeneration(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
         public new void EnablePromoteSaveLocation(bool enabled = true) { }
+        public void FromProvider(Configuration.Writable.State.IStateReader<T> source, int priority = 100, Configuration.Writable.State.StateFallbackCondition fallbackCondition = 1) { }
+        public void FromProvider(string? sourceId, Configuration.Writable.State.IStateReader<T> source, int priority = 100, Configuration.Writable.State.StateFallbackCondition fallbackCondition = 1) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
         public void UseCustomCloneStrategy(System.Func<T, T> cloneStrategy) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCustomDirectory(string directoryPath) { }
@@ -280,5 +282,54 @@ namespace Configuration.Writable
             where T :  class, new () { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string instanceName)
             where T :  class, new () { }
+    }
+}
+namespace Configuration.Writable.State
+{
+    public interface IStateReader<T>
+    {
+        System.Threading.Tasks.ValueTask<Configuration.Writable.State.StateReadResult<T>> ReadAsync(System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IStateWatcher
+    {
+        System.Threading.Tasks.ValueTask WaitForChangeAsync(string? observedRevision, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IStateWriter<T>
+    {
+        System.Threading.Tasks.ValueTask<Configuration.Writable.State.StateWriteResult> WriteAsync(Configuration.Writable.State.StateWriteRequest<T> request, System.Threading.CancellationToken cancellationToken = default);
+    }
+    [System.Flags]
+    public enum StateFallbackCondition
+    {
+        None = 0,
+        NotFound = 1,
+        Unavailable = 2,
+    }
+    public readonly struct StateReadResult<T> : System.IEquatable<Configuration.Writable.State.StateReadResult<T>>
+    {
+        public StateReadResult(Configuration.Writable.State.StateReadStatus Status, T? Value, string? Revision) { }
+        public string? Revision { get; init; }
+        public Configuration.Writable.State.StateReadStatus Status { get; init; }
+        public T Value { get; init; }
+        public static Configuration.Writable.State.StateReadResult<T> NotFound(string? revision = null) { }
+        public static Configuration.Writable.State.StateReadResult<T> Success(T value, string? revision = null) { }
+        public static Configuration.Writable.State.StateReadResult<T> Unavailable() { }
+    }
+    public enum StateReadStatus
+    {
+        Success = 0,
+        NotFound = 1,
+        Unavailable = 2,
+    }
+    public readonly struct StateWriteRequest<T> : System.IEquatable<Configuration.Writable.State.StateWriteRequest<T>>
+    {
+        public StateWriteRequest(T Value, string? ExpectedRevision) { }
+        public string? ExpectedRevision { get; init; }
+        public T Value { get; init; }
+    }
+    public readonly struct StateWriteResult : System.IEquatable<Configuration.Writable.State.StateWriteResult>
+    {
+        public StateWriteResult(string? Revision) { }
+        public string? Revision { get; init; }
     }
 }

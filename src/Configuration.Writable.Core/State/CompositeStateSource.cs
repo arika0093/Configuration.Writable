@@ -1,7 +1,8 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,8 +15,6 @@ namespace Configuration.Writable.State;
 internal sealed class CompositeStateSource<T> : IStateSource<T>
 {
     private readonly StateSource<T>[] _sources;
-    private readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, string?>> _revisions =
-        new(StringComparer.Ordinal);
 
     internal CompositeStateSource(IEnumerable<StateSource<T>> sources)
     {
@@ -115,11 +114,7 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         CancellationToken cancellationToken = default
     )
     {
-        var watchers = _sources
-            .Select(source => source.Watcher)
-            .Where(watcher => watcher is not null)
-            .Cast<IStateWatcher>()
-            .ToArray();
+        var watchers = _sources.Where(source => source.Watcher is not null).ToArray();
         if (watchers.Length == 0)
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
@@ -130,8 +125,13 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
             cancellationToken
         );
         var waits = watchers
-            .Select(watcher =>
-                watcher.WaitForChangeAsync(observedRevision, linkedCancellation.Token).AsTask()
+            .Select(source =>
+                source
+                    .Watcher!.WaitForChangeAsync(
+                        GetExpectedRevision(observedRevision, source.Id),
+                        linkedCancellation.Token
+                    )
+                    .AsTask()
             )
             .ToArray();
         try
@@ -156,13 +156,12 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
             _ => false,
         };
 
-    private string StoreRevisions(
+    private static string StoreRevisions(
         IReadOnlyDictionary<string, string?> revisions,
         string? activeSourceId,
         string? activeRevision
     )
     {
-        var token = Guid.NewGuid().ToString("N");
         var copy = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var entry in revisions)
         {
@@ -172,20 +171,46 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         {
             copy[activeSourceId] = activeRevision;
         }
-        _revisions[token] = copy;
-        return token;
+        var payload = new CompositeRevision(activeSourceId, copy);
+        return "composite:"
+            + Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
     }
 
-    private string? GetExpectedRevision(string? compositeRevision, string sourceId)
+    private static string? GetExpectedRevision(string? compositeRevision, string sourceId)
     {
-        if (
-            compositeRevision is not null
-            && _revisions.TryGetValue(compositeRevision, out var revisions)
-            && revisions.TryGetValue(sourceId, out var revision)
-        )
+        var revision = ParseRevision(compositeRevision);
+        if (revision?.Revisions.TryGetValue(sourceId, out var sourceRevision) == true)
         {
-            return revision;
+            return sourceRevision;
         }
         return null;
     }
+
+    private static CompositeRevision? ParseRevision(string? revision)
+    {
+        if (revision is null || !revision.StartsWith("composite:", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<CompositeRevision>(
+                Encoding.UTF8.GetString(Convert.FromBase64String(revision["composite:".Length..]))
+            );
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private sealed record CompositeRevision(
+        string? ActiveSourceId,
+        Dictionary<string, string?> Revisions
+    );
 }

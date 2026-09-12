@@ -176,7 +176,7 @@ internal sealed class WritableOptionsImpl<T>(
 
             var expectedRevision =
                 options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
-                    ? optionMonitorInstance.GetFingerprint(options.InstanceName)?.ToRevision()
+                    ? optionMonitorInstance.GetStateRevision(options.InstanceName)
                     : null;
             var writeResult = await options
                 .CreateStateSource(acquireSaveLock: false)
@@ -191,7 +191,8 @@ internal sealed class WritableOptionsImpl<T>(
             optionMonitorInstance.UpdateCache(
                 options.InstanceName,
                 publishedConfig,
-                ConfigurationFileFingerprint.Capture(options)
+                ConfigurationFileFingerprint.Capture(options),
+                writeResult.Revision
             );
 
             options.Logger?.LogInformation(

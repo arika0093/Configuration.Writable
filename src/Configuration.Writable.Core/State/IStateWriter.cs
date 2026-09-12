@@ -7,7 +7,7 @@ namespace Configuration.Writable.State;
 /// Writes a typed state snapshot to a backend.
 /// </summary>
 /// <typeparam name="T">The state type.</typeparam>
-internal interface IStateWriter<T>
+public interface IStateWriter<T>
 {
     /// <summary>
     /// Writes a state snapshot, optionally guarded by an opaque backend revision.

@@ -8,6 +8,7 @@ using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Internal;
 using Configuration.Writable.State;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Configuration.Writable.Tests.State;
 
@@ -133,6 +134,26 @@ public class CompositeStateSourceTests
 
         result.Status.ShouldBe(StateReadStatus.Unavailable);
         fallback.ReadCount.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task FromProvider_UsesSourceForReadAndWriteWithItsRevision()
+    {
+        var source = new TestSource<TestSettings>(
+            StateReadResult<TestSettings>.Success(new TestSettings { Value = "remote" }, "r1")
+        );
+        var services = new ServiceCollection();
+        services.AddWritableOptions<TestSettings>(options => options.FromProvider("remote", source));
+        using var serviceProvider = services.BuildServiceProvider();
+        var writableOptions = serviceProvider.GetRequiredService<IWritableOptions<TestSettings>>();
+
+        writableOptions.CurrentValue.Value.ShouldBe("remote");
+        await writableOptions.SaveAsync(new TestSettings { Value = "updated" });
+
+        source.LastWriteRequest.ShouldNotBeNull();
+        var request = source.LastWriteRequest!.Value;
+        request.Value.Value.ShouldBe("updated");
+        request.ExpectedRevision.ShouldBe("r1");
     }
 
     private sealed class TestSource<T>(StateReadResult<T> readResult) : IStateReader<T>, IStateWriter<T>

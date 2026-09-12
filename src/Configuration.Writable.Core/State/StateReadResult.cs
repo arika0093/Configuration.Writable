@@ -4,11 +4,7 @@ namespace Configuration.Writable.State;
 /// Describes the result of reading a state snapshot.
 /// </summary>
 /// <typeparam name="T">The state type.</typeparam>
-internal readonly record struct StateReadResult<T>(
-    StateReadStatus Status,
-    T? Value,
-    string? Revision
-)
+public readonly record struct StateReadResult<T>(StateReadStatus Status, T? Value, string? Revision)
 {
     /// <summary>Creates a successful read result.</summary>
     /// <param name="value">The loaded value.</param>

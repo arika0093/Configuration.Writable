@@ -7,7 +7,7 @@ namespace Configuration.Writable.State;
 /// Reads a typed state snapshot from a backend.
 /// </summary>
 /// <typeparam name="T">The state type.</typeparam>
-internal interface IStateReader<T>
+public interface IStateReader<T>
 {
     /// <summary>
     /// Reads the current state snapshot.

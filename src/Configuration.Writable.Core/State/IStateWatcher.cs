@@ -6,7 +6,7 @@ namespace Configuration.Writable.State;
 /// <summary>
 /// Waits until a backend state snapshot may have changed.
 /// </summary>
-internal interface IStateWatcher
+public interface IStateWatcher
 {
     /// <summary>
     /// Waits for an invalidation of the state observed at <paramref name="observedRevision"/>.
