@@ -1,13 +1,41 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.Configure;
+using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
+using Configuration.Writable.Internal;
 using Configuration.Writable.State;
 
 namespace Configuration.Writable.Tests.State;
 
 public class CompositeStateSourceTests
 {
+    [Test]
+    public async Task LegacyFileStateSource_UsesRevisionForOptimisticConcurrency()
+    {
+        using var file = new TemporaryFile();
+        var options = new WritableOptionsConfigBuilder<TestSettings>
+        {
+            FilePath = file.FilePath,
+            FileProvider = new CommonFileProvider(),
+            FormatProvider = new JsonFormatProvider(),
+        }.BuildOptions("");
+        var source = new LegacyFileStateSource<TestSettings>(options);
+
+        await source.WriteAsync(new StateWriteRequest<TestSettings>(new TestSettings { Value = "one" }, null));
+        var loaded = await source.ReadAsync();
+        File.WriteAllText(options.ConfigFilePath, "{\"Value\":\"external\"}");
+
+        await Should.ThrowAsync<ConfigurationConflictException>(() =>
+            source
+                .WriteAsync(new StateWriteRequest<TestSettings>(new TestSettings { Value = "two" }, loaded.Revision))
+                .AsTask()
+        );
+    }
+
     [Test]
     public async Task ReadAsync_UsesPriorityAndConfiguredFallback()
     {
@@ -129,5 +157,10 @@ public class CompositeStateSourceTests
             LastWriteRequest = request;
             return new ValueTask<StateWriteResult>(new StateWriteResult("written-r1"));
         }
+    }
+
+    private sealed class TestSettings
+    {
+        public string Value { get; set; } = "";
     }
 }

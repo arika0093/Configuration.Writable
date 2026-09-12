@@ -70,6 +70,17 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
         }
     }
 
+    internal string ToRevision() =>
+        string.Concat(
+            Exists ? "1" : "0",
+            ":",
+            Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ":",
+            LastWriteTimeUtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ":",
+            Hash ?? ""
+        );
+
     public bool Equals(ConfigurationFileFingerprint? other) =>
         other != null
         && Exists == other.Exists
