@@ -242,7 +242,7 @@ public class CompositeStateSourceTests
         )
         {
             WatchCount++;
-            return ValueTask.CompletedTask;
+            return default;
         }
     }
 
