@@ -327,7 +327,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     public void FromProvider(
         IStateReader<T> source,
         int priority = 100,
-        StateFallbackCondition fallbackCondition = StateFallbackCondition.NotFound
+        StateFallbackConditions fallbackCondition = StateFallbackConditions.NotFound
     ) => FromProvider(null, source, priority, fallbackCondition);
 
     /// <summary>
@@ -342,7 +342,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         string? sourceId,
         IStateReader<T> source,
         int priority = 100,
-        StateFallbackCondition fallbackCondition = StateFallbackCondition.NotFound
+        StateFallbackConditions fallbackCondition = StateFallbackConditions.NotFound
     )
     {
         if (source is null)
@@ -371,7 +371,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     /// Selects the source that receives saves. Without an explicit target, the highest-priority
     /// writable source is used. Use <c>file</c> to route saves to the built-in file source.
     /// </summary>
-    /// <param name="sourceId">The id supplied to <see cref="FromProvider(string?, IStateReader{T}, int, StateFallbackCondition)"/> or <c>file</c>.</param>
+    /// <param name="sourceId">The id supplied to <see cref="FromProvider(string?, IStateReader{T}, int, StateFallbackConditions)"/> or <c>file</c>.</param>
     public void UseWriteTarget(string sourceId)
     {
         if (string.IsNullOrWhiteSpace(sourceId))
@@ -509,7 +509,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 fileSource,
                 fileSource,
                 priority: int.MinValue,
-                fallbackCondition: StateFallbackCondition.None
+                fallbackCondition: StateFallbackConditions.None
             )
         );
         return new CompositeStateSource<T>(sources, writeTargetId);
@@ -519,7 +519,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         string Id,
         IStateReader<T> Reader,
         int Priority,
-        StateFallbackCondition FallbackCondition
+        StateFallbackConditions FallbackCondition
     );
 
     private static bool SupportsSchemaMetadata(

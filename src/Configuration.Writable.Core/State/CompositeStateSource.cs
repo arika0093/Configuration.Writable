@@ -71,7 +71,7 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
             if (result.Status == StateReadStatus.Success)
             {
                 return StateReadResult<T>.Success(
-                    result.Value!,
+                    result.Value,
                     StoreRevisions(revisions, source.Id, result.Revision)
                 );
             }
@@ -154,7 +154,7 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         var waits = watchers
             .Select(source =>
                 source
-                    .Watcher!.WaitForChangeAsync(
+                    .Watcher.WaitForChangeAsync(
                         GetExpectedRevision(observedRevision, source.Id),
                         linkedCancellation.Token
                     )
@@ -175,11 +175,11 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         }
     }
 
-    private static bool CanFallback(StateFallbackCondition condition, StateReadStatus status) =>
+    private static bool CanFallback(StateFallbackConditions condition, StateReadStatus status) =>
         status switch
         {
-            StateReadStatus.NotFound => (condition & StateFallbackCondition.NotFound) != 0,
-            StateReadStatus.Unavailable => (condition & StateFallbackCondition.Unavailable) != 0,
+            StateReadStatus.NotFound => (condition & StateFallbackConditions.NotFound) != 0,
+            StateReadStatus.Unavailable => (condition & StateFallbackConditions.Unavailable) != 0,
             _ => false,
         };
 
@@ -206,7 +206,10 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
     private static string? GetExpectedRevision(string? compositeRevision, string sourceId)
     {
         var revision = ParseRevision(compositeRevision);
-        if (revision?.Revisions.TryGetValue(sourceId, out var sourceRevision) == true)
+        if (
+            revision is not null
+            && revision.Revisions.TryGetValue(sourceId, out var sourceRevision)
+        )
         {
             return sourceRevision;
         }

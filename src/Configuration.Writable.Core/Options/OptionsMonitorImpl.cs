@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -268,6 +269,11 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         );
     }
 
+    [SuppressMessage(
+        "Major Code Smell",
+        "S2325:Make methods static",
+        Justification = "The watcher invokes the monitor's reload and failure-notification pipeline."
+    )]
     private async Task WatchStateChangesAsync(
         WritableOptionsConfiguration<T> options,
         OptionsMonitorDataSource dataSource,

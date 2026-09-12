@@ -50,7 +50,7 @@ public class CompositeStateSourceTests
                 fallback,
                 null,
                 0,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
             new StateSource<string>(
                 "primary",
@@ -58,7 +58,7 @@ public class CompositeStateSourceTests
                 primary,
                 null,
                 100,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
         ]
         );
@@ -84,7 +84,7 @@ public class CompositeStateSourceTests
                 primary,
                 null,
                 100,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
             new StateSource<string>(
                 "fallback",
@@ -92,7 +92,7 @@ public class CompositeStateSourceTests
                 fallback,
                 null,
                 0,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
         ]
         );
@@ -111,8 +111,8 @@ public class CompositeStateSourceTests
         var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
         var source = new CompositeStateSource<string>(
         [
-            new StateSource<string>("primary", primary, primary, null, 100, StateFallbackCondition.NotFound),
-            new StateSource<string>("fallback", fallback, fallback, null, 0, StateFallbackCondition.NotFound),
+            new StateSource<string>("primary", primary, primary, null, 100, StateFallbackConditions.NotFound),
+            new StateSource<string>("fallback", fallback, fallback, null, 0, StateFallbackConditions.NotFound),
         ],
             writeTargetId: "fallback"
         );
@@ -138,7 +138,7 @@ public class CompositeStateSourceTests
                 primary,
                 null,
                 100,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
             new StateSource<string>(
                 "fallback",
@@ -146,7 +146,7 @@ public class CompositeStateSourceTests
                 fallback,
                 null,
                 0,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
         ]
         );
@@ -190,7 +190,7 @@ public class CompositeStateSourceTests
                 primary,
                 primary,
                 100,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
             new StateSource<string>(
                 "fallback",
@@ -198,7 +198,7 @@ public class CompositeStateSourceTests
                 fallback,
                 fallback,
                 0,
-                StateFallbackCondition.NotFound
+                StateFallbackConditions.NotFound
             ),
         ]
         );

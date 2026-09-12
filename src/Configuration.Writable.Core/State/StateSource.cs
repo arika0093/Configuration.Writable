@@ -10,7 +10,7 @@ internal sealed class StateSource<T>
         IStateWriter<T>? writer,
         IStateWatcher? watcher,
         int priority,
-        StateFallbackCondition fallbackCondition
+        StateFallbackConditions fallbackCondition
     )
     {
         Id = string.IsNullOrWhiteSpace(id)
@@ -33,5 +33,5 @@ internal sealed class StateSource<T>
 
     internal int Priority { get; }
 
-    internal StateFallbackCondition FallbackCondition { get; }
+    internal StateFallbackConditions FallbackCondition { get; }
 }
