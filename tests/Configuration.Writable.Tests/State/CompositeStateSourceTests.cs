@@ -254,6 +254,7 @@ public class CompositeStateSourceTests
             services.AddWritableOptions<TestSettings>(options =>
             {
                 options.FilePath = Path.Combine(blockerPath, "unused.json");
+                options.FileProvider = new InMemoryFileProvider();
                 options.FromProvider("remote", source);
             });
             using var serviceProvider = services.BuildServiceProvider();
