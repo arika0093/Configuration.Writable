@@ -56,6 +56,20 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         _writeTargetId = writeTargetId;
     }
 
+    internal bool UsesFileWriteTarget =>
+        string.Equals(GetWriteSource()?.Id, "file", StringComparison.Ordinal);
+
+    internal string? GetWatcherScopeRevision(string? observedRevision)
+    {
+        var revision = ParseRevision(observedRevision);
+        if (revision?.ActiveSourceId is null)
+        {
+            return null;
+        }
+
+        return CompositeRevisionPrefix + EncodeRevisionPart(revision.ActiveSourceId);
+    }
+
     public async ValueTask<StateReadResult<T>> ReadAsync(
         CancellationToken cancellationToken = default
     )
