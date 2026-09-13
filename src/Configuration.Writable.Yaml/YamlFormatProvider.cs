@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using VYaml.Emitter;
 using VYaml.Parser;
@@ -21,9 +22,28 @@ namespace Configuration.Writable.FormatProvider;
 /// Writable configuration implementation for Yaml files using VYaml.
 /// This provider is AOT-compatible when user types are annotated with <c>[YamlObject]</c>.
 /// </summary>
-public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvider
+public class YamlFormatProvider
+    : FormatProviderBase,
+        IOptionsSchemaMetadataProvider,
+        IStateCodecFactory
 {
-    private static readonly MethodInfo DeserializeMethod = typeof(YamlSerializer)
+    IStateCodec<T> IStateCodecFactory.CreateStateCodec<T>(WritableOptionsConfiguration<T> options)
+    {
+        // Subclasses overriding serialization must stay on the legacy pipeline.
+        if (GetType() != typeof(YamlFormatProvider))
+        {
+            return new LegacyFormatStateCodec<T>();
+        }
+
+        return new YamlStateCodec<T>(
+            SerializerOptions,
+            Encoding,
+            SchemaVersionProperty,
+            SchemaVersionFallbackProperties
+        );
+    }
+
+    internal static readonly MethodInfo DeserializeMethod = typeof(YamlSerializer)
         .GetMethods()
         .First(m =>
             m.Name == nameof(YamlSerializer.Deserialize)
@@ -31,8 +51,8 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             && m.GetParameters().Length == 2
             && m.GetParameters()[0].ParameterType == typeof(ReadOnlyMemory<byte>)
         );
-    private static readonly ConcurrentDictionary<Type, MethodInfo> DeserializeMethods = new();
-    private static readonly ConcurrentDictionary<
+    internal static readonly ConcurrentDictionary<Type, MethodInfo> DeserializeMethods = new();
+    internal static readonly ConcurrentDictionary<
         Type,
         Func<ReadOnlyMemory<byte>, YamlSerializerOptions, object>
     > AotDeserializers = new();
@@ -125,7 +145,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return new OptionsSchemaMetadata(null, version);
     }
 
-    private static bool TryGetMetadataValue(YamlMapping metadata, string name, out string value)
+    internal static bool TryGetMetadataValue(YamlMapping metadata, string name, out string value)
     {
         if (metadata.Values.TryGetValue(name, out var yamlValue) && yamlValue is YamlScalar scalar)
         {
@@ -147,11 +167,15 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return false;
     }
 
-    private int? ReadOptionalVersion(YamlMapping metadata)
+    internal static int? ReadOptionalVersion(
+        YamlMapping metadata,
+        string schemaVersionProperty,
+        IReadOnlyList<string> schemaVersionFallbackProperties
+    )
     {
         foreach (
-            var propertyName in new[] { SchemaVersionProperty }
-                .Concat(SchemaVersionFallbackProperties)
+            var propertyName in new[] { schemaVersionProperty }
+                .Concat(schemaVersionFallbackProperties)
                 .Distinct(StringComparer.Ordinal)
         )
         {
@@ -166,7 +190,10 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return null;
     }
 
-    private static int ConvertVersion(string value, string propertyName)
+    private int? ReadOptionalVersion(YamlMapping metadata) =>
+        ReadOptionalVersion(metadata, SchemaVersionProperty, SchemaVersionFallbackProperties);
+
+    internal static int ConvertVersion(string value, string propertyName)
     {
         if (
             long.TryParse(
@@ -227,7 +254,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
     )]
     private static object CreateInstance(Type type) => Activator.CreateInstance(type)!;
 
-    private static ReadOnlyMemory<byte>? GetSectionBytes(
+    internal static ReadOnlyMemory<byte>? GetSectionBytes(
         ReadOnlyMemory<byte> yamlBytes,
         List<string> sectionNameParts
     )
@@ -262,20 +289,27 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         "IL2060",
         Justification = "The reflection fallback is used only when a type was not explicitly registered for NativeAOT."
     )]
-    private object Deserialize(Type type, ReadOnlyMemory<byte> yamlBytes)
+    internal static object Deserialize(
+        Type type,
+        ReadOnlyMemory<byte> yamlBytes,
+        YamlSerializerOptions serializerOptions
+    )
     {
         if (AotDeserializers.TryGetValue(type, out var deserializer))
         {
-            return deserializer(yamlBytes, SerializerOptions);
+            return deserializer(yamlBytes, serializerOptions);
         }
 
         var genericMethod = DeserializeMethods.GetOrAdd(
             type,
             static type => DeserializeMethod.MakeGenericMethod(type)
         );
-        var result = genericMethod.Invoke(null, new object[] { yamlBytes, SerializerOptions });
+        var result = genericMethod.Invoke(null, new object[] { yamlBytes, serializerOptions });
         return result ?? Activator.CreateInstance(type)!;
     }
+
+    private object Deserialize(Type type, ReadOnlyMemory<byte> yamlBytes) =>
+        Deserialize(type, yamlBytes, SerializerOptions);
 
     private async ValueTask<ReadOnlyMemory<byte>> ReadYamlBytesAsync(
         Stream stream,
@@ -327,7 +361,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return Encoding.UTF8.GetBytes(yamlContent);
     }
 
-    private static bool HasNonUtf8Bom(ReadOnlySpan<byte> yaml)
+    internal static bool HasNonUtf8Bom(ReadOnlySpan<byte> yaml)
     {
         return yaml.Length >= 2
             && (
@@ -343,7 +377,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             );
     }
 
-    private static bool IsEmptyOrWhiteSpace(ReadOnlySpan<byte> yaml)
+    internal static bool IsEmptyOrWhiteSpace(ReadOnlySpan<byte> yaml)
     {
         foreach (var value in yaml)
         {
@@ -509,20 +543,29 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return Encoding.GetBytes(yaml);
     }
 
-    private YamlMapping CreateSchemaMetadataDictionary<T>(T config, OptionsSchemaMetadata metadata)
+    internal static YamlMapping CreateSchemaMetadataDictionary<T>(
+        T config,
+        OptionsSchemaMetadata metadata,
+        YamlSerializerOptions serializerOptions,
+        string schemaVersionProperty
+    )
         where T : class, new()
     {
-        var yamlBytes = YamlSerializer.Serialize(config, SerializerOptions);
+        var yamlBytes = YamlSerializer.Serialize(config, serializerOptions);
         var mapping =
             ParseYaml(yamlBytes) as YamlMapping
             ?? throw new FormatException(
                 "Options schema metadata can only be written for YAML mappings."
             );
-        AddSchemaMetadata(mapping, metadata, SchemaVersionProperty);
+        AddSchemaMetadata(mapping, metadata, schemaVersionProperty);
         return mapping;
     }
 
-    private static void AddSchemaMetadata(
+    private YamlMapping CreateSchemaMetadataDictionary<T>(T config, OptionsSchemaMetadata metadata)
+        where T : class, new() =>
+        CreateSchemaMetadataDictionary(config, metadata, SerializerOptions, SchemaVersionProperty);
+
+    internal static void AddSchemaMetadata(
         YamlMapping values,
         OptionsSchemaMetadata? metadata,
         string schemaVersionProperty
@@ -544,7 +587,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
     /// <summary>
     /// Merges a new configuration into an existing mapping at the specified section path.
     /// </summary>
-    private static void MergeSection(
+    internal static void MergeSection(
         YamlMapping existingMapping,
         List<string> sections,
         int currentIndex,
@@ -581,7 +624,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         }
     }
 
-    private static YamlMapping CreateNestedSection(
+    internal static YamlMapping CreateNestedSection(
         IReadOnlyList<string> sections,
         YamlMapping value
     )
@@ -595,14 +638,14 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return current;
     }
 
-    private static IYamlValue ParseYaml(ReadOnlyMemory<byte> yamlBytes)
+    internal static IYamlValue ParseYaml(ReadOnlyMemory<byte> yamlBytes)
     {
         var parser = YamlParser.FromSequence(new ReadOnlySequence<byte>(yamlBytes));
         parser.SkipHeader();
         return ParseValue(ref parser);
     }
 
-    private static IYamlValue ParseValue(ref YamlParser parser)
+    internal static IYamlValue ParseValue(ref YamlParser parser)
     {
         return parser.CurrentEventType switch
         {
@@ -613,14 +656,14 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         };
     }
 
-    private static YamlScalar ParseScalar(ref YamlParser parser)
+    internal static YamlScalar ParseScalar(ref YamlParser parser)
     {
         var value = parser.GetScalarAsString() ?? "null";
         parser.ReadWithVerify(ParseEventType.Scalar);
         return new YamlScalar(value);
     }
 
-    private static YamlMapping ParseMapping(ref YamlParser parser)
+    internal static YamlMapping ParseMapping(ref YamlParser parser)
     {
         var mapping = new YamlMapping();
         parser.ReadWithVerify(ParseEventType.MappingStart);
@@ -638,7 +681,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return mapping;
     }
 
-    private static YamlSequence ParseSequence(ref YamlParser parser)
+    internal static YamlSequence ParseSequence(ref YamlParser parser)
     {
         var sequence = new YamlSequence();
         parser.ReadWithVerify(ParseEventType.SequenceStart);
@@ -651,7 +694,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return sequence;
     }
 
-    private static ReadOnlyMemory<byte> SerializeYaml(IYamlValue value)
+    internal static ReadOnlyMemory<byte> SerializeYaml(IYamlValue value)
     {
         var writer = new ByteBufferWriter();
         var emitter = new Utf8YamlEmitter(writer);
@@ -659,7 +702,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         return writer.WrittenMemory;
     }
 
-    private sealed class ByteBufferWriter : IBufferWriter<byte>
+    internal sealed class ByteBufferWriter : IBufferWriter<byte>
     {
         private byte[] buffer = new byte[256];
         private int written;
@@ -700,7 +743,7 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         }
     }
 
-    private static void WriteYaml(ref Utf8YamlEmitter emitter, IYamlValue value)
+    internal static void WriteYaml(ref Utf8YamlEmitter emitter, IYamlValue value)
     {
         switch (value)
         {
@@ -729,19 +772,19 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         }
     }
 
-    private interface IYamlValue;
+    internal interface IYamlValue;
 
-    private sealed class YamlScalar(string value) : IYamlValue
+    internal sealed class YamlScalar(string value) : IYamlValue
     {
         public string Value { get; } = value;
     }
 
-    private sealed class YamlMapping : IYamlValue
+    internal sealed class YamlMapping : IYamlValue
     {
         public Dictionary<string, IYamlValue> Values { get; } = new(StringComparer.Ordinal);
     }
 
-    private sealed class YamlSequence : IYamlValue
+    internal sealed class YamlSequence : IYamlValue
     {
         public List<IYamlValue> Values { get; } = [];
     }
