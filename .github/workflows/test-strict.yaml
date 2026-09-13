@@ -50,7 +50,7 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests
-        run: dotnet test --no-build -- --retry-failed-tests 3 --timeout 25m --report-trx --no-progress
+        run: dotnet test --no-build -- --retry-failed-tests 3 --timeout 5m --report-trx --no-progress
 
   native-aot:
     timeout-minutes: 30
@@ -79,5 +79,5 @@ jobs:
           tests/Configuration.Writable.Tests/bin/Release/net10.0/linux-x64/publish/Configuration.Writable.Tests
           --treenode-filter '/*/*/*/*JsonAot*'
           --retry-failed-tests 3
-          --timeout 25m
+          --timeout 5m
           --no-progress

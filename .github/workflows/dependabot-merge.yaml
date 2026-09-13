@@ -31,7 +31,7 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests only for .NET 10.0
-        run: dotnet test --no-build -- --retry-failed-tests 3 --timeout 25m --report-trx --no-progress
+        run: dotnet test --no-build -- --retry-failed-tests 3 --timeout 5m --report-trx --no-progress
   
   dependabot:
     runs-on: ubuntu-latest
