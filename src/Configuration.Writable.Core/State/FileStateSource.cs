@@ -34,13 +34,7 @@ internal sealed class FileStateSource<T> : IStateSource<T>
             var value = await _codec.ReadAsync(_resource, cancellationToken).ConfigureAwait(false);
             var revisionAfterRead = GetReadRevision();
 
-            if (
-                !string.Equals(
-                    revisionBeforeRead,
-                    revisionAfterRead,
-                    StringComparison.Ordinal
-                )
-            )
+            if (!string.Equals(revisionBeforeRead, revisionAfterRead, StringComparison.Ordinal))
             {
                 if (attempt == MaxStableReadAttempts - 1)
                 {
