@@ -143,8 +143,8 @@ public partial class OnChangeDebounceIntegrationTests : IDisposable
         TestSettings? lastReceivedValue = null;
         config.OnChange(value =>
         {
-            Interlocked.Increment(ref changeCount);
             lastReceivedValue = new TestSettings { Name = value.Name, Value = value.Value };
+            Interlocked.Increment(ref changeCount);
         });
 
         await config.SaveAsync(s =>
