@@ -8,7 +8,11 @@ on:
       - '**.csproj'
       - '**.cs'
       - '**/Directory.Build.props'
-      - '.github/workflows/test.yaml'
+      - '.github/workflows/test-strict.yaml'
+
+concurrency:
+  group: strict-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
