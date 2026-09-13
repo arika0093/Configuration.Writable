@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Configuration.Writable.State;
 
 namespace Configuration.Writable.Configure;
 
@@ -36,6 +37,13 @@ public class ProfiledOptionsConfigBuilder<T> : WritableOptionsConfigBuilder<T>
         }
 
         var template = BuildOptions(CatalogInstanceName);
+        if (template.CreateStateSource() is CompositeStateSource<T>)
+        {
+            throw new InvalidOperationException(
+                "FromProvider is not supported for profiled options because each profile requires an independent state source."
+            );
+        }
+
         var profileSectionParts = template
             .SectionNameParts.Concat(SplitSectionName(ProfileSectionName))
             .ToList();
