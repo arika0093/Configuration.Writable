@@ -356,10 +356,11 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             do
             {
                 sourceId = $"provider-{index++}";
-            }
-            while (_stateSources.Any(existing =>
-                string.Equals(existing.Id, sourceId, StringComparison.Ordinal)
-            ));
+            } while (
+                _stateSources.Any(existing =>
+                    string.Equals(existing.Id, sourceId, StringComparison.Ordinal)
+                )
+            );
         }
         if (
             string.Equals(sourceId, "file", StringComparison.Ordinal)
