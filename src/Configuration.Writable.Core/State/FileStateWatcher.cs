@@ -92,13 +92,16 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
         watcher.Error += onError;
         watcher.EnableRaisingEvents = true;
 
-        if (!_options.FileProvider.FileExists(watchedFilePath))
+        if (RevisionChanged(observedRevision))
         {
-            change.TrySetException(CreateDeletedFileException(watchedFilePath));
-        }
-        else if (RevisionChanged(observedRevision))
-        {
-            change.TrySetResult(true);
+            if (!_options.FileProvider.FileExists(watchedFilePath))
+            {
+                change.TrySetException(CreateDeletedFileException(watchedFilePath));
+            }
+            else
+            {
+                change.TrySetResult(true);
+            }
         }
 
         await change.Task.ConfigureAwait(false);
