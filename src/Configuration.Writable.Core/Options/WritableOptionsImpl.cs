@@ -178,6 +178,15 @@ internal sealed class WritableOptionsImpl<T>(
                 options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
                     ? optionMonitorInstance.GetStateRevision(options.InstanceName)
                     : null;
+            if (
+                options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
+                && expectedRevision is null
+            )
+            {
+                ConfigurationWritableEventSource.Log.ConflictDetected();
+                throw new ConfigurationConflictException(options.ConfigFilePath);
+            }
+
             var writeResult = await options
                 .CreateStateSource(acquireSaveLock: false)
                 .WriteAsync(
