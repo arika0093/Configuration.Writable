@@ -240,7 +240,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         _semaphore.Wait();
         try
         {
-            var result = options.CreateStateSource().ReadAsync().AsTask().GetAwaiter().GetResult();
+            var result = ReadStateWithoutSyncContext(options);
             if (result.Status == StateReadStatus.NotFound)
             {
                 if (!useDefaultWhenNotFound)
@@ -279,6 +279,22 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             _semaphore.Release();
         }
+    }
+
+    private static StateReadResult<T> ReadStateWithoutSyncContext(
+        WritableOptionsConfiguration<T> options
+    )
+    {
+        // Custom state readers may capture the caller's SynchronizationContext.
+        // Clearing it on a worker thread keeps this blocking read from
+        // deadlocking single-threaded contexts.
+        return Task.Run(() =>
+            {
+                SynchronizationContext.SetSynchronizationContext(null);
+                return options.CreateStateSource().ReadAsync().AsTask().GetAwaiter().GetResult();
+            })
+            .GetAwaiter()
+            .GetResult();
     }
 
     private void StartStateWatcher(
