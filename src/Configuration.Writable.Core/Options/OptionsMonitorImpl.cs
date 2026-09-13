@@ -351,9 +351,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             using var debounceCancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 cancellationToken
             );
-            var changeTask = source
-                .WaitForChangeAsync(null, debounceCancellation.Token)
-                .AsTask();
+            var changeTask = source.WaitForChangeAsync(null, debounceCancellation.Token).AsTask();
             var delayTask = Task.Delay(debounceDuration, debounceCancellation.Token);
             var completedTask = await Task.WhenAny(changeTask, delayTask).ConfigureAwait(false);
 
