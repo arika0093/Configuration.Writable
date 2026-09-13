@@ -109,6 +109,7 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// </summary>
     internal MigrationLookup? MigrationLookup { get; init; }
 
+#pragma warning disable S2325 // Both members below use instance state; flagged as a false positive.
     internal bool HasFallbackFormats => FallbackFormats.Count > 0;
 
     internal string GetSelectedFilePath()
@@ -139,6 +140,7 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
 
         return ConfigFilePath;
     }
+#pragma warning restore S2325
 
     /// <summary>
     /// Creates the state endpoint for this registration. The current factory preserves the

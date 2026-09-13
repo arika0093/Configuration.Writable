@@ -205,34 +205,13 @@ internal sealed class WritableOptionsImpl<T>(
             // read source. Publish the effective (authoritative) value instead
             // of the written value so CurrentValue never reports state that a
             // subsequent read would not return.
-            var effectiveConfig = newConfig;
-            var compositeSource = stateSource as CompositeStateSource<T>;
-            if (compositeSource is not null)
-            {
-                try
-                {
-                    var readBack = await compositeSource
-                        .ReadAsync(cancellationToken)
-                        .ConfigureAwait(false);
-                    if (readBack.Status == StateReadStatus.Success && readBack.Value is not null)
-                    {
-                        effectiveConfig = readBack.Value;
-                    }
-                }
-                catch (Exception ex)
-                    when (ex is not OperationCanceledException
-                        && !cancellationToken.IsCancellationRequested
-                    )
-                {
-                    // The write already succeeded; keep the written value when
-                    // the authoritative value cannot be re-read.
-                    options.Logger?.LogDebug(
-                        ex,
-                        "Could not re-read the effective configuration after saving {InstanceName}; publishing the written value.",
-                        options.InstanceName
-                    );
-                }
-            }
+            var effectiveConfig = await ResolveEffectiveConfigAsync(
+                    stateSource,
+                    options,
+                    newConfig,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
 
             // Update the monitor's cache (the state watcher will notify listeners)
             var publishedConfig = options.CloneMethod(effectiveConfig);
@@ -249,10 +228,7 @@ internal sealed class WritableOptionsImpl<T>(
             // Saves to a write target without a watcher never wake the monitor,
             // so notify listeners directly. Watched targets notify through the
             // normal watcher pipeline.
-            if (compositeSource is not null && !compositeSource.WriteTargetHasWatcher)
-            {
-                optionMonitorInstance.NotifyListeners(options.InstanceName, publishedConfig);
-            }
+            NotifyUnwatchedSave(stateSource, options, publishedConfig);
 
             options.Logger?.LogInformation(
                 "Configuration saved successfully for {InstanceName} at revision {Revision}",
@@ -265,6 +241,57 @@ internal sealed class WritableOptionsImpl<T>(
         {
             ConfigurationWritableEventSource.Log.SaveFailed();
             throw;
+        }
+    }
+
+    private static async Task<T> ResolveEffectiveConfigAsync(
+        IStateSource<T> stateSource,
+        WritableOptionsConfiguration<T> options,
+        T writtenConfig,
+        CancellationToken cancellationToken
+    )
+    {
+        if (stateSource is not CompositeStateSource<T> compositeSource)
+        {
+            return writtenConfig;
+        }
+
+        try
+        {
+            var readBack = await compositeSource.ReadAsync(cancellationToken).ConfigureAwait(false);
+            if (readBack.Status == StateReadStatus.Success && readBack.Value is not null)
+            {
+                return readBack.Value;
+            }
+        }
+        catch (Exception ex)
+            when (ex is not OperationCanceledException && !cancellationToken.IsCancellationRequested
+            )
+        {
+            // The write already succeeded; keep the written value when
+            // the authoritative value cannot be re-read.
+            options.Logger?.LogDebug(
+                ex,
+                "Could not re-read the effective configuration after saving {InstanceName}; publishing the written value.",
+                options.InstanceName
+            );
+        }
+
+        return writtenConfig;
+    }
+
+    private void NotifyUnwatchedSave(
+        IStateSource<T> stateSource,
+        WritableOptionsConfiguration<T> options,
+        T publishedConfig
+    )
+    {
+        if (
+            stateSource is CompositeStateSource<T> compositeSource
+            && !compositeSource.WriteTargetHasWatcher
+        )
+        {
+            optionMonitorInstance.NotifyListeners(options.InstanceName, publishedConfig);
         }
     }
 
