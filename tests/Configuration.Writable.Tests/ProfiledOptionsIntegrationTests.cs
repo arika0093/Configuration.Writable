@@ -1,7 +1,9 @@
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -59,6 +61,23 @@ public partial class ProfiledOptionsIntegrationTests
     }
 
     [Test]
+    public void Profiles_FromProvider_ShouldBeRejected()
+    {
+        var services = new ServiceCollection();
+
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            services.AddProfiledWritableOptions<ProfileSettings>(options =>
+            {
+                options.FilePath = Path.GetRandomFileName();
+                options.UseInMemoryFileProvider(_fileProvider);
+                options.FromProvider("remote", new ProfileStateReader());
+            })
+        );
+
+        exception.Message.ShouldContain("FromProvider");
+    }
+
+    [Test]
     public async Task Profiles_ShouldRestoreCatalogWhenApplicationRestarts()
     {
         var fileName = Path.GetRandomFileName();
@@ -93,6 +112,13 @@ public partial class ProfiledOptionsIntegrationTests
             options.UseInMemoryFileProvider(_fileProvider);
         });
         return builder.Build();
+    }
+
+    private sealed class ProfileStateReader : IStateReader<ProfileSettings>
+    {
+        public ValueTask<StateReadResult<ProfileSettings>> ReadAsync(
+            CancellationToken cancellationToken = default
+        ) => new(StateReadResult<ProfileSettings>.NotFound());
     }
 
     [OptionsModel]
