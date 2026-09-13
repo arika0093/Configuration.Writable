@@ -67,7 +67,7 @@ internal sealed class WritableOptionsImpl<T>(
     {
         var options = GetOptions(name);
         var configToSave = options.CloneMethod(newConfig);
-        return SaveClonedAsync(configToSave, options, cancellationToken);
+        return SaveClonedAsync(this, configToSave, options, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -234,17 +234,19 @@ internal sealed class WritableOptionsImpl<T>(
     /// the specified name exists.</exception>
     private WritableOptionsConfiguration<T> GetOptions(string name) => registryInstance.Get(name);
 
-    private async Task SaveClonedAsync(
+    private static async Task SaveClonedAsync(
+        WritableOptionsImpl<T> owner,
         T configToSave,
         WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken
     )
     {
         var stateSource = options.CreateStateSource(acquireSaveLock: false);
-        await RunCoordinatedSaveAsync(
+        await owner
+            .RunCoordinatedSaveAsync(
                 options,
                 stateSource,
-                () => SaveCoreAsync(configToSave, options, stateSource, cancellationToken),
+                () => owner.SaveCoreAsync(configToSave, options, stateSource, cancellationToken),
                 cancellationToken
             )
             .ConfigureAwait(false);

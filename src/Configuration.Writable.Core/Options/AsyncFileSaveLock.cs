@@ -30,11 +30,9 @@ internal static class AsyncFileSaveLock
         using var lockTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         lockTimeout.CancelAfter(LockTimeout);
         var lockCancellationToken = lockTimeout.Token;
-        var semaphoreAcquired = false;
         try
         {
             await entry.Semaphore.WaitAsync(lockCancellationToken).ConfigureAwait(false);
-            semaphoreAcquired = true;
             try
             {
                 var sidecarLockStream = await AcquireSidecarLockAsync(key, lockCancellationToken)
@@ -44,17 +42,13 @@ internal static class AsyncFileSaveLock
             catch
             {
                 entry.Semaphore.Release();
-                semaphoreAcquired = false;
                 throw;
             }
         }
         catch (OperationCanceledException)
             when (lockTimeout.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
-            if (semaphoreAcquired)
-            {
-                entry.Semaphore.Release();
-            }
+            ReleaseReference(key, entry);
             throw new TimeoutException(
                 $"Timed out after {LockTimeout} while acquiring the configuration file lock for '{key}'."
             );
