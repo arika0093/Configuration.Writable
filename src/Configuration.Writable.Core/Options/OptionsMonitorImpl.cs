@@ -305,13 +305,15 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             try
             {
+                var observedRevision = dataSource.WatcherRevision;
                 await source
-                    .WaitForChangeAsync(dataSource.WatcherRevision, cancellationToken)
+                    .WaitForChangeAsync(observedRevision, cancellationToken)
                     .ConfigureAwait(false);
                 if (options.OnChangeDebounce > TimeSpan.Zero)
                 {
                     await WaitForQuietPeriodAsync(
                             source,
+                            observedRevision,
                             options.OnChangeDebounce,
                             cancellationToken
                         )
@@ -342,16 +344,23 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
     private static async Task WaitForQuietPeriodAsync(
         IStateSource<T> source,
+        string? observedRevision,
         TimeSpan debounceDuration,
         CancellationToken cancellationToken
     )
     {
+        var debounceRevision =
+            source is CompositeStateSource<T> compositeSource
+                ? compositeSource.GetWatcherScopeRevision(observedRevision)
+                : null;
         while (true)
         {
             using var debounceCancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 cancellationToken
             );
-            var changeTask = source.WaitForChangeAsync(null, debounceCancellation.Token).AsTask();
+            var changeTask = source
+                .WaitForChangeAsync(debounceRevision, debounceCancellation.Token)
+                .AsTask();
             var delayTask = Task.Delay(debounceDuration, debounceCancellation.Token);
             var completedTask = await Task.WhenAny(changeTask, delayTask).ConfigureAwait(false);
 
@@ -376,10 +385,8 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 await changeTask.ConfigureAwait(false);
             }
             catch (OperationCanceledException)
-                when (
-                    debounceCancellation.IsCancellationRequested
-                    && !cancellationToken.IsCancellationRequested
-                )
+                when (debounceCancellation.IsCancellationRequested
+                    && !cancellationToken.IsCancellationRequested)
             {
                 return;
             }
