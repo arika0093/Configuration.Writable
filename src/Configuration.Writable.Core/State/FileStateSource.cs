@@ -120,7 +120,12 @@ internal sealed class FileStateSource<T> : IStateSource<T>
     private WritableOptionsConfiguration<T> GetReadOptions()
     {
         var options = _resource.Options;
-        return options with { ConfigFilePath = options.ReadFilePath };
+        var readFilePath =
+            options.PromoteSaveLocationEnabled
+            && options.FileProvider.FileExists(options.ConfigFilePath)
+                ? options.ConfigFilePath
+                : options.ReadFilePath;
+        return options with { ConfigFilePath = readFilePath };
     }
 
     private async ValueTask PromoteIfRequiredAsync(T value, CancellationToken cancellationToken)
@@ -129,6 +134,7 @@ internal sealed class FileStateSource<T> : IStateSource<T>
         if (
             !options.PromoteSaveLocationEnabled
             || string.Equals(options.ReadFilePath, options.ConfigFilePath, StringComparison.Ordinal)
+            || options.FileProvider.FileExists(options.ConfigFilePath)
         )
         {
             return;
