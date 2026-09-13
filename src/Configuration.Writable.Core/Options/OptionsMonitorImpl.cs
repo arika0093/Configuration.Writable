@@ -224,6 +224,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             dataSource.Cache = loaded.Value;
             dataSource.Fingerprint = loaded.Fingerprint;
             dataSource.StateRevision = loaded.Revision;
+            dataSource.WatcherRevision = loaded.Revision;
         }
         return loaded.Value;
     }
@@ -305,7 +306,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             try
             {
                 await source
-                    .WaitForChangeAsync(dataSource.StateRevision, cancellationToken)
+                    .WaitForChangeAsync(dataSource.WatcherRevision, cancellationToken)
                     .ConfigureAwait(false);
                 if (options.OnChangeDebounce > TimeSpan.Zero)
                 {
@@ -510,6 +511,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public T DefaultValue { get; set; }
         public ConfigurationFileFingerprint? Fingerprint { get; set; }
         public string? StateRevision { get; set; }
+        public string? WatcherRevision { get; set; }
         public List<Action<T, string?>> Listeners { get; } = [];
         public List<Action<Exception, string?>> FailureListeners { get; } = [];
         private object ListenersLock { get; } = new();
@@ -527,6 +529,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             DefaultValue = defaultValue;
             Fingerprint = fingerprint;
             StateRevision = stateRevision;
+            WatcherRevision = stateRevision;
         }
 
         public void AddListener(Action<T, string?> listener)
