@@ -1,13 +1,11 @@
 using System;
 using System.IO;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Shouldly;
 
 namespace Configuration.Writable.Tests;
 
-public class FallbackFormatProviderPathValidationTests
+public class FallbackFormatPathValidationTests
 {
     [Test]
     public void BuildOptions_ShouldRejectCanonicalPathThatCollidesWithFallbackFormat()
@@ -15,10 +13,10 @@ public class FallbackFormatProviderPathValidationTests
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
         {
             FilePath = "settings.json",
-            FileProvider = new InMemoryFileProvider(),
-            FormatProvider = new ExtensionJsonFormatProvider("yaml"),
+            FileBackend = new InMemoryFileBackend(),
+            FormatOptions = new ExtensionJsonFileOptions("yaml"),
         };
-        builder.AddFallbackFormatProvider(new JsonFormatProvider());
+        builder.AddFallbackFormat(new JsonFileOptions());
 
         var exception = Should.Throw<InvalidOperationException>(() => builder.BuildOptions(""));
 
@@ -35,10 +33,10 @@ public class FallbackFormatProviderPathValidationTests
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
         {
             FilePath = "settings.conf",
-            FileProvider = new InMemoryFileProvider(),
-            FormatProvider = new ExtensionJsonFormatProvider("yaml"),
+            FileBackend = new InMemoryFileBackend(),
+            FormatOptions = new ExtensionJsonFileOptions("yaml"),
         };
-        builder.AddFallbackFormatProvider(new JsonFormatProvider());
+        builder.AddFallbackFormat(new JsonFileOptions());
 
         var options = builder.BuildOptions("");
 
@@ -51,17 +49,17 @@ public class FallbackFormatProviderPathValidationTests
         var builder = new WritableOptionsConfigBuilder<MigrationSupportTests.SettingsWithoutVersion>
         {
             FilePath = "settings.JSON",
-            FileProvider = new InMemoryFileProvider(),
-            FormatProvider = new ExtensionJsonFormatProvider("yaml"),
+            FileBackend = new InMemoryFileBackend(),
+            FormatOptions = new ExtensionJsonFileOptions("yaml"),
         };
-        builder.AddFallbackFormatProvider(new JsonFormatProvider());
+        builder.AddFallbackFormat(new JsonFileOptions());
 
         var options = builder.BuildOptions("");
 
         Path.GetExtension(options.ConfigFilePath).ShouldBe(".JSON");
     }
 
-    private sealed class ExtensionJsonFormatProvider(string extension) : JsonFormatProvider
+    private sealed class ExtensionJsonFileOptions(string extension) : JsonFileOptions
     {
         public override string FileExtension => extension;
     }

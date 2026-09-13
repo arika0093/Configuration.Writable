@@ -42,7 +42,7 @@ public static class ProfiledOptionsExtensions
         services.AddSingleton<IProfiledWritableOptions<T>>(provider =>
         {
             var options = new ProfiledWritableOptions<T>(
-                provider.GetRequiredService<IWritableOptionsConfigRegistry<T>>(),
+                provider.GetRequiredService<WritableOptionsRegistry<T>>(),
                 provider.GetRequiredService<IWritableNamedOptions<T>>(),
                 provider.GetRequiredService<IWritableOptions<ProfileCatalog>>(),
                 builder,

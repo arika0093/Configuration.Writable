@@ -8,7 +8,7 @@ using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
 
-public partial class ConfigurationOptionsRegistryTests
+public partial class WritableOptionsRegistryTests
 {
     [OptionsModel]
     internal partial class TestSettings
@@ -26,7 +26,7 @@ public partial class ConfigurationOptionsRegistryTests
         var optionsList = new[] { options1, options2 };
 
         // Act
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>(optionsList);
+        var registry = new WritableOptionsRegistry<TestSettings>(optionsList);
 
         // Assert
         var instanceNames = registry.GetInstanceNames().ToList();
@@ -41,7 +41,7 @@ public partial class ConfigurationOptionsRegistryTests
         // Arrange
         var options1 = CreateOptions("instance1", "file1.json");
         var options2 = CreateOptions("instance2", "file2.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([options1, options2]);
+        var registry = new WritableOptionsRegistry<TestSettings>([options1, options2]);
 
         // Act
         var retrieved1 = registry.Get("instance1");
@@ -58,7 +58,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void Get_ThrowsKeyNotFoundException_WhenInstanceNotFound()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
 
         // Act & Assert
         Should.Throw<KeyNotFoundException>(() => registry.Get("nonexistent"));
@@ -68,7 +68,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void TryAdd_AddsNewOption_ReturnsTrue()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
 
         // Act
         var result = registry.TryAdd(
@@ -92,7 +92,7 @@ public partial class ConfigurationOptionsRegistryTests
     {
         // Arrange
         var existingOption = CreateOptions("existing", "existing.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([existingOption]);
+        var registry = new WritableOptionsRegistry<TestSettings>([existingOption]);
 
         // Act
         var result = registry.TryAdd(
@@ -112,7 +112,7 @@ public partial class ConfigurationOptionsRegistryTests
     [Test]
     public void TryAdd_ConcurrentRequestsForSameInstance_AddsOnlyOnce()
     {
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
         var results = new bool[32];
 
         Parallel.For(
@@ -138,7 +138,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void TryAdd_TriggersOnAddedEvent()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
         WritableOptionsConfiguration<TestSettings>? addedOption = null;
         registry.OnAdded += conf => addedOption = conf;
 
@@ -162,7 +162,7 @@ public partial class ConfigurationOptionsRegistryTests
     {
         // Arrange
         var existingOption = CreateOptions("existing", "existing.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([existingOption]);
+        var registry = new WritableOptionsRegistry<TestSettings>([existingOption]);
         var eventTriggered = false;
         registry.OnAdded += _ => eventTriggered = true;
 
@@ -185,7 +185,7 @@ public partial class ConfigurationOptionsRegistryTests
         // Arrange
         var option1 = CreateOptions("instance1", "file1.json");
         var option2 = CreateOptions("instance2", "file2.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([option1, option2]);
+        var registry = new WritableOptionsRegistry<TestSettings>([option1, option2]);
 
         // Act
         var result = registry.TryRemove("instance1");
@@ -200,7 +200,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void TryRemove_WhenInstanceNotFound_ReturnsFalse()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
 
         // Act
         var result = registry.TryRemove("nonexistent");
@@ -214,7 +214,7 @@ public partial class ConfigurationOptionsRegistryTests
     {
         // Arrange
         var option = CreateOptions("instance1", "file1.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([option]);
+        var registry = new WritableOptionsRegistry<TestSettings>([option]);
         string? removedInstanceName = null;
         registry.OnRemoved += name => removedInstanceName = name;
 
@@ -229,7 +229,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void TryRemove_WhenFails_DoesNotTriggerOnRemovedEvent()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
         var eventTriggered = false;
         registry.OnRemoved += _ => eventTriggered = true;
 
@@ -247,7 +247,7 @@ public partial class ConfigurationOptionsRegistryTests
         var option1 = CreateOptions("instance1", "file1.json");
         var option2 = CreateOptions("instance2", "file2.json");
         var option3 = CreateOptions("instance3", "file3.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsRegistry<TestSettings>([
             option1,
             option2,
             option3,
@@ -267,7 +267,7 @@ public partial class ConfigurationOptionsRegistryTests
         var option1 = CreateOptions("instance1", "file1.json");
         var option2 = CreateOptions("instance2", "file2.json");
         var option3 = CreateOptions("instance3", "file3.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsRegistry<TestSettings>([
             option1,
             option2,
             option3,
@@ -289,7 +289,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void Clear_OnEmptyRegistry_DoesNothing()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
         var eventTriggered = false;
         registry.OnRemoved += _ => eventTriggered = true;
 
@@ -305,7 +305,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void GetInstanceNames_ReturnsEmptyForEmptyRegistry()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
 
         // Act
         var names = registry.GetInstanceNames();
@@ -318,7 +318,7 @@ public partial class ConfigurationOptionsRegistryTests
     public void MultipleEventHandlers_AllGetTriggered()
     {
         // Arrange
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([]);
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
         var addedCount = 0;
         var removedCount = 0;
 
@@ -347,7 +347,7 @@ public partial class ConfigurationOptionsRegistryTests
     {
         // Arrange
         var option1 = CreateOptions("initial", "initial.json");
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([option1]);
+        var registry = new WritableOptionsRegistry<TestSettings>([option1]);
 
         // Act & Assert - Add multiple
         registry

@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable.State;
 
@@ -10,15 +9,12 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
     where T : class, new()
 {
     private readonly WritableOptionsConfiguration<T> _options;
-    private readonly IWritableFileProvider _fileProvider;
+    private readonly IFileBackend _backend;
 
-    internal FileStateWatcher(
-        WritableOptionsConfiguration<T> options,
-        IWritableFileProvider fileProvider
-    )
+    internal FileStateWatcher(WritableOptionsConfiguration<T> options, IFileBackend backend)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
-        _fileProvider = fileProvider ?? throw new ArgumentNullException(nameof(fileProvider));
+        _backend = backend ?? throw new ArgumentNullException(nameof(backend));
     }
 
     public async ValueTask WaitForChangeAsync(
@@ -56,7 +52,7 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
 
         void SignalChange()
         {
-            if (!_fileProvider.FileExists(watchedFilePath))
+            if (!_backend.FileExists(watchedFilePath))
             {
                 change.TrySetException(CreateDeletedFileException(watchedFilePath));
                 return;
@@ -94,7 +90,7 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
 
         if (RevisionChanged(observedRevision))
         {
-            if (!_fileProvider.FileExists(watchedFilePath))
+            if (!_backend.FileExists(watchedFilePath))
             {
                 change.TrySetException(CreateDeletedFileException(watchedFilePath));
             }
@@ -118,9 +114,9 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
 
     private string GetPhysicalPath(string path)
     {
-        if (_fileProvider is IPhysicalFileProvider physicalFileProvider)
+        if (_backend.IsPhysical)
         {
-            return physicalFileProvider.GetPhysicalFilePath(path);
+            return _backend.GetPhysicalPath(path);
         }
         return Path.GetFullPath(path);
     }
@@ -133,14 +129,14 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
         }
 
         var currentRevision = ConfigurationFileFingerprint
-            .Capture(_options.GetSelectedFilePath(), _fileProvider)
+            .Capture(_options.GetSelectedFilePath(), _backend)
             ?.ToRevision();
         return !string.Equals(observedRevision, currentRevision, StringComparison.Ordinal);
     }
 
     private void ThrowIfWatchedFileWasDeleted(string watchedFilePath)
     {
-        if (!_fileProvider.FileExists(watchedFilePath))
+        if (!_backend.FileExists(watchedFilePath))
         {
             throw CreateDeletedFileException(watchedFilePath);
         }

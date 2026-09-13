@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
@@ -21,15 +19,21 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     internal WritableOptionsConfiguration() { }
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
-    /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
+    /// Gets the file format settings used to serialize the configuration data.
+    /// Defaults to JSON.
     /// </summary>
-    public required FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
+    public required FileFormatOptions FormatOptions { get; init; }
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations.
+    /// Gets the fallback file formats used to load an existing configuration
+    /// when the canonical file does not exist.
     /// </summary>
-    public required IWritableFileProvider FileProvider { get; init; }
+    public IReadOnlyList<FileFormatOptions> FallbackFormats { get; init; } = [];
+
+    /// <summary>
+    /// Gets the file backend used to read and write the configuration file.
+    /// </summary>
+    internal IFileBackend FileBackend { get; init; } = null!;
 
     /// <summary>
     /// Gets the full file path used to save the configuration file.
@@ -105,14 +109,34 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// </summary>
     internal MigrationLookup? MigrationLookup { get; init; }
 
-    internal bool HasFallbackFormats => FormatProvider is FallbackFormatProvider;
+    internal bool HasFallbackFormats => FallbackFormats.Count > 0;
 
     internal string GetSelectedFilePath()
     {
-        if (FormatProvider is FallbackFormatProvider fallbackProvider)
+        if (!HasFallbackFormats)
         {
-            return fallbackProvider.GetSelectedFilePath(this);
+            return ConfigFilePath;
         }
+
+        var backend = FileBackend;
+        if (!backend.FileExists(ConfigFilePath))
+        {
+            backend.TryRestoreLatestBackup(ConfigFilePath, Logger);
+        }
+        if (backend.FileExists(ConfigFilePath))
+        {
+            return ConfigFilePath;
+        }
+
+        foreach (var fallback in FallbackFormats)
+        {
+            var fallbackPath = Path.ChangeExtension(ConfigFilePath, fallback.FileExtension);
+            if (backend.FileExists(fallbackPath))
+            {
+                return fallbackPath;
+            }
+        }
+
         return ConfigFilePath;
     }
 

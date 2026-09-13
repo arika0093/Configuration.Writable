@@ -1,5 +1,5 @@
-﻿using Configuration.Writable;
-using Configuration.Writable.FormatProvider;
+﻿using System.Text.Json;
+using Configuration.Writable;
 using Example.ConsoleApp;
 
 // initialize the writable config system
@@ -12,15 +12,13 @@ WritableOptions.Initialize(conf =>
     conf.EnableJsonSchemaGeneration();
     conf.SchemaBaseUri = "../schema/";
 
-    // customize the format provider
-    // you can use Json, Xml, Yaml, or your original format by implementing IWritableFormatProvider
-    conf.FormatProvider = new JsonFormatProvider()
+    // customize the file format (Json, Yaml, or Xml via YamlFileOptions/XmlFileOptions)
+    conf.FormatOptions = new JsonFileOptions
     {
-        // One backup is kept by default. Set a custom count when needed.
-        // FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };
+        // One backup is kept by default.
 
         // customize JsonSerializerOptions
-        JsonSerializerOptions = { WriteIndented = true },
+        JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
     };
 
     // if you want to use logging, set Logger

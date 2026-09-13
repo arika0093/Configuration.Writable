@@ -60,8 +60,9 @@ public class ProfiledOptionsConfigBuilder<T> : WritableOptionsConfigBuilder<T>
 
         var catalogConfiguration = new WritableOptionsConfiguration<ProfileCatalog>
         {
-            FormatProvider = template.FormatProvider,
-            FileProvider = template.FileProvider,
+            FormatOptions = template.FormatOptions,
+            FallbackFormats = template.FallbackFormats,
+            FileBackend = template.FileBackend,
             ConfigFilePath = template.ConfigFilePath,
             ReadFilePath = template.ReadFilePath,
             PromoteSaveLocationEnabled = template.PromoteSaveLocationEnabled,

@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using VYaml.Serialization;
 
 // AppSettings and UserSettings are in TestModels.cs
@@ -18,7 +16,7 @@ namespace Configuration.Writable.Yaml.Tests;
 /// </summary>
 public class YamlPartialWriteTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [Test]
     public async Task PartialWrite_WithExistingFile_ShouldPreserveOtherSections()
@@ -45,8 +43,8 @@ public class YamlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "appSettings";
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act - Update only AppSettings section
@@ -106,8 +104,8 @@ public class YamlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "app:settings";
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -151,8 +149,8 @@ public class YamlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "appSettings";
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -185,18 +183,20 @@ public class YamlPartialWriteTests
         const string malformedContent = "appSettings: [unterminated";
         await _fileProvider.SaveToFileAsync(testFileName, Encoding.UTF8.GetBytes(malformedContent));
 
-        var provider = new YamlFormatProvider();
         var builder = new WritableOptionsConfigBuilder<AppSettings>
         {
             FilePath = testFileName,
             SectionName = "appSettings",
-            FormatProvider = provider,
-            FileProvider = _fileProvider,
+            FormatOptions = new YamlFileOptions(),
         };
+        builder.UseInMemoryBackend(_fileProvider);
         var options = builder.BuildOptions("");
 
         await Should.ThrowAsync<Exception>(() =>
-            provider.SaveAsync(new AppSettings { Name = "MustNotBeWritten", Revision = 1 }, options)
+            Configuration.Writable.Tests.Utility.StateTestHelper.WriteStateValue(
+                options,
+                new AppSettings { Name = "MustNotBeWritten", Revision = 1 }
+            )
         );
 
         _fileProvider.ReadAllText(testFileName).ShouldBe(malformedContent);
@@ -219,8 +219,8 @@ public class YamlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "newSection";
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -272,8 +272,8 @@ public class YamlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "appSettings";
-            options.FormatProvider = new YamlFormatProvider { Encoding = Encoding.Unicode };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new YamlFileOptions { Encoding = Encoding.Unicode };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         await instance
@@ -298,8 +298,8 @@ public class YamlPartialWriteTests
         {
             options.FilePath = testFileName;
             // No SectionName specified - full overwrite
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act

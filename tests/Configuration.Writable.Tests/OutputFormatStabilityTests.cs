@@ -4,9 +4,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Internal;
+using Configuration.Writable.State;
 
 namespace Configuration.Writable.Tests;
 
@@ -17,7 +16,7 @@ namespace Configuration.Writable.Tests;
 /// </summary>
 public partial class OutputFormatStabilityTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
 
     /// <summary>
@@ -62,7 +61,7 @@ public partial class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -70,7 +69,7 @@ public partial class OutputFormatStabilityTests
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 },
             };
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -95,7 +94,7 @@ public partial class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
@@ -104,7 +103,7 @@ public partial class OutputFormatStabilityTests
                 },
             };
             options.SectionName = "ApplicationSettings:Database";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -131,14 +130,14 @@ public partial class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     WriteIndented = false, // Compact format
                 },
             };
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -157,10 +156,10 @@ public partial class OutputFormatStabilityTests
     }
 
     [Test]
-    public async Task CommonFileProvider_OutputBytes_ShouldBeExact()
+    public async Task PhysicalFileBackend_OutputBytes_ShouldBeExact()
     {
         using var tempFile = new TemporaryFile();
-        var writer = new CommonFileProvider();
+        var writer = new PhysicalFileBackend();
 
         var testContent = """
             {
@@ -176,13 +175,13 @@ public partial class OutputFormatStabilityTests
         var savedBytes = File.ReadAllBytes(tempFile.FilePath);
         savedBytes.ShouldBe(
             contentBytes,
-            "CommonFileProvider should save exact byte content without modification"
+            "PhysicalFileBackend should save exact byte content without modification"
         );
 
         var savedText = File.ReadAllText(tempFile.FilePath, Encoding.UTF8);
         savedText.ShouldBe(
             testContent,
-            "CommonFileProvider should preserve exact text content including formatting"
+            "PhysicalFileBackend should preserve exact text content including formatting"
         );
     }
 
@@ -201,14 +200,14 @@ public partial class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -242,14 +241,14 @@ public partial class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     WriteIndented = true,
                 },
             };
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -275,14 +274,14 @@ public partial class OutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     WriteIndented = false,
                 },
             };
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();

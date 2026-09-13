@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 
@@ -51,8 +50,10 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
             readOptions,
             type => LoadAsType(fileResource, readPath, type, readOptions),
             () =>
-                FormatProviderBase.ExecuteWithBackupRecovery(
-                    readOptions,
+                FileBackupRecovery.Execute(
+                    readOptions.FileBackend,
+                    readPath,
+                    readOptions.Logger,
                     () => ReadSchemaMetadata(fileResource, readPath, readOptions)
                 ),
             static _ => { }
@@ -81,8 +82,10 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
         WritableOptionsConfiguration<T> options
     )
     {
-        return FormatProviderBase.ExecuteWithBackupRecovery(
-            options,
+        return FileBackupRecovery.Execute(
+            options.FileBackend,
+            path,
+            options.Logger,
             () => LoadCore(resource, path, type, options)
         );
     }
@@ -204,7 +207,7 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
 
         // No section name - create full XML with <configuration> wrapper
         // Serialize the configuration to XML
-        var serializer = XmlFormatProvider.SerializerCache<T>.Instance;
+        var serializer = SerializerCache<T>.Instance;
         using var sw = new StringWriter();
         serializer.Serialize(sw, config);
         var xmlDocument = new XmlDocument();
@@ -216,11 +219,7 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
         {
             throw new InvalidOperationException("Failed to serialize configuration to XML");
         }
-        XmlFormatProvider.AddSchemaMetadata(
-            configElement,
-            options.SchemaMetadata,
-            _schemaVersionProperty
-        );
+        AddSchemaMetadata(configElement, options.SchemaMetadata, _schemaVersionProperty);
 
         // Build nested XML structure with innerXml
         var innerXml = configElement.InnerXml;
@@ -240,23 +239,14 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
     {
         var parts = options.SectionNameParts;
         var existingDoc = LoadExistingDocument(resource, options);
-        var configElement = XmlFormatProvider.SerializeConfiguration(config);
-        XmlFormatProvider.AddSchemaMetadata(
-            configElement,
-            options.SchemaMetadata,
-            _schemaVersionProperty
-        );
+        var configElement = SerializeConfiguration(config);
+        AddSchemaMetadata(configElement, options.SchemaMetadata, _schemaVersionProperty);
         var resultDoc =
             existingDoc?.Root == null
-                ? XmlFormatProvider.CreatePartialDocument(configElement, parts, options)
-                : XmlFormatProvider.MergePartialDocument(
-                    existingDoc,
-                    configElement,
-                    parts,
-                    options
-                );
+                ? CreatePartialDocument(configElement, parts, options)
+                : MergePartialDocument(existingDoc, configElement, parts, options);
 
-        return XmlFormatProvider.WriteDocument(resultDoc, options);
+        return WriteDocument(resultDoc, options);
     }
 
     private static XDocument? LoadExistingDocument(
@@ -292,4 +282,144 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
             "The XML state codec requires a file state resource.",
             nameof(resource)
         );
+
+    private static class SerializerCache<TSerializer>
+        where TSerializer : class, new()
+    {
+        internal static readonly XmlSerializer Instance = new(typeof(TSerializer));
+    }
+
+    private static XmlElement SerializeConfiguration<TConfig>(TConfig config)
+        where TConfig : class, new()
+    {
+        using var writer = new StringWriter();
+        SerializerCache<TConfig>.Instance.Serialize(writer, config);
+        var document = new XmlDocument();
+        document.LoadXml(writer.ToString());
+        return document.DocumentElement
+            ?? throw new InvalidOperationException("Failed to serialize configuration to XML");
+    }
+
+    private static void AddSchemaMetadata(
+        XmlElement configElement,
+        OptionsSchemaMetadata? metadata,
+        string schemaVersionProperty
+    )
+    {
+        if (metadata == null)
+        {
+            return;
+        }
+
+        var document = configElement.OwnerDocument;
+        if (metadata.Version is not null)
+        {
+            var version = document.CreateElement(schemaVersionProperty);
+            version.InnerText = metadata.Version.Value.ToString(
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+            configElement.PrependChild(version);
+        }
+    }
+
+    private static XDocument CreatePartialDocument(
+        XmlElement configElement,
+        System.Collections.Generic.IReadOnlyList<string> parts,
+        WritableOptionsConfiguration<T> options
+    )
+    {
+        options.Logger?.LogTrace(
+            "Creating new nested section structure for section: {Section}",
+            string.Join(":", parts)
+        );
+
+        var innerXml = configElement.InnerXml;
+        for (int i = parts.Count - 1; i >= 0; i--)
+        {
+            innerXml = $"<{parts[i]}>{innerXml}</{parts[i]}>";
+        }
+
+        return XDocument.Parse(
+            $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <configuration>{innerXml}</configuration>
+            """
+        );
+    }
+
+    private static XDocument MergePartialDocument(
+        XDocument document,
+        XmlElement configElement,
+        System.Collections.Generic.IReadOnlyList<string> parts,
+        WritableOptionsConfiguration<T> options
+    )
+    {
+        options.Logger?.LogTrace(
+            "Merging with existing XML file for section: {Section}",
+            string.Join(":", parts)
+        );
+
+        var root =
+            document.Root
+            ?? throw new InvalidOperationException("Existing XML document has no root element");
+        var parent = GetSectionParent(root, parts);
+        var sectionName = parts[parts.Count - 1];
+        var replacement = new XElement(sectionName, XElement.Parse(configElement.OuterXml).Nodes());
+        var existing = parent.Element(sectionName);
+
+        if (existing == null)
+        {
+            parent.Add(replacement);
+        }
+        else
+        {
+            existing.ReplaceWith(replacement);
+        }
+
+        return document;
+    }
+
+    private static XElement GetSectionParent(
+        XElement root,
+        System.Collections.Generic.IReadOnlyList<string> parts
+    )
+    {
+        var current = root;
+        for (int i = 0; i < parts.Count - 1; i++)
+        {
+            var existing = current.Element(parts[i]);
+            if (existing == null)
+            {
+                existing = new XElement(parts[i]);
+                current.Add(existing);
+            }
+
+            current = existing;
+        }
+
+        return current;
+    }
+
+    private static ReadOnlyMemory<byte> WriteDocument(
+        XDocument document,
+        WritableOptionsConfiguration<T> options
+    )
+    {
+        using var resultWriter = new StringWriter();
+        using var xmlWriter = XmlWriter.Create(
+            resultWriter,
+            new XmlWriterSettings
+            {
+                Indent = true,
+                Encoding = Encoding.UTF8,
+                OmitXmlDeclaration = false,
+            }
+        );
+        document.WriteTo(xmlWriter);
+        xmlWriter.Flush();
+
+        options.Logger?.LogTrace("Partial XML serialization completed successfully");
+
+        return Encoding.UTF8.GetBytes(resultWriter.ToString());
+    }
 }

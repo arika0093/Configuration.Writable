@@ -3,8 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Tests;
 
@@ -58,12 +56,12 @@ internal partial class AotCamelCaseConfigContext : JsonSerializerContext;
 /// Tests to ensure that JsonAotFormatProvider works correctly with JSON Source Generators
 /// for AOT-compatible scenarios.
 /// </summary>
-public class JsonAotFormatProviderTests
+public class JsonAotFileOptionsTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [Test]
-    public async Task JsonAotFormatProvider_ShouldSerializeCorrectly()
+    public async Task JsonAotFileOptions_ShouldSerializeCorrectly()
     {
         const string testFileName = "aot_serialize_test.json";
         var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
@@ -71,8 +69,8 @@ public class JsonAotFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new AotTestConfig
@@ -98,7 +96,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_ShouldDeserializeCorrectly()
+    public async Task JsonAotFileOptions_ShouldDeserializeCorrectly()
     {
         const string testFileName = "aot_deserialize_test.json";
         var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
@@ -106,8 +104,8 @@ public class JsonAotFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // First, save a configuration
@@ -128,8 +126,8 @@ public class JsonAotFormatProviderTests
         loadInstance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var loadedOption = loadInstance.GetOptions();
@@ -145,7 +143,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_WithSectionName_ShouldWork()
+    public async Task JsonAotFileOptions_WithSectionName_ShouldWork()
     {
         const string testFileName = "aot_section_test.json";
         var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
@@ -154,8 +152,8 @@ public class JsonAotFormatProviderTests
         {
             options.FilePath = testFileName;
             options.SectionName = "AppSettings:Advanced";
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new AotTestConfig { Name = "Section Test", Count = 123 };
@@ -173,7 +171,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_SectionName_LoadSaveRoundTrip()
+    public async Task JsonAotFileOptions_SectionName_LoadSaveRoundTrip()
     {
         const string testFileName = "aot_section_roundtrip.json";
         var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
@@ -182,8 +180,8 @@ public class JsonAotFormatProviderTests
         {
             options.FilePath = testFileName;
             options.SectionName = "MyApp:Settings:Database";
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Save initial configuration
@@ -211,8 +209,8 @@ public class JsonAotFormatProviderTests
         {
             options.FilePath = testFileName;
             options.SectionName = "MyApp:Settings:Database";
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var loadedOption = loadInstance.GetOptions();
@@ -243,7 +241,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_SectionName_WithUnderscoreSeparator()
+    public async Task JsonAotFileOptions_SectionName_WithUnderscoreSeparator()
     {
         const string testFileName = "aot_section_underscore.json";
         var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
@@ -252,8 +250,8 @@ public class JsonAotFormatProviderTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App__Config__Section";
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new AotTestConfig { Name = "Underscore Test", Count = 456 };
@@ -274,8 +272,8 @@ public class JsonAotFormatProviderTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App__Config__Section";
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var loadedConfig = loadInstance.GetOptions().CurrentValue;
@@ -284,7 +282,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_RoundTrip_ShouldPreserveData()
+    public async Task JsonAotFileOptions_RoundTrip_ShouldPreserveData()
     {
         const string testFileName = "aot_roundtrip_test.json";
         var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
@@ -292,8 +290,8 @@ public class JsonAotFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var option = instance.GetOptions();
@@ -326,7 +324,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_WithCamelCaseNamingPolicy_ShouldWork()
+    public async Task JsonAotFileOptions_WithCamelCaseNamingPolicy_ShouldWork()
     {
         const string testFileName = "aot_camelcase_test.json";
         var instance = new WritableOptionsSimpleInstance<AotCamelCaseConfig>();
@@ -334,8 +332,8 @@ public class JsonAotFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonAotFormatProvider(AotCamelCaseConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotCamelCaseConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new AotCamelCaseConfig
@@ -360,7 +358,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_VsJsonFormatProvider_ShouldProduceSameResult()
+    public async Task JsonAotFileOptions_VsJsonFormatProvider_ShouldProduceSameResult()
     {
         const string aotFileName = "aot_comparison.json";
         const string reflectionFileName = "reflection_comparison.json";
@@ -379,8 +377,8 @@ public class JsonAotFormatProviderTests
         aotInstance.Initialize(options =>
         {
             options.FilePath = aotFileName;
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var aotOption = aotInstance.GetOptions();
@@ -391,7 +389,7 @@ public class JsonAotFormatProviderTests
         reflectionInstance.Initialize(options =>
         {
             options.FilePath = reflectionFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -399,7 +397,7 @@ public class JsonAotFormatProviderTests
                     TypeInfoResolver = AotTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var reflectionOption = reflectionInstance.GetOptions();
@@ -417,13 +415,28 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public void JsonAotFormatProvider_Constructor_WithNullResolver_ShouldThrow()
+    public async Task JsonFileOptions_WithNullResolver_ShouldFallBackToRuntimeJson()
     {
-        Should.Throw<ArgumentNullException>(() => new JsonAotFormatProvider(null!));
+        const string testFileName = "aot_null_resolver.json";
+        var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFileName;
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = null };
+            options.UseInMemoryBackend(_fileProvider);
+        });
+
+        var testConfig = new AotTestConfig { Name = "Runtime Fallback", Count = 7 };
+        var writableOptions = instance.GetOptions();
+        await writableOptions.SaveAsync(testConfig);
+
+        var savedContent = _fileProvider.ReadAllText(testFileName);
+        savedContent.ShouldContain("Runtime Fallback");
+        writableOptions.CurrentValue.Name.ShouldBe("Runtime Fallback");
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_WithCustomJsonSerializerOptions_ShouldOverrideContextOptions()
+    public async Task JsonAotFileOptions_WithCustomJsonSerializerOptions_ShouldOverrideContextOptions()
     {
         const string testFileName = "aot_custom_options.json";
         var instance = new WritableOptionsSimpleInstance<AotTestConfig>();
@@ -437,11 +450,12 @@ public class JsonAotFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default)
+            options.FormatOptions = new JsonFileOptions
             {
+                TypeInfoResolver = AotTestConfigContext.Default,
                 JsonSerializerOptions = customOptions,
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new AotTestConfig { Name = "Custom Options Test", Count = 42 };
@@ -457,7 +471,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_SectionWithMissingSection_ShouldReturnDefaultInstance()
+    public async Task JsonAotFileOptions_SectionWithMissingSection_ShouldReturnDefaultInstance()
     {
         const string testFileName = "aot_missing_section.json";
 
@@ -471,8 +485,8 @@ public class JsonAotFormatProviderTests
         {
             options.FilePath = testFileName;
             options.SectionName = "NonExistentSection";
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var loadedOption = instance.GetOptions();
@@ -485,7 +499,7 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public async Task JsonAotFormatProvider_PartialUpdate_ShouldPreserveOtherSections()
+    public async Task JsonAotFileOptions_PartialUpdate_ShouldPreserveOtherSections()
     {
         const string testFileName = "aot_partial_preserve.json";
 
@@ -500,8 +514,8 @@ public class JsonAotFormatProviderTests
         {
             options.FilePath = testFileName;
             options.SectionName = "AppSettings";
-            options.FormatProvider = new JsonAotFormatProvider(AotTestConfigContext.Default);
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var option = instance.GetOptions();
@@ -518,9 +532,9 @@ public class JsonAotFormatProviderTests
     }
 
     [Test]
-    public void JsonAotFormatProvider_FileExtension_ShouldBeJson()
+    public void JsonAotFileOptions_FileExtension_ShouldBeJson()
     {
-        var provider = new JsonAotFormatProvider(AotTestConfigContext.Default);
+        var provider = new JsonFileOptions { TypeInfoResolver = AotTestConfigContext.Default };
         provider.FileExtension.ShouldBe("json");
     }
 }

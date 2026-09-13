@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.State;
@@ -144,12 +143,9 @@ internal sealed class FallbackStateCodec<T> : IStateCodec<T>
         WritableOptionsConfiguration<T> options
     )
     {
-        if (
-            !resource.FileExists(canonical)
-            && options.FileProvider is CommonFileProvider fileProvider
-        )
+        if (!resource.FileExists(canonical))
         {
-            fileProvider.TryRestoreLatestBackup(canonical, options.Logger);
+            resource.Backend.TryRestoreLatestBackup(canonical, options.Logger);
         }
     }
 
@@ -175,10 +171,7 @@ internal sealed class FallbackStateCodec<T> : IStateCodec<T>
 
         // Preserve the source document before promoting it to the canonical format.
         var backedUp = false;
-        if (
-            options.FileProvider is IBackupFileProvider backupFileProvider
-            && backupFileProvider.TryBackup(selectedPath, out var backupPath, options.Logger)
-        )
+        if (options.FileBackend.TryBackup(selectedPath, out var backupPath, options.Logger))
         {
             backedUp = true;
             options.Logger?.LogDebug(
@@ -207,11 +200,7 @@ internal sealed class FallbackStateCodec<T> : IStateCodec<T>
         // Once the canonical file has been written successfully, remove the source
         // file. Keep it when backup was unavailable or failed so a failed
         // migration remains recoverable.
-        if (
-            backedUp
-            && options.FileProvider is IFileDeleter fileDeleter
-            && !fileDeleter.TryDelete(selectedPath, options.Logger)
-        )
+        if (backedUp && !options.FileBackend.TryDelete(selectedPath, options.Logger))
         {
             options.Logger?.LogWarning(
                 "The fallback configuration was promoted, but the source file could not be deleted: {Path}",

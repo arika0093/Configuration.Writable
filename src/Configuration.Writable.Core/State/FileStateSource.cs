@@ -105,11 +105,9 @@ internal sealed class FileStateSource<T> : IStateSource<T>
     }
 
     private string? GetReadRevision() =>
-        ConfigurationFileFingerprint
-            .Capture(GetReadFilePath(), _resource.Options.FileProvider)
-            ?.ToRevision();
+        ConfigurationFileFingerprint.Capture(GetReadFilePath(), _resource.Backend)?.ToRevision();
 
-    private bool ReadFileExists() => _resource.Options.FileProvider.FileExists(GetReadFilePath());
+    private bool ReadFileExists() => _resource.FileExists(GetReadFilePath());
 
     private string GetReadFilePath()
     {
@@ -121,8 +119,7 @@ internal sealed class FileStateSource<T> : IStateSource<T>
     {
         var options = _resource.Options;
         var readFilePath =
-            options.PromoteSaveLocationEnabled
-            && options.FileProvider.FileExists(options.ConfigFilePath)
+            options.PromoteSaveLocationEnabled && _resource.FileExists(options.ConfigFilePath)
                 ? options.ConfigFilePath
                 : options.ReadFilePath;
         return options with { ConfigFilePath = readFilePath };
@@ -134,7 +131,7 @@ internal sealed class FileStateSource<T> : IStateSource<T>
         if (
             !options.PromoteSaveLocationEnabled
             || string.Equals(options.ReadFilePath, options.ConfigFilePath, StringComparison.Ordinal)
-            || options.FileProvider.FileExists(options.ConfigFilePath)
+            || _resource.FileExists(options.ConfigFilePath)
         )
         {
             return;

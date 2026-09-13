@@ -41,8 +41,7 @@ namespace Configuration.Writable.Configure
         public WritableOptionsConfigBuilder() { }
         public Configuration.Writable.Configure.ConfigurationConflictResolution ConflictResolution { get; set; }
         public string? FilePath { get; set; }
-        public Configuration.Writable.FileProvider.IWritableFileProvider? FileProvider { get; set; }
-        public Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; set; }
+        public Configuration.Writable.FileFormatOptions FormatOptions { get; set; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public System.TimeSpan OnChangeDebounce { get; set; }
         public bool PromoteSaveLocationEnabled { get; }
@@ -51,7 +50,7 @@ namespace Configuration.Writable.Configure
         public string SectionName { get; set; }
         [set: System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Data Annotations validation may require types that cannot be statically analyzed.")]
         public bool UseDataAnnotationsValidation { get; set; }
-        public void AddFallbackFormatProvider(params Configuration.Writable.FormatProvider.IWritableFormatProvider[] formatProviders) { }
+        public void AddFallbackFormat(params Configuration.Writable.FileFormatOptions[] formats) { }
         public void AddFilePath(string path, int priority = 0) { }
         [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("The runtime JSON contract may require runtime code generation and is not compatib" +
             "le with NativeAOT.")]
@@ -68,15 +67,10 @@ namespace Configuration.Writable.Configure
     public class WritableOptionsConfigBuilder<T> : Configuration.Writable.Configure.WritableOptionsConfigBuilder
         where T :  class, new ()
     {
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification="The default JSON provider is retained for non-AOT applications; AOT callers can r" +
-            "eplace it with JsonAotFormatProvider.")]
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification="The default JSON provider is retained for non-AOT applications; AOT callers can r" +
-            "eplace it with JsonAotFormatProvider.")]
         public WritableOptionsConfigBuilder() { }
         public new Configuration.Writable.Configure.ConfigurationConflictResolution ConflictResolution { get; set; }
         public new string? FilePath { get; set; }
-        public new Configuration.Writable.FileProvider.IWritableFileProvider? FileProvider { get; set; }
-        public new Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; set; }
+        public new Configuration.Writable.FileFormatOptions FormatOptions { get; set; }
         public new Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
         public new System.TimeSpan OnChangeDebounce { get; set; }
         public new bool RegisterAsSingleton { get; set; }
@@ -110,143 +104,31 @@ namespace Configuration.Writable.Configure
         public void WithValidatorFunction(System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult> validator) { }
     }
 }
-namespace Configuration.Writable.FileProvider
-{
-    public class CommonFileProvider : Configuration.Writable.FileProvider.IBackupFileProvider, Configuration.Writable.FileProvider.IWritableFileProvider, System.IDisposable
-    {
-        public CommonFileProvider() { }
-        public virtual string BackupDirectory { get; set; }
-        public virtual int BackupMaxCount { get; set; }
-        public virtual int MaxRetryCount { get; set; }
-        public virtual System.Func<int, int> RetryDelay { get; set; }
-        public virtual bool CanWriteToDirectory(string path) { }
-        public virtual bool CanWriteToFile(string path) { }
-        public virtual bool DirectoryExists(string path) { }
-        public void Dispose() { }
-        protected virtual void Dispose(bool disposing) { }
-        public virtual bool EnsureDirectoryExists(string path) { }
-        public virtual bool FileExists(string path) { }
-        protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
-        public virtual System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
-        protected virtual string GetTemporaryFilePath(string path) { }
-        public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
-        public virtual bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null) { }
-        public virtual bool TryRestoreLatestBackup(string path, Microsoft.Extensions.Logging.ILogger? logger = null) { }
-        protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
-    }
-    public interface IBackupFileProvider
-    {
-        bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null);
-    }
-    public interface IWritableFileProvider
-    {
-        bool CanWriteToDirectory(string path);
-        bool CanWriteToFile(string path);
-        bool DirectoryExists(string path);
-        bool EnsureDirectoryExists(string path);
-        bool FileExists(string path);
-        System.IO.Pipelines.PipeReader? GetFilePipeReader(string path);
-        System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default);
-    }
-    public class ZipFileProvider : Configuration.Writable.FileProvider.IBackupFileProvider, Configuration.Writable.FileProvider.IWritableFileProvider, System.IDisposable
-    {
-        public ZipFileProvider() { }
-        public string EntriesDirectory { get; set; }
-        public string ZipFileName { get; set; }
-        public bool CanWriteToDirectory(string path) { }
-        public bool CanWriteToFile(string path) { }
-        public bool DirectoryExists(string path) { }
-        public void Dispose() { }
-        protected virtual void Dispose(bool disposing) { }
-        public bool EnsureDirectoryExists(string path) { }
-        public bool FileExists(string path) { }
-        public System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
-        public System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
-        public bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null) { }
-    }
-}
-namespace Configuration.Writable.FormatProvider
-{
-    public abstract class FormatProviderBase : Configuration.Writable.FormatProvider.IWritableFormatProvider
-    {
-        protected FormatProviderBase() { }
-        public abstract string FileExtension { get; }
-        public virtual System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        public virtual string SchemaVersionProperty { get; set; }
-        public object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options) { }
-        public abstract System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
-        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new ();
-        protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
-    }
-    public interface IOptionsSchemaMetadataProvider
-    {
-        Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options);
-    }
-    public interface IWritableFormatProvider
-    {
-        string FileExtension { get; }
-        System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        string SchemaVersionProperty { get; set; }
-        object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options);
-        System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
-        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new ();
-    }
-    public class JsonAotFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
-    {
-        public JsonAotFormatProvider(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
-        public System.Text.Encoding Encoding { get; init; }
-        public override string FileExtension { get; }
-        public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; init; }
-        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        public override string SchemaVersionProperty { get; set; }
-        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
-        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new () { }
-    }
-    public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
-    {
-        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Runtime JSON metadata may require runtime code generation and is not compatible w" +
-            "ith NativeAOT.")]
-        public JsonFormatProvider() { }
-        public System.Text.Encoding Encoding { get; init; }
-        public override string FileExtension { get; }
-        public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        public override string SchemaVersionProperty { get; set; }
-        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
-        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new () { }
-    }
-}
 namespace Configuration.Writable
 {
-    public interface IWritableOptionsConfigRegistry<T>
-        where T :  class, new ()
+    public abstract class FileFormatOptions
     {
-        event System.Action<Configuration.Writable.WritableOptionsConfiguration<T>> OnAdded;
-        event System.Action<string> OnRemoved;
-        void Clear();
-        Configuration.Writable.WritableOptionsConfiguration<T> Get(string instanceName);
-        System.Collections.Generic.IEnumerable<string> GetInstanceNames();
-        bool TryAdd(Configuration.Writable.WritableOptionsConfiguration<T> configuration);
-        bool TryAdd(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure);
-        bool TryRemove(string instanceName);
+        protected FileFormatOptions() { }
+        public abstract string FileExtension { get; }
     }
     public interface IWritableOptionsConfiguration
     {
         string ConfigFilePath { get; }
-        Configuration.Writable.FileProvider.IWritableFileProvider FileProvider { get; }
-        Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; }
         string InstanceName { get; }
         Microsoft.Extensions.Logging.ILogger? Logger { get; }
         System.TimeSpan OnChangeDebounce { get; }
         string? SchemaBaseUri { get; }
         Configuration.Writable.OptionsSchemaMetadata? SchemaMetadata { get; }
         System.Collections.Generic.List<string> SectionNameParts { get; }
+    }
+    public class JsonFileOptions : Configuration.Writable.FileFormatOptions
+    {
+        public JsonFileOptions() { }
+        public override string FileExtension { get; }
+        public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; set; }
+        public System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public string SchemaVersionProperty { get; set; }
+        public System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver? TypeInfoResolver { get; set; }
     }
     public sealed class OptionsSchemaMetadata : System.IEquatable<Configuration.Writable.OptionsSchemaMetadata>
     {
@@ -265,8 +147,8 @@ namespace Configuration.Writable
         public required System.Func<T, T> CloneMethod { get; init; }
         public required string ConfigFilePath { get; init; }
         public Configuration.Writable.Configure.ConfigurationConflictResolution ConflictResolution { get; init; }
-        public required Configuration.Writable.FileProvider.IWritableFileProvider FileProvider { get; init; }
-        public required Configuration.Writable.FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Configuration.Writable.FileFormatOptions> FallbackFormats { get; init; }
+        public required Configuration.Writable.FileFormatOptions FormatOptions { get; init; }
         public required string InstanceName { get; init; }
         public Microsoft.Extensions.Logging.ILogger? Logger { get; init; }
         public required System.TimeSpan OnChangeDebounce { get; init; }

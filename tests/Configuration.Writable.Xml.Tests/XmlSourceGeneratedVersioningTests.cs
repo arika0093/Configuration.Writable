@@ -2,8 +2,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Xml.Tests;
 
@@ -24,7 +22,7 @@ public partial class XmlGeneratedSettingsV2
 
 public class XmlSourceGeneratedVersioningTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [Test]
     public async Task XmlProvider_ShouldPersistMetadataInsideSection()
@@ -72,8 +70,8 @@ public class XmlSourceGeneratedVersioningTests
         {
             options.FilePath = fileName;
             options.SectionName = sectionName;
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
         return instance;
     }

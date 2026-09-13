@@ -4,8 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Internal;
 using Configuration.Writable.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,8 +19,7 @@ public class CompositeStateSourceTests
         var options = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = file.FilePath,
-            FileProvider = new CommonFileProvider(),
-            FormatProvider = new JsonFormatProvider(),
+            FileBackend = new PhysicalFileBackend(),
         }.BuildOptions("");
         var source = new FileStateSource<TestSettings>(options);
 
@@ -44,8 +41,7 @@ public class CompositeStateSourceTests
         var options = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = file.FilePath,
-            FileProvider = new CommonFileProvider(),
-            FormatProvider = new JsonFormatProvider(),
+            FileBackend = new PhysicalFileBackend(),
         }.BuildOptions("");
         var source = new FileStateSource<TestSettings>(options);
 
@@ -254,7 +250,7 @@ public class CompositeStateSourceTests
             services.AddWritableOptions<TestSettings>(options =>
             {
                 options.FilePath = Path.Combine(blockerPath, "unused.json");
-                options.FileProvider = new InMemoryFileProvider();
+                options.UseInMemoryBackend(new InMemoryFileBackend());
                 options.FromProvider("remote", source);
             });
             using var serviceProvider = services.BuildServiceProvider();

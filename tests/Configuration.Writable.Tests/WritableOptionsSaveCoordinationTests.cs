@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Options;
+using Configuration.Writable.State;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.Tests;
 
@@ -16,12 +16,12 @@ public partial class WritableOptionsSaveCoordinationTests
     [Test]
     public async Task SaveAsync_ClonesInputBeforePublishingCache()
     {
-        var fileProvider = new InMemoryFileProvider();
+        var fileProvider = new InMemoryFileBackend();
         var instance = new WritableOptionsSimpleInstance<FirstSettings>();
         instance.Initialize(options =>
         {
             options.FilePath = $"clone-{Guid.NewGuid():N}.json";
-            options.FileProvider = fileProvider;
+            options.UseInMemoryBackend(fileProvider);
             options.UseJsonCloneStrategy();
         });
         var options = instance.GetOptions();
@@ -36,7 +36,7 @@ public partial class WritableOptionsSaveCoordinationTests
     [Test]
     public async Task SaveAsync_SerializesSavesForTheSameNormalizedPathAcrossOptionTypes()
     {
-        var provider = new BlockingFormatProvider(expectedSaveCount: 2);
+        var provider = new BlockingFileBackend(expectedSaveCount: 2, new InMemoryFileBackend());
         var path = $"shared-save-{Guid.NewGuid():N}.json";
         var first = CreateOptions<FirstSettings>(provider, path);
         var second = CreateOptions<SecondSettings>(provider, path);
@@ -59,7 +59,7 @@ public partial class WritableOptionsSaveCoordinationTests
     [Test]
     public async Task SaveAsync_AllowsDifferentFilesToSaveInParallel()
     {
-        var provider = new BlockingFormatProvider(expectedSaveCount: 2);
+        var provider = new BlockingFileBackend(expectedSaveCount: 2, new InMemoryFileBackend());
         var first = CreateOptions<FirstSettings>(provider, $"first-{Guid.NewGuid():N}.json");
         var second = CreateOptions<SecondSettings>(provider, $"second-{Guid.NewGuid():N}.json");
 
@@ -78,7 +78,7 @@ public partial class WritableOptionsSaveCoordinationTests
     [Test]
     public async Task SaveAsync_DeletesSidecarLockAfterSaving()
     {
-        var provider = new BlockingFormatProvider(expectedSaveCount: 1);
+        var provider = new BlockingFileBackend(expectedSaveCount: 1, new InMemoryFileBackend());
         var path = Path.Combine(AppContext.BaseDirectory, $"sidecar-lock-{Guid.NewGuid():N}.json");
         var options = CreateOptions<FirstSettings>(provider, path);
 
@@ -157,7 +157,7 @@ public partial class WritableOptionsSaveCoordinationTests
     }
 
     private static IWritableOptionsMonitor<T> CreateOptions<T>(
-        IWritableFormatProvider formatProvider,
+        IFileBackend backend,
         string path
     )
         where T : class, new()
@@ -166,7 +166,7 @@ public partial class WritableOptionsSaveCoordinationTests
         instance.Initialize(options =>
         {
             options.FilePath = path;
-            options.FormatProvider = formatProvider;
+            options.FileBackend = backend;
             options.UseJsonCloneStrategy();
         });
         return instance.GetOptions();
@@ -184,7 +184,7 @@ public partial class WritableOptionsSaveCoordinationTests
         };
         builder.UseJsonCloneStrategy();
         var configuration = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
-        var registry = new WritableOptionsConfigRegistryImpl<FirstSettings>([configuration]);
+        var registry = new WritableOptionsRegistry<FirstSettings>([configuration]);
         var monitor = new OptionsMonitorImpl<FirstSettings>(registry);
         return new FileOptions(new WritableOptionsImpl<FirstSettings>(monitor, registry), monitor);
     }
@@ -231,7 +231,10 @@ public partial class WritableOptionsSaveCoordinationTests
         internal OptionsMonitorImpl<FirstSettings> Monitor { get; } = monitor;
     }
 
-    private sealed class BlockingFormatProvider(int expectedSaveCount) : JsonFormatProvider
+    private sealed class BlockingFileBackend(
+        int expectedSaveCount,
+        InMemoryFileBackend inner
+    ) : IFileBackend
     {
         private readonly TaskCompletionSource<bool> _release = new(
             TaskCreationOptions.RunContinuationsAsynchronously
@@ -244,9 +247,35 @@ public partial class WritableOptionsSaveCoordinationTests
             new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal int SaveCount => Volatile.Read(ref _saveCount);
 
-        public override async Task SaveAsync<T>(
-            T config,
-            IWritableOptionsConfiguration options,
+        public bool IsPhysical => inner.IsPhysical;
+
+        public string GetPhysicalPath(string path) => inner.GetPhysicalPath(path);
+
+        public bool FileExists(string path) => inner.FileExists(path);
+
+        public Stream? OpenReadStream(string path) => inner.OpenReadStream(path);
+
+        public bool DirectoryExists(string path) => inner.DirectoryExists(path);
+
+        public bool CanWriteToFile(string path) => inner.CanWriteToFile(path);
+
+        public bool CanWriteToDirectory(string path) => inner.CanWriteToDirectory(path);
+
+        public bool EnsureDirectoryExists(string path) => inner.EnsureDirectoryExists(path);
+
+        public bool TryBackup(string path, out string? backupPath, ILogger? logger = null) =>
+            inner.TryBackup(path, out backupPath, logger);
+
+        public bool TryDelete(string path, ILogger? logger = null) =>
+            inner.TryDelete(path, logger);
+
+        public bool TryRestoreLatestBackup(string path, ILogger? logger = null) =>
+            inner.TryRestoreLatestBackup(path, logger);
+
+        public async Task SaveToFileAsync(
+            string path,
+            ReadOnlyMemory<byte> content,
+            ILogger? logger = null,
             CancellationToken cancellationToken = default
         )
         {

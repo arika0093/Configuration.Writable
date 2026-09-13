@@ -56,8 +56,10 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
             readOptions,
             type => LoadAsType(fileResource, readPath, type, readOptions),
             () =>
-                FormatProviderBase.ExecuteWithBackupRecovery(
-                    readOptions,
+                FileBackupRecovery.Execute(
+                    readOptions.FileBackend,
+                    readPath,
+                    readOptions.Logger,
                     () => ReadSchemaMetadata(fileResource, readPath, readOptions)
                 ),
             static _ => { }
@@ -86,8 +88,10 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         WritableOptionsConfiguration<T> options
     )
     {
-        return FormatProviderBase.ExecuteWithBackupRecovery(
-            options,
+        return FileBackupRecovery.Execute(
+            options.FileBackend,
+            path,
+            options.Logger,
             () => LoadCore(resource, path, type, options)
         );
     }
@@ -105,20 +109,17 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         }
 
         var yamlBytes = ReadYamlBytes(resource, path);
-        if (YamlFormatProvider.IsEmptyOrWhiteSpace(yamlBytes.Span))
+        if (YamlCodecSupport.IsEmptyOrWhiteSpace(yamlBytes.Span))
         {
             return CreateDefault(type);
         }
 
         try
         {
-            var targetBytes = YamlFormatProvider.GetSectionBytes(
-                yamlBytes,
-                options.SectionNameParts
-            );
+            var targetBytes = YamlCodecSupport.GetSectionBytes(yamlBytes, options.SectionNameParts);
             return targetBytes == null
                 ? CreateDefault(type)
-                : YamlFormatProvider.Deserialize(type, targetBytes.Value, _serializerOptions);
+                : YamlCodecSupport.Deserialize(type, targetBytes.Value, _serializerOptions);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -145,15 +146,15 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         }
 
         var yamlBytes = ReadYamlBytes(resource, path);
-        if (YamlFormatProvider.IsEmptyOrWhiteSpace(yamlBytes.Span))
+        if (YamlCodecSupport.IsEmptyOrWhiteSpace(yamlBytes.Span))
         {
             return null;
         }
 
-        YamlFormatProvider.IYamlValue? data;
+        YamlCodecSupport.IYamlValue? data;
         try
         {
-            data = YamlFormatProvider.ParseYaml(yamlBytes);
+            data = YamlCodecSupport.ParseYaml(yamlBytes);
         }
         catch (Exception ex)
         {
@@ -168,7 +169,7 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         foreach (var section in options.SectionNameParts)
         {
             if (
-                current is not YamlFormatProvider.YamlMapping mapping
+                current is not YamlCodecSupport.YamlMapping mapping
                 || !mapping.Values.TryGetValue(section, out current)
             )
             {
@@ -176,13 +177,13 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
             }
         }
 
-        if (current is not YamlFormatProvider.YamlMapping metadata)
+        if (current is not YamlCodecSupport.YamlMapping metadata)
         {
             throw new FormatException("Options schema metadata must be stored in a YAML mapping.");
         }
 
         var version =
-            YamlFormatProvider.ReadOptionalVersion(
+            YamlCodecSupport.ReadOptionalVersion(
                 metadata,
                 _schemaVersionProperty,
                 _schemaVersionFallbackProperties
@@ -203,7 +204,7 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
             using var buffer = new MemoryStream();
             stream.CopyTo(buffer, 81920);
             var yamlBytes = buffer.ToArray();
-            if (!YamlFormatProvider.HasNonUtf8Bom(yamlBytes))
+            if (!YamlCodecSupport.HasNonUtf8Bom(yamlBytes))
             {
                 return yamlBytes;
             }
@@ -252,8 +253,8 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
                         )
                     )
                     : SerializeForFile(
-                        (YamlFormatProvider.IYamlValue)
-                            YamlFormatProvider.CreateSchemaMetadataDictionary(
+                        (YamlCodecSupport.IYamlValue)
+                            YamlCodecSupport.CreateSchemaMetadataDictionary(
                                 config,
                                 options.SchemaMetadata,
                                 _serializerOptions,
@@ -278,7 +279,7 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
     )
     {
         var sections = options.SectionNameParts;
-        YamlFormatProvider.YamlMapping? existingDocument = null;
+        YamlCodecSupport.YamlMapping? existingDocument = null;
 
         // A malformed existing file must never be replaced with a new partial document.
         // Propagating the parse error preserves the original file for recovery.
@@ -287,10 +288,10 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
             using var stream = resource.OpenRead(options.ConfigFilePath);
             var yamlBytes = ReadYamlBytes(stream);
 
-            if (!YamlFormatProvider.IsEmptyOrWhiteSpace(yamlBytes.Span))
+            if (!YamlCodecSupport.IsEmptyOrWhiteSpace(yamlBytes.Span))
             {
                 existingDocument =
-                    YamlFormatProvider.ParseYaml(yamlBytes) as YamlFormatProvider.YamlMapping
+                    YamlCodecSupport.ParseYaml(yamlBytes) as YamlCodecSupport.YamlMapping
                     ?? throw new FormatException("YAML document must be a mapping.");
                 options.Logger?.LogTrace("Loaded existing YAML file for partial update");
             }
@@ -299,16 +300,16 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         // Serialize config to YAML then deserialize to dictionary
         // This goes through YAML to avoid type boxing issues (e.g. decimal)
         var configYamlBytes = YamlSerializer.Serialize(config, _serializerOptions);
-        var configValue = YamlFormatProvider.ParseYaml(configYamlBytes);
-        if (configValue is not YamlFormatProvider.YamlMapping configMapping)
+        var configValue = YamlCodecSupport.ParseYaml(configYamlBytes);
+        if (configValue is not YamlCodecSupport.YamlMapping configMapping)
             throw new FormatException("YAML configuration must be a mapping.");
-        YamlFormatProvider.AddSchemaMetadata(
+        YamlCodecSupport.AddSchemaMetadata(
             configMapping,
             options.SchemaMetadata,
             _schemaVersionProperty
         );
 
-        YamlFormatProvider.YamlMapping resultDocument;
+        YamlCodecSupport.YamlMapping resultDocument;
 
         if (existingDocument == null)
         {
@@ -318,7 +319,7 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
                 string.Join(":", sections)
             );
 
-            resultDocument = YamlFormatProvider.CreateNestedSection(sections, configMapping);
+            resultDocument = YamlCodecSupport.CreateNestedSection(sections, configMapping);
         }
         else
         {
@@ -329,12 +330,12 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
             );
 
             resultDocument = existingDocument;
-            YamlFormatProvider.MergeSection(resultDocument, sections, 0, configMapping);
+            YamlCodecSupport.MergeSection(resultDocument, sections, 0, configMapping);
         }
 
         options.Logger?.LogTrace("Partial YAML serialization completed successfully");
 
-        return SerializeForFile((YamlFormatProvider.IYamlValue)resultDocument);
+        return SerializeForFile((YamlCodecSupport.IYamlValue)resultDocument);
     }
 
     private ReadOnlyMemory<byte> SerializeForFile(T value, string? schemaReference = null)
@@ -344,11 +345,11 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
     }
 
     private ReadOnlyMemory<byte> SerializeForFile(
-        YamlFormatProvider.IYamlValue value,
+        YamlCodecSupport.IYamlValue value,
         string? schemaReference = null
     )
     {
-        return AddSchemaReference(YamlFormatProvider.SerializeYaml(value), schemaReference);
+        return AddSchemaReference(YamlCodecSupport.SerializeYaml(value), schemaReference);
     }
 
     private ReadOnlyMemory<byte> AddSchemaReference(

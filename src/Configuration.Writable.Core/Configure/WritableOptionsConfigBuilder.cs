@@ -7,8 +7,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.Abstractions;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
@@ -27,17 +25,10 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     where T : class, new()
 {
     /// <inheritdoc />
-    public new FormatProvider.IWritableFormatProvider FormatProvider
+    public new FileFormatOptions FormatOptions
     {
-        get => base.FormatProvider;
-        set => base.FormatProvider = value;
-    }
-
-    /// <inheritdoc />
-    public new IWritableFileProvider? FileProvider
-    {
-        get => base.FileProvider;
-        set => base.FileProvider = value;
+        get => base.FormatOptions;
+        set => base.FormatOptions = value;
     }
 
     /// <inheritdoc />
@@ -162,16 +153,13 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     private string? _writeTargetId;
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
-    /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
-    /// </summary>
-    /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations override from provider's default.
+    /// Gets or sets the file format settings used to persist the configuration data.<br/>
+    /// Defaults to JSON.<br/>
     /// </summary>
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
-    /// Extension is determined by the <see cref="IWritableFormatProvider"/> so it can be omitted.
+    /// Extension is determined by the configured <see cref="FileFormatOptions"/> so it can be omitted.
     /// </summary>
     /// <summary>
     /// Gets or sets the debounce duration for change events.
@@ -208,18 +196,6 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <summary>Creates a builder with default settings.</summary>
-#if NET
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026",
-        Justification = "The default JSON provider is retained for non-AOT applications; AOT callers can replace it with JsonAotFormatProvider."
-    )]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050",
-        Justification = "The default JSON provider is retained for non-AOT applications; AOT callers can replace it with JsonAotFormatProvider."
-    )]
-#endif
     public WritableOptionsConfigBuilder() { }
 
     /// <summary>
@@ -399,26 +375,25 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
-        if (FormatProvider is FormatProviderBase typeRegistrationProvider)
+        FormatOptions.RegisterType<T>();
+        foreach (var fallback in FallbackFormats)
         {
-            typeRegistrationProvider.RegisterType<T>();
-        }
-        else if (FormatProvider is FallbackFormatProvider fallbackFormatProvider)
-        {
-            fallbackFormatProvider.RegisterType<T>();
+            fallback.RegisterType<T>();
         }
 
-        var fileProvider = FileProvider ?? new CommonFileProvider();
+        var backend = FileBackend ?? new PhysicalFileBackend();
+        var fallbackExtensions = FallbackFormats.Select(format => format.FileExtension).ToList();
         var configFilePath = SaveLocationManager.Build(
-            FormatProvider,
-            fileProvider,
+            FormatOptions.FileExtension,
+            backend,
             instanceName,
-            PromoteSaveLocationEnabled
+            PromoteSaveLocationEnabled,
+            fallbackExtensions
         );
         var readFilePath = PromoteSaveLocationEnabled
             ? SaveLocationManager.BuildReadPath(
-                FormatProvider,
-                fileProvider,
+                FormatOptions.FileExtension,
+                backend,
                 instanceName,
                 PromoteSaveLocationEnabled
             ) ?? configFilePath
@@ -433,13 +408,6 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 schemaMetadata.Version.Value
             );
         }
-        if (schemaMetadata is not null && !SupportsSchemaMetadata(FormatProvider))
-        {
-            throw new InvalidOperationException(
-                $"Format provider {FormatProvider.GetType().Name} does not support options schema metadata required by {typeof(T).Name}."
-            );
-        }
-
         var migrationSteps = new List<MigrationStep>(_migrationSteps);
         var generatedMetadata = new T() as IGeneratedOptionsMetadata;
         generatedMetadata?.RegisterMigrations(new OptionsMigrationRegistrar(migrationSteps));
@@ -466,8 +434,9 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         var writeTargetId = _writeTargetId;
         return new WritableOptionsConfiguration<T>
         {
-            FormatProvider = FormatProvider,
-            FileProvider = fileProvider,
+            FormatOptions = FormatOptions,
+            FallbackFormats = new List<FileFormatOptions>(FallbackFormats),
+            FileBackend = backend,
             ConfigFilePath = configFilePath,
             ReadFilePath = readFilePath,
             PromoteSaveLocationEnabled = PromoteSaveLocationEnabled,
@@ -542,13 +511,6 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         int Priority,
         StateFallbackConditions FallbackCondition
     );
-
-    private static bool SupportsSchemaMetadata(
-        FormatProvider.IWritableFormatProvider formatProvider
-    ) =>
-        formatProvider is FallbackFormatProvider fallbackProvider
-            ? fallbackProvider.SupportsSchemaMetadata
-            : formatProvider is IOptionsSchemaMetadataProvider;
 
     private static void ValidateMigrationSteps(
         OptionsSchemaMetadata? targetMetadata,

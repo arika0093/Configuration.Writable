@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
@@ -26,7 +25,7 @@ namespace Configuration.Writable;
 /// <param name="registryInstance">The configuration options registry instance.</param>
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
-    IWritableOptionsConfigRegistry<T> registryInstance
+    WritableOptionsRegistry<T> registryInstance
 ) : IWritableOptionsMonitor<T>, IOptionsMonitor<T>
     where T : class, new()
 {
@@ -188,7 +187,7 @@ internal sealed class WritableOptionsImpl<T>(
                 options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
                 && expectedRevision is null
                 && UsesFileWriteTarget(stateSource)
-                && options.FileProvider is IPhysicalFileProvider
+                && options.FileBackend.IsPhysical
             )
             {
                 ConfigurationWritableEventSource.Log.ConflictDetected();
@@ -209,7 +208,7 @@ internal sealed class WritableOptionsImpl<T>(
                 publishedConfig,
                 ConfigurationFileFingerprint.Capture(
                     options.GetSelectedFilePath(),
-                    options.FileProvider
+                    options.FileBackend
                 ),
                 writeResult.Revision
             );

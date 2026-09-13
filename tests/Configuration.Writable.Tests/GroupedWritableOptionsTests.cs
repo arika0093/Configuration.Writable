@@ -1,9 +1,12 @@
 using System;
 using System.IO;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
+using System.Threading;
+using System.Threading.Tasks;
+using Configuration.Writable.Options;
+using Configuration.Writable.State;
 using Configuration.Writable.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.Tests;
 
@@ -36,7 +39,7 @@ public partial class GroupedWritableOptionsTests
     [Test]
     public void GroupedRegistration_AppliesSharedConfigurationAfterRecipesAreCollected()
     {
-        var provider = new InMemoryFileProvider();
+        var provider = new InMemoryFileBackend();
         var services = new ServiceCollection();
 
         services.AddWritableOptions(options =>
@@ -44,19 +47,19 @@ public partial class GroupedWritableOptionsTests
             options.Add<FirstSettings>(x => x.AddFilePath("first.json"));
             options.Add<SecondSettings>(x => x.AddFilePath("second.json"));
             options.UseCustomDirectory("grouped");
-            options.FileProvider = provider;
+            options.UseInMemoryBackend(provider);
         });
 
         using var serviceProvider = services.BuildServiceProvider();
         var first = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigRegistry<FirstSettings>>()
+            .GetRequiredService<WritableOptionsRegistry<FirstSettings>>()
             .Get(string.Empty);
         var second = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigRegistry<SecondSettings>>()
+            .GetRequiredService<WritableOptionsRegistry<SecondSettings>>()
             .Get(string.Empty);
 
-        first.FileProvider.ShouldBeSameAs(provider);
-        second.FileProvider.ShouldBeSameAs(provider);
+        first.FileBackend.ShouldBeSameAs(provider);
+        second.FileBackend.ShouldBeSameAs(provider);
         first.ConfigFilePath.ShouldBe(Path.GetFullPath(Path.Combine("grouped", "first.json")));
         second.ConfigFilePath.ShouldBe(Path.GetFullPath(Path.Combine("grouped", "second.json")));
     }
@@ -64,11 +67,11 @@ public partial class GroupedWritableOptionsTests
     [Test]
     public void GroupedRegistration_TypeConfigurationOverridesSharedConfiguration()
     {
-        var provider = new InMemoryFileProvider();
+        var provider = new InMemoryFileBackend();
         var services = new ServiceCollection();
         services.AddWritableOptions(options =>
         {
-            options.FileProvider = provider;
+            options.UseInMemoryBackend(provider);
             options.UseFile("shared.json");
             options.SectionName = "Shared";
             options.Add<FirstSettings>(x =>
@@ -80,53 +83,51 @@ public partial class GroupedWritableOptionsTests
 
         using var serviceProvider = services.BuildServiceProvider();
         var configuration = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigRegistry<FirstSettings>>()
+            .GetRequiredService<WritableOptionsRegistry<FirstSettings>>()
             .Get(string.Empty);
         configuration.ConfigFilePath.ShouldBe(Path.GetFullPath("specific.json"));
         configuration.SectionNameParts.ShouldBe(["Specific"]);
     }
 
     [Test]
-    public void GroupedRegistration_ClonesFallbackProvidersPerType()
+    public void GroupedRegistration_ClonesFallbackFormatsPerType()
     {
-        var provider = new InMemoryFileProvider();
+        var provider = new InMemoryFileBackend();
         var services = new ServiceCollection();
         services.AddWritableOptions(options =>
         {
-            options.FileProvider = provider;
+            options.UseInMemoryBackend(provider);
             options.UseFile("shared.json");
             options.Add<FirstSettings>(builder =>
-                builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("first"))
+                builder.AddFallbackFormat(new LegacyJsonFileOptions("first"))
             );
             options.Add<SecondSettings>(builder =>
-                builder.AddFallbackFormatProvider(new LegacyJsonFormatProvider("second"))
+                builder.AddFallbackFormat(new LegacyJsonFileOptions("second"))
             );
         });
 
         using var serviceProvider = services.BuildServiceProvider();
         var first = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigRegistry<FirstSettings>>()
+            .GetRequiredService<WritableOptionsRegistry<FirstSettings>>()
             .Get(string.Empty);
         var second = serviceProvider
-            .GetRequiredService<IWritableOptionsConfigRegistry<SecondSettings>>()
+            .GetRequiredService<WritableOptionsRegistry<SecondSettings>>()
             .Get(string.Empty);
-        var firstProvider = first.FormatProvider.ShouldBeOfType<FallbackFormatProvider>();
-        var secondProvider = second.FormatProvider.ShouldBeOfType<FallbackFormatProvider>();
 
-        firstProvider.ShouldNotBeSameAs(secondProvider);
-        firstProvider.FallbackProviders.Count.ShouldBe(1);
-        secondProvider.FallbackProviders.Count.ShouldBe(1);
-        firstProvider.FallbackProviders[0].FileExtension.ShouldBe("first");
-        secondProvider.FallbackProviders[0].FileExtension.ShouldBe("second");
+        first.FallbackFormats.Count.ShouldBe(1);
+        second.FallbackFormats.Count.ShouldBe(1);
+        first.FallbackFormats.ShouldNotBeSameAs(second.FallbackFormats);
+        first.FallbackFormats[0].FileExtension.ShouldBe("first");
+        second.FallbackFormats[0].FileExtension.ShouldBe("second");
     }
 
     [Test]
     public void StaticGroupedInitialization_RetainsEveryNamedRegistration()
     {
-        var provider = new InMemoryFileProvider();
+        var provider = new InMemoryFileBackend();
         WritableOptions.Initialize(options =>
         {
-            options.FileProvider = provider;
+            options.UseInMemoryBackend(provider);
             options.Add<NamedSettings>("First", conf => conf.UseFile("first.json"));
             options.Add<NamedSettings>("Second", conf => conf.UseFile("second.json"));
         });
@@ -140,18 +141,18 @@ public partial class GroupedWritableOptionsTests
     [Test]
     public void SimpleInstance_ReinitializationFailureRetainsPreviousConfiguration()
     {
-        var provider = new InMemoryFileProvider();
+        var provider = new InMemoryFileBackend();
         var instance = new WritableOptionsSimpleInstance<ReinitializedSettings>();
         instance.Initialize(options =>
         {
-            options.FileProvider = provider;
+            options.UseInMemoryBackend(provider);
             options.UseFile("existing.json");
         });
 
         Should.Throw<InvalidOperationException>(() =>
             instance.Initialize(options =>
             {
-                options.FileProvider = new RejectingFileProvider();
+                options.FileBackend = new RejectingFileBackend();
                 options.UseFile("replacement.json");
             })
         );
@@ -164,17 +165,17 @@ public partial class GroupedWritableOptionsTests
     [Test]
     public void StaticGroupedInitialization_FailureRetainsPreviousConfiguration()
     {
-        var provider = new InMemoryFileProvider();
+        var provider = new InMemoryFileBackend();
         WritableOptions.Initialize<ReinitializedSettings>(options =>
         {
-            options.FileProvider = provider;
+            options.UseInMemoryBackend(provider);
             options.UseFile("existing.json");
         });
 
         Should.Throw<InvalidOperationException>(() =>
             WritableOptions.Initialize(options =>
             {
-                options.FileProvider = new RejectingFileProvider();
+                options.FileBackend = new RejectingFileBackend();
                 options.Add<ReinitializedSettings>(conf => conf.UseFile("replacement.json"));
             })
         );
@@ -184,12 +185,44 @@ public partial class GroupedWritableOptionsTests
             .ConfigurationInfo.WritePath.ShouldBe(Path.GetFullPath("existing.json"));
     }
 
-    private sealed class RejectingFileProvider : CommonFileProvider
+    private sealed class RejectingFileBackend : IFileBackend
     {
-        public override bool EnsureDirectoryExists(string path) => false;
+        private readonly InMemoryFileBackend _inner = new();
+
+        public bool IsPhysical => _inner.IsPhysical;
+
+        public string GetPhysicalPath(string path) => _inner.GetPhysicalPath(path);
+
+        public bool FileExists(string path) => _inner.FileExists(path);
+
+        public Stream? OpenReadStream(string path) => _inner.OpenReadStream(path);
+
+        public Task SaveToFileAsync(
+            string path,
+            ReadOnlyMemory<byte> content,
+            ILogger? logger = null,
+            CancellationToken cancellationToken = default
+        ) => _inner.SaveToFileAsync(path, content, logger, cancellationToken);
+
+        public bool DirectoryExists(string path) => _inner.DirectoryExists(path);
+
+        public bool CanWriteToFile(string path) => _inner.CanWriteToFile(path);
+
+        public bool CanWriteToDirectory(string path) => _inner.CanWriteToDirectory(path);
+
+        public bool EnsureDirectoryExists(string path) => false;
+
+        public bool TryBackup(string path, out string? backupPath, ILogger? logger = null) =>
+            _inner.TryBackup(path, out backupPath, logger);
+
+        public bool TryDelete(string path, ILogger? logger = null) =>
+            _inner.TryDelete(path, logger);
+
+        public bool TryRestoreLatestBackup(string path, ILogger? logger = null) =>
+            _inner.TryRestoreLatestBackup(path, logger);
     }
 
-    private sealed class LegacyJsonFormatProvider(string extension) : JsonFormatProvider
+    private sealed class LegacyJsonFileOptions(string extension) : JsonFileOptions
     {
         public override string FileExtension => extension;
     }

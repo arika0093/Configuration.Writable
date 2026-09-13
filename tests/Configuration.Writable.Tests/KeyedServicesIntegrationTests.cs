@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Tests.Utility;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +9,7 @@ namespace Configuration.Writable.Tests;
 
 public partial class KeyedServicesIntegrationTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
 
     [OptionsModel]
     public partial class AppSettings
@@ -28,7 +27,7 @@ public partial class KeyedServicesIntegrationTests
             "Production",
             options =>
             {
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -52,7 +51,7 @@ public partial class KeyedServicesIntegrationTests
         var services = new ServiceCollection();
         services.AddWritableOptions<AppSettings>(options =>
         {
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var serviceProvider = services.BuildServiceProvider();
@@ -71,7 +70,7 @@ public partial class KeyedServicesIntegrationTests
         var services = new ServiceCollection();
         services.AddWritableOptions<AppSettings>(options =>
         {
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var serviceProvider = services.BuildServiceProvider();
@@ -90,7 +89,7 @@ public partial class KeyedServicesIntegrationTests
             "Development",
             options =>
             {
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -98,7 +97,7 @@ public partial class KeyedServicesIntegrationTests
             "Production",
             options =>
             {
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -130,7 +129,7 @@ public partial class KeyedServicesIntegrationTests
             options =>
             {
                 options.FilePath = fileName;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -163,7 +162,7 @@ public partial class KeyedServicesIntegrationTests
             options =>
             {
                 options.FilePath = fileName;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -200,7 +199,7 @@ public partial class KeyedServicesIntegrationTests
             options =>
             {
                 options.FilePath = fileName;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -233,7 +232,7 @@ public partial class KeyedServicesIntegrationTests
             options =>
             {
                 options.FilePath = fileName;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -270,7 +269,7 @@ public partial class KeyedServicesIntegrationTests
             options =>
             {
                 options.FilePath = file1;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -279,7 +278,7 @@ public partial class KeyedServicesIntegrationTests
             options =>
             {
                 options.FilePath = file2;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -312,7 +311,7 @@ public partial class KeyedServicesIntegrationTests
             options =>
             {
                 options.FilePath = fileName;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -403,7 +402,7 @@ public partial class KeyedServicesIntegrationTests
             "KeyA",
             options =>
             {
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -411,7 +410,7 @@ public partial class KeyedServicesIntegrationTests
             "KeyB",
             options =>
             {
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -419,7 +418,7 @@ public partial class KeyedServicesIntegrationTests
             "KeyC",
             options =>
             {
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 

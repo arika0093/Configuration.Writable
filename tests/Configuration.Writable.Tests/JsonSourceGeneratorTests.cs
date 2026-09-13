@@ -3,8 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Tests;
 
@@ -58,10 +56,10 @@ internal partial class CamelCaseTestConfigContext : JsonSerializerContext;
 /// </summary>
 public class JsonSourceGeneratorTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [Test]
-    public async Task JsonFormatProvider_WithSourceGenerator_ShouldSerializeCorrectly()
+    public async Task JsonFileOptions_WithSourceGenerator_ShouldSerializeCorrectly()
     {
         const string testFileName = "sourcegen_test.json";
         var instance = new WritableOptionsSimpleInstance<SourceGenTestConfig>();
@@ -69,7 +67,7 @@ public class JsonSourceGeneratorTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -77,7 +75,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new SourceGenTestConfig
@@ -103,7 +101,7 @@ public class JsonSourceGeneratorTests
     }
 
     [Test]
-    public async Task JsonFormatProvider_WithSourceGenerator_ShouldDeserializeCorrectly()
+    public async Task JsonFileOptions_WithSourceGenerator_ShouldDeserializeCorrectly()
     {
         const string testFileName = "sourcegen_load_test.json";
         var instance = new WritableOptionsSimpleInstance<SourceGenTestConfig>();
@@ -111,7 +109,7 @@ public class JsonSourceGeneratorTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -119,7 +117,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // First, save a configuration
@@ -140,7 +138,7 @@ public class JsonSourceGeneratorTests
         loadInstance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -148,7 +146,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var loadedOption = loadInstance.GetOptions();
@@ -164,7 +162,7 @@ public class JsonSourceGeneratorTests
     }
 
     [Test]
-    public async Task JsonFormatProvider_WithSourceGenerator_AndSectionName_ShouldWork()
+    public async Task JsonFileOptions_WithSourceGenerator_AndSectionName_ShouldWork()
     {
         const string testFileName = "sourcegen_section_test.json";
         var instance = new WritableOptionsSimpleInstance<SourceGenTestConfig>();
@@ -173,7 +171,7 @@ public class JsonSourceGeneratorTests
         {
             options.FilePath = testFileName;
             options.SectionName = "AppSettings:Advanced";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -181,7 +179,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new SourceGenTestConfig { Name = "Section Test", Count = 123 };
@@ -199,7 +197,7 @@ public class JsonSourceGeneratorTests
     }
 
     [Test]
-    public async Task JsonFormatProvider_WithSourceGenerator_SectionName_LoadSaveRoundTrip()
+    public async Task JsonFileOptions_WithSourceGenerator_SectionName_LoadSaveRoundTrip()
     {
         const string testFileName = "sourcegen_section_roundtrip.json";
         var instance = new WritableOptionsSimpleInstance<SourceGenTestConfig>();
@@ -208,7 +206,7 @@ public class JsonSourceGeneratorTests
         {
             options.FilePath = testFileName;
             options.SectionName = "MyApp:Settings:Database";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -216,7 +214,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Save initial configuration
@@ -244,7 +242,7 @@ public class JsonSourceGeneratorTests
         {
             options.FilePath = testFileName;
             options.SectionName = "MyApp:Settings:Database";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -252,7 +250,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var loadedOption = loadInstance.GetOptions();
@@ -283,7 +281,7 @@ public class JsonSourceGeneratorTests
     }
 
     [Test]
-    public async Task JsonFormatProvider_WithSourceGenerator_SectionName_WithUnderscoreSeparator()
+    public async Task JsonFileOptions_WithSourceGenerator_SectionName_WithUnderscoreSeparator()
     {
         const string testFileName = "sourcegen_section_underscore.json";
         var instance = new WritableOptionsSimpleInstance<SourceGenTestConfig>();
@@ -292,7 +290,7 @@ public class JsonSourceGeneratorTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App__Config__Section";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -300,7 +298,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new SourceGenTestConfig { Name = "Underscore Test", Count = 456 };
@@ -321,7 +319,7 @@ public class JsonSourceGeneratorTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App__Config__Section";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -329,7 +327,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var loadedConfig = loadInstance.GetOptions().CurrentValue;
@@ -338,7 +336,7 @@ public class JsonSourceGeneratorTests
     }
 
     [Test]
-    public async Task JsonFormatProvider_WithSourceGenerator_RoundTrip_ShouldPreserveData()
+    public async Task JsonFileOptions_WithSourceGenerator_RoundTrip_ShouldPreserveData()
     {
         const string testFileName = "sourcegen_roundtrip_test.json";
         var instance = new WritableOptionsSimpleInstance<SourceGenTestConfig>();
@@ -346,7 +344,7 @@ public class JsonSourceGeneratorTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -354,7 +352,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var option = instance.GetOptions();
@@ -387,7 +385,7 @@ public class JsonSourceGeneratorTests
     }
 
     [Test]
-    public async Task JsonFormatProvider_WithSourceGenerator_CamelCase_ShouldWork()
+    public async Task JsonFileOptions_WithSourceGenerator_CamelCase_ShouldWork()
     {
         const string testFileName = "sourcegen_camelcase_test.json";
         var instance = new WritableOptionsSimpleInstance<CamelCaseTestConfig>();
@@ -395,7 +393,7 @@ public class JsonSourceGeneratorTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -403,7 +401,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = CamelCaseTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var testConfig = new CamelCaseTestConfig
@@ -428,7 +426,7 @@ public class JsonSourceGeneratorTests
     }
 
     [Test]
-    public async Task JsonFormatProvider_SourceGeneratorVsReflection_ShouldProduceSameResult()
+    public async Task JsonFileOptions_SourceGeneratorVsReflection_ShouldProduceSameResult()
     {
         const string sourceGenFileName = "comparison_sourcegen.json";
         const string reflectionFileName = "comparison_reflection.json";
@@ -447,7 +445,7 @@ public class JsonSourceGeneratorTests
         sourceGenInstance.Initialize(options =>
         {
             options.FilePath = sourceGenFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions
                 {
@@ -455,7 +453,7 @@ public class JsonSourceGeneratorTests
                     TypeInfoResolver = SourceGenTestConfigContext.Default,
                 },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var sourceGenOption = sourceGenInstance.GetOptions();
@@ -466,11 +464,11 @@ public class JsonSourceGeneratorTests
         reflectionInstance.Initialize(options =>
         {
             options.FilePath = reflectionFileName;
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         var reflectionOption = reflectionInstance.GetOptions();

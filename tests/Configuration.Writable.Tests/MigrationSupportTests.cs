@@ -4,8 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Shouldly;
 
@@ -13,7 +11,7 @@ namespace Configuration.Writable.Tests;
 
 public partial class MigrationSupportTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [Test]
     public async Task LoadWithMigration_ShouldDeserializeDirectly_WhenVersionMatches()
@@ -33,15 +31,13 @@ public partial class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider(),
         };
-        builder.FileProvider = _fileProvider;
+        builder.UseInMemoryBackend(_fileProvider);
 
         var options = builder.BuildOptions("");
-        var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadWithMigration(options);
+        var result = Utility.StateTestHelper.ReadStateValue(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -65,15 +61,13 @@ public partial class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<MySettingsV2>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider(),
         };
-        builder.FileProvider = _fileProvider;
+        builder.UseInMemoryBackend(_fileProvider);
 
         var options = builder.BuildOptions("");
-        var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadWithMigration(options);
+        var result = Utility.StateTestHelper.ReadStateValue(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -97,14 +91,12 @@ public partial class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<MySettingsV3>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider(),
         };
-        builder.FileProvider = _fileProvider;
+        builder.UseInMemoryBackend(_fileProvider);
         var options = builder.BuildOptions("");
-        var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadWithMigration(options);
+        var result = Utility.StateTestHelper.ReadStateValue(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -127,14 +119,12 @@ public partial class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<SettingsWithoutVersion>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider(),
         };
-        builder.FileProvider = _fileProvider;
+        builder.UseInMemoryBackend(_fileProvider);
         var options = builder.BuildOptions("");
-        var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadWithMigration(options);
+        var result = Utility.StateTestHelper.ReadStateValue(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -157,14 +147,12 @@ public partial class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<SettingsWithoutVersion>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider(),
         };
-        builder.FileProvider = _fileProvider;
+        builder.UseInMemoryBackend(_fileProvider);
         var options = builder.BuildOptions("");
-        var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadWithMigration(options);
+        var result = Utility.StateTestHelper.ReadStateValue(options);
 
         // Assert
         result.ShouldNotBeNull();
@@ -183,11 +171,10 @@ public partial class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<SettingsWithBusinessVersion>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider(),
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
 
-        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+        var result = Utility.StateTestHelper.ReadStateValue(builder.BuildOptions(""));
 
         result.Version.ShouldBe("business");
         result.Name.ShouldBe("TestName");
@@ -253,14 +240,12 @@ public partial class MigrationSupportTests
         var builder = new WritableOptionsConfigBuilder<MySettingsV2>
         {
             FilePath = fileName,
-            FormatProvider = new JsonFormatProvider(),
         };
-        builder.FileProvider = _fileProvider;
+        builder.UseInMemoryBackend(_fileProvider);
         var options = builder.BuildOptions("");
-        var provider = new JsonFormatProvider();
 
         // Act
-        var result = provider.LoadWithMigration(options);
+        var result = Utility.StateTestHelper.ReadStateValue(options);
 
         // Assert
         result.ShouldNotBeNull();

@@ -1,6 +1,4 @@
 using System;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.Migration;
@@ -11,35 +9,12 @@ namespace Configuration.Writable.Migration;
 internal static class MigrationLoaderExtension
 {
     /// <summary>
+    /// Codec-agnostic migration loading. Codecs supply how to load a type,
+    /// read schema metadata, and promote fallback documents.
     /// Attempts to deserialize and apply migrations to reach the target type T.
     /// This method handles version detection and migration chain application.
     /// </summary>
     /// <typeparam name="T">The target configuration type.</typeparam>
-    internal static T LoadWithMigration<T>(
-        this FormatProvider.IWritableFormatProvider formatProvider,
-        WritableOptionsConfiguration<T> options
-    )
-        where T : class, new()
-    {
-        return LoadWithMigration(
-            options,
-            type => formatProvider.LoadConfiguration(type, options),
-            () =>
-                formatProvider is IOptionsSchemaMetadataProvider metadataProvider
-                    ? FormatProviderBase.ExecuteWithBackupRecovery(
-                        options,
-                        () => metadataProvider.ReadSchemaMetadata(options)
-                    )
-                    : null,
-            value => PromoteIfNeeded(formatProvider, options, value)
-        );
-    }
-
-    /// <summary>
-    /// Codec-agnostic migration loading. Codecs supply how to load a type,
-    /// read schema metadata, and promote fallback documents, so migration no
-    /// longer depends on <see cref="FormatProvider.IWritableFormatProvider"/>.
-    /// </summary>
     internal static T LoadWithMigration<T>(
         WritableOptionsConfiguration<T> options,
         Func<Type, object> load,
@@ -97,13 +72,11 @@ internal static class MigrationLoaderExtension
         {
             // The compatibility is broken, so create a backup and return the default values.
             string? backupPath = null;
-            var success =
-                options.FileProvider is IBackupFileProvider backupFileProvider
-                && backupFileProvider.TryBackup(
-                    options.ConfigFilePath,
-                    out backupPath,
-                    options.Logger
-                );
+            var success = options.FileBackend.TryBackup(
+                options.ConfigFilePath,
+                out backupPath,
+                options.Logger
+            );
             if (success)
             {
                 options.Logger?.LogWarning(
@@ -127,19 +100,6 @@ internal static class MigrationLoaderExtension
         var migrated = ApplyMigrationChain<T>(options, load, migrationLookup, currentType);
         promote(migrated);
         return migrated;
-    }
-
-    private static void PromoteIfNeeded<T>(
-        IWritableFormatProvider formatProvider,
-        WritableOptionsConfiguration<T> options,
-        T value
-    )
-        where T : class, new()
-    {
-        if (formatProvider is FallbackFormatProvider fallbackFormatProvider)
-        {
-            fallbackFormatProvider.PromoteIfNeeded(value, options);
-        }
     }
 
     private static void ValidateFileMetadata(OptionsSchemaMetadata? fileMetadata)

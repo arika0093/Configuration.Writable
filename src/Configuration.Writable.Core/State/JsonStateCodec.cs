@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 
@@ -68,8 +67,10 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
             readOptions,
             type => LoadAsType(fileResource, readPath, type, readOptions),
             () =>
-                FormatProviderBase.ExecuteWithBackupRecovery(
-                    readOptions,
+                FileBackupRecovery.Execute(
+                    readOptions.FileBackend,
+                    readPath,
+                    readOptions.Logger,
                     () => ReadSchemaMetadata(fileResource, readPath, readOptions)
                 ),
             static _ => { }
@@ -98,8 +99,10 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
         WritableOptionsConfiguration<T> options
     )
     {
-        return FormatProviderBase.ExecuteWithBackupRecovery(
-            options,
+        return FileBackupRecovery.Execute(
+            options.FileBackend,
+            path,
+            options.Logger,
             () => LoadCore(resource, path, type, options)
         );
     }

@@ -2,19 +2,17 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Yaml.Tests;
 
-public class YamlFormatProviderTests
+public class YamlFileOptionsTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
 
     [Test]
-    public void YamlFormatProvider_ShouldHaveCorrectFileExtension()
+    public void YamlFileOptions_ShouldHaveCorrectFileExtension()
     {
-        var provider = new YamlFormatProvider();
+        var provider = new YamlFileOptions();
         provider.FileExtension.ShouldBe("yaml");
     }
 
@@ -27,8 +25,8 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var settings = new TestSettings
@@ -57,14 +55,14 @@ public class YamlFormatProviderTests
     public async Task LoadAndSave_WithYamlProvider_ShouldPreserveData()
     {
         var testFileName = Path.GetRandomFileName();
-        var provider = new YamlFormatProvider();
+        var provider = new YamlFileOptions();
 
         var _instance = new WritableOptionsSimpleInstance<TestSettings>();
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = provider;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = provider;
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var originalSettings = new TestSettings
@@ -83,8 +81,8 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = provider;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = provider;
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         option = _instance.GetOptions();
@@ -101,14 +99,14 @@ public class YamlFormatProviderTests
     public async Task LoadAndSave_WithNonUtf8Encoding_ShouldPreserveData()
     {
         const string testFileName = "utf16_config.yaml";
-        var provider = new YamlFormatProvider { Encoding = Encoding.Unicode };
+        var provider = new YamlFileOptions { Encoding = Encoding.Unicode };
         var instance = new WritableOptionsSimpleInstance<TestSettings>();
 
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = provider;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = provider;
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -127,8 +125,8 @@ public class YamlFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = provider;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = provider;
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var loadedSettings = instance.GetOptions().CurrentValue;
@@ -158,8 +156,8 @@ public class YamlFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var loadedSettings = instance.GetOptions().CurrentValue;
@@ -179,8 +177,8 @@ public class YamlFormatProviderTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         Should.Throw<FormatException>(() => instance.GetOptions());
@@ -196,8 +194,8 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = _instance.GetOptions();
@@ -225,9 +223,9 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
+            options.FormatOptions = new YamlFileOptions();
             options.SectionName = "App:Settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -264,9 +262,9 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
+            options.FormatOptions = new YamlFileOptions();
             options.SectionName = "Database__Connection";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -303,9 +301,9 @@ public class YamlFormatProviderTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
+            options.FormatOptions = new YamlFileOptions();
             options.SectionName = "App:Database:Connection:Settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings

@@ -2,8 +2,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Tests;
 
@@ -13,7 +11,7 @@ namespace Configuration.Writable.Tests;
 /// </summary>
 public partial class JsonPartialWriteTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [OptionsModel]
     public partial class AppSettings
@@ -59,11 +57,11 @@ public partial class JsonPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "AppSettings";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act - Update only AppSettings section
@@ -122,11 +120,11 @@ public partial class JsonPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Settings";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -166,11 +164,11 @@ public partial class JsonPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "AppSettings";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -211,11 +209,11 @@ public partial class JsonPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "NewSection";
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -260,11 +258,11 @@ public partial class JsonPartialWriteTests
         {
             options.FilePath = testFileName;
             // No SectionName specified - full overwrite
-            options.FormatProvider = new JsonFormatProvider
+            options.FormatOptions = new JsonFileOptions
             {
                 JsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true },
             };
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act

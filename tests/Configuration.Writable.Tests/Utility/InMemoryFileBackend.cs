@@ -2,23 +2,25 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable.FileProvider;
+namespace Configuration.Writable;
 
 /// <summary>
-/// Provides an in-memory implementation of the <see cref="IWritableFileProvider"/> interface for managing files and directories without
-/// persistent storage. for testing purposes.
+/// In-memory <see cref="IFileBackend"/> implementation for testing purposes.
 /// </summary>
-public class InMemoryFileProvider : IWritableFileProvider, IBackupFileProvider
+internal class InMemoryFileBackend : IFileBackend
 {
     private readonly ConcurrentDictionary<string, byte[]> _files = new();
-    private readonly ConcurrentDictionary<string, DateTime> _lastWriteTimes = new();
 
     public int BackupAttemptCount { get; private set; }
+
+    public bool IsPhysical => false;
+
+    public string GetPhysicalPath(string path) => Path.GetFullPath(path);
 
     /// <inheritdoc />
     public bool TryBackup(string path, out string? backupPath, ILogger? logger = null)
@@ -27,6 +29,14 @@ public class InMemoryFileProvider : IWritableFileProvider, IBackupFileProvider
         backupPath = null;
         return false;
     }
+
+    public bool TryDelete(string path, ILogger? logger = null)
+    {
+        var normalizedPath = Path.GetFullPath(path);
+        return _files.TryRemove(normalizedPath, out _);
+    }
+
+    public bool TryRestoreLatestBackup(string path, ILogger? logger = null) => false;
 
     /// <inheritdoc />
     public Task SaveToFileAsync(
@@ -39,7 +49,6 @@ public class InMemoryFileProvider : IWritableFileProvider, IBackupFileProvider
         cancellationToken.ThrowIfCancellationRequested();
         var normalizedPath = Path.GetFullPath(path);
         _files[normalizedPath] = content.ToArray();
-        _lastWriteTimes[normalizedPath] = DateTime.UtcNow;
         return Task.CompletedTask;
     }
 
@@ -54,42 +63,41 @@ public class InMemoryFileProvider : IWritableFileProvider, IBackupFileProvider
     }
 
     /// <inheritdoc />
-    public PipeReader? GetFilePipeReader(string path)
+    public Stream? OpenReadStream(string path)
     {
         var normalizedPath = Path.GetFullPath(path);
         if (!_files.TryGetValue(normalizedPath, out var content))
         {
             return null;
         }
-        var stream = new MemoryStream(content);
-        return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: false));
+        return new MemoryStream(content, writable: false);
     }
 
     /// <inheritdoc />
     public bool DirectoryExists(string path)
     {
-        // In-memory provider always has directories available
+        // In-memory backend always has directories available
         return true;
     }
 
     /// <inheritdoc />
     public bool CanWriteToFile(string path)
     {
-        // In-memory provider can write to a file if it exists
+        // In-memory backend can write to a file if it exists
         return FileExists(path);
     }
 
     /// <inheritdoc />
     public bool CanWriteToDirectory(string path)
     {
-        // In-memory provider can always write to any directory
+        // In-memory backend can always write to any directory
         return true;
     }
 
     /// <inheritdoc />
     public bool EnsureDirectoryExists(string path)
     {
-        // In-memory provider always has directories available
+        // In-memory backend always has directories available
         return true;
     }
 

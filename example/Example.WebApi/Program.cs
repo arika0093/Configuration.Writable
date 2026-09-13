@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Configuration.Writable;
-using Configuration.Writable.FormatProvider;
 using Example.WebApi;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +11,10 @@ var builder = WebApplication.CreateSlimBuilder(args);
 builder.Services.AddWritableOptions(services =>
 {
     // shared configuration for all options types
-    services.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+    services.FormatOptions = new JsonFileOptions
+    {
+        TypeInfoResolver = SampleSettingSerializerContext.Default,
+    };
 
     // if you want to standard system configuration location, use services.UseStandardSaveDirectory("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows

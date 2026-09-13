@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Diagnostics;
+using Configuration.Writable.Options;
 using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,14 +21,14 @@ namespace Configuration.Writable;
 internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     where T : class, new()
 {
-    private readonly IWritableOptionsConfigRegistry<T> _optionsRegistry;
+    private readonly WritableOptionsRegistry<T> _optionsRegistry;
     private readonly ConcurrentDictionary<string, OptionsMonitorDataSource> _dataSources = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly object _listenersLock = new();
     private readonly List<Action<T, string?>> _listeners = [];
     private readonly List<Action<Exception, string?>> _failureListeners = [];
 
-    public OptionsMonitorImpl(IWritableOptionsConfigRegistry<T> optionsRegistry)
+    public OptionsMonitorImpl(WritableOptionsRegistry<T> optionsRegistry)
     {
         _optionsRegistry = optionsRegistry;
         // subscribe to options added/removed events
@@ -254,7 +255,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                     new T(),
                     ConfigurationFileFingerprint.Capture(
                         options.GetSelectedFilePath(),
-                        options.FileProvider
+                        options.FileBackend
                     ),
                     result.Revision
                 );
@@ -269,7 +270,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 result.Value,
                 ConfigurationFileFingerprint.Capture(
                     options.GetSelectedFilePath(),
-                    options.FileProvider
+                    options.FileBackend
                 ),
                 result.Revision
             );

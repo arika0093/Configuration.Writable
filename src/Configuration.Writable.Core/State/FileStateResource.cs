@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable.State;
 
@@ -15,14 +14,16 @@ internal sealed class FileStateResource<T> : IStateResource
     internal FileStateResource(WritableOptionsConfiguration<T> options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
-        _watcher = new FileStateWatcher<T>(_options, options.FileProvider);
+        _watcher = new FileStateWatcher<T>(_options, options.FileBackend);
     }
 
     internal WritableOptionsConfiguration<T> Options => _options;
 
+    internal IFileBackend Backend => _options.FileBackend;
+
     public string? GetRevision() =>
         ConfigurationFileFingerprint
-            .Capture(_options.GetSelectedFilePath(), _options.FileProvider)
+            .Capture(_options.GetSelectedFilePath(), _options.FileBackend)
             ?.ToRevision();
 
     public ValueTask WaitForChangeAsync(
@@ -32,33 +33,32 @@ internal sealed class FileStateResource<T> : IStateResource
 
     internal string GetPhysicalPath(string path)
     {
-        if (_options.FileProvider is IPhysicalFileProvider physicalFileProvider)
+        if (_options.FileBackend.IsPhysical)
         {
-            return physicalFileProvider.GetPhysicalFilePath(path);
+            return _options.FileBackend.GetPhysicalPath(path);
         }
         return Path.GetFullPath(path);
     }
 
-    internal bool FileExists(string path) => _options.FileProvider.FileExists(path);
+    internal bool FileExists(string path) => _options.FileBackend.FileExists(path);
 
     internal Stream OpenRead(string path)
     {
-        var pipeReader = _options.FileProvider.GetFilePipeReader(path);
-        if (pipeReader == null)
-        {
-            throw new FileNotFoundException($"File not found: {path}");
-        }
-        return pipeReader.AsStream(leaveOpen: false);
+        return _options.FileBackend.OpenReadStream(path)
+            ?? throw new FileNotFoundException($"File not found: {path}");
     }
 
-    internal async Task WriteAsync(
+    internal Task WriteAsync(
         string path,
         ReadOnlyMemory<byte> content,
         CancellationToken cancellationToken
     )
     {
-        await _options
-            .FileProvider.SaveToFileAsync(path, content, _options.Logger, cancellationToken)
-            .ConfigureAwait(false);
+        return _options.FileBackend.SaveToFileAsync(
+            path,
+            content,
+            _options.Logger,
+            cancellationToken
+        );
     }
 }

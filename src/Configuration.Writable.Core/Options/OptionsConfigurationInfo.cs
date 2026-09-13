@@ -42,7 +42,7 @@ internal sealed class OptionsConfigurationInfo : IOptionsConfigurationInfo
             options.InstanceName,
             options.ReadFilePath,
             options.ConfigFilePath,
-            options.FormatProvider.FileExtension,
+            options.FormatOptions.FileExtension,
             options.SectionNameParts
         );
 }

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -10,7 +9,7 @@ namespace Configuration.Writable.Tests;
 
 public partial class InstanceNameIntegrationTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
 
     [OptionsModel]
     public partial class UserSetting
@@ -33,7 +32,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = firstFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -43,7 +42,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = secondFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -115,7 +114,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = firstFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -124,7 +123,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = secondFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -171,7 +170,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = firstFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -180,7 +179,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = secondFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -205,7 +204,7 @@ public partial class InstanceNameIntegrationTests
         builder.Services.AddWritableOptions<UserSetting>(conf =>
         {
             conf.FilePath = fileName;
-            conf.UseInMemoryFileProvider(_FileProvider);
+            conf.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -241,7 +240,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = firstFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -250,7 +249,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = secondFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -285,7 +284,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = firstFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -294,7 +293,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = secondFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -329,7 +328,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = firstFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -338,7 +337,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = secondFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -390,7 +389,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = firstFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -399,7 +398,7 @@ public partial class InstanceNameIntegrationTests
             conf =>
             {
                 conf.FilePath = secondFileName;
-                conf.UseInMemoryFileProvider(_FileProvider);
+                conf.UseInMemoryBackend(_FileProvider);
             }
         );
 
