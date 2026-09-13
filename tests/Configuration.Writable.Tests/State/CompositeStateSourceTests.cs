@@ -308,7 +308,7 @@ public class CompositeStateSourceTests
         await Should.ThrowAsync<InvalidOperationException>(() =>
             source.WaitForChangeAsync(null).AsTask()
         );
-        await pendingWatcher.CancellationObserved.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        pendingWatcher.CancellationObserved.Task.IsCompleted.ShouldBeTrue();
     }
 
     private sealed class TestSource<T>(StateReadResult<T> readResult)
