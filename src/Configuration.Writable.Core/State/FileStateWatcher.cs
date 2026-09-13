@@ -24,10 +24,9 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
     )
     {
         var watchedFilePath = GetWatchedPath();
-        var watchedPath =
-            _options.FileProvider is IPhysicalFileProvider physicalFileProvider
-                ? physicalFileProvider.GetPhysicalFilePath(watchedFilePath)
-                : watchedFilePath;
+        var watchedPath = _options.FileProvider is IPhysicalFileProvider physicalFileProvider
+            ? physicalFileProvider.GetPhysicalFilePath(watchedFilePath)
+            : watchedFilePath;
         var directory = Path.GetDirectoryName(watchedPath);
         if (string.IsNullOrEmpty(directory))
         {
