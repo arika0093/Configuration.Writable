@@ -12,6 +12,7 @@ internal static class AsyncFileSaveLock
 {
     private const long LockOffset = 0;
     private const long LockLength = 1;
+    private static readonly TimeSpan LockTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan LockRetryDelay = TimeSpan.FromMilliseconds(50);
     private static readonly ConcurrentDictionary<string, Entry> Entries = new(
         Path.DirectorySeparatorChar == '\\'
@@ -26,20 +27,37 @@ internal static class AsyncFileSaveLock
     {
         var key = NormalizePath(configFilePath);
         var entry = AddReference(key);
+        using var lockTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        lockTimeout.CancelAfter(LockTimeout);
+        var lockCancellationToken = lockTimeout.Token;
+        var semaphoreAcquired = false;
         try
         {
-            await entry.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await entry.Semaphore.WaitAsync(lockCancellationToken).ConfigureAwait(false);
+            semaphoreAcquired = true;
             try
             {
-                var sidecarLockStream = await AcquireSidecarLockAsync(key, cancellationToken)
+                var sidecarLockStream = await AcquireSidecarLockAsync(key, lockCancellationToken)
                     .ConfigureAwait(false);
                 return new Releaser(key, entry, sidecarLockStream);
             }
             catch
             {
                 entry.Semaphore.Release();
+                semaphoreAcquired = false;
                 throw;
             }
+        }
+        catch (OperationCanceledException)
+            when (lockTimeout.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            if (semaphoreAcquired)
+            {
+                entry.Semaphore.Release();
+            }
+            throw new TimeoutException(
+                $"Timed out after {LockTimeout} while acquiring the configuration file lock for '{key}'."
+            );
         }
         catch
         {
