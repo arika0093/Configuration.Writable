@@ -350,7 +350,17 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             throw new ArgumentNullException(nameof(source));
         }
 
-        sourceId ??= $"provider-{_stateSources.Count}";
+        if (sourceId is null)
+        {
+            var index = _stateSources.Count;
+            do
+            {
+                sourceId = $"provider-{index++}";
+            }
+            while (_stateSources.Any(existing =>
+                string.Equals(existing.Id, sourceId, StringComparison.Ordinal)
+            ));
+        }
         if (
             string.Equals(sourceId, "file", StringComparison.Ordinal)
             || _stateSources.Any(existing =>
@@ -489,6 +499,16 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         var fileSource = new FileStateSource<T>(options, acquireSaveLock);
         if (configuredSources.Count == 0)
         {
+            if (
+                writeTargetId is not null
+                && !string.Equals(writeTargetId, "file", StringComparison.Ordinal)
+            )
+            {
+                throw new ArgumentException(
+                    "The write target must be a registered state source.",
+                    nameof(writeTargetId)
+                );
+            }
             return fileSource;
         }
 
