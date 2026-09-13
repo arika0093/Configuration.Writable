@@ -349,10 +349,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         CancellationToken cancellationToken
     )
     {
-        var debounceRevision =
-            source is CompositeStateSource<T> compositeSource
-                ? compositeSource.GetWatcherScopeRevision(observedRevision)
-                : null;
+        var debounceRevision = source is CompositeStateSource<T> compositeSource
+            ? compositeSource.GetWatcherScopeRevision(observedRevision)
+            : null;
         while (true)
         {
             using var debounceCancellation = CancellationTokenSource.CreateLinkedTokenSource(
