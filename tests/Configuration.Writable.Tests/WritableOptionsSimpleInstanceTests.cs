@@ -1,17 +1,16 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Tests.Utility;
 
 namespace Configuration.Writable.Tests;
 
 public class WritableOptionsSimpleInstanceTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
 
     [Test]
     public void Initialize_ShouldCreateConfiguration()
@@ -56,7 +55,7 @@ public class WritableOptionsSimpleInstanceTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -86,7 +85,7 @@ public class WritableOptionsSimpleInstanceTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -116,7 +115,7 @@ public class WritableOptionsSimpleInstanceTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = _instance.GetOptions();
@@ -141,7 +140,7 @@ public class WritableOptionsSimpleInstanceTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var options = instance.GetOptions();
@@ -204,7 +203,7 @@ public class WritableOptionsSimpleInstanceTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -242,7 +241,7 @@ public class WritableOptionsSimpleInstanceTests
         {
             options.FilePath = testFileName;
             options.SectionName = "Database__Connection";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -280,7 +279,7 @@ public class WritableOptionsSimpleInstanceTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Database:Connection:Settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -319,7 +318,7 @@ public class WritableOptionsSimpleInstanceTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Config__Settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings
@@ -356,7 +355,7 @@ public class WritableOptionsSimpleInstanceTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var newSettings = new TestSettings

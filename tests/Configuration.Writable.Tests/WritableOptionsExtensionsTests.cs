@@ -1,7 +1,6 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,7 +10,7 @@ namespace Configuration.Writable.Tests;
 
 public partial class WritableOptionsExtensionsTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
 
     [OptionsModel]
     public partial class TestSettings
@@ -81,7 +80,7 @@ public partial class WritableOptionsExtensionsTests
         services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFilePath;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
         var serviceProvider = services.BuildServiceProvider();
         var writableOptions = serviceProvider.GetService<IWritableOptions<TestSettings>>();
@@ -114,7 +113,7 @@ public partial class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFilePath;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -132,7 +131,7 @@ public partial class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -164,7 +163,7 @@ public partial class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -204,7 +203,7 @@ public partial class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<TestSettingsV2>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -224,7 +223,7 @@ public partial class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<ValidatableSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.WithValidator<ValidatableSettingsValidator>();
         });
 
@@ -256,7 +255,7 @@ public partial class WritableOptionsExtensionsTests
         builder.Services.AddWritableOptions<ValidatableSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.Count > 100)

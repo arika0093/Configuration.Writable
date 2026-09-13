@@ -3,8 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Xml.Tests;
 
@@ -15,7 +13,7 @@ namespace Configuration.Writable.Xml.Tests;
 /// </summary>
 public partial class XmlOutputFormatStabilityTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
 
     /// <summary>
@@ -66,8 +64,8 @@ public partial class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -96,9 +94,9 @@ public partial class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new XmlFormatProvider();
+            options.FormatOptions = new XmlFileOptions();
             options.SectionName = "App:Database";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -133,8 +131,8 @@ public partial class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -169,8 +167,8 @@ public partial class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -205,8 +203,8 @@ public partial class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -234,9 +232,9 @@ public partial class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new XmlFormatProvider();
+            options.FormatOptions = new XmlFileOptions();
             options.SectionName = "App:Database:Connection:Settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -265,9 +263,9 @@ public partial class XmlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new XmlFormatProvider();
+            options.FormatOptions = new XmlFileOptions();
             options.SectionName = ""; // Empty section name
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();

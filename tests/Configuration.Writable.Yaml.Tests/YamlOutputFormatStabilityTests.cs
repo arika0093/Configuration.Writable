@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Yaml.Tests;
 
@@ -13,7 +11,7 @@ namespace Configuration.Writable.Yaml.Tests;
 /// </summary>
 public class YamlOutputFormatStabilityTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
     private const string ReferenceFilesPath = "ReferenceFiles";
 
     /// <summary>
@@ -46,8 +44,8 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -76,9 +74,9 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
+            options.FormatOptions = new YamlFileOptions();
             options.SectionName = "app:settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();
@@ -113,8 +111,8 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -149,8 +147,8 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -185,8 +183,8 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var option = instance.GetOptions();
@@ -214,9 +212,9 @@ public class YamlOutputFormatStabilityTests
         instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.FormatProvider = new YamlFormatProvider();
+            options.FormatOptions = new YamlFileOptions();
             options.SectionName = "app:database:connection:settings";
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var testConfig = new TestConfiguration();

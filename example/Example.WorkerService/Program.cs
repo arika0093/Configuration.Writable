@@ -1,5 +1,4 @@
 using Configuration.Writable;
-using Configuration.Writable.FormatProvider;
 using Example.WorkerService;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -7,7 +6,10 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddWritableOptions(services =>
 {
     // shared configuration for all options types
-    services.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+    services.FormatOptions = new JsonFileOptions
+    {
+        TypeInfoResolver = SampleSettingSerializerContext.Default,
+    };
 
     // One backup is kept by default. Set a custom count when needed.
     // services.FileProvider = new CommonFileProvider() { BackupMaxCount = 5 };

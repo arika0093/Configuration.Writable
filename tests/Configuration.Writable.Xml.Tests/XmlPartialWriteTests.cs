@@ -2,8 +2,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.Xml.Tests;
 
@@ -13,7 +11,7 @@ namespace Configuration.Writable.Xml.Tests;
 /// </summary>
 public partial class XmlPartialWriteTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [OptionsModel]
     public partial class AppSettings
@@ -60,8 +58,8 @@ public partial class XmlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "AppSettings";
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act - Update only AppSettings section
@@ -126,8 +124,8 @@ public partial class XmlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "App:Settings";
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -170,8 +168,8 @@ public partial class XmlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "AppSettings";
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -217,8 +215,8 @@ public partial class XmlPartialWriteTests
         {
             options.FilePath = testFileName;
             options.SectionName = "NewSection";
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act
@@ -270,8 +268,8 @@ public partial class XmlPartialWriteTests
         {
             options.FilePath = testFileName;
             // No SectionName specified - full overwrite
-            options.FormatProvider = new XmlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new XmlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         // Act

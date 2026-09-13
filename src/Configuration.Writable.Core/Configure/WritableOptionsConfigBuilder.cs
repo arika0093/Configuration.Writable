@@ -7,9 +7,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Configuration.Writable.Abstractions;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 #if NET
@@ -26,17 +25,10 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     where T : class, new()
 {
     /// <inheritdoc />
-    public new FormatProvider.IWritableFormatProvider FormatProvider
+    public new FileFormatOptions FormatOptions
     {
-        get => base.FormatProvider;
-        set => base.FormatProvider = value;
-    }
-
-    /// <inheritdoc />
-    public new IWritableFileProvider? FileProvider
-    {
-        get => base.FileProvider;
-        set => base.FileProvider = value;
+        get => base.FormatOptions;
+        set => base.FormatOptions = value;
     }
 
     /// <inheritdoc />
@@ -157,18 +149,17 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     private bool _usesDefaultJsonCloneFallback;
     private readonly List<Func<T, ValidateOptionsResult>> _validators = [];
     private readonly List<MigrationStep> _migrationSteps = [];
+    private readonly List<ConfiguredStateSource> _stateSources = [];
+    private string? _writeTargetId;
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
-    /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
-    /// </summary>
-    /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations override from provider's default.
+    /// Gets or sets the file format settings used to persist the configuration data.<br/>
+    /// Defaults to JSON.<br/>
     /// </summary>
     /// <summary>
     /// Gets or sets the path of the file used to store user settings. <br/>
     /// Defaults(null) to "usersettings" or InstanceName if specified. <br/>
-    /// Extension is determined by the <see cref="IWritableFormatProvider"/> so it can be omitted.
+    /// Extension is determined by the configured <see cref="FileFormatOptions"/> so it can be omitted.
     /// </summary>
     /// <summary>
     /// Gets or sets the debounce duration for change events.
@@ -205,18 +196,6 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <summary>Creates a builder with default settings.</summary>
-#if NET
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026",
-        Justification = "The default JSON provider is retained for non-AOT applications; AOT callers can replace it with JsonAotFormatProvider."
-    )]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050",
-        Justification = "The default JSON provider is retained for non-AOT applications; AOT callers can replace it with JsonAotFormatProvider."
-    )]
-#endif
     public WritableOptionsConfigBuilder() { }
 
     /// <summary>
@@ -313,32 +292,108 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
     }
 
     /// <summary>
+    /// Adds a backend-neutral state source. If the source also implements
+    /// <see cref="IStateWriter{T}"/> or <see cref="IStateWatcher"/>, those capabilities are
+    /// used automatically. The built-in file source remains available as the lowest-priority
+    /// fallback, preserving <see cref="UseFile"/> and location-builder behavior.
+    /// </summary>
+    /// <param name="source">The source used to read the typed state snapshot.</param>
+    /// <param name="priority">The read and default write priority. Higher values win.</param>
+    /// <param name="fallbackCondition">The conditions under which resolution continues to a lower-priority source.</param>
+    public void FromProvider(
+        IStateReader<T> source,
+        int priority = 100,
+        StateFallbackConditions fallbackCondition = StateFallbackConditions.NotFound
+    ) => FromProvider(null, source, priority, fallbackCondition);
+
+    /// <summary>
+    /// Adds a named backend-neutral state source. Source ids are diagnostic handles and must be
+    /// unique within this registration.
+    /// </summary>
+    /// <param name="sourceId">A stable source identifier, or <see langword="null"/> to generate one.</param>
+    /// <param name="source">The source used to read the typed state snapshot.</param>
+    /// <param name="priority">The read and default write priority. Higher values win.</param>
+    /// <param name="fallbackCondition">The conditions under which resolution continues to a lower-priority source.</param>
+    public void FromProvider(
+        string? sourceId,
+        IStateReader<T> source,
+        int priority = 100,
+        StateFallbackConditions fallbackCondition = StateFallbackConditions.NotFound
+    )
+    {
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        if (sourceId is null)
+        {
+            var index = _stateSources.Count;
+            do
+            {
+                sourceId = $"provider-{index++}";
+            } while (
+                _stateSources.Any(existing =>
+                    string.Equals(existing.Id, sourceId, StringComparison.Ordinal)
+                )
+            );
+        }
+        if (
+            string.Equals(sourceId, "file", StringComparison.Ordinal)
+            || _stateSources.Any(existing =>
+                string.Equals(existing.Id, sourceId, StringComparison.Ordinal)
+            )
+        )
+        {
+            throw new ArgumentException(
+                $"A state source named '{sourceId}' is already registered.",
+                nameof(sourceId)
+            );
+        }
+
+        _stateSources.Add(new ConfiguredStateSource(sourceId, source, priority, fallbackCondition));
+    }
+
+    /// <summary>
+    /// Selects the source that receives saves. Without an explicit target, the highest-priority
+    /// writable source is used. Use <c>file</c> to route saves to the built-in file source.
+    /// </summary>
+    /// <param name="sourceId">The id supplied to <see cref="FromProvider(string?, IStateReader{T}, int, StateFallbackConditions)"/> or <c>file</c>.</param>
+    public void UseWriteTarget(string sourceId)
+    {
+        if (string.IsNullOrWhiteSpace(sourceId))
+        {
+            throw new ArgumentException("A state source id is required.", nameof(sourceId));
+        }
+        _writeTargetId = sourceId;
+    }
+
+    /// <summary>
     /// Creates a new instance of writable configuration options for the specified type.
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
     public WritableOptionsConfiguration<T> BuildOptions(string instanceName)
     {
-        if (FormatProvider is FormatProviderBase typeRegistrationProvider)
+        FormatOptions.RegisterType<T>();
+        foreach (var fallback in FallbackFormats)
         {
-            typeRegistrationProvider.RegisterType<T>();
-        }
-        else if (FormatProvider is FallbackFormatProvider fallbackFormatProvider)
-        {
-            fallbackFormatProvider.RegisterType<T>();
+            fallback.RegisterType<T>();
         }
 
-        var fileProvider = FileProvider ?? new CommonFileProvider();
+        var backend = FileBackend ?? new PhysicalFileBackend();
+        var fallbackExtensions = FallbackFormats.Select(format => format.FileExtension).ToList();
         var configFilePath = SaveLocationManager.Build(
-            FormatProvider,
-            fileProvider,
+            FormatOptions.FileExtension,
+            backend,
             instanceName,
-            PromoteSaveLocationEnabled
+            PromoteSaveLocationEnabled,
+            fallbackExtensions
         );
         var readFilePath = PromoteSaveLocationEnabled
             ? SaveLocationManager.BuildReadPath(
-                FormatProvider,
-                fileProvider,
+                FormatOptions.FileExtension,
+                backend,
                 instanceName,
                 PromoteSaveLocationEnabled
             ) ?? configFilePath
@@ -353,13 +408,6 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 schemaMetadata.Version.Value
             );
         }
-        if (schemaMetadata is not null && !SupportsSchemaMetadata(FormatProvider))
-        {
-            throw new InvalidOperationException(
-                $"Format provider {FormatProvider.GetType().Name} does not support options schema metadata required by {typeof(T).Name}."
-            );
-        }
-
         var migrationSteps = new List<MigrationStep>(_migrationSteps);
         var generatedMetadata = new T() as IGeneratedOptionsMetadata;
         generatedMetadata?.RegisterMigrations(new OptionsMigrationRegistrar(migrationSteps));
@@ -382,10 +430,13 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             }
         }
 
+        var stateSources = _stateSources.ToArray();
+        var writeTargetId = _writeTargetId;
         return new WritableOptionsConfiguration<T>
         {
-            FormatProvider = FormatProvider,
-            FileProvider = fileProvider,
+            FormatOptions = FormatOptions,
+            FallbackFormats = new List<FileFormatOptions>(FallbackFormats),
+            FileBackend = backend,
             ConfigFilePath = configFilePath,
             ReadFilePath = readFilePath,
             PromoteSaveLocationEnabled = PromoteSaveLocationEnabled,
@@ -403,15 +454,63 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
                 migrationSteps.Count == 0 || schemaMetadata?.Version is null
                     ? null
                     : new MigrationLookup(typeof(T), schemaMetadata, migrationSteps),
+            StateSourceFactory = (options, acquireSaveLock) =>
+                CreateStateSource(options, stateSources, writeTargetId, acquireSaveLock),
         };
     }
 
-    private static bool SupportsSchemaMetadata(
-        FormatProvider.IWritableFormatProvider formatProvider
-    ) =>
-        formatProvider is FallbackFormatProvider fallbackProvider
-            ? fallbackProvider.SupportsSchemaMetadata
-            : formatProvider is IOptionsSchemaMetadataProvider;
+    private static IStateSource<T> CreateStateSource(
+        WritableOptionsConfiguration<T> options,
+        IReadOnlyList<ConfiguredStateSource> configuredSources,
+        string? writeTargetId,
+        bool acquireSaveLock
+    )
+    {
+        var fileSource = new FileStateSource<T>(options, acquireSaveLock);
+        if (configuredSources.Count == 0)
+        {
+            if (
+                writeTargetId is not null
+                && !string.Equals(writeTargetId, "file", StringComparison.Ordinal)
+            )
+            {
+                throw new ArgumentException(
+                    "The write target must be a registered state source.",
+                    nameof(writeTargetId)
+                );
+            }
+            return fileSource;
+        }
+
+        var sources = configuredSources
+            .Select(source => new StateSource<T>(
+                source.Id,
+                source.Reader,
+                source.Reader as IStateWriter<T>,
+                source.Reader as IStateWatcher,
+                source.Priority,
+                source.FallbackCondition
+            ))
+            .ToList();
+        sources.Add(
+            new StateSource<T>(
+                "file",
+                fileSource,
+                fileSource,
+                fileSource,
+                priority: int.MinValue,
+                fallbackCondition: StateFallbackConditions.None
+            )
+        );
+        return new CompositeStateSource<T>(sources, writeTargetId);
+    }
+
+    private sealed record ConfiguredStateSource(
+        string Id,
+        IStateReader<T> Reader,
+        int Priority,
+        StateFallbackConditions FallbackCondition
+    );
 
     private static void ValidateMigrationSteps(
         OptionsSchemaMetadata? targetMetadata,

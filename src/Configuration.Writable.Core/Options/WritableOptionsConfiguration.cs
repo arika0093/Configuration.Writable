@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -19,15 +19,21 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     internal WritableOptionsConfiguration() { }
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFormatProvider"/> used to handle the serialization and deserialization of the configuration data.<br/>
-    /// Defaults to <see cref="JsonFormatProvider"/> which uses JSON format. <br/>
+    /// Gets the file format settings used to serialize the configuration data.
+    /// Defaults to JSON.
     /// </summary>
-    public required FormatProvider.IWritableFormatProvider FormatProvider { get; init; }
+    public required FileFormatOptions FormatOptions { get; init; }
 
     /// <summary>
-    /// Gets or sets a instance of <see cref="IWritableFileProvider"/> used to handle the file writing operations.
+    /// Gets the fallback file formats used to load an existing configuration
+    /// when the canonical file does not exist.
     /// </summary>
-    public required IWritableFileProvider FileProvider { get; init; }
+    public IReadOnlyList<FileFormatOptions> FallbackFormats { get; init; } = [];
+
+    /// <summary>
+    /// Gets the file backend used to read and write the configuration file.
+    /// </summary>
+    internal IFileBackend FileBackend { get; init; } = new PhysicalFileBackend();
 
     /// <summary>
     /// Gets the full file path used to save the configuration file.
@@ -102,4 +108,52 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// Gets the migration lookups computed when these options were built.
     /// </summary>
     internal MigrationLookup? MigrationLookup { get; init; }
+
+#pragma warning disable S2325 // Both members below use instance state; flagged as a false positive.
+    internal bool HasFallbackFormats => FallbackFormats.Count > 0;
+
+    internal string GetSelectedFilePath()
+    {
+        if (!HasFallbackFormats)
+        {
+            return ConfigFilePath;
+        }
+
+        var backend = FileBackend;
+        if (!backend.FileExists(ConfigFilePath))
+        {
+            backend.TryRestoreLatestBackup(ConfigFilePath, Logger);
+        }
+        if (backend.FileExists(ConfigFilePath))
+        {
+            return ConfigFilePath;
+        }
+
+        foreach (var fallback in FallbackFormats)
+        {
+            var fallbackPath = Path.ChangeExtension(ConfigFilePath, fallback.FileExtension);
+            if (backend.FileExists(fallbackPath))
+            {
+                return fallbackPath;
+            }
+        }
+
+        return ConfigFilePath;
+    }
+#pragma warning restore S2325
+
+    /// <summary>
+    /// Creates the state endpoint for this registration. The current factory preserves the
+    /// existing file-backed behavior; registrations can replace it with a composite source
+    /// without changing the options runtime.
+    /// </summary>
+    internal Func<
+        WritableOptionsConfiguration<T>,
+        bool,
+        IStateSource<T>
+    > StateSourceFactory { get; init; } =
+        static (options, acquireSaveLock) => new FileStateSource<T>(options, acquireSaveLock);
+
+    internal IStateSource<T> CreateStateSource(bool acquireSaveLock = true) =>
+        StateSourceFactory(this, acquireSaveLock);
 }

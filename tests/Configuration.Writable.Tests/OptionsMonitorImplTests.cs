@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
@@ -21,11 +20,11 @@ public partial class OptionsMonitorImplTests
     private WritableOptionsConfiguration<TestSettings> CreateConfigOptions(
         string fileName,
         string instanceName,
-        InMemoryFileProvider FileProvider
+        InMemoryFileBackend FileProvider
     )
     {
         var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = fileName };
-        builder.UseInMemoryFileProvider(FileProvider);
+        builder.UseInMemoryBackend(FileProvider);
         return builder.BuildOptions(instanceName);
     }
 
@@ -33,14 +32,14 @@ public partial class OptionsMonitorImplTests
     public void CurrentValue_ShouldReturnDefaultValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -56,14 +55,14 @@ public partial class OptionsMonitorImplTests
     public void Get_WithDefaultName_ShouldReturnCurrentValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -79,14 +78,14 @@ public partial class OptionsMonitorImplTests
     public void Get_WithNull_ShouldReturnDefaultValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -102,14 +101,14 @@ public partial class OptionsMonitorImplTests
     public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions("test.json", "custom", FileProvider);
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
-        await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
+        await Utility.StateTestHelper.WriteStateValue(configOptions, testSettings);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -124,14 +123,14 @@ public partial class OptionsMonitorImplTests
     public void Get_WithInvalidName_ShouldThrow()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
@@ -142,14 +141,14 @@ public partial class OptionsMonitorImplTests
     public void Get_MultipleCalls_ShouldReturnCachedValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -165,14 +164,14 @@ public partial class OptionsMonitorImplTests
     public void OnChange_ShouldRegisterListener()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
         TestSettings? changedValue = null;
@@ -208,14 +207,14 @@ public partial class OptionsMonitorImplTests
     public void OnChange_DisposingListener_ShouldUnregister()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
@@ -233,9 +232,9 @@ public partial class OptionsMonitorImplTests
     [Test]
     public void OnChange_RegisteredBeforeDynamicInstance_AddsListenerToNewInstance()
     {
-        var fileProvider = new InMemoryFileProvider();
+        var fileProvider = new InMemoryFileBackend();
         var initialOptions = CreateConfigOptions("initial.json", "initial", fileProvider);
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([initialOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([initialOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         string? notifiedInstance = null;
 
@@ -245,7 +244,7 @@ public partial class OptionsMonitorImplTests
             options =>
             {
                 options.FilePath = "added.json";
-                options.UseInMemoryFileProvider(fileProvider);
+                options.UseInMemoryBackend(fileProvider);
             }
         );
 
@@ -260,14 +259,14 @@ public partial class OptionsMonitorImplTests
     public void UpdateCache_ShouldUpdateCacheWithoutNotifying()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var notified = false;
 
@@ -288,14 +287,14 @@ public partial class OptionsMonitorImplTests
     public void ClearCache_ShouldRemoveCachedValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Get value to cache it
@@ -315,11 +314,11 @@ public partial class OptionsMonitorImplTests
     public void GetInstanceNames_ShouldReturnAllConfiguredNames()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
         var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsRegistry<TestSettings>([
             configOptions1,
             configOptions2,
         ]);
@@ -337,7 +336,7 @@ public partial class OptionsMonitorImplTests
     public async Task GetDefaultValue_ShouldReturnStoredDefaultValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var testSettings = new TestSettings { Name = "preloaded", Value = 555 };
 
         var configOptions = CreateConfigOptions(
@@ -347,9 +346,9 @@ public partial class OptionsMonitorImplTests
         );
 
         // Preload data
-        await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
+        await Utility.StateTestHelper.WriteStateValue(configOptions, testSettings);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act
@@ -366,14 +365,14 @@ public partial class OptionsMonitorImplTests
     public void GetDefaultValue_WithInvalidName_ShouldThrow()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Act & Assert
@@ -384,14 +383,14 @@ public partial class OptionsMonitorImplTests
     public void Dispose_ShouldCleanupResources()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
         var changeCount = 0;
 
@@ -408,7 +407,7 @@ public partial class OptionsMonitorImplTests
     public async Task MultipleInstances_ShouldWorkIndependently()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
 
         var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
         var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
@@ -417,10 +416,10 @@ public partial class OptionsMonitorImplTests
         var settings1 = new TestSettings { Name = "first", Value = 111 };
         var settings2 = new TestSettings { Name = "second", Value = 222 };
 
-        await configOptions1.FormatProvider.SaveAsync(settings1, configOptions1);
-        await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
+        await Utility.StateTestHelper.WriteStateValue(configOptions1, settings1);
+        await Utility.StateTestHelper.WriteStateValue(configOptions2, settings2);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsRegistry<TestSettings>([
             configOptions1,
             configOptions2,
         ]);
@@ -441,16 +440,16 @@ public partial class OptionsMonitorImplTests
     public void OnChangeDebounce_WithDefaultDebounce_ShouldReceiveOnlyFirstChange()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             // Default debounce is 300ms
         };
-        builder.UseInMemoryFileProvider(FileProvider);
+        builder.UseInMemoryBackend(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var monitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         var changeCount = 0;
@@ -473,13 +472,13 @@ public partial class OptionsMonitorImplTests
     public void OnChangeDebounce_WithZeroDebounce_ShouldDisableDebouncing()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var builder = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test.json",
             OnChangeDebounce = TimeSpan.Zero, // Disable debouncing
         };
-        builder.UseInMemoryFileProvider(FileProvider);
+        builder.UseInMemoryBackend(FileProvider);
         var configOptions = builder.BuildOptions(Microsoft.Extensions.Options.Options.DefaultName);
 
         // Assert
@@ -495,8 +494,8 @@ public partial class OptionsMonitorImplTests
             FilePath = "test.json",
             OnChangeDebounce = TimeSpan.FromSeconds(2),
         };
-        var FileProvider = new InMemoryFileProvider();
-        builder.UseInMemoryFileProvider(FileProvider);
+        var FileProvider = new InMemoryFileBackend();
+        builder.UseInMemoryBackend(FileProvider);
         var configOptions = builder.BuildOptions("test");
 
         // Assert
@@ -507,14 +506,14 @@ public partial class OptionsMonitorImplTests
     public async Task OnChangeDebounce_MultipleInstances_ShouldHaveIndependentDebounce()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
 
         var builder1 = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = "test1.json",
             OnChangeDebounce = TimeSpan.FromMilliseconds(500),
         };
-        builder1.UseInMemoryFileProvider(FileProvider);
+        builder1.UseInMemoryBackend(FileProvider);
         var configOptions1 = builder1.BuildOptions("instance1");
 
         var builder2 = new WritableOptionsConfigBuilder<TestSettings>
@@ -522,10 +521,10 @@ public partial class OptionsMonitorImplTests
             FilePath = "test2.json",
             OnChangeDebounce = TimeSpan.FromMilliseconds(1500),
         };
-        builder2.UseInMemoryFileProvider(FileProvider);
+        builder2.UseInMemoryBackend(FileProvider);
         var configOptions2 = builder2.BuildOptions("instance2");
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsRegistry<TestSettings>([
             configOptions1,
             configOptions2,
         ]);
@@ -534,8 +533,8 @@ public partial class OptionsMonitorImplTests
         // Preload data
         var settings1 = new TestSettings { Name = "first", Value = 111 };
         var settings2 = new TestSettings { Name = "second", Value = 222 };
-        await configOptions1.FormatProvider.SaveAsync(settings1, configOptions1);
-        await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
+        await Utility.StateTestHelper.WriteStateValue(configOptions1, settings1);
+        await Utility.StateTestHelper.WriteStateValue(configOptions2, settings2);
 
         // Assert
         configOptions1.OnChangeDebounce.ShouldBe(TimeSpan.FromMilliseconds(500));

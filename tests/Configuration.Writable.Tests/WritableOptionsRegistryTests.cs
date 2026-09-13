@@ -1,0 +1,416 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Configuration.Writable;
+using Configuration.Writable.Configure;
+using Configuration.Writable.Options;
+
+namespace Configuration.Writable.Tests;
+
+public partial class WritableOptionsRegistryTests
+{
+    [OptionsModel]
+    internal partial class TestSettings
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Value { get; set; }
+    }
+
+    [Test]
+    public void Constructor_InitializesWithProvidedOptions()
+    {
+        // Arrange
+        var options1 = CreateOptions("instance1", "file1.json");
+        var options2 = CreateOptions("instance2", "file2.json");
+        var optionsList = new[] { options1, options2 };
+
+        // Act
+        var registry = new WritableOptionsRegistry<TestSettings>(optionsList);
+
+        // Assert
+        var instanceNames = registry.GetInstanceNames().ToList();
+        instanceNames.ShouldContain("instance1");
+        instanceNames.ShouldContain("instance2");
+        instanceNames.Count.ShouldBe(2);
+    }
+
+    [Test]
+    public void Get_ReturnsCorrectOption()
+    {
+        // Arrange
+        var options1 = CreateOptions("instance1", "file1.json");
+        var options2 = CreateOptions("instance2", "file2.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([options1, options2]);
+
+        // Act
+        var retrieved1 = registry.Get("instance1");
+        var retrieved2 = registry.Get("instance2");
+
+        // Assert
+        retrieved1.InstanceName.ShouldBe("instance1");
+        retrieved1.ConfigFilePath.ShouldContain("file1.json");
+        retrieved2.InstanceName.ShouldBe("instance2");
+        retrieved2.ConfigFilePath.ShouldContain("file2.json");
+    }
+
+    [Test]
+    public void Get_ThrowsKeyNotFoundException_WhenInstanceNotFound()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+
+        // Act & Assert
+        Should.Throw<KeyNotFoundException>(() => registry.Get("nonexistent"));
+    }
+
+    [Test]
+    public void TryAdd_AddsNewOption_ReturnsTrue()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+
+        // Act
+        var result = registry.TryAdd(
+            "newInstance",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
+
+        // Assert
+        result.ShouldBeTrue();
+        registry.GetInstanceNames().ShouldContain("newInstance");
+        var addedOption = registry.Get("newInstance");
+        addedOption.InstanceName.ShouldBe("newInstance");
+        addedOption.ConfigFilePath.ShouldContain("new.json");
+    }
+
+    [Test]
+    public void TryAdd_WhenInstanceExists_ReturnsFalse()
+    {
+        // Arrange
+        var existingOption = CreateOptions("existing", "existing.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([existingOption]);
+
+        // Act
+        var result = registry.TryAdd(
+            "existing",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
+
+        // Assert
+        result.ShouldBeFalse();
+        var option = registry.Get("existing");
+        option.ConfigFilePath.ShouldContain("existing.json"); // Should not be changed
+    }
+
+    [Test]
+    public void TryAdd_ConcurrentRequestsForSameInstance_AddsOnlyOnce()
+    {
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+        var results = new bool[32];
+
+        Parallel.For(
+            0,
+            results.Length,
+            index =>
+            {
+                results[index] = registry.TryAdd(
+                    "shared",
+                    options =>
+                    {
+                        options.FilePath = "shared.json";
+                    }
+                );
+            }
+        );
+
+        results.Count(result => result).ShouldBe(1);
+        registry.GetInstanceNames().ShouldBe(["shared"]);
+    }
+
+    [Test]
+    public void TryAdd_TriggersOnAddedEvent()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+        WritableOptionsConfiguration<TestSettings>? addedOption = null;
+        registry.OnAdded += conf => addedOption = conf;
+
+        // Act
+        registry.TryAdd(
+            "newInstance",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
+
+        // Assert
+        addedOption.ShouldNotBeNull();
+        addedOption!.InstanceName.ShouldBe("newInstance");
+        addedOption.ConfigFilePath.ShouldContain("new.json");
+    }
+
+    [Test]
+    public void TryAdd_WhenFails_DoesNotTriggerOnAddedEvent()
+    {
+        // Arrange
+        var existingOption = CreateOptions("existing", "existing.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([existingOption]);
+        var eventTriggered = false;
+        registry.OnAdded += _ => eventTriggered = true;
+
+        // Act
+        registry.TryAdd(
+            "existing",
+            conf =>
+            {
+                conf.FilePath = "new.json";
+            }
+        );
+
+        // Assert
+        eventTriggered.ShouldBeFalse();
+    }
+
+    [Test]
+    public void TryRemove_RemovesExistingOption_ReturnsTrue()
+    {
+        // Arrange
+        var option1 = CreateOptions("instance1", "file1.json");
+        var option2 = CreateOptions("instance2", "file2.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([option1, option2]);
+
+        // Act
+        var result = registry.TryRemove("instance1");
+
+        // Assert
+        result.ShouldBeTrue();
+        registry.GetInstanceNames().ShouldNotContain("instance1");
+        registry.GetInstanceNames().ShouldContain("instance2");
+    }
+
+    [Test]
+    public void TryRemove_WhenInstanceNotFound_ReturnsFalse()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+
+        // Act
+        var result = registry.TryRemove("nonexistent");
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
+    [Test]
+    public void TryRemove_TriggersOnRemovedEvent()
+    {
+        // Arrange
+        var option = CreateOptions("instance1", "file1.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([option]);
+        string? removedInstanceName = null;
+        registry.OnRemoved += name => removedInstanceName = name;
+
+        // Act
+        registry.TryRemove("instance1");
+
+        // Assert
+        removedInstanceName.ShouldBe("instance1");
+    }
+
+    [Test]
+    public void TryRemove_WhenFails_DoesNotTriggerOnRemovedEvent()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+        var eventTriggered = false;
+        registry.OnRemoved += _ => eventTriggered = true;
+
+        // Act
+        registry.TryRemove("nonexistent");
+
+        // Assert
+        eventTriggered.ShouldBeFalse();
+    }
+
+    [Test]
+    public void Clear_RemovesAllOptions()
+    {
+        // Arrange
+        var option1 = CreateOptions("instance1", "file1.json");
+        var option2 = CreateOptions("instance2", "file2.json");
+        var option3 = CreateOptions("instance3", "file3.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([
+            option1,
+            option2,
+            option3,
+        ]);
+
+        // Act
+        registry.Clear();
+
+        // Assert
+        registry.GetInstanceNames().ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Clear_TriggersOnRemovedEventForEachItem()
+    {
+        // Arrange
+        var option1 = CreateOptions("instance1", "file1.json");
+        var option2 = CreateOptions("instance2", "file2.json");
+        var option3 = CreateOptions("instance3", "file3.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([
+            option1,
+            option2,
+            option3,
+        ]);
+        var removedInstances = new List<string>();
+        registry.OnRemoved += name => removedInstances.Add(name);
+
+        // Act
+        registry.Clear();
+
+        // Assert
+        removedInstances.Count.ShouldBe(3);
+        removedInstances.ShouldContain("instance1");
+        removedInstances.ShouldContain("instance2");
+        removedInstances.ShouldContain("instance3");
+    }
+
+    [Test]
+    public void Clear_OnEmptyRegistry_DoesNothing()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+        var eventTriggered = false;
+        registry.OnRemoved += _ => eventTriggered = true;
+
+        // Act
+        registry.Clear();
+
+        // Assert
+        eventTriggered.ShouldBeFalse();
+        registry.GetInstanceNames().ShouldBeEmpty();
+    }
+
+    [Test]
+    public void GetInstanceNames_ReturnsEmptyForEmptyRegistry()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+
+        // Act
+        var names = registry.GetInstanceNames();
+
+        // Assert
+        names.ShouldBeEmpty();
+    }
+
+    [Test]
+    public void MultipleEventHandlers_AllGetTriggered()
+    {
+        // Arrange
+        var registry = new WritableOptionsRegistry<TestSettings>([]);
+        var addedCount = 0;
+        var removedCount = 0;
+
+        registry.OnAdded += _ => addedCount++;
+        registry.OnAdded += _ => addedCount++;
+        registry.OnRemoved += _ => removedCount++;
+        registry.OnRemoved += _ => removedCount++;
+
+        // Act
+        registry.TryAdd(
+            "test",
+            conf =>
+            {
+                conf.FilePath = "test.json";
+            }
+        );
+        registry.TryRemove("test");
+
+        // Assert
+        addedCount.ShouldBe(2);
+        removedCount.ShouldBe(2);
+    }
+
+    [Test]
+    public void ComplexScenario_AddRemoveMultipleOperations()
+    {
+        // Arrange
+        var option1 = CreateOptions("initial", "initial.json");
+        var registry = new WritableOptionsRegistry<TestSettings>([option1]);
+
+        // Act & Assert - Add multiple
+        registry
+            .TryAdd(
+                "second",
+                conf =>
+                {
+                    conf.FilePath = "second.json";
+                }
+            )
+            .ShouldBeTrue();
+        registry
+            .TryAdd(
+                "third",
+                conf =>
+                {
+                    conf.FilePath = "third.json";
+                }
+            )
+            .ShouldBeTrue();
+        registry.GetInstanceNames().Count().ShouldBe(3);
+
+        // Remove one
+        registry.TryRemove("second").ShouldBeTrue();
+        registry.GetInstanceNames().Count().ShouldBe(2);
+        registry.GetInstanceNames().ShouldNotContain("second");
+
+        // Try to add duplicate
+        registry
+            .TryAdd(
+                "initial",
+                conf =>
+                {
+                    conf.FilePath = "new.json";
+                }
+            )
+            .ShouldBeFalse();
+        registry.Get("initial").ConfigFilePath.ShouldContain("initial.json");
+
+        // Add removed one back
+        registry
+            .TryAdd(
+                "second",
+                conf =>
+                {
+                    conf.FilePath = "second-new.json";
+                }
+            )
+            .ShouldBeTrue();
+        registry.Get("second").ConfigFilePath.ShouldContain("second-new.json");
+
+        // Clear all
+        registry.Clear();
+        registry.GetInstanceNames().ShouldBeEmpty();
+    }
+
+    // Helper method to create WritableOptionsConfiguration
+    private static WritableOptionsConfiguration<TestSettings> CreateOptions(
+        string instanceName,
+        string filePath
+    )
+    {
+        var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = filePath };
+        return builder.BuildOptions(instanceName);
+    }
+}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
 
 namespace Configuration.Writable.Tests;
 
@@ -39,14 +38,14 @@ public partial class WritableOptionsConfigBuilderTests
     [Test]
     public async Task EnablePromoteSaveLocation_ShouldResolveExistingReadPathSeparately()
     {
-        var fileProvider = new InMemoryFileProvider();
+        var fileProvider = new InMemoryFileBackend();
         var newPath = Path.Combine("new", "settings");
         var oldPath = Path.Combine("old", "settings");
         await fileProvider.SaveToFileAsync($"{oldPath}.json", Encoding.UTF8.GetBytes("{}"));
 
         var options = new WritableOptionsConfigBuilder<TestSettings>
         {
-            FileProvider = fileProvider,
+            FileBackend = fileProvider,
         };
         options.UseCustomDirectory("new").AddFilePath("settings");
         options.UseCustomDirectory("old").AddFilePath("settings");

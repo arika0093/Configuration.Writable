@@ -1,13 +1,11 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
-namespace Configuration.Writable.FormatProvider
+namespace Configuration.Writable
 {
-    public class XmlFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
+    public class XmlFileOptions : Configuration.Writable.FileFormatOptions
     {
-        public XmlFormatProvider() { }
+        public XmlFileOptions() { }
         public override string FileExtension { get; }
-        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
-        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new () { }
+        public System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public string SchemaVersionProperty { get; set; }
     }
 }

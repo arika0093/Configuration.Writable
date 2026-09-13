@@ -9,8 +9,6 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Generator;
 using Configuration.Writable.Migration;
 using Microsoft.CodeAnalysis;
@@ -89,7 +87,7 @@ internal partial class GeneratedVersioningJsonContext : JsonSerializerContext;
 
 public class SourceGeneratedVersioningTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [Test]
     public void GeneratedMetadata_ShouldExposeIdVersionAndMigrationChain()
@@ -98,7 +96,7 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
         {
             FilePath = "generated.json",
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
 
         var options = builder.BuildOptions("");
@@ -122,10 +120,10 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
 
-        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+        var result = Utility.StateTestHelper.ReadStateValue(builder.BuildOptions(""));
 
         result.Names.ShouldBe(["legacy"]);
     }
@@ -141,10 +139,10 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<RenamedSettingsV2>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
 
-        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+        var result = Utility.StateTestHelper.ReadStateValue(builder.BuildOptions(""));
 
         result.Value.ShouldBe("legacy");
     }
@@ -157,7 +155,7 @@ public class SourceGeneratedVersioningTests
             fileName,
             Encoding.UTF8.GetBytes("""{"$version":1,"Name":"legacy"}""")
         );
-        var provider = new JsonFormatProvider
+        var provider = new JsonFileOptions
         {
             SchemaVersionProperty = "$cwVersion",
             SchemaVersionFallbackProperties = ["$version", "Version"],
@@ -165,16 +163,16 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
-            FormatProvider = provider,
+            FileBackend = _fileProvider,
+            FormatOptions = provider,
         };
 
-        var result = provider.LoadWithMigration(builder.BuildOptions(""));
+        var result = Utility.StateTestHelper.ReadStateValue(builder.BuildOptions(""));
 
         result.Names.ShouldBe(["legacy"]);
 
         var options = builder.BuildOptions("");
-        await provider.SaveAsync(result, options);
+        await Utility.StateTestHelper.WriteStateValue(options, result);
         _fileProvider.ReadAllText(fileName).ShouldContain("\"$cwVersion\":3");
     }
 
@@ -191,10 +189,10 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<CutoffSettingsV2>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
 
-        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+        var result = Utility.StateTestHelper.ReadStateValue(builder.BuildOptions(""));
 
         result.CurrentValue.ShouldBe("");
         _fileProvider.BackupAttemptCount.ShouldBe(1);
@@ -213,11 +211,11 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<CutoffSettingsV2>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
 
         var exception = Should.Throw<InvalidOperationException>(() =>
-            new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""))
+            Utility.StateTestHelper.ReadStateValue(builder.BuildOptions(""))
         );
 
         exception.Message.ShouldContain("newer than supported");
@@ -230,15 +228,12 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
             SectionName = "Application:Settings",
         };
         var options = builder.BuildOptions("");
 
-        await options.FormatProvider.SaveAsync(
-            new GeneratedSettingsV3 { Names = ["one"] },
-            options
-        );
+        await Utility.StateTestHelper.WriteStateValue(options, new GeneratedSettingsV3 { Names = ["one"] });
 
         using var document = JsonDocument.Parse(_fileProvider.ReadAllText(fileName));
         var section = document.RootElement.GetProperty("Application").GetProperty("Settings");
@@ -251,17 +246,17 @@ public class SourceGeneratedVersioningTests
     public async Task JsonAotProvider_ShouldPersistAndLoadGeneratedMetadata()
     {
         const string fileName = "generated-aot.json";
-        var provider = new JsonAotFormatProvider(GeneratedVersioningJsonContext.Default);
+        var provider = new JsonFileOptions { TypeInfoResolver = GeneratedVersioningJsonContext.Default };
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
-            FormatProvider = provider,
+            FileBackend = _fileProvider,
+            FormatOptions = provider,
         };
         var options = builder.BuildOptions("");
 
-        await provider.SaveAsync(new GeneratedSettingsV3 { Names = ["aot"] }, options);
-        var loaded = provider.LoadWithMigration(options);
+        await Utility.StateTestHelper.WriteStateValue(options, new GeneratedSettingsV3 { Names = ["aot"] });
+        var loaded = Utility.StateTestHelper.ReadStateValue(options);
 
         loaded.Names.ShouldBe(["aot"]);
         _fileProvider.ReadAllText(fileName).ShouldNotContain("\"ModelId\"");
@@ -279,25 +274,12 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
         {
             FilePath = fileName,
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
 
-        var result = new JsonFormatProvider().LoadWithMigration(builder.BuildOptions(""));
+        var result = Utility.StateTestHelper.ReadStateValue(builder.BuildOptions(""));
 
         result.Names.ShouldBeEmpty();
-    }
-
-    [Test]
-    public void BuildOptions_ShouldRejectProviderWithoutSchemaMetadataCapability()
-    {
-        var builder = new WritableOptionsConfigBuilder<GeneratedSettingsV3>
-        {
-            FormatProvider = new MetadataUnsupportedProvider(),
-        };
-
-        Should
-            .Throw<InvalidOperationException>(() => builder.BuildOptions(""))
-            .Message.ShouldContain("does not support options schema metadata");
     }
 
     [Test]
@@ -306,14 +288,11 @@ public class SourceGeneratedVersioningTests
         var builder = new WritableOptionsConfigBuilder<GeneratedDefaultVersionSettings>
         {
             FilePath = "unversioned.json",
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
         var options = builder.BuildOptions("");
 
-        await options.FormatProvider.SaveAsync(
-            new GeneratedDefaultVersionSettings { Value = "value" },
-            options
-        );
+        await Utility.StateTestHelper.WriteStateValue(options, new GeneratedDefaultVersionSettings { Value = "value" });
 
         var json = _fileProvider.ReadAllText("unversioned.json");
         json.ShouldNotContain("\"ModelId\"");
@@ -326,7 +305,7 @@ public class SourceGeneratedVersioningTests
         var services = new ServiceCollection();
         services.AddWritableOptions(builder =>
         {
-            builder.FileProvider = _fileProvider;
+            builder.UseInMemoryBackend(_fileProvider);
             builder.Add<GeneratedSettingsV3>(options => options.FilePath = "aggregated.json");
         });
         using var provider = services.BuildServiceProvider();
@@ -337,7 +316,7 @@ public class SourceGeneratedVersioningTests
         var profiledBuilder = new ProfiledOptionsConfigBuilder<GeneratedSettingsV3>
         {
             FilePath = "profiled.json",
-            FileProvider = _fileProvider,
+            FileBackend = _fileProvider,
         };
         var profiled = profiledBuilder.Build();
 
@@ -354,7 +333,7 @@ public class SourceGeneratedVersioningTests
         WritableOptions.Initialize<GeneratedDefaultVersionSettings>(options =>
         {
             options.FilePath = fileName;
-            options.FileProvider = _fileProvider;
+            options.UseInMemoryBackend(_fileProvider);
         });
 
         await WritableOptions
@@ -362,32 +341,6 @@ public class SourceGeneratedVersioningTests
             .SaveAsync(new GeneratedDefaultVersionSettings { Value = "static" });
 
         _fileProvider.ReadAllText(fileName).ShouldContain("\"$version\"");
-    }
-
-    private sealed class MetadataUnsupportedProvider : IWritableFormatProvider
-    {
-        public string SchemaVersionProperty { get; set; } = "Version";
-
-        public IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; } = [];
-
-        public string FileExtension => "test";
-
-        public object LoadConfiguration(Type type, IWritableOptionsConfiguration options) =>
-            new GeneratedSettingsV3();
-
-        public ValueTask<object> LoadConfigurationAsync(
-            Type type,
-            PipeReader reader,
-            List<string> sectionNameParts,
-            CancellationToken cancellationToken = default
-        ) => new(new GeneratedSettingsV3());
-
-        public Task SaveAsync<T>(
-            T config,
-            IWritableOptionsConfiguration options,
-            CancellationToken cancellationToken = default
-        )
-            where T : class, new() => Task.CompletedTask;
     }
 }
 

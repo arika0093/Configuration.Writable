@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Configuration.Writable.FileProvider;
+using Configuration.Writable.State;
 
 namespace Configuration.Writable.Configure;
 
@@ -52,18 +52,20 @@ internal class SaveLocationManager
     /// <summary>
     /// Builds the write location by evaluating the added location providers in order.
     /// </summary>
-    /// <param name="formatProvider">The format provider to determine the file extension.</param>
+    /// <param name="fileExtension">The file extension used when the path has none.</param>
+    /// <param name="backend">The file backend to check file and directory access.</param>
     /// <param name="instanceName">The instance name for default location.</param>
-    /// <param name="fileProvider">The file provider to check file and directory access.</param>
     /// <param name="promoteSaveLocationEnabled">
     /// Whether an existing file should be ignored when selecting the preferred write location.
     /// </param>
+    /// <param name="fallbackExtensions">Registered fallback format extensions for collision validation.</param>
     /// <returns>The first valid save location path found, or null if none are available.</returns>
     public string Build(
-        FormatProvider.IWritableFormatProvider formatProvider,
-        IWritableFileProvider fileProvider,
+        string fileExtension,
+        IFileBackend backend,
         string instanceName,
-        bool promoteSaveLocationEnabled
+        bool promoteSaveLocationEnabled,
+        IReadOnlyList<string>? fallbackExtensions = null
     )
     {
         var targetPaths = GetTargetPaths(instanceName);
@@ -77,24 +79,22 @@ internal class SaveLocationManager
                 (p, i) =>
                     new
                     {
-                        Path = GetPathWithExtension(p.Path, formatProvider),
+                        Path = GetPathWithExtension(p.Path, fileExtension),
                         p.Priority,
                         Index = i,
                         CanWriteFile = !promoteSaveLocationEnabled
-                            && fileProvider.CanWriteToFile(
-                                GetPathWithExtension(p.Path, formatProvider)
-                            ),
+                            && backend.CanWriteToFile(GetPathWithExtension(p.Path, fileExtension)),
                         // A directory is considered writable if:
                         // 1. It exists and is writable (verified by CanWriteToDirectory), OR
                         // 2. The path is relative to the current directory (no explicit directory part)
                         //    and the current directory itself is writable (use full path to avoid
                         //    provider inferring directory from a filename-only argument)
-                        CanWriteDir = fileProvider.CanWriteToDirectory(
-                            GetPathWithExtension(p.Path, formatProvider)
+                        CanWriteDir = backend.CanWriteToDirectory(
+                            GetPathWithExtension(p.Path, fileExtension)
                         )
                             || (
                                 string.IsNullOrEmpty(Path.GetDirectoryName(p.Path))
-                                && fileProvider.CanWriteToDirectory(Path.GetFullPath("."))
+                                && backend.CanWriteToDirectory(Path.GetFullPath("."))
                             ),
                     }
             )
@@ -113,7 +113,7 @@ internal class SaveLocationManager
 
         // Ensure the directory for the selected path exists (create if necessary)
         // and verify write access
-        if (!fileProvider.EnsureDirectoryExists(targetPath.Path))
+        if (!backend.EnsureDirectoryExists(targetPath.Path))
         {
             throw new InvalidOperationException(
                 $"Cannot create or write to the directory for the configured save location: {targetPath.Path}"
@@ -122,9 +122,9 @@ internal class SaveLocationManager
 
         var resultPath = targetPath.Path;
 
-        if (formatProvider is FormatProvider.FallbackFormatProvider fallbackProvider)
+        if (fallbackExtensions is { Count: > 0 })
         {
-            fallbackProvider.ValidateConfigurationPath(resultPath, fileProvider);
+            ValidateConfigurationPath(resultPath, fileExtension, fallbackExtensions, backend);
         }
 
         return resultPath;
@@ -134,8 +134,8 @@ internal class SaveLocationManager
     /// Gets the highest-priority existing location suitable for reading.
     /// </summary>
     public string? BuildReadPath(
-        FormatProvider.IWritableFormatProvider formatProvider,
-        IWritableFileProvider fileProvider,
+        string fileExtension,
+        IFileBackend backend,
         string instanceName,
         bool promoteSaveLocationEnabled
     )
@@ -145,23 +145,23 @@ internal class SaveLocationManager
                 (path, index) =>
                     new
                     {
-                        Path = GetPathWithExtension(path.Path, formatProvider),
+                        Path = GetPathWithExtension(path.Path, fileExtension),
                         path.Priority,
                         Index = index,
                         CanWriteFile = !promoteSaveLocationEnabled
-                            && fileProvider.CanWriteToFile(
-                                GetPathWithExtension(path.Path, formatProvider)
+                            && backend.CanWriteToFile(
+                                GetPathWithExtension(path.Path, fileExtension)
                             ),
-                        CanWriteDir = fileProvider.CanWriteToDirectory(
-                            GetPathWithExtension(path.Path, formatProvider)
+                        CanWriteDir = backend.CanWriteToDirectory(
+                            GetPathWithExtension(path.Path, fileExtension)
                         )
                             || (
                                 string.IsNullOrEmpty(Path.GetDirectoryName(path.Path))
-                                && fileProvider.CanWriteToDirectory(Path.GetFullPath("."))
+                                && backend.CanWriteToDirectory(Path.GetFullPath("."))
                             ),
                     }
             )
-            .Where(path => fileProvider.FileExists(path.Path))
+            .Where(path => backend.FileExists(path.Path))
             .OrderByDescending(path => path.Priority)
             .ThenByDescending(path => path.CanWriteFile)
             .ThenByDescending(path => path.CanWriteDir)
@@ -187,16 +187,57 @@ internal class SaveLocationManager
             .Where(path => !string.IsNullOrEmpty(path.Path));
     }
 
-    private static string GetPathWithExtension(
-        string path,
-        FormatProvider.IWritableFormatProvider formatProvider
-    )
+    private static string GetPathWithExtension(string path, string fileExtension)
     {
         var fileName = Path.GetFileName(path);
-        return !fileName.Contains('.') && !string.IsNullOrWhiteSpace(formatProvider.FileExtension)
-            ? $"{path}.{formatProvider.FileExtension}"
+        return !fileName.Contains('.') && !string.IsNullOrWhiteSpace(fileExtension)
+            ? $"{path}.{fileExtension}"
             : path;
     }
+
+    private static void ValidateConfigurationPath(
+        string canonicalPath,
+        string canonicalExtension,
+        IReadOnlyList<string> fallbackExtensions,
+        IFileBackend backend
+    )
+    {
+        var pathComparison =
+            backend.IsPhysical && Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+
+        foreach (var extension in fallbackExtensions)
+        {
+            var fallbackPath = Path.ChangeExtension(canonicalPath, extension);
+            if (!string.Equals(canonicalPath, fallbackPath, pathComparison))
+            {
+                continue;
+            }
+
+            var normalizedCanonical = NormalizeExtension(canonicalExtension);
+            var normalizedFallback = NormalizeExtension(extension);
+            var extensionlessPath = Path.ChangeExtension(canonicalPath, null);
+
+            throw new InvalidOperationException(
+                $"""
+                The canonical configuration path '{canonicalPath}' conflicts with the registered fallback format '.{normalizedFallback}'.
+
+                Canonical path: '{canonicalPath}'
+                Fallback path:  '{fallbackPath}'
+
+                Both resolve to the same file, so the fallback provider can never be selected.
+
+                Canonical format: '.{normalizedCanonical}'
+                Fallback format:  '.{normalizedFallback}'
+
+                Use an extensionless file path such as '{extensionlessPath}', or specify a file extension that does not conflict with any registered fallback format.
+                """
+            );
+        }
+    }
+
+    private static string NormalizeExtension(string extension) => extension.Trim().TrimStart('.');
 
     /// <summary>
     /// Gets the default location path based on the instance name.

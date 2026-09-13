@@ -4,14 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Options;
 
 namespace Configuration.Writable.Tests;
 
 public class ValidationTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
 
     [Test]
     public async Task SaveAsync_WithValidationFunction_ShouldThrowWhenValidationFails()
@@ -22,7 +21,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
@@ -57,7 +56,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
@@ -89,7 +88,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)
@@ -127,7 +126,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.WithValidator(new ValidatableSettingsValidator());
         });
 
@@ -152,7 +151,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.UseDataAnnotationsValidation = true;
         });
 
@@ -181,7 +180,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.UseDataAnnotationsValidation = true;
         });
 
@@ -209,7 +208,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.UseDataAnnotationsValidation = true;
             options.WithValidatorFunction(settings =>
             {
@@ -246,7 +245,7 @@ public class ValidationTests
         _instance.Initialize(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
             options.WithValidatorFunction(settings =>
             {
                 if (settings.MaxConnections < 1)

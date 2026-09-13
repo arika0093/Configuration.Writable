@@ -1,5 +1,4 @@
 using Configuration.Writable;
-using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp.Yaml;
 
 // Register VYaml formatters for NativeAOT support.
@@ -17,7 +16,7 @@ WritableOptions.Initialize(conf =>
     conf.SchemaBaseUri = "../schema/";
 
     // shared configuration for all options types
-    conf.FormatProvider = new YamlFormatProvider
+    conf.FormatOptions = new YamlFileOptions
     {
         SerializerOptions = new VYaml.Serialization.YamlSerializerOptions
         {

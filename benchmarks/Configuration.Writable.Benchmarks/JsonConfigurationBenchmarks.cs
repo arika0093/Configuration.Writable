@@ -317,28 +317,22 @@ public class YamlPartialSaveBenchmarks : ProviderConfigurationBenchmarkBase
 
 internal sealed class ConfigurationWritableRunner
 {
-    private readonly object _formatProvider;
-    private readonly object _optionsConfiguration;
+    private readonly object _writableOptions;
     private readonly MethodInfo _saveAsync;
-    private readonly MethodInfo _loadConfiguration;
+    private readonly PropertyInfo _currentValue;
     private readonly string _filePath;
-    private readonly Type _configurationType;
 
     private ConfigurationWritableRunner(
-        object formatProvider,
-        object optionsConfiguration,
+        object writableOptions,
         MethodInfo saveAsync,
-        MethodInfo loadConfiguration,
-        string filePath,
-        Type configurationType
+        PropertyInfo currentValue,
+        string filePath
     )
     {
-        _formatProvider = formatProvider;
-        _optionsConfiguration = optionsConfiguration;
+        _writableOptions = writableOptions;
         _saveAsync = saveAsync;
-        _loadConfiguration = loadConfiguration;
+        _currentValue = currentValue;
         _filePath = filePath;
-        _configurationType = configurationType;
     }
 
     public static ConfigurationWritableRunner CreatePublishedPackage(
@@ -374,7 +368,7 @@ internal sealed class ConfigurationWritableRunner
             Path.Combine(AppContext.BaseDirectory, format.AssemblyFileName),
             filePath,
             sectionName,
-            format.ProviderTypeName,
+            format.PublishedProviderTypeName,
             typeof(ProviderBenchmarkConfiguration)
         );
 
@@ -387,7 +381,7 @@ internal sealed class ConfigurationWritableRunner
             Path.Combine(AppContext.BaseDirectory, "local", format.AssemblyFileName),
             filePath,
             sectionName,
-            format.ProviderTypeName,
+            format.LocalProviderTypeName,
             typeof(ProviderBenchmarkConfiguration)
         );
 
@@ -395,19 +389,13 @@ internal sealed class ConfigurationWritableRunner
         where T : class, new()
     {
         var task = (Task)
-            _saveAsync
-                .MakeGenericMethod(typeof(T))
-                .Invoke(
-                    _formatProvider,
-                    [configuration, _optionsConfiguration, CancellationToken.None]
-                )!;
+            _saveAsync.Invoke(_writableOptions, [configuration, CancellationToken.None])!;
 
         await task.ConfigureAwait(false);
         return new FileInfo(_filePath).Length;
     }
 
-    public object Load() =>
-        _loadConfiguration.Invoke(_formatProvider, [_configurationType, _optionsConfiguration])!;
+    public object Load() => _currentValue.GetValue(_writableOptions)!;
 
     private static ConfigurationWritableRunner Create(
         string assemblyPath,
@@ -455,40 +443,15 @@ internal sealed class ConfigurationWritableRunner
         instanceType.GetMethod("Initialize", [configure.GetType()])!.Invoke(instance, [configure]);
 
         var options = instanceType.GetMethod("GetOptions")!.Invoke(instance, null)!;
-        var optionsConfiguration = options
-            .GetType()
-            .GetMethod("GetOptionsConfiguration", Type.EmptyTypes)!
-            .Invoke(options, null)!;
-        var configuredFormatProvider = optionsConfiguration
-            .GetType()
-            .GetProperty("FormatProvider")!
-            .GetValue(optionsConfiguration)!;
-        var formatProviderType = configuredFormatProvider.GetType();
-        var saveAsync = formatProviderType
-            .GetMethods()
-            .First(method =>
-                method.Name == "SaveAsync"
-                && method.IsGenericMethodDefinition
-                && method.GetGenericArguments().Length == 1
-                && method.GetParameters().Length == 3
-            );
-        var loadConfiguration = formatProviderType.GetMethod(
-            "LoadConfiguration",
-            [
-                typeof(Type),
-                coreAssembly.GetType("Configuration.Writable.IWritableOptionsConfiguration")!,
-            ]
+        var optionsType = options.GetType();
+        var saveAsync = optionsType.GetMethod(
+            "SaveAsync",
+            [configurationType, typeof(CancellationToken)]
         )!;
+        var currentValue = optionsType.GetProperty("CurrentValue")!;
 
         _ = writableAssembly;
-        return new ConfigurationWritableRunner(
-            configuredFormatProvider,
-            optionsConfiguration,
-            saveAsync,
-            loadConfiguration,
-            filePath,
-            configurationType
-        );
+        return new ConfigurationWritableRunner(options, saveAsync, currentValue, filePath);
     }
 
     private static Delegate CreateConfigureDelegate(
@@ -516,12 +479,16 @@ internal sealed class ConfigurationWritableRunner
         };
         if (formatProvider is not null)
         {
+            // Newer implementations expose FormatOptions; older ones expose FormatProvider.
+            var formatProperty =
+                builderType.GetProperty("FormatOptions")
+                ?? builderType.GetProperty("FormatProvider");
             assignments.Add(
                 Expression.Assign(
-                    Expression.Property(builder, "FormatProvider"),
+                    Expression.Property(builder, formatProperty!),
                     Expression.Convert(
                         Expression.Constant(formatProvider),
-                        Expression.Property(builder, "FormatProvider").Type
+                        formatProperty!.PropertyType
                     )
                 )
             );
@@ -635,7 +602,8 @@ public sealed partial class ProviderPartialConfigurationFile
 
 public sealed record ProviderBenchmarkFormat(
     string AssemblyFileName,
-    string ProviderTypeName,
+    string PublishedProviderTypeName,
+    string LocalProviderTypeName,
     string FileExtension,
     string SectionName
 )
@@ -644,6 +612,7 @@ public sealed record ProviderBenchmarkFormat(
         new(
             "Configuration.Writable.Xml.dll",
             "Configuration.Writable.FormatProvider.XmlFormatProvider",
+            "Configuration.Writable.XmlFileOptions",
             "xml",
             "Settings"
         );
@@ -652,6 +621,7 @@ public sealed record ProviderBenchmarkFormat(
         new(
             "Configuration.Writable.Yaml.dll",
             "Configuration.Writable.FormatProvider.YamlFormatProvider",
+            "Configuration.Writable.YamlFileOptions",
             "yaml",
             "settings"
         );

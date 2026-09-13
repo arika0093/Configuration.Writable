@@ -1,5 +1,4 @@
 ﻿using Configuration.Writable;
-using Configuration.Writable.FormatProvider;
 using Example.ConsoleApp.NativeAot;
 
 // initialize the writable config system
@@ -12,8 +11,11 @@ WritableOptions.Initialize(conf =>
     conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
     conf.SchemaBaseUri = "../schema/";
 
-    // JsonAotFormatProvider is the recommended format provider for NativeAOT scenarios
-    conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
+    // A source-generated resolver is the recommended JSON setup for NativeAOT scenarios
+    conf.FormatOptions = new JsonFileOptions
+    {
+        TypeInfoResolver = SampleSettingSerializerContext.Default,
+    };
 
     // if you want to standard system configuration location, use conf.UseStandardSaveDirectory("your-app-id");
     // e.g. %APPDATA%\your-app-id\appdata-setting.json on Windows

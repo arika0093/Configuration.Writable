@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Tests.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -72,20 +71,20 @@ public partial class AbstractionsPackageTests
     [Test]
     public void CoreRegistrations_ExposeStandardCustomAndConfigurationContracts()
     {
-        var fileProvider = new InMemoryFileProvider();
+        var fileProvider = new InMemoryFileBackend();
         var services = new ServiceCollection();
         services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = "settings.custom";
             options.SectionName = "Application:Settings";
-            options.UseInMemoryFileProvider(fileProvider);
+            options.UseInMemoryBackend(fileProvider);
         });
         services.AddWritableOptions<TestSettings>(
             "named",
             options =>
             {
                 options.FilePath = "named.custom";
-                options.UseInMemoryFileProvider(fileProvider);
+                options.UseInMemoryBackend(fileProvider);
             }
         );
 

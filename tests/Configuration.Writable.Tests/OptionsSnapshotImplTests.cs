@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Configuration.Writable;
 using Configuration.Writable.Configure;
-using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 
 namespace Configuration.Writable.Tests;
@@ -19,11 +18,11 @@ public partial class OptionsSnapshotImplTests
     private WritableOptionsConfiguration<TestSettings> CreateConfigOptions(
         string fileName,
         string instanceName,
-        InMemoryFileProvider FileProvider
+        InMemoryFileBackend FileProvider
     )
     {
         var builder = new WritableOptionsConfigBuilder<TestSettings> { FilePath = fileName };
-        builder.UseInMemoryFileProvider(FileProvider);
+        builder.UseInMemoryBackend(FileProvider);
         return builder.BuildOptions(instanceName);
     }
 
@@ -31,14 +30,14 @@ public partial class OptionsSnapshotImplTests
     public void Value_ShouldReturnSnapshotValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -55,14 +54,14 @@ public partial class OptionsSnapshotImplTests
     public void Get_WithDefaultName_ShouldReturnSnapshotValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -79,14 +78,14 @@ public partial class OptionsSnapshotImplTests
     public async Task Get_WithCustomName_ShouldReturnCustomValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions("test.json", "custom", FileProvider);
 
         // Preload custom data
         var testSettings = new TestSettings { Name = "custom", Value = 999 };
-        await configOptions.FormatProvider.SaveAsync(testSettings, configOptions);
+        await Utility.StateTestHelper.WriteStateValue(configOptions, testSettings);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -102,14 +101,14 @@ public partial class OptionsSnapshotImplTests
     public void Snapshot_ShouldNotReflectChangesAfterCreation()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -137,7 +136,7 @@ public partial class OptionsSnapshotImplTests
     public async Task Snapshot_WithMultipleInstances_ShouldSnapshotAllInstances()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
 
         var configOptions1 = CreateConfigOptions("test1.json", "instance1", FileProvider);
         var configOptions2 = CreateConfigOptions("test2.json", "instance2", FileProvider);
@@ -146,10 +145,10 @@ public partial class OptionsSnapshotImplTests
         var settings1 = new TestSettings { Name = "first", Value = 111 };
         var settings2 = new TestSettings { Name = "second", Value = 222 };
 
-        await configOptions1.FormatProvider.SaveAsync(settings1, configOptions1);
-        await configOptions2.FormatProvider.SaveAsync(settings2, configOptions2);
+        await Utility.StateTestHelper.WriteStateValue(configOptions1, settings1);
+        await Utility.StateTestHelper.WriteStateValue(configOptions2, settings2);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([
+        var registry = new WritableOptionsRegistry<TestSettings>([
             configOptions1,
             configOptions2,
         ]);
@@ -171,14 +170,14 @@ public partial class OptionsSnapshotImplTests
     public void Snapshot_MultipleCalls_ShouldReturnSameValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -195,14 +194,14 @@ public partial class OptionsSnapshotImplTests
     public void Snapshot_AfterMonitorUpdate_NewSnapshotShouldStillHaveFirstValue()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create first snapshot
@@ -230,14 +229,14 @@ public partial class OptionsSnapshotImplTests
     public void Get_WithNull_ShouldThrow()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
         var configOptions = CreateConfigOptions(
             "test.json",
             Microsoft.Extensions.Options.Options.DefaultName,
             FileProvider
         );
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
         var snapshot = new OptionsSnapshotImpl<TestSettings>(optionsMonitor);
 
@@ -249,15 +248,15 @@ public partial class OptionsSnapshotImplTests
     public async Task Snapshot_ShouldCaptureAllInstancesAtCreationTime()
     {
         // Arrange
-        var FileProvider = new InMemoryFileProvider();
+        var FileProvider = new InMemoryFileBackend();
 
         var configOptions = CreateConfigOptions("test.json", "instance1", FileProvider);
 
         // Initial data
         var initialSettings = new TestSettings { Name = "initial", Value = 100 };
-        await configOptions.FormatProvider.SaveAsync(initialSettings, configOptions);
+        await Utility.StateTestHelper.WriteStateValue(configOptions, initialSettings);
 
-        var registry = new WritableOptionsConfigRegistryImpl<TestSettings>([configOptions]);
+        var registry = new WritableOptionsRegistry<TestSettings>([configOptions]);
         var optionsMonitor = new OptionsMonitorImpl<TestSettings>(registry);
 
         // Create snapshot with initial data

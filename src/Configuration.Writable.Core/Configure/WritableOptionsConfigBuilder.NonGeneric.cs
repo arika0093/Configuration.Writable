@@ -1,8 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization.Metadata;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 #if NET
 using System.Diagnostics.CodeAnalysis;
@@ -16,26 +16,14 @@ public class WritableOptionsConfigBuilder
 {
     internal SaveLocationManager SaveLocationManager { get; private set; } = new();
 
-    /// <summary>Gets or sets the format provider.</summary>
-    public IWritableFormatProvider FormatProvider { get; set; } = CreateDefaultFormatProvider();
+    /// <summary>Gets or sets the file format settings.</summary>
+    public FileFormatOptions FormatOptions { get; set; } = new JsonFileOptions();
 
-#if NET
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026",
-        Justification = "The default provider intentionally uses runtime JSON metadata; callers can provide JsonAotFormatProvider for NativeAOT."
-    )]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050",
-        Justification = "The default provider intentionally uses runtime JSON metadata; callers can provide JsonAotFormatProvider for NativeAOT."
-    )]
-#endif
-    private static IWritableFormatProvider CreateDefaultFormatProvider() =>
-        new JsonFormatProvider();
+    /// <summary>Gets the registered fallback file formats.</summary>
+    internal List<FileFormatOptions> FallbackFormats { get; } = [];
 
-    /// <summary>Gets or sets the file provider.</summary>
-    public IWritableFileProvider? FileProvider { get; set; }
+    /// <summary>Gets or sets the file backend. Defaults to the physical file system.</summary>
+    internal IFileBackend? FileBackend { get; set; }
 
     /// <summary>Gets or sets the configured file path.</summary>
     public string? FilePath
@@ -97,10 +85,10 @@ public class WritableOptionsConfigBuilder
 #endif
     internal void CopyFrom(WritableOptionsConfigBuilder source)
     {
-        FormatProvider = source.FormatProvider is FallbackFormatProvider fallbackProvider
-            ? fallbackProvider.Clone()
-            : source.FormatProvider;
-        FileProvider = source.FileProvider;
+        FormatOptions = source.FormatOptions;
+        FallbackFormats.Clear();
+        FallbackFormats.AddRange(source.FallbackFormats);
+        FileBackend = source.FileBackend;
         OnChangeDebounce = source.OnChangeDebounce;
         RegisterAsSingleton = source.RegisterAsSingleton;
         UseDataAnnotationsValidation = source.UseDataAnnotationsValidation;
@@ -141,36 +129,60 @@ public class WritableOptionsConfigBuilder
     }
 
     /// <summary>
-    /// Registers additional format providers that may be used to load an existing configuration
-    /// when the canonical file for <see cref="FormatProvider"/> does not exist.
+    /// Registers additional file formats that may be used to load an existing configuration
+    /// when the canonical file does not exist.
     /// A successfully loaded fallback configuration is promoted to the canonical format after schema migration.
     /// </summary>
-    /// <param name="formatProviders">The fallback format providers, in resolution order.</param>
-    public void AddFallbackFormatProvider(params IWritableFormatProvider[] formatProviders)
+    /// <param name="formats">The fallback formats, in resolution order.</param>
+    public void AddFallbackFormat(params FileFormatOptions[] formats)
     {
-        if (formatProviders is null)
+        if (formats is null)
         {
-            throw new ArgumentNullException(nameof(formatProviders));
+            throw new ArgumentNullException(nameof(formats));
         }
 
-        if (formatProviders.Any(formatProvider => formatProvider is null))
+        if (formats.Any(format => format is null))
         {
-            throw new ArgumentNullException(nameof(formatProviders));
+            throw new ArgumentNullException(nameof(formats));
         }
 
-        if (formatProviders.Length == 0)
+        if (formats.Length == 0)
         {
             return;
         }
 
-        if (FormatProvider is not FallbackFormatProvider fallbackProvider)
+        var knownExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            fallbackProvider = new FallbackFormatProvider(FormatProvider);
-            FormatProvider = fallbackProvider;
+            NormalizeExtension(FormatOptions.FileExtension),
+        };
+        foreach (var existing in FallbackFormats)
+        {
+            knownExtensions.Add(NormalizeExtension(existing.FileExtension));
         }
 
-        fallbackProvider.AddFallbacks(formatProviders);
+        foreach (var format in formats)
+        {
+            var extension = NormalizeExtension(format.FileExtension);
+            if (string.IsNullOrEmpty(extension))
+            {
+                throw new ArgumentException(
+                    "Fallback formats must declare a file extension.",
+                    nameof(formats)
+                );
+            }
+
+            if (!knownExtensions.Add(extension))
+            {
+                throw new InvalidOperationException(
+                    $"A format for '.{extension}' is already registered."
+                );
+            }
+        }
+
+        FallbackFormats.AddRange(formats);
     }
+
+    private static string NormalizeExtension(string extension) => extension.Trim().TrimStart('.');
 
     /// <summary>
     /// Enables or disables promotion of an existing configuration file to the preferred save location during startup.

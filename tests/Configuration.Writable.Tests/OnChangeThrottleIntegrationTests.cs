@@ -125,4 +125,55 @@ public partial class OnChangeDebounceIntegrationTests : IDisposable
             receivedValues[^1].Value.ShouldBe(5);
         }
     }
+
+    [Test]
+    public async Task OnChangeDebounce_ChangesContinuingPastInterval_ShouldWaitUntilQuiet()
+    {
+        var testFilePath = Path.Combine(_testDirectory, "continuous_changes.json");
+        var instance = new WritableOptionsSimpleInstance<TestSettings>();
+
+        instance.Initialize(options =>
+        {
+            options.FilePath = testFilePath;
+            options.OnChangeDebounce = TimeSpan.FromMilliseconds(250);
+        });
+
+        var config = instance.GetOptions();
+        var changeCount = 0;
+        TestSettings? lastReceivedValue = null;
+        config.OnChange(value =>
+        {
+            lastReceivedValue = new TestSettings { Name = value.Name, Value = value.Value };
+            Interlocked.Increment(ref changeCount);
+        });
+
+        await config.SaveAsync(s =>
+        {
+            s.Name = "initial";
+            s.Value = 0;
+        });
+        await FileWatcherTestHelper.WaitForConditionAsync(() =>
+            Volatile.Read(ref changeCount) >= 1
+        );
+        var initialChangeCount = Volatile.Read(ref changeCount);
+
+        for (var index = 1; index <= 8; index++)
+        {
+            var content = System.Text.Json.JsonSerializer.Serialize(
+                new TestSettings { Name = $"change{index}", Value = index }
+            );
+            File.WriteAllText(testFilePath, content);
+            await Task.Delay(100);
+
+            Volatile.Read(ref changeCount).ShouldBe(initialChangeCount);
+        }
+
+        await FileWatcherTestHelper.WaitForConditionAsync(
+            () =>
+                Volatile.Read(ref changeCount) == initialChangeCount + 1
+                && lastReceivedValue?.Name == "change8"
+                && lastReceivedValue.Value == 8,
+            timeout: TimeSpan.FromSeconds(5)
+        );
+    }
 }

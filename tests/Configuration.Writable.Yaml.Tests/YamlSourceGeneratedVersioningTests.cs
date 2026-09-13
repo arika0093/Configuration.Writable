@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 using VYaml.Annotations;
 using VYaml.Serialization;
 
@@ -28,7 +26,7 @@ public partial class YamlGeneratedSettingsV2
 
 public class YamlSourceGeneratedVersioningTests
 {
-    private readonly InMemoryFileProvider _fileProvider = new();
+    private readonly InMemoryFileBackend _fileProvider = new();
 
     [Test]
     public async Task YamlProvider_ShouldPersistMetadataInsideSection()
@@ -92,8 +90,8 @@ public class YamlSourceGeneratedVersioningTests
         {
             options.FilePath = fileName;
             options.SectionName = sectionName;
-            options.FormatProvider = new YamlFormatProvider();
-            options.UseInMemoryFileProvider(_fileProvider);
+            options.FormatOptions = new YamlFileOptions();
+            options.UseInMemoryBackend(_fileProvider);
         });
         return instance;
     }

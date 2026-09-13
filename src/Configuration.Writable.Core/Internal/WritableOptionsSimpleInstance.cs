@@ -73,7 +73,7 @@ internal class WritableOptionsSimpleInstanceCore<T>
                 "WritableOptionsSimpleInstance is not initialized. Call Initialize() before GetOptions()."
             );
         }
-        var optionsRegistry = new WritableOptionsConfigRegistryImpl<T>(_options);
+        var optionsRegistry = new WritableOptionsRegistry<T>(_options);
         var optionsMonitor = new OptionsMonitorImpl<T>(optionsRegistry);
         var writableOptions = new WritableOptionsImpl<T>(optionsMonitor, optionsRegistry);
         return writableOptions;

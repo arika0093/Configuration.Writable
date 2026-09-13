@@ -8,7 +8,7 @@ using Configuration.Writable.Configure;
 namespace Configuration.Writable.Options;
 
 internal sealed class ProfiledWritableOptions<T>(
-    IWritableOptionsConfigRegistry<T> registry,
+    WritableOptionsRegistry<T> registry,
     IWritableNamedOptions<T> namedOptions,
     IWritableOptions<ProfileCatalog> catalogOptions,
     ProfiledOptionsConfigBuilder<T> profileBuilder,

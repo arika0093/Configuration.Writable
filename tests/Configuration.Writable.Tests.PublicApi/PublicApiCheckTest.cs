@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
-using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Testing;
 using PublicApiGenerator;
 
@@ -44,14 +43,14 @@ public class PublicApiCheckTest
     public void Abstractions() => PublicApiCheck.Check<IOptionsConfigurationInfo>();
 
     [Test]
-    public void Core() => PublicApiCheck.Check<JsonFormatProvider>();
+    public void Core() => PublicApiCheck.Check<JsonFileOptions>();
 
     [Test]
     public void Testing() => PublicApiCheck.Check<WritableOptionsSimpleInstance<object>>();
 
     [Test]
-    public void Xml() => PublicApiCheck.Check<XmlFormatProvider>();
+    public void Xml() => PublicApiCheck.Check<XmlFileOptions>();
 
     [Test]
-    public void Yaml() => PublicApiCheck.Check<YamlFormatProvider>();
+    public void Yaml() => PublicApiCheck.Check<YamlFileOptions>();
 }

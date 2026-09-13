@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-using Configuration.Writable.FileProvider;
+using Configuration.Writable.State;
 
 namespace Configuration.Writable;
 
@@ -25,40 +25,64 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
     private long LastWriteTimeUtcTicks { get; }
     private string? Hash { get; }
 
-    internal static ConfigurationFileFingerprint? Capture(IWritableOptionsConfiguration options)
+    internal static ConfigurationFileFingerprint? Capture(
+        string configFilePath,
+        IFileBackend backend
+    )
     {
-        if (!(options.FileProvider is IPhysicalFileProvider physicalFileProvider))
+        // Revision tracking requires a physical file backend. Virtual backends
+        // report no revision, so optimistic concurrency checks are skipped.
+        if (!backend.IsPhysical)
         {
             return null;
         }
 
         try
         {
-            var configFilePath = options.FormatProvider
-                is FormatProvider.FallbackFormatProvider fallbackProvider
-                ? fallbackProvider.GetSelectedFilePath(options)
-                : options.ConfigFilePath;
-            var path = physicalFileProvider.GetPhysicalFilePath(configFilePath);
-            if (!File.Exists(path))
+            if (!backend.FileExists(configFilePath))
             {
                 return new ConfigurationFileFingerprint(false, 0, 0, null);
             }
 
-            var fileInfo = new FileInfo(path);
-            using var stream = new FileStream(
-                path,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete
-            );
+            using var stream = backend.OpenReadStream(configFilePath);
+            if (stream == null)
+            {
+                return new ConfigurationFileFingerprint(false, 0, 0, null);
+            }
+
             using var hashAlgorithm = SHA256.Create();
-            var hash = Convert.ToBase64String(hashAlgorithm.ComputeHash(stream));
-            return new ConfigurationFileFingerprint(
-                true,
-                fileInfo.Length,
-                fileInfo.LastWriteTimeUtc.Ticks,
-                hash
-            );
+            byte[] hash;
+            long length;
+            if (stream.CanSeek)
+            {
+                length = stream.Length;
+                hash = hashAlgorithm.ComputeHash(stream);
+            }
+            else
+            {
+                using var buffer = new MemoryStream();
+                stream.CopyTo(buffer);
+                var content = buffer.ToArray();
+                length = content.Length;
+                hash = hashAlgorithm.ComputeHash(content);
+            }
+            var hashText = Convert.ToBase64String(hash);
+
+            long lastWriteTimeUtcTicks = 0;
+            try
+            {
+                var path = backend.GetPhysicalPath(configFilePath);
+                if (File.Exists(path))
+                {
+                    lastWriteTimeUtcTicks = new FileInfo(path).LastWriteTimeUtc.Ticks;
+                }
+            }
+            catch
+            {
+                // Ignore errors when getting file info
+            }
+
+            return new ConfigurationFileFingerprint(true, length, lastWriteTimeUtcTicks, hashText);
         }
         catch (IOException)
         {
@@ -69,6 +93,17 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
             return null;
         }
     }
+
+    internal string ToRevision() =>
+        string.Concat(
+            Exists ? "1" : "0",
+            ":",
+            Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ":",
+            LastWriteTimeUtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ":",
+            Hash ?? ""
+        );
 
     public bool Equals(ConfigurationFileFingerprint? other) =>
         other != null

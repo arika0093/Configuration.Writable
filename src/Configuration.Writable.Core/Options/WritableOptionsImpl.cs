@@ -1,11 +1,12 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
 using Configuration.Writable.Options;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -24,10 +25,12 @@ namespace Configuration.Writable;
 /// <param name="registryInstance">The configuration options registry instance.</param>
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
-    IWritableOptionsConfigRegistry<T> registryInstance
+    WritableOptionsRegistry<T> registryInstance
 ) : IWritableOptionsMonitor<T>, IOptionsMonitor<T>
     where T : class, new()
 {
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _saveGates = new();
+
     /// <inheritdoc />
     public IOptionsConfigurationInfo ConfigurationInfo =>
         GetConfigurationInfo(MEOptions.DefaultName);
@@ -63,7 +66,7 @@ internal sealed class WritableOptionsImpl<T>(
     {
         var options = GetOptions(name);
         var configToSave = options.CloneMethod(newConfig);
-        return SaveClonedAsync(configToSave, options, cancellationToken);
+        return SaveClonedAsync(this, configToSave, options, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -149,11 +152,13 @@ internal sealed class WritableOptionsImpl<T>(
     /// </summary>
     /// <param name="newConfig">The new configuration to save.</param>
     /// <param name="options">The writable configuration options associated with the configuration to be saved.</param>
+    /// <param name="stateSource">The resolved state source used for this save.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">Thrown when validation fails.</exception>
     private async Task SaveCoreAsync(
         T newConfig,
         WritableOptionsConfiguration<T> options,
+        IStateSource<T> stateSource,
         CancellationToken cancellationToken = default
     )
     {
@@ -174,45 +179,61 @@ internal sealed class WritableOptionsImpl<T>(
                 }
             }
 
-            if (options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict)
+            var expectedRevision =
+                options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
+                    ? optionMonitorInstance.GetStateRevision(options.InstanceName)
+                    : null;
+            if (
+                options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
+                && expectedRevision is null
+                && UsesFileWriteTarget(stateSource)
+                && options.FileBackend.IsPhysical
+            )
             {
-                var expectedFingerprint = optionMonitorInstance.GetFingerprint(
-                    options.InstanceName
-                );
-                var currentFingerprint = ConfigurationFileFingerprint.Capture(options);
-                if (
-                    expectedFingerprint != null
-                    && currentFingerprint != null
-                    && !expectedFingerprint.Equals(currentFingerprint)
-                )
-                {
-                    ConfigurationWritableEventSource.Log.ConflictDetected();
-                    throw new ConfigurationConflictException(options.ConfigFilePath);
-                }
+                ConfigurationWritableEventSource.Log.ConflictDetected();
+                throw new ConfigurationConflictException(options.ConfigFilePath);
             }
 
-            options.Logger?.LogDebug(
-                "Saving configuration to {ConfigFilePath}",
-                options.ConfigFilePath
-            );
-
-            // Save to file
-            await options
-                .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
+            var writeResult = await stateSource
+                .WriteAsync(
+                    new StateWriteRequest<T>(newConfig, expectedRevision),
+                    cancellationToken
+                )
                 .ConfigureAwait(false);
 
-            // Update the monitor's cache (FileSystemWatcher will notify listeners)
-            var publishedConfig = options.CloneMethod(newConfig);
+            // For composite sources the write target may sit below the active
+            // read source. Publish the effective (authoritative) value instead
+            // of the written value so CurrentValue never reports state that a
+            // subsequent read would not return.
+            var effectiveConfig = await ResolveEffectiveConfigAsync(
+                    stateSource,
+                    options,
+                    newConfig,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
+
+            // Update the monitor's cache (the state watcher will notify listeners)
+            var publishedConfig = options.CloneMethod(effectiveConfig);
             optionMonitorInstance.UpdateCache(
                 options.InstanceName,
                 publishedConfig,
-                ConfigurationFileFingerprint.Capture(options)
+                ConfigurationFileFingerprint.Capture(
+                    options.GetSelectedFilePath(),
+                    options.FileBackend
+                ),
+                writeResult.Revision
             );
 
-            var fileName = Path.GetFileName(options.ConfigFilePath);
+            // Saves to a write target without a watcher never wake the monitor,
+            // so notify listeners directly. Watched targets notify through the
+            // normal watcher pipeline.
+            NotifyUnwatchedSave(stateSource, options, publishedConfig);
+
             options.Logger?.LogInformation(
-                "Configuration saved successfully to {FileName}",
-                fileName
+                "Configuration saved successfully for {InstanceName} at revision {Revision}",
+                options.InstanceName,
+                writeResult.Revision
             );
             ConfigurationWritableEventSource.Log.SaveSucceeded(stopwatch.Elapsed.TotalMilliseconds);
         }
@@ -220,6 +241,57 @@ internal sealed class WritableOptionsImpl<T>(
         {
             ConfigurationWritableEventSource.Log.SaveFailed();
             throw;
+        }
+    }
+
+    private static async Task<T> ResolveEffectiveConfigAsync(
+        IStateSource<T> stateSource,
+        WritableOptionsConfiguration<T> options,
+        T writtenConfig,
+        CancellationToken cancellationToken
+    )
+    {
+        if (stateSource is not CompositeStateSource<T> compositeSource)
+        {
+            return writtenConfig;
+        }
+
+        try
+        {
+            var readBack = await compositeSource.ReadAsync(cancellationToken).ConfigureAwait(false);
+            if (readBack.Status == StateReadStatus.Success && readBack.Value is not null)
+            {
+                return readBack.Value;
+            }
+        }
+        catch (Exception ex)
+            when (ex is not OperationCanceledException && !cancellationToken.IsCancellationRequested
+            )
+        {
+            // The write already succeeded; keep the written value when
+            // the authoritative value cannot be re-read.
+            options.Logger?.LogDebug(
+                ex,
+                "Could not re-read the effective configuration after saving {InstanceName}; publishing the written value.",
+                options.InstanceName
+            );
+        }
+
+        return writtenConfig;
+    }
+
+    private void NotifyUnwatchedSave(
+        IStateSource<T> stateSource,
+        WritableOptionsConfiguration<T> options,
+        T publishedConfig
+    )
+    {
+        if (
+            stateSource is CompositeStateSource<T> compositeSource
+            && !compositeSource.WriteTargetHasWatcher
+        )
+        {
+            optionMonitorInstance.NotifyListeners(options.InstanceName, publishedConfig);
         }
     }
 
@@ -232,16 +304,22 @@ internal sealed class WritableOptionsImpl<T>(
     /// the specified name exists.</exception>
     private WritableOptionsConfiguration<T> GetOptions(string name) => registryInstance.Get(name);
 
-    private async Task SaveClonedAsync(
+    private static async Task SaveClonedAsync(
+        WritableOptionsImpl<T> owner,
         T configToSave,
         WritableOptionsConfiguration<T> options,
         CancellationToken cancellationToken
     )
     {
-        using var fileLock = await AsyncFileSaveLock
-            .AcquireAsync(options.ConfigFilePath, cancellationToken)
+        var stateSource = options.CreateStateSource(acquireSaveLock: false);
+        await owner
+            .RunCoordinatedSaveAsync(
+                options,
+                stateSource,
+                () => owner.SaveCoreAsync(configToSave, options, stateSource, cancellationToken),
+                cancellationToken
+            )
             .ConfigureAwait(false);
-        await SaveCoreAsync(configToSave, options, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task UpdateAndSaveAsync(
@@ -250,12 +328,20 @@ internal sealed class WritableOptionsImpl<T>(
         CancellationToken cancellationToken
     )
     {
-        using var fileLock = await AsyncFileSaveLock
-            .AcquireAsync(options.ConfigFilePath, cancellationToken)
+        var stateSource = options.CreateStateSource(acquireSaveLock: false);
+        await RunCoordinatedSaveAsync(
+                options,
+                stateSource,
+                async () =>
+                {
+                    var configToSave = options.CloneMethod(Get(options.InstanceName));
+                    configUpdater(configToSave);
+                    await SaveCoreAsync(configToSave, options, stateSource, cancellationToken)
+                        .ConfigureAwait(false);
+                },
+                cancellationToken
+            )
             .ConfigureAwait(false);
-        var configToSave = options.CloneMethod(Get(options.InstanceName));
-        configUpdater(configToSave);
-        await SaveCoreAsync(configToSave, options, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task UpdateAndSaveAsync(
@@ -264,11 +350,51 @@ internal sealed class WritableOptionsImpl<T>(
         CancellationToken cancellationToken
     )
     {
-        using var fileLock = await AsyncFileSaveLock
-            .AcquireAsync(options.ConfigFilePath, cancellationToken)
+        var stateSource = options.CreateStateSource(acquireSaveLock: false);
+        await RunCoordinatedSaveAsync(
+                options,
+                stateSource,
+                async () =>
+                {
+                    var configToSave = options.CloneMethod(Get(options.InstanceName));
+                    await configUpdater(configToSave).ConfigureAwait(false);
+                    await SaveCoreAsync(configToSave, options, stateSource, cancellationToken)
+                        .ConfigureAwait(false);
+                },
+                cancellationToken
+            )
             .ConfigureAwait(false);
-        var configToSave = options.CloneMethod(Get(options.InstanceName));
-        await configUpdater(configToSave).ConfigureAwait(false);
-        await SaveCoreAsync(configToSave, options, cancellationToken).ConfigureAwait(false);
     }
+
+    private async Task RunCoordinatedSaveAsync(
+        WritableOptionsConfiguration<T> options,
+        IStateSource<T> stateSource,
+        Func<Task> saveAction,
+        CancellationToken cancellationToken
+    )
+    {
+        var saveGate = _saveGates.GetOrAdd(options.InstanceName, _ => new SemaphoreSlim(1, 1));
+        await saveGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (UsesFileWriteTarget(stateSource))
+            {
+                using var fileLock = await AsyncFileSaveLock
+                    .AcquireAsync(options.ConfigFilePath, cancellationToken)
+                    .ConfigureAwait(false);
+                await saveAction().ConfigureAwait(false);
+                return;
+            }
+
+            await saveAction().ConfigureAwait(false);
+        }
+        finally
+        {
+            saveGate.Release();
+        }
+    }
+
+    private static bool UsesFileWriteTarget(IStateSource<T> stateSource) =>
+        stateSource is FileStateSource<T>
+        || stateSource is CompositeStateSource<T> composite && composite.UsesFileWriteTarget;
 }

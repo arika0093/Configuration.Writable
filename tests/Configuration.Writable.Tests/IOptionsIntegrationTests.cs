@@ -1,8 +1,7 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable;
-using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -11,7 +10,7 @@ namespace Configuration.Writable.Tests;
 
 public partial class IOptionsIntegrationTests
 {
-    private readonly InMemoryFileProvider _FileProvider = new();
+    private readonly InMemoryFileBackend _FileProvider = new();
 
     [OptionsModel]
     public partial class TestSettings
@@ -30,7 +29,7 @@ public partial class IOptionsIntegrationTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -59,7 +58,7 @@ public partial class IOptionsIntegrationTests
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddWritableOptions(conf =>
         {
-            conf.FileProvider = _FileProvider;
+            conf.UseInMemoryBackend(_FileProvider);
             conf.EnablePromoteSaveLocation();
             conf.UseCustomDirectory(newDirectory).AddFilePath(fileName);
             conf.UseCustomDirectory(oldDirectory).AddFilePath(fileName);
@@ -85,7 +84,7 @@ public partial class IOptionsIntegrationTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -111,7 +110,7 @@ public partial class IOptionsIntegrationTests
         builder.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host = builder.Build();
@@ -135,7 +134,7 @@ public partial class IOptionsIntegrationTests
             options =>
             {
                 options.FilePath = testFileName;
-                options.UseInMemoryFileProvider(_FileProvider);
+                options.UseInMemoryBackend(_FileProvider);
             }
         );
 
@@ -159,7 +158,7 @@ public partial class IOptionsIntegrationTests
         builder1.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host1 = builder1.Build();
@@ -180,7 +179,7 @@ public partial class IOptionsIntegrationTests
         builder2.Services.AddWritableOptions<TestSettings>(options =>
         {
             options.FilePath = testFileName;
-            options.UseInMemoryFileProvider(_FileProvider);
+            options.UseInMemoryBackend(_FileProvider);
         });
 
         var host2 = builder2.Build();
