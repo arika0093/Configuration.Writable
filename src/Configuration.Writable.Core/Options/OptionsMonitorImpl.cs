@@ -384,8 +384,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 await changeTask.ConfigureAwait(false);
             }
             catch (OperationCanceledException)
-                when (
-                    debounceCancellation.IsCancellationRequested
+                when (debounceCancellation.IsCancellationRequested
                     && !cancellationToken.IsCancellationRequested
                 )
             {
