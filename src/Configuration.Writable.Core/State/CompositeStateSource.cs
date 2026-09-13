@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,6 +13,7 @@ namespace Configuration.Writable.State;
 /// <typeparam name="T">The state type.</typeparam>
 internal sealed class CompositeStateSource<T> : IStateSource<T>
 {
+    private const string CompositeRevisionPrefix = "composite:v1:";
     private readonly StateSource<T>[] _sources;
     private readonly string? _writeTargetId;
 
@@ -156,24 +156,24 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken
         );
-        var waits = watchers
-            .Select(source =>
-            {
-                var watcher = source.Watcher;
-                if (watcher is null)
-                {
-                    return Task.CompletedTask;
-                }
-                return watcher
-                    .WaitForChangeAsync(
-                        GetExpectedRevision(observedRevision, source.Id),
-                        linkedCancellation.Token
-                    )
-                    .AsTask();
-            })
-            .ToArray();
         try
         {
+            var waits = watchers
+                .Select(source =>
+                {
+                    var watcher = source.Watcher;
+                    if (watcher is null)
+                    {
+                        return Task.CompletedTask;
+                    }
+                    return watcher
+                        .WaitForChangeAsync(
+                            GetExpectedRevision(observedRevision, source.Id),
+                            linkedCancellation.Token
+                        )
+                        .AsTask();
+                })
+                .ToArray();
             await (await Task.WhenAny(waits).ConfigureAwait(false)).ConfigureAwait(false);
         }
         finally
@@ -209,9 +209,18 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         {
             copy[activeSourceId] = activeRevision;
         }
-        var payload = new CompositeRevision(activeSourceId, copy);
-        return "composite:"
-            + Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload)));
+
+        var payload = new StringBuilder(CompositeRevisionPrefix);
+        payload.Append(EncodeRevisionPart(activeSourceId));
+        foreach (var entry in copy.OrderBy(entry => entry.Key, StringComparer.Ordinal))
+        {
+            payload
+                .Append(';')
+                .Append(EncodeRequiredPart(entry.Key))
+                .Append(':')
+                .Append(EncodeRevisionPart(entry.Value));
+        }
+        return payload.ToString();
     }
 
     private static string? GetExpectedRevision(string? compositeRevision, string sourceId)
@@ -229,25 +238,63 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
 
     private static CompositeRevision? ParseRevision(string? revision)
     {
-        if (revision is null || !revision.StartsWith("composite:", StringComparison.Ordinal))
+        if (revision is null || !revision.StartsWith(CompositeRevisionPrefix, StringComparison.Ordinal))
         {
             return null;
         }
 
         try
         {
-            return JsonSerializer.Deserialize<CompositeRevision>(
-                Encoding.UTF8.GetString(Convert.FromBase64String(revision["composite:".Length..]))
-            );
+            var parts = revision[CompositeRevisionPrefix.Length..].Split(';');
+            if (parts.Length == 0)
+            {
+                return null;
+            }
+
+            var activeSourceId = DecodeRevisionPart(parts[0]);
+            var revisions = new Dictionary<string, string?>(StringComparer.Ordinal);
+            for (var index = 1; index < parts.Length; index++)
+            {
+                var separator = parts[index].IndexOf(':');
+                if (separator < 0)
+                {
+                    return null;
+                }
+
+                var sourceId = DecodeRequiredPart(parts[index][..separator]);
+                if (sourceId is null || revisions.ContainsKey(sourceId))
+                {
+                    return null;
+                }
+
+                revisions[sourceId] = DecodeRevisionPart(parts[index][(separator + 1)..]);
+            }
+
+            return new CompositeRevision(activeSourceId, revisions);
         }
         catch (FormatException)
         {
             return null;
         }
-        catch (JsonException)
+    }
+
+    private static string EncodeRevisionPart(string? value) =>
+        value is null ? "-" : EncodeRequiredPart(value);
+
+    private static string EncodeRequiredPart(string value) =>
+        Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
+
+    private static string? DecodeRevisionPart(string value) =>
+        string.Equals(value, "-", StringComparison.Ordinal) ? null : DecodeRequiredPart(value);
+
+    private static string? DecodeRequiredPart(string value)
+    {
+        if (string.Equals(value, "-", StringComparison.Ordinal))
         {
             return null;
         }
+
+        return Encoding.UTF8.GetString(Convert.FromBase64String(value));
     }
 
     private sealed record CompositeRevision(
