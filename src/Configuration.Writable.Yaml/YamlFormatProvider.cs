@@ -27,7 +27,7 @@ public class YamlFormatProvider
         IOptionsSchemaMetadataProvider,
         IStateCodecFactory
 {
-    IStateCodec<T> IStateCodecFactory.CreateStateCodec<T>(WritableOptionsConfiguration<T> options)
+    IStateCodec<T> IStateCodecFactory.CreateStateCodec<T>()
     {
         // Subclasses overriding serialization must stay on the legacy pipeline.
         if (GetType() != typeof(YamlFormatProvider))
