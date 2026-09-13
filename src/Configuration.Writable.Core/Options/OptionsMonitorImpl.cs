@@ -360,6 +360,18 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             var changeTask = source
                 .WaitForChangeAsync(debounceRevision, debounceCancellation.Token)
                 .AsTask();
+
+            // A watcher is expected to return a pending task until a change occurs.
+            // Some state sources can report an already-observed change synchronously,
+            // though. Re-subscribing to such a watcher in the loop below would spin
+            // forever on runtimes where the watcher keeps completing synchronously.
+            if (changeTask.IsCompleted)
+            {
+                await changeTask.ConfigureAwait(false);
+                await Task.Delay(debounceDuration, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             var delayTask = Task.Delay(debounceDuration, debounceCancellation.Token);
             var completedTask = await Task.WhenAny(changeTask, delayTask).ConfigureAwait(false);
 
