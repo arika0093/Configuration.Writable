@@ -215,9 +215,9 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Loads configuration from the provider and updates the cache.
-    private T LoadConfiguration(string instanceName)
+    private T LoadConfiguration(string instanceName, bool useDefaultWhenNotFound = true)
     {
-        var loaded = LoadConfigurationFromProvider(instanceName);
+        var loaded = LoadConfigurationFromProvider(instanceName, useDefaultWhenNotFound);
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
             // Don't notify listeners during explicit load, only file change events should notify
@@ -229,13 +229,32 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     }
 
     // Loads configuration from the provider without updating cache
-    private LoadedConfiguration LoadConfigurationFromProvider(string instanceName)
+    private LoadedConfiguration LoadConfigurationFromProvider(
+        string instanceName,
+        bool useDefaultWhenNotFound = true
+    )
     {
         var options = _optionsRegistry.Get(instanceName);
         _semaphore.Wait();
         try
         {
             var result = options.CreateStateSource().ReadAsync().AsTask().GetAwaiter().GetResult();
+            if (result.Status == StateReadStatus.NotFound)
+            {
+                if (!useDefaultWhenNotFound)
+                {
+                    throw new FileNotFoundException(
+                        $"Configuration state was not found for options instance '{instanceName}'.",
+                        options.ConfigFilePath
+                    );
+                }
+
+                return new LoadedConfiguration(
+                    new T(),
+                    ConfigurationFileFingerprint.Capture(options),
+                    result.Revision
+                );
+            }
             if (result.Status != StateReadStatus.Success || result.Value is null)
             {
                 throw new InvalidOperationException(
@@ -361,7 +380,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             try
             {
-                return LoadConfiguration(instanceName);
+                return LoadConfiguration(instanceName, useDefaultWhenNotFound: false);
             }
             catch (IOException) when (i < maxRetries - 1)
             {
@@ -370,7 +389,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
         }
         // Final attempt without catching
-        return LoadConfiguration(instanceName);
+        return LoadConfiguration(instanceName, useDefaultWhenNotFound: false);
     }
 
     // Notifies all registered listeners of a configuration change
