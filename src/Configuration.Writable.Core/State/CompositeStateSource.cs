@@ -238,7 +238,10 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
 
     private static CompositeRevision? ParseRevision(string? revision)
     {
-        if (revision is null || !revision.StartsWith(CompositeRevisionPrefix, StringComparison.Ordinal))
+        if (
+            revision is null
+            || !revision.StartsWith(CompositeRevisionPrefix, StringComparison.Ordinal)
+        )
         {
             return null;
         }
