@@ -21,6 +21,33 @@ internal static class MigrationLoaderExtension
     )
         where T : class, new()
     {
+        return LoadWithMigration(
+            options,
+            type => formatProvider.LoadConfiguration(type, options),
+            () =>
+                formatProvider is IOptionsSchemaMetadataProvider metadataProvider
+                    ? FormatProviderBase.ExecuteWithBackupRecovery(
+                        options,
+                        () => metadataProvider.ReadSchemaMetadata(options)
+                    )
+                    : null,
+            value => PromoteIfNeeded(formatProvider, options, value)
+        );
+    }
+
+    /// <summary>
+    /// Codec-agnostic migration loading. Codecs supply how to load a type,
+    /// read schema metadata, and promote fallback documents, so migration no
+    /// longer depends on <see cref="FormatProvider.IWritableFormatProvider"/>.
+    /// </summary>
+    internal static T LoadWithMigration<T>(
+        WritableOptionsConfiguration<T> options,
+        Func<Type, object> load,
+        Func<OptionsSchemaMetadata?> readMetadata,
+        Action<T> promote
+    )
+        where T : class, new()
+    {
         var migrationLookup = options.MigrationLookup;
         var targetMetadata = options.SchemaMetadata;
 
@@ -28,30 +55,20 @@ internal static class MigrationLoaderExtension
         var targetVersion = targetMetadata?.Version;
         if (targetVersion is null)
         {
-            return PromoteIfNeeded(
-                formatProvider,
-                options,
-                (T)formatProvider.LoadConfiguration(typeof(T), options)
-            );
+            var unversioned = (T)load(typeof(T));
+            promote(unversioned);
+            return unversioned;
         }
 
-        var metadataProvider = formatProvider as IOptionsSchemaMetadataProvider;
-        var fileMetadata = metadataProvider is null
-            ? null
-            : FormatProviderBase.ExecuteWithBackupRecovery(
-                options,
-                () => metadataProvider.ReadSchemaMetadata(options)
-            );
+        var fileMetadata = readMetadata();
         ValidateFileMetadata(fileMetadata);
 
         // Missing documents or sections are initialized directly as the target type.
         if (fileMetadata is null)
         {
-            return PromoteIfNeeded(
-                formatProvider,
-                options,
-                (T)formatProvider.LoadConfiguration(typeof(T), options)
-            );
+            var missing = (T)load(typeof(T));
+            promote(missing);
+            return missing;
         }
 
         var fileVersion = fileMetadata.Version ?? 1;
@@ -59,11 +76,9 @@ internal static class MigrationLoaderExtension
         // The file declares a version. If it already matches the target, load directly.
         if (fileVersion == targetVersion)
         {
-            return PromoteIfNeeded(
-                formatProvider,
-                options,
-                (T)formatProvider.LoadConfiguration(typeof(T), options)
-            );
+            var current = (T)load(typeof(T));
+            promote(current);
+            return current;
         }
 
         // The file declares a version that is newer than the target. This is an unsupported scenario.
@@ -109,14 +124,12 @@ internal static class MigrationLoaderExtension
             return new T();
         }
 
-        return PromoteIfNeeded(
-            formatProvider,
-            options,
-            ApplyMigrationChain<T>(formatProvider, options, migrationLookup, currentType)
-        );
+        var migrated = ApplyMigrationChain<T>(options, load, migrationLookup, currentType);
+        promote(migrated);
+        return migrated;
     }
 
-    private static T PromoteIfNeeded<T>(
+    private static void PromoteIfNeeded<T>(
         IWritableFormatProvider formatProvider,
         WritableOptionsConfiguration<T> options,
         T value
@@ -127,8 +140,6 @@ internal static class MigrationLoaderExtension
         {
             fallbackFormatProvider.PromoteIfNeeded(value, options);
         }
-
-        return value;
     }
 
     private static void ValidateFileMetadata(OptionsSchemaMetadata? fileMetadata)
@@ -140,15 +151,15 @@ internal static class MigrationLoaderExtension
     }
 
     private static T ApplyMigrationChain<T>(
-        FormatProvider.IWritableFormatProvider formatProvider,
         WritableOptionsConfiguration<T> options,
+        Func<Type, object> load,
         MigrationLookup migrationLookup,
         Type startingType
     )
         where T : class, new()
     {
         var currentType = startingType;
-        var current = formatProvider.LoadConfiguration(currentType, options);
+        var current = load(currentType);
 
         while (currentType != typeof(T))
         {

@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
@@ -74,7 +75,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
             var root = document.RootElement;
 
             if (
-                !JsonWriterHelper.TryNavigateToSection(
+                !JsonStateWriterHelper.TryNavigateToSection(
                     root,
                     options.SectionNameParts,
                     out var current
@@ -176,6 +177,14 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         };
     }
 
+    /// <summary>
+    /// Gets the settings needed to build a native state codec for this provider.
+    /// </summary>
+    internal (
+        JsonSerializerOptions EffectiveOptions,
+        IJsonTypeInfoResolver TypeInfoResolver
+    ) GetCodecSettings() => (GetEffectiveOptions(), _typeInfoResolver);
+
     /// <inheritdoc />
     public override async ValueTask<object> LoadConfigurationAsync(
         Type type,
@@ -201,7 +210,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
             .ParseAsync(stream, default, cancellationToken)
             .ConfigureAwait(false);
         if (
-            !JsonWriterHelper.TryNavigateToSection(
+            !JsonStateWriterHelper.TryNavigateToSection(
                 jsonDocument.RootElement,
                 sectionNameParts,
                 out var current
@@ -258,7 +267,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         var sections = options.SectionNameParts;
         var serializerOptions = GetEffectiveOptions();
         var typeInfo = serializerOptions.GetTypeInfo(typeof(T));
-        var serializeAction = JsonWriterHelper.AddSchemaMetadata(
+        var serializeAction = JsonStateWriterHelper.AddSchemaMetadata(
             CreateSerializeAction<T>(typeInfo),
             options.SchemaMetadata,
             SchemaVersionProperty,
@@ -277,7 +286,7 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
 
         if (sections.Count == 0)
         {
-            return JsonWriterHelper.GetFullSaveContents(
+            return JsonStateWriterHelper.GetFullSaveContents(
                 config,
                 writerOptions,
                 serializeAction,
@@ -292,12 +301,12 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
                 string.Join(":", sections)
             );
 
-            return JsonWriterHelper.GetPartialSaveContents(
+            return JsonStateWriterHelper.GetPartialSaveContents(
                 config,
                 sections,
                 writerOptions,
                 serializeAction,
-                options.FileProvider,
+                path => options.FileProvider.GetFilePipeReader(path)?.AsStream(leaveOpen: false),
                 options.ConfigFilePath,
                 options.Logger
             );

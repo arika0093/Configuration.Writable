@@ -17,9 +17,16 @@ internal sealed class FileStateSource<T> : IStateSource<T>
     private readonly bool _acquireSaveLock;
 
     internal FileStateSource(WritableOptionsConfiguration<T> options, bool acquireSaveLock = true)
+        : this(options, FileCodecSelector.Select(options), acquireSaveLock) { }
+
+    internal FileStateSource(
+        WritableOptionsConfiguration<T> options,
+        IStateCodec<T> codec,
+        bool acquireSaveLock = true
+    )
     {
         _resource = new FileStateResource<T>(options);
-        _codec = new LegacyFormatStateCodec<T>();
+        _codec = codec ?? throw new ArgumentNullException(nameof(codec));
         _acquireSaveLock = acquireSaveLock;
     }
 

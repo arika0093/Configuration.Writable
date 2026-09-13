@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
@@ -73,7 +74,7 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             var root = document.RootElement;
 
             if (
-                !JsonWriterHelper.TryNavigateToSection(
+                !JsonStateWriterHelper.TryNavigateToSection(
                     root,
                     options.SectionNameParts,
                     out var current
@@ -202,7 +203,7 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
             .ParseAsync(stream, default, cancellationToken)
             .ConfigureAwait(false);
         if (
-            !JsonWriterHelper.TryNavigateToSection(
+            !JsonStateWriterHelper.TryNavigateToSection(
                 jsonDocument.RootElement,
                 sectionNameParts,
                 out var current
@@ -251,7 +252,7 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         );
 
         var sections = options.SectionNameParts;
-        var serializeAction = JsonWriterHelper.AddSchemaMetadata(
+        var serializeAction = JsonStateWriterHelper.AddSchemaMetadata(
             CreateSerializeAction<T>(JsonSerializerOptions),
             options.SchemaMetadata,
             SchemaVersionProperty,
@@ -270,7 +271,7 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 
         if (sections.Count == 0)
         {
-            return JsonWriterHelper.GetFullSaveContents(
+            return JsonStateWriterHelper.GetFullSaveContents(
                 config,
                 writerOptions,
                 serializeAction,
@@ -285,12 +286,12 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
                 string.Join(":", sections)
             );
 
-            return JsonWriterHelper.GetPartialSaveContents(
+            return JsonStateWriterHelper.GetPartialSaveContents(
                 config,
                 sections,
                 writerOptions,
                 serializeAction,
-                options.FileProvider,
+                path => options.FileProvider.GetFilePipeReader(path)?.AsStream(leaveOpen: false),
                 options.ConfigFilePath,
                 options.Logger
             );

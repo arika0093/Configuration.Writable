@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using Configuration.Writable.FileProvider;
 using Microsoft.Extensions.Logging;
 
-namespace Configuration.Writable.FormatProvider;
+namespace Configuration.Writable.State;
 
 /// <summary>
 /// Delegate for serializing a value to a Utf8JsonWriter.
@@ -16,9 +15,9 @@ namespace Configuration.Writable.FormatProvider;
 internal delegate void JsonSerializeAction<in T>(Utf8JsonWriter writer, T value);
 
 /// <summary>
-/// Helper class for shared JSON writing operations between JsonFormatProvider and JsonAotFormatProvider.
+/// Helper class for shared JSON writing operations between JSON state codecs.
 /// </summary>
-internal static class JsonWriterHelper
+internal static class JsonStateWriterHelper
 {
     /// <summary>
     /// Navigates to a section in a JSON document.
@@ -144,7 +143,7 @@ internal static class JsonWriterHelper
     /// <param name="sections">The section path parts.</param>
     /// <param name="writerOptions">The JSON writer options.</param>
     /// <param name="serializeAction">The action to serialize the config object.</param>
-    /// <param name="fileProvider">The file provider to read existing file.</param>
+    /// <param name="openRead">Opens the existing file for reading, or returns null when missing.</param>
     /// <param name="configFilePath">The configuration file path.</param>
     /// <param name="logger">Optional logger for trace output.</param>
     /// <returns>The serialized bytes.</returns>
@@ -153,7 +152,7 @@ internal static class JsonWriterHelper
         List<string> sections,
         JsonWriterOptions writerOptions,
         JsonSerializeAction<T> serializeAction,
-        IWritableFileProvider fileProvider,
+        Func<string, Stream?> openRead,
         string configFilePath,
         ILogger? logger
     )
@@ -161,13 +160,12 @@ internal static class JsonWriterHelper
     {
         JsonDocument? existingDocument = null;
 
-        // Try to read existing file using PipeReader
+        // Try to read existing file
         try
         {
-            var pipeReader = fileProvider.GetFilePipeReader(configFilePath);
-            if (pipeReader != null)
+            using var stream = openRead(configFilePath);
+            if (stream != null)
             {
-                using var stream = pipeReader.AsStream(leaveOpen: false);
                 existingDocument = JsonDocument.Parse(stream);
                 logger?.Log(LogLevel.Trace, "Loaded existing JSON file for partial update");
             }
