@@ -123,6 +123,45 @@ public class CompositeStateSourceTests
     }
 
     [Test]
+    public async Task ReadAsync_CapturesLowerPriorityWriteSourceRevisionBeforeReturning()
+    {
+        var primary = new ReadOnlyTestSource<string>(
+            StateReadResult<string>.Success("primary", "primary-r1")
+        );
+        var fallback = new TestSource<string>(
+            StateReadResult<string>.Success("fallback", "fallback-r1")
+        );
+        var source = new CompositeStateSource<string>(
+        [
+            new StateSource<string>(
+                "primary",
+                primary,
+                null,
+                null,
+                100,
+                StateFallbackConditions.NotFound
+            ),
+            new StateSource<string>(
+                "fallback",
+                fallback,
+                fallback,
+                fallback,
+                0,
+                StateFallbackConditions.NotFound
+            ),
+        ]
+        );
+
+        var read = await source.ReadAsync();
+        await source.WriteAsync(new StateWriteRequest<string>("saved", read.Revision));
+
+        fallback.ReadCount.ShouldBe(1);
+        fallback.LastWriteRequest.ShouldBe(
+            new StateWriteRequest<string>("saved", "fallback-r1")
+        );
+    }
+
+    [Test]
     public async Task WriteAsync_UsesExplicitWriteTarget()
     {
         var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
@@ -274,6 +313,40 @@ public class CompositeStateSourceTests
 
         primary.WatchCount.ShouldBe(1);
         fallback.WatchCount.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task WaitForChangeAsync_WatchesExplicitLowerPriorityWriteSource()
+    {
+        var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
+        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
+        var source = new CompositeStateSource<string>(
+        [
+            new StateSource<string>(
+                "primary",
+                primary,
+                primary,
+                primary,
+                100,
+                StateFallbackConditions.NotFound
+            ),
+            new StateSource<string>(
+                "fallback",
+                fallback,
+                fallback,
+                fallback,
+                0,
+                StateFallbackConditions.NotFound
+            ),
+        ],
+            writeTargetId: "fallback"
+        );
+
+        var read = await source.ReadAsync();
+        await source.WaitForChangeAsync(read.Revision);
+
+        primary.WatchCount.ShouldBe(1);
+        fallback.WatchCount.ShouldBe(1);
     }
 
     [Test]
