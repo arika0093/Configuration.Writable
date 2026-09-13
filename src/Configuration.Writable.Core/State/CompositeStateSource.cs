@@ -201,9 +201,7 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
             return;
         }
 
-        var result = await writeSource
-            .Reader.ReadAsync(cancellationToken)
-            .ConfigureAwait(false);
+        var result = await writeSource.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
         revisions[writeSource.Id] = result.Revision;
     }
 
