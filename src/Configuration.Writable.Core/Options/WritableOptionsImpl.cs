@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
 using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
@@ -181,6 +182,7 @@ internal sealed class WritableOptionsImpl<T>(
             if (
                 options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
                 && expectedRevision is null
+                && options.FileProvider is IPhysicalFileProvider
             )
             {
                 ConfigurationWritableEventSource.Log.ConflictDetected();
