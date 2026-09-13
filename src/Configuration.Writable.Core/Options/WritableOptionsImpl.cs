@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
+using Configuration.Writable.FileProvider;
 using Configuration.Writable.Options;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -174,31 +175,26 @@ internal sealed class WritableOptionsImpl<T>(
                 }
             }
 
-            if (options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict)
+            var expectedRevision =
+                options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
+                    ? optionMonitorInstance.GetStateRevision(options.InstanceName)
+                    : null;
+            if (
+                options.ConflictResolution == ConfigurationConflictResolution.FailOnConflict
+                && expectedRevision is null
+                && options.FileProvider is IPhysicalFileProvider
+            )
             {
-                var expectedFingerprint = optionMonitorInstance.GetFingerprint(
-                    options.InstanceName
-                );
-                var currentFingerprint = ConfigurationFileFingerprint.Capture(options);
-                if (
-                    expectedFingerprint != null
-                    && currentFingerprint != null
-                    && !expectedFingerprint.Equals(currentFingerprint)
-                )
-                {
-                    ConfigurationWritableEventSource.Log.ConflictDetected();
-                    throw new ConfigurationConflictException(options.ConfigFilePath);
-                }
+                ConfigurationWritableEventSource.Log.ConflictDetected();
+                throw new ConfigurationConflictException(options.ConfigFilePath);
             }
 
-            options.Logger?.LogDebug(
-                "Saving configuration to {ConfigFilePath}",
-                options.ConfigFilePath
-            );
-
-            // Save to file
-            await options
-                .FormatProvider.SaveAsync(newConfig, options, cancellationToken)
+            var writeResult = await options
+                .CreateStateSource(acquireSaveLock: false)
+                .WriteAsync(
+                    new StateWriteRequest<T>(newConfig, expectedRevision),
+                    cancellationToken
+                )
                 .ConfigureAwait(false);
 
             // Update the monitor's cache (FileSystemWatcher will notify listeners)
@@ -206,13 +202,14 @@ internal sealed class WritableOptionsImpl<T>(
             optionMonitorInstance.UpdateCache(
                 options.InstanceName,
                 publishedConfig,
-                ConfigurationFileFingerprint.Capture(options)
+                ConfigurationFileFingerprint.Capture(options),
+                writeResult.Revision
             );
 
-            var fileName = Path.GetFileName(options.ConfigFilePath);
             options.Logger?.LogInformation(
-                "Configuration saved successfully to {FileName}",
-                fileName
+                "Configuration saved successfully for {InstanceName} at revision {Revision}",
+                options.InstanceName,
+                writeResult.Revision
             );
             ConfigurationWritableEventSource.Log.SaveSucceeded(stopwatch.Elapsed.TotalMilliseconds);
         }

@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Configuration.Writable.Diagnostics;
-using Configuration.Writable.FileProvider;
-using Configuration.Writable.Migration;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MEOptions = Microsoft.Extensions.Options.Options;
@@ -25,12 +26,6 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly object _listenersLock = new();
     private readonly List<Action<T, string?>> _listeners = [];
     private readonly List<Action<Exception, string?>> _failureListeners = [];
-    private static readonly TimeSpan MaxWatcherRecoveryDelay = TimeSpan.FromSeconds(30);
-#if NET9_0_OR_GREATER
-    private readonly Lock _debounceTimersLock = new();
-#else
-    private readonly object _debounceTimersLock = new();
-#endif
 
     public OptionsMonitorImpl(IWritableOptionsConfigRegistry<T> optionsRegistry)
     {
@@ -124,26 +119,34 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     /// <summary>
     /// Updates the cached value for the specified instance name.
     /// This is called when SaveAsync is executed.
-    /// Notification is handled by FileSystemWatcher, not by this method.
+    /// Notification is handled by the configured state watcher, not by this method.
     /// </summary>
     /// <param name="instanceName">The name of the instance to update.</param>
     /// <param name="value">The new value to cache.</param>
     /// <param name="fingerprint">The fingerprint associated with the cached value.</param>
+    /// <param name="stateRevision">The backend-neutral revision associated with the cached value.</param>
     internal void UpdateCache(
         string instanceName,
         T value,
-        ConfigurationFileFingerprint? fingerprint = null
+        ConfigurationFileFingerprint? fingerprint = null,
+        string? stateRevision = null
     )
     {
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
             dataSource.Cache = value;
             dataSource.Fingerprint = fingerprint;
+            dataSource.StateRevision = stateRevision;
         }
     }
 
     internal ConfigurationFileFingerprint? GetFingerprint(string instanceName) =>
         _dataSources.TryGetValue(instanceName, out var dataSource) ? dataSource.Fingerprint : null;
+
+    internal string? GetStateRevision(string instanceName) =>
+        _dataSources.TryGetValue(instanceName, out var dataSource)
+            ? dataSource.StateRevision
+            : null;
 
     /// <summary>
     /// Clears the cached value for the specified instance name.
@@ -204,52 +207,65 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         var dataSource = new OptionsMonitorDataSource(
             initial.Value,
             defaultValue,
-            initial.Fingerprint
+            initial.Fingerprint,
+            initial.Revision
         );
         _dataSources[instanceName] = dataSource;
-        // Setup file watcher
-        SetupFileWatcher(opt, dataSource);
+        StartStateWatcher(opt, dataSource);
     }
 
     // Loads configuration from the provider and updates the cache.
-    private T LoadConfiguration(string instanceName)
+    private T LoadConfiguration(string instanceName, bool useDefaultWhenNotFound = true)
     {
-        var loaded = LoadConfigurationFromProvider(instanceName);
+        var loaded = LoadConfigurationFromProvider(instanceName, useDefaultWhenNotFound);
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {
             // Don't notify listeners during explicit load, only file change events should notify
             dataSource.Cache = loaded.Value;
             dataSource.Fingerprint = loaded.Fingerprint;
+            dataSource.StateRevision = loaded.Revision;
         }
         return loaded.Value;
     }
 
     // Loads configuration from the provider without updating cache
-    private LoadedConfiguration LoadConfigurationFromProvider(string instanceName)
+    private LoadedConfiguration LoadConfigurationFromProvider(
+        string instanceName,
+        bool useDefaultWhenNotFound = true
+    )
     {
         var options = _optionsRegistry.Get(instanceName);
         _semaphore.Wait();
         try
         {
-            var readOptions = options with { ConfigFilePath = options.ReadFilePath };
-            var value = readOptions.FormatProvider.LoadWithMigration<T>(readOptions);
-            if (
-                options.PromoteSaveLocationEnabled
-                && !string.Equals(
-                    options.ReadFilePath,
-                    options.ConfigFilePath,
-                    StringComparison.Ordinal
-                )
-            )
+            var result = options.CreateStateSource().ReadAsync().AsTask().GetAwaiter().GetResult();
+            if (result.Status == StateReadStatus.NotFound)
             {
-                options.Logger?.LogInformation(
-                    "Promoting configuration from {ReadFilePath} to {ConfigFilePath}",
-                    options.ReadFilePath,
-                    options.ConfigFilePath
+                if (!useDefaultWhenNotFound)
+                {
+                    throw new FileNotFoundException(
+                        $"Configuration state was not found for options instance '{instanceName}'.",
+                        options.ConfigFilePath
+                    );
+                }
+
+                return new LoadedConfiguration(
+                    new T(),
+                    ConfigurationFileFingerprint.Capture(options),
+                    result.Revision
                 );
-                options.FormatProvider.SaveAsync(value, options).GetAwaiter().GetResult();
             }
-            return new LoadedConfiguration(value, ConfigurationFileFingerprint.Capture(options));
+            if (result.Status != StateReadStatus.Success || result.Value is null)
+            {
+                throw new InvalidOperationException(
+                    $"State source did not return a value for options instance '{instanceName}'."
+                );
+            }
+            return new LoadedConfiguration(
+                result.Value,
+                ConfigurationFileFingerprint.Capture(options),
+                result.Revision
+            );
         }
         finally
         {
@@ -257,315 +273,66 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         }
     }
 
-    // Sets up a FileSystemWatcher to monitor changes to the configuration file.
-    private bool SetupFileWatcher(
+    private void StartStateWatcher(
         WritableOptionsConfiguration<T> options,
         OptionsMonitorDataSource dataSource
     )
     {
-        var filePath = GetWatchPath(options);
-        var directory = Path.GetDirectoryName(filePath);
-        var fileName =
-            options.FormatProvider is FormatProvider.FallbackFormatProvider
-                ? "*"
-                : Path.GetFileName(filePath);
+        dataSource.WatcherCancellation?.Cancel();
+        dataSource.WatcherCancellation?.Dispose();
+        dataSource.WatcherCancellation = new CancellationTokenSource();
+        dataSource.WatcherTask = WatchStateChangesAsync(
+            options,
+            dataSource,
+            dataSource.WatcherCancellation.Token
+        );
+    }
 
-        if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName))
-        {
-            dataSource.Watcher = null;
-            return false;
-        }
-
-        // Create directory if it doesn't exist
-        if (!Directory.Exists(directory))
+    [SuppressMessage(
+        "Major Code Smell",
+        "S2325:Make methods static",
+        Justification = "The watcher invokes the monitor's reload and failure-notification pipeline."
+    )]
+    private async Task WatchStateChangesAsync(
+        WritableOptionsConfiguration<T> options,
+        OptionsMonitorDataSource dataSource,
+        CancellationToken cancellationToken
+    )
+    {
+        var source = options.CreateStateSource();
+        while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                Directory.CreateDirectory(directory);
+                await source
+                    .WaitForChangeAsync(dataSource.StateRevision, cancellationToken)
+                    .ConfigureAwait(false);
+                if (options.OnChangeDebounce > TimeSpan.Zero)
+                {
+                    await Task.Delay(options.OnChangeDebounce, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
+                ReloadAndNotify(options.InstanceName);
             }
-            catch (Exception ex)
-            {
-                options.Logger?.LogWarning(
-                    ex,
-                    "Configuration directory could not be created for watcher: {Directory}",
-                    directory
-                );
-                dataSource.Watcher = null;
-                return false;
-            }
-        }
-
-        try
-        {
-            var watcher = new FileSystemWatcher(directory, fileName)
-            {
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-                EnableRaisingEvents = true,
-            };
-
-            watcher.Changed += (sender, args) =>
-                OnFileChanged(options.InstanceName, args, filePath);
-            watcher.Created += (sender, args) =>
-                OnFileChanged(options.InstanceName, args, filePath);
-            watcher.Deleted += (sender, args) =>
-                OnFileChanged(options.InstanceName, args, filePath);
-            watcher.Renamed += (sender, args) =>
-                OnFileChanged(options.InstanceName, args, filePath);
-            watcher.Error += (sender, args) => OnWatcherError(options.InstanceName, args);
-
-            dataSource.Watcher = watcher;
-            dataSource.WatchedPath = filePath;
-            dataSource.WatcherRecoveryAttempts = 0;
-            dataSource.WatcherRecoveryTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-            return true;
-        }
-        catch (IOException ex)
-        {
-            options.Logger?.LogWarning(
-                ex,
-                "Configuration file watcher could not be started: {FileName}",
-                fileName
-            );
-            dataSource.Watcher = null;
-            dataSource.WatchedPath = null;
-            return false;
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            options.Logger?.LogWarning(
-                ex,
-                "Configuration file watcher could not be started: {FileName}",
-                fileName
-            );
-            dataSource.Watcher = null;
-            dataSource.WatchedPath = null;
-            return false;
-        }
-    }
-
-    // Called when the configuration file changes
-    private void OnFileChanged(string instanceName, FileSystemEventArgs args, string watchedPath)
-    {
-        var options = _optionsRegistry.Get(instanceName);
-        if (
-            !_dataSources.TryGetValue(instanceName, out var dataSource)
-            || !IsRelevantFileChange(options, watchedPath, args.FullPath)
-        )
-        {
-            // Ignore changes to other files in the same directory
-            // e.g. temporary file (foobar.json~ABCDEF.TMP)
-            return;
-        }
-
-        var selectedFilePath = GetSelectedFilePath(options);
-        if (!options.FileProvider.FileExists(selectedFilePath))
-        {
-            var exception = new FileNotFoundException(
-                $"Configuration file was deleted: {selectedFilePath}",
-                selectedFilePath
-            );
-            options.Logger?.LogError(exception, "Configuration file was deleted.");
-            NotifyReloadFailure(instanceName, exception);
-            RebindFileWatcher(options, dataSource);
-            return;
-        }
-
-        var fileName = Path.GetFileName(options.ConfigFilePath);
-
-        if (options.OnChangeDebounce > TimeSpan.Zero)
-        {
-            DebounceReload(instanceName, options.OnChangeDebounce);
-            options.Logger?.LogDebug(
-                "Configuration file change detected and queued for debounce: {FileName} ({ChangeType})",
-                fileName,
-                args.ChangeType
-            );
-            return;
-        }
-
-        options.Logger?.LogInformation(
-            "Configuration file change detected: {FileName} ({ChangeType})",
-            fileName,
-            args.ChangeType
-        );
-
-        ReloadAndNotify(instanceName);
-        RebindFileWatcher(options, dataSource);
-    }
-
-    private static string GetWatchPath(WritableOptionsConfiguration<T> options)
-    {
-        var selectedFilePath = GetSelectedFilePath(options);
-        return options.FileProvider is IPhysicalFileProvider physicalFileProvider
-            ? physicalFileProvider.GetPhysicalFilePath(selectedFilePath)
-            : selectedFilePath;
-    }
-
-    private static string GetSelectedFilePath(WritableOptionsConfiguration<T> options) =>
-        options.FormatProvider is FormatProvider.FallbackFormatProvider fallbackProvider
-            ? fallbackProvider.GetSelectedFilePath(options)
-            : options.ConfigFilePath;
-
-    private static bool IsRelevantFileChange(
-        WritableOptionsConfiguration<T> options,
-        string watchedPath,
-        string changedPath
-    )
-    {
-        var pathComparison = GetPathComparison();
-        if (string.Equals(watchedPath, changedPath, pathComparison))
-        {
-            return true;
-        }
-
-        if (options.FormatProvider is not FormatProvider.FallbackFormatProvider)
-        {
-            return false;
-        }
-
-        var canonicalPath = GetPhysicalPath(options, options.ConfigFilePath);
-        var selectedPath = GetWatchPath(options);
-        if (
-            string.Equals(canonicalPath, changedPath, pathComparison)
-            || string.Equals(selectedPath, changedPath, pathComparison)
-        )
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    private static string GetPhysicalPath(
-        WritableOptionsConfiguration<T> options,
-        string configFilePath
-    ) =>
-        options.FileProvider is IPhysicalFileProvider physicalFileProvider
-            ? physicalFileProvider.GetPhysicalFilePath(configFilePath)
-            : configFilePath;
-
-    private void RebindFileWatcher(
-        WritableOptionsConfiguration<T> options,
-        OptionsMonitorDataSource dataSource
-    )
-    {
-        var currentWatchPath = GetWatchPath(options);
-        if (string.Equals(dataSource.WatchedPath, currentWatchPath, GetPathComparison()))
-        {
-            return;
-        }
-
-        dataSource.Watcher?.Dispose();
-        dataSource.Watcher = null;
-        SetupFileWatcher(options, dataSource);
-    }
-
-    private static StringComparison GetPathComparison() =>
-        Path.DirectorySeparatorChar == '\\'
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
-
-    private void OnWatcherError(string instanceName, ErrorEventArgs args)
-    {
-        var exception = args.GetException();
-        var options = _optionsRegistry.Get(instanceName);
-        options.Logger?.LogWarning(
-            exception,
-            "Configuration file watcher failed and will be recreated: {ConfigFilePath}",
-            options.ConfigFilePath
-        );
-        NotifyReloadFailure(instanceName, exception);
-
-        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
-        {
-            return;
-        }
-
-        dataSource.Watcher?.Dispose();
-        dataSource.Watcher = null;
-        if (!SetupFileWatcher(options, dataSource))
-        {
-            ScheduleWatcherRecovery(instanceName, dataSource);
-        }
-    }
-
-    private void ScheduleWatcherRecovery(string instanceName, OptionsMonitorDataSource dataSource)
-    {
-        var attempt = ++dataSource.WatcherRecoveryAttempts;
-        var delayMilliseconds = Math.Min(
-            1000 * (1 << Math.Min(attempt - 1, 5)),
-            (int)MaxWatcherRecoveryDelay.TotalMilliseconds
-        );
-        dataSource.WatcherRecoveryTimer ??= new Timer(
-            _ => RecoverWatcher(instanceName),
-            null,
-            Timeout.Infinite,
-            Timeout.Infinite
-        );
-        dataSource.WatcherRecoveryTimer.Change(delayMilliseconds, Timeout.Infinite);
-    }
-
-    private void RecoverWatcher(string instanceName)
-    {
-        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
-        {
-            return;
-        }
-
-        var options = _optionsRegistry.Get(instanceName);
-        if (!SetupFileWatcher(options, dataSource))
-        {
-            ScheduleWatcherRecovery(instanceName, dataSource);
-        }
-    }
-
-    // Delays reload until changes have stopped for the configured duration.
-    private void DebounceReload(string instanceName, TimeSpan debounceDuration)
-    {
-        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
-        {
-            return;
-        }
-
-        lock (_debounceTimersLock)
-        {
-            if (dataSource.DebounceTimer == null)
-            {
-                dataSource.DebounceTimer = new Timer(
-                    _ => OnDebounceTimerElapsed(instanceName),
-                    null,
-                    Timeout.Infinite,
-                    Timeout.Infinite
-                );
-                dataSource.HasPendingDebouncedChange = true;
-                dataSource.DebounceTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
-                return;
-            }
-
-            dataSource.HasPendingDebouncedChange = true;
-            dataSource.DebounceTimer.Change(debounceDuration, Timeout.InfiniteTimeSpan);
-        }
-    }
-
-    private void OnDebounceTimerElapsed(string instanceName)
-    {
-        if (!_dataSources.TryGetValue(instanceName, out var dataSource))
-        {
-            return;
-        }
-
-        lock (_debounceTimersLock)
-        {
-            dataSource.DebounceTimer?.Dispose();
-            dataSource.DebounceTimer = null;
-            if (!dataSource.HasPendingDebouncedChange)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
-            dataSource.HasPendingDebouncedChange = false;
+            catch (Exception exception)
+            {
+                HandleReloadFailure(options.InstanceName, exception);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+            }
         }
-
-        ReloadAndNotify(instanceName);
     }
 
     // Reloads configuration and notifies listeners with retry logic for file access conflicts.
@@ -613,7 +380,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         {
             try
             {
-                return LoadConfiguration(instanceName);
+                return LoadConfiguration(instanceName, useDefaultWhenNotFound: false);
             }
             catch (IOException) when (i < maxRetries - 1)
             {
@@ -622,7 +389,7 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
         }
         // Final attempt without catching
-        return LoadConfiguration(instanceName);
+        return LoadConfiguration(instanceName, useDefaultWhenNotFound: false);
     }
 
     // Notifies all registered listeners of a configuration change
@@ -742,25 +509,24 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         public T Cache { get; set; }
         public T DefaultValue { get; set; }
         public ConfigurationFileFingerprint? Fingerprint { get; set; }
+        public string? StateRevision { get; set; }
         public List<Action<T, string?>> Listeners { get; } = [];
         public List<Action<Exception, string?>> FailureListeners { get; } = [];
         private object ListenersLock { get; } = new();
-        public FileSystemWatcher? Watcher { get; set; }
-        public string? WatchedPath { get; set; }
-        public Timer? DebounceTimer { get; set; }
-        public Timer? WatcherRecoveryTimer { get; set; }
-        public int WatcherRecoveryAttempts { get; set; }
-        public bool HasPendingDebouncedChange { get; set; }
+        public CancellationTokenSource? WatcherCancellation { get; set; }
+        public Task? WatcherTask { get; set; }
 
         public OptionsMonitorDataSource(
             T cache,
             T defaultValue,
-            ConfigurationFileFingerprint? fingerprint
+            ConfigurationFileFingerprint? fingerprint,
+            string? stateRevision
         )
         {
             Cache = cache;
             DefaultValue = defaultValue;
             Fingerprint = fingerprint;
+            StateRevision = stateRevision;
         }
 
         public void AddListener(Action<T, string?> listener)
@@ -813,15 +579,19 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
         public void Dispose()
         {
-            Watcher?.Dispose();
-            DebounceTimer?.Dispose();
-            WatcherRecoveryTimer?.Dispose();
+            WatcherCancellation?.Cancel();
+            WatcherCancellation?.Dispose();
         }
     }
 
-    private sealed class LoadedConfiguration(T value, ConfigurationFileFingerprint? fingerprint)
+    private sealed class LoadedConfiguration(
+        T value,
+        ConfigurationFileFingerprint? fingerprint,
+        string? revision
+    )
     {
         internal T Value { get; } = value;
         internal ConfigurationFileFingerprint? Fingerprint { get; } = fingerprint;
+        internal string? Revision { get; } = revision;
     }
 }
