@@ -20,7 +20,12 @@ internal sealed class LegacyFormatStateCodec<T> : IStateCodec<T>
         cancellationToken.ThrowIfCancellationRequested();
         var fileResource = GetFileResource(resource);
         var options = fileResource.Options;
-        var readOptions = options with { ConfigFilePath = options.ReadFilePath };
+        var readFilePath =
+            options.PromoteSaveLocationEnabled
+            && options.FileProvider.FileExists(options.ConfigFilePath)
+                ? options.ConfigFilePath
+                : options.ReadFilePath;
+        var readOptions = options with { ConfigFilePath = readFilePath };
         return new ValueTask<T>(readOptions.FormatProvider.LoadWithMigration<T>(readOptions));
     }
 
