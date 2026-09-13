@@ -50,12 +50,23 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
                 return new ConfigurationFileFingerprint(false, 0, 0, null);
             }
 
-            using var memoryStream = new MemoryStream();
-            stream.CopyTo(memoryStream);
-            var content = memoryStream.ToArray();
-
             using var hashAlgorithm = SHA256.Create();
-            var hash = Convert.ToBase64String(hashAlgorithm.ComputeHash(content));
+            byte[] hash;
+            long length;
+            if (stream.CanSeek)
+            {
+                length = stream.Length;
+                hash = hashAlgorithm.ComputeHash(stream);
+            }
+            else
+            {
+                using var buffer = new MemoryStream();
+                stream.CopyTo(buffer);
+                var content = buffer.ToArray();
+                length = content.Length;
+                hash = hashAlgorithm.ComputeHash(content);
+            }
+            var hashText = Convert.ToBase64String(hash);
 
             long lastWriteTimeUtcTicks = 0;
             try
@@ -71,12 +82,7 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
                 // Ignore errors when getting file info
             }
 
-            return new ConfigurationFileFingerprint(
-                true,
-                content.Length,
-                lastWriteTimeUtcTicks,
-                hash
-            );
+            return new ConfigurationFileFingerprint(true, length, lastWriteTimeUtcTicks, hashText);
         }
         catch (IOException)
         {

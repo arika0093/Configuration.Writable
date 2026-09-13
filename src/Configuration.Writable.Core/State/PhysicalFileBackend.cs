@@ -86,8 +86,8 @@ internal sealed class PhysicalFileBackend : IFileBackend, IDisposable
             try
             {
                 // Create directory if it does not exist
-                var directory = Path.GetDirectoryName(path)!;
-                if (!Directory.Exists(directory))
+                var directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
                     logger?.LogTrace("Creating directory: {Directory}", directory);
                     Directory.CreateDirectory(directory);
@@ -333,7 +333,7 @@ internal sealed class PhysicalFileBackend : IFileBackend, IDisposable
     {
         var extension = Path.GetExtension(path);
         var filePathWithoutExtension = Path.Combine(
-            Path.GetDirectoryName(path)!,
+            Path.GetDirectoryName(path) ?? Directory.GetCurrentDirectory(),
             Path.GetFileNameWithoutExtension(path)
         );
         var timestamp = DateTime.UtcNow.Ticks;

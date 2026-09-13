@@ -125,7 +125,7 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
             return DeserializeRoot(stream, type) ?? CreateDefault(type);
         }
 
-        using var document = JsonDocument.Parse(stream);
+        using var document = JsonDocument.Parse(stream, GetDocumentOptions());
         if (
             !JsonStateWriterHelper.TryNavigateToSection(
                 document.RootElement,
@@ -148,7 +148,7 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
     {
         if (_isAot)
         {
-            using var document = JsonDocument.Parse(stream);
+            using var document = JsonDocument.Parse(stream, GetDocumentOptions());
             return JsonSerializer.Deserialize(
                 document.RootElement.GetRawText(),
                 _effectiveOptions.GetTypeInfo(type)
@@ -157,6 +157,14 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
 
         return JsonSerializer.Deserialize(stream, type, _effectiveOptions);
     }
+
+    private JsonDocumentOptions GetDocumentOptions() =>
+        new()
+        {
+            AllowTrailingCommas = _effectiveOptions.AllowTrailingCommas,
+            CommentHandling = _effectiveOptions.ReadCommentHandling,
+            MaxDepth = _effectiveOptions.MaxDepth,
+        };
 
 #if NET
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
@@ -187,7 +195,8 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
                 );
         }
 
-        return Activator.CreateInstance(type)!;
+        return Activator.CreateInstance(type)
+            ?? throw new InvalidOperationException($"Could not create an instance of {type.Name}.");
     }
 
     private OptionsSchemaMetadata? ReadSchemaMetadata(
@@ -202,7 +211,7 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
         }
 
         using var stream = resource.OpenRead(path);
-        using var document = JsonDocument.Parse(stream);
+        using var document = JsonDocument.Parse(stream, GetDocumentOptions());
         if (
             !JsonStateWriterHelper.TryNavigateToSection(
                 document.RootElement,

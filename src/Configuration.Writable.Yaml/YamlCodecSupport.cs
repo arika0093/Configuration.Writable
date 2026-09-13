@@ -161,7 +161,10 @@ internal static class YamlCodecSupport
             static type => DeserializeMethod.MakeGenericMethod(type)
         );
         var result = genericMethod.Invoke(null, new object[] { yamlBytes, serializerOptions });
-        return result ?? Activator.CreateInstance(type)!;
+        return result
+            ?? throw new InvalidOperationException(
+                $"Could not deserialize YAML configuration to {type.Name}."
+            );
     }
 
     internal static bool HasNonUtf8Bom(ReadOnlySpan<byte> yaml)

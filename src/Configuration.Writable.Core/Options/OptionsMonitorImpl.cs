@@ -469,8 +469,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
         return LoadConfiguration(instanceName, useDefaultWhenNotFound: false);
     }
 
-    // Notifies all registered listeners of a configuration change
-    private void NotifyListeners(string instanceName, T value)
+    // Notifies all registered listeners of a configuration change.
+    // Invoked by the state watcher pipeline and, for saves to unwatched
+    // write targets, directly by the save path.
+    internal void NotifyListeners(string instanceName, T value)
     {
         if (_dataSources.TryGetValue(instanceName, out var dataSource))
         {

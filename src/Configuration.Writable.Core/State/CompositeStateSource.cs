@@ -59,6 +59,8 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
     internal bool UsesFileWriteTarget =>
         string.Equals(GetWriteSource()?.Id, "file", StringComparison.Ordinal);
 
+    internal bool WriteTargetHasWatcher => GetWriteSource()?.Watcher is not null;
+
     internal string? GetWatcherScopeRevision(string? observedRevision)
     {
         var revision = ParseRevision(observedRevision);
@@ -199,7 +201,9 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
 #if NET8_0_OR_GREATER
             await linkedCancellation.CancelAsync().ConfigureAwait(false);
 #else
+#pragma warning disable S6966 // CancelAsync is unavailable on netstandard2.0; synchronous Cancel is the only option.
             linkedCancellation.Cancel();
+#pragma warning restore S6966
 #endif
         }
     }
@@ -212,6 +216,14 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         var writeSource = GetWriteSource();
         if (writeSource?.Writer is null || revisions.ContainsKey(writeSource.Id))
         {
+            return;
+        }
+
+        // Prefer a decode-free revision so a malformed or unmigratable write
+        // target cannot fail reads served by another source.
+        if (writeSource.Reader is IRevisionProvider revisionProvider)
+        {
+            revisions[writeSource.Id] = revisionProvider.GetCurrentRevision();
             return;
         }
 

@@ -33,7 +33,7 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// <summary>
     /// Gets the file backend used to read and write the configuration file.
     /// </summary>
-    internal IFileBackend FileBackend { get; init; } = null!;
+    internal IFileBackend FileBackend { get; init; } = new PhysicalFileBackend();
 
     /// <summary>
     /// Gets the full file path used to save the configuration file.

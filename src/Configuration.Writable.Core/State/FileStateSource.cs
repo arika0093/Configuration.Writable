@@ -8,7 +8,7 @@ using Configuration.Writable.Diagnostics;
 namespace Configuration.Writable.State;
 
 /// <summary>Composes a file resource and a codec into one state endpoint.</summary>
-internal sealed class FileStateSource<T> : IStateSource<T>
+internal sealed class FileStateSource<T> : IStateSource<T>, IRevisionProvider
     where T : class, new()
 {
     private const int MaxStableReadAttempts = 3;
@@ -84,6 +84,8 @@ internal sealed class FileStateSource<T> : IStateSource<T>
         string? observedRevision,
         CancellationToken cancellationToken = default
     ) => _resource.WaitForChangeAsync(observedRevision, cancellationToken);
+
+    public string? GetCurrentRevision() => _resource.GetRevision();
 
     private async ValueTask<StateWriteResult> WriteCoreAsync(
         StateWriteRequest<T> request,

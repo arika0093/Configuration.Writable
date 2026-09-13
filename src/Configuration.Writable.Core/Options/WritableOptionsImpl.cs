@@ -201,8 +201,41 @@ internal sealed class WritableOptionsImpl<T>(
                 )
                 .ConfigureAwait(false);
 
+            // For composite sources the write target may sit below the active
+            // read source. Publish the effective (authoritative) value instead
+            // of the written value so CurrentValue never reports state that a
+            // subsequent read would not return.
+            var effectiveConfig = newConfig;
+            var compositeSource = stateSource as CompositeStateSource<T>;
+            if (compositeSource is not null)
+            {
+                try
+                {
+                    var readBack = await compositeSource
+                        .ReadAsync(cancellationToken)
+                        .ConfigureAwait(false);
+                    if (readBack.Status == StateReadStatus.Success && readBack.Value is not null)
+                    {
+                        effectiveConfig = readBack.Value;
+                    }
+                }
+                catch (Exception ex)
+                    when (ex is not OperationCanceledException
+                        && !cancellationToken.IsCancellationRequested
+                    )
+                {
+                    // The write already succeeded; keep the written value when
+                    // the authoritative value cannot be re-read.
+                    options.Logger?.LogDebug(
+                        ex,
+                        "Could not re-read the effective configuration after saving {InstanceName}; publishing the written value.",
+                        options.InstanceName
+                    );
+                }
+            }
+
             // Update the monitor's cache (the state watcher will notify listeners)
-            var publishedConfig = options.CloneMethod(newConfig);
+            var publishedConfig = options.CloneMethod(effectiveConfig);
             optionMonitorInstance.UpdateCache(
                 options.InstanceName,
                 publishedConfig,
@@ -212,6 +245,14 @@ internal sealed class WritableOptionsImpl<T>(
                 ),
                 writeResult.Revision
             );
+
+            // Saves to a write target without a watcher never wake the monitor,
+            // so notify listeners directly. Watched targets notify through the
+            // normal watcher pipeline.
+            if (compositeSource is not null && !compositeSource.WriteTargetHasWatcher)
+            {
+                optionMonitorInstance.NotifyListeners(options.InstanceName, publishedConfig);
+            }
 
             options.Logger?.LogInformation(
                 "Configuration saved successfully for {InstanceName} at revision {Revision}",

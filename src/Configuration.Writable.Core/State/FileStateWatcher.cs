@@ -34,7 +34,7 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
         Directory.CreateDirectory(directory);
         if (RevisionChanged(observedRevision))
         {
-            ThrowIfWatchedFileWasDeleted(watchedFilePath);
+            ThrowIfNoSelectableFile();
             return;
         }
 
@@ -52,9 +52,12 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
 
         void SignalChange()
         {
-            if (!_backend.FileExists(watchedFilePath))
+            // Re-resolve the selection: the watched file may have been deleted
+            // while another registered fallback still exists. Only report a
+            // deletion failure when nothing is selectable anymore.
+            if (!HasSelectableFile(out var currentPath))
             {
-                change.TrySetException(CreateDeletedFileException(watchedFilePath));
+                change.TrySetException(CreateDeletedFileException(currentPath));
                 return;
             }
 
@@ -90,9 +93,9 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
 
         if (RevisionChanged(observedRevision))
         {
-            if (!_backend.FileExists(watchedFilePath))
+            if (!HasSelectableFile(out var currentPath))
             {
-                change.TrySetException(CreateDeletedFileException(watchedFilePath));
+                change.TrySetException(CreateDeletedFileException(currentPath));
             }
             else
             {
@@ -134,12 +137,18 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
         return !string.Equals(observedRevision, currentRevision, StringComparison.Ordinal);
     }
 
-    private void ThrowIfWatchedFileWasDeleted(string watchedFilePath)
+    private void ThrowIfNoSelectableFile()
     {
-        if (!_backend.FileExists(watchedFilePath))
+        if (!HasSelectableFile(out var currentPath))
         {
-            throw CreateDeletedFileException(watchedFilePath);
+            throw CreateDeletedFileException(currentPath);
         }
+    }
+
+    private bool HasSelectableFile(out string currentPath)
+    {
+        currentPath = GetWatchedPath();
+        return _backend.FileExists(currentPath);
     }
 
     private static FileNotFoundException CreateDeletedFileException(string watchedFilePath) =>
@@ -151,13 +160,42 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
             Path.DirectorySeparatorChar == '\\'
                 ? StringComparison.OrdinalIgnoreCase
                 : StringComparison.Ordinal;
-        if (!_options.HasFallbackFormats)
+        if (string.Equals(changedPath, watchedPath, comparison))
         {
-            return string.Equals(changedPath, watchedPath, comparison);
+            return true;
         }
 
         var canonicalPath = GetPhysicalPath(_options.ConfigFilePath);
-        return string.Equals(changedPath, watchedPath, comparison)
-            || string.Equals(changedPath, canonicalPath, comparison);
+        if (string.Equals(changedPath, canonicalPath, comparison))
+        {
+            return true;
+        }
+
+        if (!_options.HasFallbackFormats)
+        {
+            return false;
+        }
+
+        // A fallback file created after startup must wake the watcher, but only
+        // while nothing is selected yet. Once the canonical file or another
+        // fallback is selected, unrelated fallback changes cannot affect the
+        // effective value and must not trigger spurious reloads.
+        if (_backend.FileExists(GetWatchedPath()))
+        {
+            return false;
+        }
+
+        foreach (var fallback in _options.FallbackFormats)
+        {
+            var candidate = GetPhysicalPath(
+                Path.ChangeExtension(_options.ConfigFilePath, fallback.FileExtension)
+            );
+            if (string.Equals(changedPath, candidate, comparison))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

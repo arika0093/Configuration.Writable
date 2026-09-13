@@ -132,7 +132,9 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         "IL2067",
         Justification = "Non-AOT callers retain the existing runtime type activation fallback; NativeAOT callers register source-generated deserializers."
     )]
-    private static object CreateDefault(Type type) => Activator.CreateInstance(type)!;
+    private static object CreateDefault(Type type) =>
+        Activator.CreateInstance(type)
+        ?? throw new InvalidOperationException($"Could not create an instance of {type.Name}.");
 
     private OptionsSchemaMetadata? ReadSchemaMetadata(
         FileStateResource<T> resource,

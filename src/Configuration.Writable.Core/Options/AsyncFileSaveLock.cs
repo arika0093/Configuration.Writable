@@ -46,12 +46,15 @@ internal static class AsyncFileSaveLock
             }
         }
         catch (OperationCanceledException)
-            when (lockTimeout.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
         {
             ReleaseReference(key, entry);
-            throw new TimeoutException(
-                $"Timed out after {LockTimeout} while acquiring the configuration file lock for '{key}'."
-            );
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException(
+                    $"Timed out after {LockTimeout} while acquiring the configuration file lock for '{key}'."
+                );
+            }
+            throw;
         }
         catch
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -99,7 +100,7 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
     {
         if (!resource.FileExists(path))
         {
-            return Activator.CreateInstance(type)!;
+            return CreateDefault(type);
         }
 
         using var stream = resource.OpenRead(path);
@@ -108,7 +109,7 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
 
         if (root == null)
         {
-            return Activator.CreateInstance(type)!;
+            return CreateDefault(type);
         }
 
         // Navigate to the section if specified
@@ -126,21 +127,30 @@ internal sealed class XmlStateCodec<T> : IStateCodec<T>
                 else
                 {
                     // Section not found, return default instance
-                    return Activator.CreateInstance(type)!;
+                    return CreateDefault(type);
                 }
             }
 
             using var xmlReader = current.CreateReader();
             var serializer = new XmlSerializer(type, new XmlRootAttribute(current.Name.LocalName));
-            return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
+            return serializer.Deserialize(xmlReader) ?? CreateDefault(type);
         }
 
         using (var xmlReader = root.CreateReader())
         {
             var serializer = new XmlSerializer(type, new XmlRootAttribute(root.Name.LocalName));
-            return serializer.Deserialize(xmlReader) ?? Activator.CreateInstance(type)!;
+            return serializer.Deserialize(xmlReader) ?? CreateDefault(type);
         }
     }
+
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2067",
+        Justification = "Non-AOT callers retain the existing runtime type activation fallback."
+    )]
+    private static object CreateDefault(Type type) =>
+        Activator.CreateInstance(type)
+        ?? throw new InvalidOperationException($"Could not create an instance of {type.Name}.");
 
     private OptionsSchemaMetadata? ReadSchemaMetadata(
         FileStateResource<T> resource,
