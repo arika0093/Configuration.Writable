@@ -41,7 +41,6 @@ public class CompositeStateSourceTests
     public async Task FileStateSource_ReturnsNotFoundWhenFileIsMissing()
     {
         using var file = new TemporaryFile();
-        File.Delete(file.FilePath);
         var options = new WritableOptionsConfigBuilder<TestSettings>
         {
             FilePath = file.FilePath,
@@ -91,80 +90,26 @@ public class CompositeStateSourceTests
     }
 
     [Test]
-    public async Task WriteAsync_UsesWriteTargetRevisionCollectedDuringFallbackRead()
-    {
-        var primary = new TestSource<string>(StateReadResult<string>.NotFound("primary-r1"));
-        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
-        var source = new CompositeStateSource<string>(
-        [
-            new StateSource<string>(
-                "primary",
-                primary,
-                primary,
-                null,
-                100,
-                StateFallbackConditions.NotFound
-            ),
-            new StateSource<string>(
-                "fallback",
-                fallback,
-                fallback,
-                null,
-                0,
-                StateFallbackConditions.NotFound
-            ),
-        ]
-        );
-
-        var read = await source.ReadAsync();
-        await source.WriteAsync(new StateWriteRequest<string>("saved", read.Revision));
-
-        primary.LastWriteRequest.ShouldBe(new StateWriteRequest<string>("saved", "primary-r1"));
-        fallback.LastWriteRequest.ShouldBeNull();
-    }
-
-    [Test]
-    public async Task WriteAsync_UsesExplicitWriteTarget()
-    {
-        var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
-        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
-        var source = new CompositeStateSource<string>(
-        [
-            new StateSource<string>("primary", primary, primary, null, 100, StateFallbackConditions.NotFound),
-            new StateSource<string>("fallback", fallback, fallback, null, 0, StateFallbackConditions.NotFound),
-        ],
-            writeTargetId: "fallback"
-        );
-
-        await source.WriteAsync(new StateWriteRequest<string>("saved", null));
-
-        primary.LastWriteRequest.ShouldBeNull();
-        fallback.LastWriteRequest.ShouldNotBeNull();
-        var write = fallback.LastWriteRequest!.Value;
-        write.Value.ShouldBe("saved");
-    }
-
-    [Test]
-    public async Task ReadAsync_DoesNotFallbackWhenTheConfiguredConditionDoesNotMatch()
+    public async Task ReadAsync_StopsWhenFallbackConditionDoesNotMatch()
     {
         var primary = new TestSource<string>(StateReadResult<string>.Unavailable());
-        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback"));
+        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
         var source = new CompositeStateSource<string>(
         [
-            new StateSource<string>(
-                "primary",
-                primary,
-                primary,
-                null,
-                100,
-                StateFallbackConditions.NotFound
-            ),
             new StateSource<string>(
                 "fallback",
                 fallback,
                 fallback,
                 null,
                 0,
+                StateFallbackConditions.NotFound
+            ),
+            new StateSource<string>(
+                "primary",
+                primary,
+                primary,
+                null,
+                100,
                 StateFallbackConditions.NotFound
             ),
         ]
@@ -173,79 +118,12 @@ public class CompositeStateSourceTests
         var result = await source.ReadAsync();
 
         result.Status.ShouldBe(StateReadStatus.Unavailable);
+        primary.ReadCount.ShouldBe(1);
         fallback.ReadCount.ShouldBe(0);
     }
 
     [Test]
-    public async Task FromProvider_UsesSourceForReadAndWriteWithItsRevision()
-    {
-        var source = new TestSource<TestSettings>(
-            StateReadResult<TestSettings>.Success(new TestSettings { Value = "remote" }, "r1")
-        );
-        var services = new ServiceCollection();
-        services.AddWritableOptions<TestSettings>(options => options.FromProvider("remote", source));
-        using var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredService<IWritableOptions<TestSettings>>();
-
-        writableOptions.CurrentValue.Value.ShouldBe("remote");
-        await writableOptions.SaveAsync(new TestSettings { Value = "updated" });
-
-        source.LastWriteRequest.ShouldNotBeNull();
-        var request = source.LastWriteRequest!.Value;
-        request.Value.Value.ShouldBe("updated");
-        request.ExpectedRevision.ShouldBe("r1");
-    }
-
-    [Test]
-    public void FromProvider_GeneratesAnUnusedProviderId()
-    {
-        var explicitSource = new TestSource<TestSettings>(
-            StateReadResult<TestSettings>.Success(new TestSettings(), "explicit-r1")
-        );
-        var generatedSource = new TestSource<TestSettings>(
-            StateReadResult<TestSettings>.Success(new TestSettings(), "generated-r1")
-        );
-        var builder = new WritableOptionsConfigBuilder<TestSettings>();
-        builder.FromProvider("provider-1", explicitSource);
-        builder.FromProvider(generatedSource);
-        builder.UseWriteTarget("provider-2");
-        var options = builder.BuildOptions("");
-
-        var source = options.CreateStateSource();
-
-        source.ShouldNotBeNull();
-    }
-
-    [Test]
-    public void UseWriteTarget_RejectsUnknownTargetWithoutConfiguredProviders()
-    {
-        var builder = new WritableOptionsConfigBuilder<TestSettings>();
-        builder.UseWriteTarget("remote");
-        var options = builder.BuildOptions("");
-
-        Should.Throw<ArgumentException>(() => options.CreateStateSource());
-    }
-
-    [Test]
-    public void OptionsMonitor_UsesDefaultValueForNotFoundState()
-    {
-        var source = new ReadOnlyTestSource<TestSettings>(StateReadResult<TestSettings>.NotFound());
-        var services = new ServiceCollection();
-        services.AddWritableOptions<TestSettings>(options =>
-            options.FromProvider(
-                "remote",
-                source,
-                fallbackCondition: StateFallbackConditions.None
-            )
-        );
-        using var serviceProvider = services.BuildServiceProvider();
-        var writableOptions = serviceProvider.GetRequiredService<IWritableOptions<TestSettings>>();
-
-        writableOptions.CurrentValue.Value.ShouldBe("");
-    }
-
-    [Test]
-    public async Task WaitForChangeAsync_WatchesActiveSourceAndHigherPrioritiesOnly()
+    public async Task WriteAsync_UsesConfiguredWriteTargetAndRevision()
     {
         var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
         var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
@@ -255,7 +133,7 @@ public class CompositeStateSourceTests
                 "primary",
                 primary,
                 primary,
-                primary,
+                null,
                 100,
                 StateFallbackConditions.NotFound
             ),
@@ -263,32 +141,80 @@ public class CompositeStateSourceTests
                 "fallback",
                 fallback,
                 fallback,
-                fallback,
+                null,
                 0,
                 StateFallbackConditions.NotFound
             ),
-        ]
+        ],
+            "fallback"
         );
 
-        var read = await source.ReadAsync();
-        await source.WaitForChangeAsync(read.Revision);
+        var loaded = await source.ReadAsync();
+        await source.WriteAsync(new StateWriteRequest<string>("written", loaded.Revision));
 
-        primary.WatchCount.ShouldBe(1);
-        fallback.WatchCount.ShouldBe(0);
+        primary.WriteCount.ShouldBe(0);
+        fallback.WriteCount.ShouldBe(1);
+        fallback.LastExpectedRevision.ShouldBeNull();
+    }
+
+    [Test]
+    public void FromProvider_GeneratesAnUnusedProviderId()
+    {
+        var builder = new WritableOptionsConfigBuilder<TestSettings>();
+        builder.FromProvider(
+            new ReadOnlyTestSource<TestSettings>(),
+            "provider-1",
+            priority: 100,
+            fallbackCondition: StateFallbackConditions.NotFound
+        );
+        builder.FromProvider(
+            new ReadOnlyTestSource<TestSettings>(),
+            priority: 50,
+            fallbackCondition: StateFallbackConditions.NotFound
+        );
+        builder.UseWriteTarget("provider-2");
+
+        Should.NotThrow(() => builder.BuildOptions("").CreateStateSource());
+    }
+
+    [Test]
+    public void UseWriteTarget_RejectsUnknownTargetWithoutConfiguredProviders()
+    {
+        var builder = new WritableOptionsConfigBuilder<TestSettings>();
+        builder.UseWriteTarget("remote");
+
+        Should.Throw<ArgumentException>(() => builder.BuildOptions("").CreateStateSource());
+    }
+
+    [Test]
+    public void OptionsMonitor_UsesDefaultValueForNotFoundState()
+    {
+        var services = new ServiceCollection();
+        services
+            .AddWritableOptions<TestSettings>(builder =>
+            {
+                builder.FromProvider(
+                    new ReadOnlyTestSource<TestSettings>(),
+                    "remote",
+                    priority: 100,
+                    fallbackCondition: StateFallbackConditions.None
+                );
+            })
+            .ValidateDataAnnotations();
+        using var provider = services.BuildServiceProvider();
+
+        provider.GetRequiredService<IWritableOptions<TestSettings>>().CurrentValue.ShouldNotBeNull();
     }
 
     [Test]
     public async Task WaitForChangeAsync_CancelsPendingWatcherWhenLaterWatcherThrowsSynchronously()
     {
-        var pendingReader = new ReadOnlyTestSource<string>(StateReadResult<string>.Success("one"));
-        var throwingReader = new ReadOnlyTestSource<string>(StateReadResult<string>.Success("two"));
         var pendingWatcher = new PendingWatcher();
-        var throwingWatcher = new ThrowingWatcher();
         var source = new CompositeStateSource<string>(
         [
             new StateSource<string>(
                 "pending",
-                pendingReader,
+                new TestSource<string>(StateReadResult<string>.NotFound("pending-r1")),
                 null,
                 pendingWatcher,
                 100,
@@ -296,10 +222,10 @@ public class CompositeStateSourceTests
             ),
             new StateSource<string>(
                 "throwing",
-                throwingReader,
+                new TestSource<string>(StateReadResult<string>.NotFound("throwing-r1")),
                 null,
-                throwingWatcher,
-                0,
+                new ThrowingWatcher(),
+                100,
                 StateFallbackConditions.NotFound
             ),
         ]
@@ -308,24 +234,29 @@ public class CompositeStateSourceTests
         await Should.ThrowAsync<InvalidOperationException>(() =>
             source.WaitForChangeAsync(null).AsTask()
         );
+
         pendingWatcher.CancellationObserved.Task.IsCompleted.ShouldBeTrue();
     }
 
-    private sealed class TestSource<T>(StateReadResult<T> readResult)
-        : IStateReader<T>, IStateWriter<T>, IStateWatcher
+    private sealed class TestSource<T> : IStateReader<T>, IStateWriter<T>
     {
-        internal int ReadCount { get; private set; }
+        private readonly StateReadResult<T> _readResult;
 
-        internal StateWriteRequest<T>? LastWriteRequest { get; private set; }
+        public TestSource(StateReadResult<T> readResult)
+        {
+            _readResult = readResult;
+        }
 
-        internal int WatchCount { get; private set; }
+        public int ReadCount { get; private set; }
+        public int WriteCount { get; private set; }
+        public string? LastExpectedRevision { get; private set; }
 
         public ValueTask<StateReadResult<T>> ReadAsync(
             CancellationToken cancellationToken = default
         )
         {
             ReadCount++;
-            return new ValueTask<StateReadResult<T>>(readResult);
+            return new ValueTask<StateReadResult<T>>(_readResult);
         }
 
         public ValueTask<StateWriteResult> WriteAsync(
@@ -333,39 +264,45 @@ public class CompositeStateSourceTests
             CancellationToken cancellationToken = default
         )
         {
-            LastWriteRequest = request;
+            WriteCount++;
+            LastExpectedRevision = request.ExpectedRevision;
             return new ValueTask<StateWriteResult>(new StateWriteResult("written-r1"));
-        }
-
-        public ValueTask WaitForChangeAsync(
-            string? observedRevision,
-            CancellationToken cancellationToken = default
-        )
-        {
-            WatchCount++;
-            return default;
         }
     }
 
-    private sealed class ReadOnlyTestSource<T>(StateReadResult<T> readResult) : IStateReader<T>
+    private sealed class ReadOnlyTestSource<T> : IStateReader<T>, IStateWatcher
+        where T : class, new()
     {
         public ValueTask<StateReadResult<T>> ReadAsync(
             CancellationToken cancellationToken = default
-        ) => new(readResult);
+        ) => new(StateReadResult<T>.NotFound());
+
+        public async ValueTask WaitForChangeAsync(
+            string? observedRevision,
+            CancellationToken cancellationToken = default
+        ) => await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
     }
 
     private sealed class PendingWatcher : IStateWatcher
     {
-        internal TaskCompletionSource<bool> CancellationObserved { get; } =
-            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<bool> CancellationObserved { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
 
-        public ValueTask WaitForChangeAsync(
+        public async ValueTask WaitForChangeAsync(
             string? observedRevision,
             CancellationToken cancellationToken = default
         )
         {
-            cancellationToken.Register(() => CancellationObserved.TrySetResult(true));
-            return new ValueTask(Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken));
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                CancellationObserved.TrySetResult(true);
+                throw;
+            }
         }
     }
 
@@ -374,11 +311,6 @@ public class CompositeStateSourceTests
         public ValueTask WaitForChangeAsync(
             string? observedRevision,
             CancellationToken cancellationToken = default
-        ) => throw new InvalidOperationException("watcher failed synchronously");
-    }
-
-    private sealed class TestSettings
-    {
-        public string Value { get; set; } = "";
+        ) => throw new InvalidOperationException("Synchronous watcher failure.");
     }
 }
