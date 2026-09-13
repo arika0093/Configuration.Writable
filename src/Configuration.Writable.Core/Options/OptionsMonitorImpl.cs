@@ -384,8 +384,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 await changeTask.ConfigureAwait(false);
             }
             catch (OperationCanceledException)
-                when (debounceCancellation.IsCancellationRequested
-                    && !cancellationToken.IsCancellationRequested)
+                when (
+                    debounceCancellation.IsCancellationRequested
+                    && !cancellationToken.IsCancellationRequested
+                )
             {
                 return;
             }
@@ -530,12 +532,12 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private sealed class ReloadFailureTrackerDisposable : IDisposable
     {
         private readonly OptionsMonitorImpl<T> _monitor;
-        private readonly Action<Exception, string?> _listener;
+        private readonly Action<Exception, string?>> _listener;
         private bool _disposed;
 
         public ReloadFailureTrackerDisposable(
             OptionsMonitorImpl<T> monitor,
-            Action<Exception, string?> listener
+            Action<Exception, string?>> listener
         )
         {
             _monitor = monitor;
