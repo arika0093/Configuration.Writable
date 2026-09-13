@@ -252,7 +252,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
 
                 return new LoadedConfiguration(
                     new T(),
-                    ConfigurationFileFingerprint.Capture(options),
+                    ConfigurationFileFingerprint.Capture(
+                        options.GetSelectedFilePath(),
+                        options.FileProvider
+                    ),
                     result.Revision
                 );
             }
@@ -264,7 +267,10 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             }
             return new LoadedConfiguration(
                 result.Value,
-                ConfigurationFileFingerprint.Capture(options),
+                ConfigurationFileFingerprint.Capture(
+                    options.GetSelectedFilePath(),
+                    options.FileProvider
+                ),
                 result.Revision
             );
         }

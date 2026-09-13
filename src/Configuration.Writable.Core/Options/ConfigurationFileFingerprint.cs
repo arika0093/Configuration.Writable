@@ -25,40 +25,59 @@ internal sealed class ConfigurationFileFingerprint : IEquatable<ConfigurationFil
     private long LastWriteTimeUtcTicks { get; }
     private string? Hash { get; }
 
-    internal static ConfigurationFileFingerprint? Capture(IWritableOptionsConfiguration options)
+    internal static ConfigurationFileFingerprint? Capture(
+        string configFilePath,
+        IWritableFileProvider fileProvider
+    )
     {
-        if (!(options.FileProvider is IPhysicalFileProvider physicalFileProvider))
+        // Revision tracking is only supported for physical file providers.
+        // In-memory and other virtual providers return null to skip optimistic
+        // concurrency checks (preserves historical behavior; shared-file section
+        // writes via profiled options would otherwise self-conflict).
+        if (fileProvider is not IPhysicalFileProvider physicalFileProvider)
         {
             return null;
         }
 
         try
         {
-            var configFilePath = options.FormatProvider
-                is FormatProvider.FallbackFormatProvider fallbackProvider
-                ? fallbackProvider.GetSelectedFilePath(options)
-                : options.ConfigFilePath;
-            var path = physicalFileProvider.GetPhysicalFilePath(configFilePath);
-            if (!File.Exists(path))
+            if (!fileProvider.FileExists(configFilePath))
             {
                 return new ConfigurationFileFingerprint(false, 0, 0, null);
             }
 
-            var fileInfo = new FileInfo(path);
-            using var stream = new FileStream(
-                path,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete
-            );
+            var pipeReader = fileProvider.GetFilePipeReader(configFilePath);
+            if (pipeReader == null)
+            {
+                return new ConfigurationFileFingerprint(false, 0, 0, null);
+            }
+
+            using var stream = pipeReader.AsStream(leaveOpen: false);
+            using var memoryStream = new MemoryStream();
+            stream.CopyTo(memoryStream);
+            var content = memoryStream.ToArray();
+
             using var hashAlgorithm = SHA256.Create();
-            var hash = Convert.ToBase64String(hashAlgorithm.ComputeHash(stream));
-            return new ConfigurationFileFingerprint(
-                true,
-                fileInfo.Length,
-                fileInfo.LastWriteTimeUtc.Ticks,
-                hash
-            );
+            var hash = Convert.ToBase64String(hashAlgorithm.ComputeHash(content));
+
+            var length = content.Length;
+
+            long lastWriteTimeUtcTicks = 0;
+            try
+            {
+                var path = physicalFileProvider.GetPhysicalFilePath(configFilePath);
+                if (File.Exists(path))
+                {
+                    var fileInfo = new FileInfo(path);
+                    lastWriteTimeUtcTicks = fileInfo.LastWriteTimeUtc.Ticks;
+                }
+            }
+            catch
+            {
+                // Ignore errors when getting file info
+            }
+
+            return new ConfigurationFileFingerprint(true, length, lastWriteTimeUtcTicks, hash);
         }
         catch (IOException)
         {

@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.State;
 
@@ -99,16 +98,16 @@ internal sealed class FileStateSource<T> : IStateSource<T>
     }
 
     private string? GetReadRevision() =>
-        ConfigurationFileFingerprint.Capture(GetReadOptions())?.ToRevision();
+        ConfigurationFileFingerprint
+            .Capture(GetReadFilePath(), _resource.Options.FileProvider)
+            ?.ToRevision();
 
     private bool ReadFileExists() => _resource.Options.FileProvider.FileExists(GetReadFilePath());
 
     private string GetReadFilePath()
     {
         var readOptions = GetReadOptions();
-        return readOptions.FormatProvider is FallbackFormatProvider fallbackProvider
-            ? fallbackProvider.GetSelectedFilePath(readOptions)
-            : readOptions.ConfigFilePath;
+        return readOptions.GetSelectedFilePath();
     }
 
     private WritableOptionsConfiguration<T> GetReadOptions()

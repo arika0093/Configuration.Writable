@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Configuration.Writable.Configure;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
@@ -103,6 +104,17 @@ public record WritableOptionsConfiguration<T> : IWritableOptionsConfiguration
     /// Gets the migration lookups computed when these options were built.
     /// </summary>
     internal MigrationLookup? MigrationLookup { get; init; }
+
+    internal bool HasFallbackFormats => FormatProvider is FallbackFormatProvider;
+
+    internal string GetSelectedFilePath()
+    {
+        if (FormatProvider is FallbackFormatProvider fallbackProvider)
+        {
+            return fallbackProvider.GetSelectedFilePath(this);
+        }
+        return ConfigFilePath;
+    }
 
     /// <summary>
     /// Creates the state endpoint for this registration. The current factory preserves the

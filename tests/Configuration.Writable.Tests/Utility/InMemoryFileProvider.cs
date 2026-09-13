@@ -16,6 +16,7 @@ namespace Configuration.Writable.FileProvider;
 public class InMemoryFileProvider : IWritableFileProvider, IBackupFileProvider
 {
     private readonly ConcurrentDictionary<string, byte[]> _files = new();
+    private readonly ConcurrentDictionary<string, DateTime> _lastWriteTimes = new();
 
     public int BackupAttemptCount { get; private set; }
 
@@ -38,6 +39,7 @@ public class InMemoryFileProvider : IWritableFileProvider, IBackupFileProvider
         cancellationToken.ThrowIfCancellationRequested();
         var normalizedPath = Path.GetFullPath(path);
         _files[normalizedPath] = content.ToArray();
+        _lastWriteTimes[normalizedPath] = DateTime.UtcNow;
         return Task.CompletedTask;
     }
 

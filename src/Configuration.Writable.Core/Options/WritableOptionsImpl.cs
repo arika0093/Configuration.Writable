@@ -207,7 +207,10 @@ internal sealed class WritableOptionsImpl<T>(
             optionMonitorInstance.UpdateCache(
                 options.InstanceName,
                 publishedConfig,
-                ConfigurationFileFingerprint.Capture(options),
+                ConfigurationFileFingerprint.Capture(
+                    options.GetSelectedFilePath(),
+                    options.FileProvider
+                ),
                 writeResult.Revision
             );
 

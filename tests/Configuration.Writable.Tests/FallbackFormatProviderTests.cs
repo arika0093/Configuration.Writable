@@ -151,9 +151,9 @@ public class FallbackFormatProviderTests
             Encoding.UTF8.GetBytes("{\"First\":{\"Name\":\"before\"}}")
         );
 
-        var before = ConfigurationFileFingerprint.Capture(options);
+        var before = ConfigurationFileFingerprint.Capture(options.GetSelectedFilePath(), options.FileProvider);
         File.WriteAllText(fallbackPath, "{\"First\":{\"Name\":\"after\"}}");
-        var after = ConfigurationFileFingerprint.Capture(options);
+        var after = ConfigurationFileFingerprint.Capture(options.GetSelectedFilePath(), options.FileProvider);
 
         before.ShouldNotBe(after);
     }

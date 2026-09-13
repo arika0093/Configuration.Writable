@@ -3,19 +3,22 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
-using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.State;
 
-/// <summary>Observes relevant changes for a file-backed state resource.</summary>
 internal sealed class FileStateWatcher<T> : IStateWatcher
     where T : class, new()
 {
     private readonly WritableOptionsConfiguration<T> _options;
+    private readonly IWritableFileProvider _fileProvider;
 
-    internal FileStateWatcher(WritableOptionsConfiguration<T> options)
+    internal FileStateWatcher(
+        WritableOptionsConfiguration<T> options,
+        IWritableFileProvider fileProvider
+    )
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        _fileProvider = fileProvider ?? throw new ArgumentNullException(nameof(fileProvider));
     }
 
     public async ValueTask WaitForChangeAsync(
@@ -24,9 +27,7 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
     )
     {
         var watchedFilePath = GetWatchedPath();
-        var watchedPath = _options.FileProvider is IPhysicalFileProvider physicalFileProvider
-            ? physicalFileProvider.GetPhysicalFilePath(watchedFilePath)
-            : watchedFilePath;
+        var watchedPath = GetPhysicalPath(watchedFilePath);
         var directory = Path.GetDirectoryName(watchedPath);
         if (string.IsNullOrEmpty(directory))
         {
@@ -41,8 +42,7 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
             return;
         }
 
-        var filter =
-            _options.FormatProvider is FallbackFormatProvider ? "*" : Path.GetFileName(watchedPath);
+        var filter = _options.HasFallbackFormats ? "*" : Path.GetFileName(watchedPath);
         var change = new TaskCompletionSource<bool>(
             TaskCreationOptions.RunContinuationsAsynchronously
         );
@@ -56,7 +56,7 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
 
         void SignalChange()
         {
-            if (!_options.FileProvider.FileExists(watchedFilePath))
+            if (!_fileProvider.FileExists(watchedFilePath))
             {
                 change.TrySetException(CreateDeletedFileException(watchedFilePath));
                 return;
@@ -94,7 +94,7 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
 
         if (RevisionChanged(observedRevision))
         {
-            if (!_options.FileProvider.FileExists(watchedFilePath))
+            if (!_fileProvider.FileExists(watchedFilePath))
             {
                 change.TrySetException(CreateDeletedFileException(watchedFilePath));
             }
@@ -107,10 +107,23 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
         await change.Task.ConfigureAwait(false);
     }
 
-    private string GetWatchedPath() =>
-        _options.FormatProvider is FallbackFormatProvider fallbackProvider
-            ? fallbackProvider.GetSelectedFilePath(_options)
-            : _options.ConfigFilePath;
+    private string GetWatchedPath()
+    {
+        if (_options.HasFallbackFormats)
+        {
+            return _options.GetSelectedFilePath();
+        }
+        return _options.ConfigFilePath;
+    }
+
+    private string GetPhysicalPath(string path)
+    {
+        if (_fileProvider is IPhysicalFileProvider physicalFileProvider)
+        {
+            return physicalFileProvider.GetPhysicalFilePath(path);
+        }
+        return Path.GetFullPath(path);
+    }
 
     private bool RevisionChanged(string? observedRevision)
     {
@@ -119,13 +132,15 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
             return false;
         }
 
-        var currentRevision = ConfigurationFileFingerprint.Capture(_options)?.ToRevision();
+        var currentRevision = ConfigurationFileFingerprint
+            .Capture(_options.GetSelectedFilePath(), _fileProvider)
+            ?.ToRevision();
         return !string.Equals(observedRevision, currentRevision, StringComparison.Ordinal);
     }
 
     private void ThrowIfWatchedFileWasDeleted(string watchedFilePath)
     {
-        if (!_options.FileProvider.FileExists(watchedFilePath))
+        if (!_fileProvider.FileExists(watchedFilePath))
         {
             throw CreateDeletedFileException(watchedFilePath);
         }
@@ -140,14 +155,12 @@ internal sealed class FileStateWatcher<T> : IStateWatcher
             Path.DirectorySeparatorChar == '\\'
                 ? StringComparison.OrdinalIgnoreCase
                 : StringComparison.Ordinal;
-        if (_options.FormatProvider is not FallbackFormatProvider)
+        if (!_options.HasFallbackFormats)
         {
             return string.Equals(changedPath, watchedPath, comparison);
         }
 
-        var canonicalPath = _options.FileProvider is IPhysicalFileProvider physicalFileProvider
-            ? physicalFileProvider.GetPhysicalFilePath(_options.ConfigFilePath)
-            : _options.ConfigFilePath;
+        var canonicalPath = GetPhysicalPath(_options.ConfigFilePath);
         return string.Equals(changedPath, watchedPath, comparison)
             || string.Equals(changedPath, canonicalPath, comparison);
     }
