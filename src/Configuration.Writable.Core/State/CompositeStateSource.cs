@@ -75,6 +75,8 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
                     ?? throw new InvalidOperationException(
                         $"State source '{source.Id}' returned Success without a value."
                     );
+                await CaptureWriteSourceRevisionAsync(revisions, cancellationToken)
+                    .ConfigureAwait(false);
                 return StateReadResult<T>.Success(
                     value,
                     StoreRevisions(revisions, source.Id, result.Revision)
@@ -84,11 +86,16 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
             lastStatus = result.Status;
             if (!CanFallback(source.FallbackCondition, result.Status))
             {
-                return result.Status == StateReadStatus.NotFound
-                    ? StateReadResult<T>.NotFound(
+                if (result.Status == StateReadStatus.NotFound)
+                {
+                    await CaptureWriteSourceRevisionAsync(revisions, cancellationToken)
+                        .ConfigureAwait(false);
+                    return StateReadResult<T>.NotFound(
                         StoreRevisions(revisions, source.Id, result.Revision)
-                    )
-                    : StateReadResult<T>.Unavailable();
+                    );
+                }
+
+                return StateReadResult<T>.Unavailable();
             }
         }
 
@@ -102,11 +109,7 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
         CancellationToken cancellationToken = default
     )
     {
-        var source = _writeTargetId is null
-            ? _sources.FirstOrDefault(candidate => candidate.Writer is not null)
-            : _sources.First(candidate =>
-                string.Equals(candidate.Id, _writeTargetId, StringComparison.Ordinal)
-            );
+        var source = GetWriteSource();
         if (source?.Writer is null)
         {
             throw new InvalidOperationException("No writable state source is configured.");
@@ -144,8 +147,9 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
                 string.Equals(source.Id, revision.ActiveSourceId, StringComparison.Ordinal)
             );
         var minimumPriority = activeSource?.Priority ?? int.MinValue;
+        var writeSource = GetWriteSource();
         var watchers = _sources
-            .Where(source => source.Watcher is not null && source.Priority >= minimumPriority)
+            .Where(source => ShouldWatchSource(source, minimumPriority, writeSource))
             .ToArray();
         if (watchers.Length == 0)
         {
@@ -185,6 +189,38 @@ internal sealed class CompositeStateSource<T> : IStateSource<T>
 #endif
         }
     }
+
+    private async ValueTask CaptureWriteSourceRevisionAsync(
+        Dictionary<string, string?> revisions,
+        CancellationToken cancellationToken
+    )
+    {
+        var writeSource = GetWriteSource();
+        if (writeSource?.Writer is null || revisions.ContainsKey(writeSource.Id))
+        {
+            return;
+        }
+
+        var result = await writeSource
+            .Reader.ReadAsync(cancellationToken)
+            .ConfigureAwait(false);
+        revisions[writeSource.Id] = result.Revision;
+    }
+
+    private StateSource<T>? GetWriteSource() =>
+        _writeTargetId is null
+            ? _sources.FirstOrDefault(candidate => candidate.Writer is not null)
+            : _sources.First(candidate =>
+                string.Equals(candidate.Id, _writeTargetId, StringComparison.Ordinal)
+            );
+
+    private static bool ShouldWatchSource(
+        StateSource<T> source,
+        int minimumPriority,
+        StateSource<T>? writeSource
+    ) =>
+        source.Watcher is not null
+        && (source.Priority >= minimumPriority || ReferenceEquals(source, writeSource));
 
     private static bool CanFallback(StateFallbackConditions condition, StateReadStatus status) =>
         status switch
