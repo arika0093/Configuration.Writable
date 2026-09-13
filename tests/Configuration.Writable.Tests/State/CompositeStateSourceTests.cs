@@ -235,6 +235,42 @@ public class CompositeStateSourceTests
     }
 
     [Test]
+    public async Task FromProvider_CustomWriter_DoesNotRequireFileLock()
+    {
+        var blockerPath = Path.Combine(
+            Path.GetTempPath(),
+            $"state-source-blocker-{Guid.NewGuid():N}"
+        );
+        File.WriteAllText(blockerPath, "blocker");
+        try
+        {
+            var source = new ReadWriteTestSource<TestSettings>(
+                StateReadResult<TestSettings>.Success(
+                    new TestSettings { Value = "remote" },
+                    "r1"
+                )
+            );
+            var services = new ServiceCollection();
+            services.AddWritableOptions<TestSettings>(options =>
+            {
+                options.FilePath = Path.Combine(blockerPath, "unused.json");
+                options.FromProvider("remote", source);
+            });
+            using var serviceProvider = services.BuildServiceProvider();
+            var writableOptions = serviceProvider.GetRequiredService<IWritableOptions<TestSettings>>();
+
+            await writableOptions.SaveAsync(new TestSettings { Value = "updated" });
+
+            source.LastWriteRequest.ShouldNotBeNull();
+            source.LastWriteRequest!.Value.Value.Value.ShouldBe("updated");
+        }
+        finally
+        {
+            File.Delete(blockerPath);
+        }
+    }
+
+    [Test]
     public void FromProvider_GeneratesAnUnusedProviderId()
     {
         var explicitSource = new TestSource<TestSettings>(
@@ -316,6 +352,41 @@ public class CompositeStateSourceTests
     }
 
     [Test]
+    public async Task GetWatcherScopeRevision_PreservesActiveSourceWithoutExpectedRevision()
+    {
+        var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
+        var fallback = new TestSource<string>(StateReadResult<string>.Success("fallback", "fallback-r1"));
+        var source = new CompositeStateSource<string>(
+        [
+            new StateSource<string>(
+                "primary",
+                primary,
+                primary,
+                primary,
+                100,
+                StateFallbackConditions.NotFound
+            ),
+            new StateSource<string>(
+                "fallback",
+                fallback,
+                fallback,
+                fallback,
+                0,
+                StateFallbackConditions.NotFound
+            ),
+        ]
+        );
+
+        var read = await source.ReadAsync();
+        var scopeRevision = source.GetWatcherScopeRevision(read.Revision);
+        await source.WaitForChangeAsync(scopeRevision);
+
+        primary.WatchCount.ShouldBe(1);
+        primary.LastObservedRevision.ShouldBeNull();
+        fallback.WatchCount.ShouldBe(0);
+    }
+
+    [Test]
     public async Task WaitForChangeAsync_WatchesExplicitLowerPriorityWriteSource()
     {
         var primary = new TestSource<string>(StateReadResult<string>.Success("primary", "primary-r1"));
@@ -392,6 +463,8 @@ public class CompositeStateSourceTests
 
         internal int WatchCount { get; private set; }
 
+        internal string? LastObservedRevision { get; private set; }
+
         public ValueTask<StateReadResult<T>> ReadAsync(
             CancellationToken cancellationToken = default
         )
@@ -415,7 +488,27 @@ public class CompositeStateSourceTests
         )
         {
             WatchCount++;
+            LastObservedRevision = observedRevision;
             return default;
+        }
+    }
+
+    private sealed class ReadWriteTestSource<T>(StateReadResult<T> readResult)
+        : IStateReader<T>, IStateWriter<T>
+    {
+        internal StateWriteRequest<T>? LastWriteRequest { get; private set; }
+
+        public ValueTask<StateReadResult<T>> ReadAsync(
+            CancellationToken cancellationToken = default
+        ) => new(readResult);
+
+        public ValueTask<StateWriteResult> WriteAsync(
+            StateWriteRequest<T> request,
+            CancellationToken cancellationToken = default
+        )
+        {
+            LastWriteRequest = request;
+            return new ValueTask<StateWriteResult>(new StateWriteResult("written-r1"));
         }
     }
 
