@@ -17,7 +17,7 @@ namespace Configuration.Writable.State;
 /// <c>JsonAotFormatProvider</c> pipeline with direct <see cref="IStateCodec{T}"/>
 /// serialization over <see cref="FileStateResource{T}"/> file operations.
 /// </summary>
-internal sealed class JsonStateCodec<T> : IStateCodec<T>
+internal sealed class JsonStateCodec<T> : FileStateCodecBase<T>
     where T : class, new()
 {
 #if NET
@@ -50,64 +50,7 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
         _schemaVersionFallbackProperties = schemaVersionFallbackProperties;
     }
 
-    public ValueTask<T> ReadAsync(
-        IStateResource resource,
-        CancellationToken cancellationToken = default
-    )
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var fileResource = GetFileResource(resource);
-        var options = fileResource.Options;
-        var readPath =
-            options.PromoteSaveLocationEnabled && fileResource.FileExists(options.ConfigFilePath)
-                ? options.ConfigFilePath
-                : options.ReadFilePath;
-        var readOptions = options with { ConfigFilePath = readPath };
-        var result = MigrationLoaderExtension.LoadWithMigration(
-            readOptions,
-            type => LoadAsType(fileResource, readPath, type, readOptions),
-            () =>
-                FileBackupRecovery.Execute(
-                    readOptions.FileBackend,
-                    readPath,
-                    readOptions.Logger,
-                    () => ReadSchemaMetadata(fileResource, readPath, readOptions)
-                ),
-            static _ => { }
-        );
-        return new ValueTask<T>(result);
-    }
-
-    public async ValueTask WriteAsync(
-        T value,
-        IStateResource resource,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var fileResource = GetFileResource(resource);
-        var options = fileResource.Options;
-        var contents = GetSaveContents(value, fileResource, options);
-        await fileResource
-            .WriteAsync(options.ConfigFilePath, contents, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    private object LoadAsType(
-        FileStateResource<T> resource,
-        string path,
-        Type type,
-        WritableOptionsConfiguration<T> options
-    )
-    {
-        return FileBackupRecovery.Execute(
-            options.FileBackend,
-            path,
-            options.Logger,
-            () => LoadCore(resource, path, type, options)
-        );
-    }
-
-    private object LoadCore(
+    protected override object LoadCore(
         FileStateResource<T> resource,
         string path,
         Type type,
@@ -199,7 +142,7 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
             ?? throw new InvalidOperationException($"Could not create an instance of {type.Name}.");
     }
 
-    private OptionsSchemaMetadata? ReadSchemaMetadata(
+    protected override OptionsSchemaMetadata? ReadSchemaMetadata(
         FileStateResource<T> resource,
         string path,
         WritableOptionsConfiguration<T> options
@@ -311,7 +254,7 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = AotJsonReason)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = AotJsonReason)]
 #endif
-    private ReadOnlyMemory<byte> GetSaveContents(
+    protected override ReadOnlyMemory<byte> GetSaveContents(
         T config,
         FileStateResource<T> resource,
         WritableOptionsConfiguration<T> options
@@ -383,11 +326,4 @@ internal sealed class JsonStateCodec<T> : IStateCodec<T>
         var options = _effectiveOptions;
         return (writer, value) => JsonSerializer.Serialize(writer, value, options);
     }
-
-    private static FileStateResource<T> GetFileResource(IStateResource resource) =>
-        resource as FileStateResource<T>
-        ?? throw new ArgumentException(
-            "The JSON state codec requires a file state resource.",
-            nameof(resource)
-        );
 }

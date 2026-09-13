@@ -17,7 +17,7 @@ namespace Configuration.Writable.State;
 /// direct <see cref="IStateCodec{T}"/> serialization over
 /// <see cref="FileStateResource{T}"/> file operations.
 /// </summary>
-internal sealed class YamlStateCodec<T> : IStateCodec<T>
+internal sealed class YamlStateCodec<T> : FileStateCodecBase<T>
     where T : class, new()
 {
     private readonly YamlSerializerOptions _serializerOptions;
@@ -39,64 +39,7 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         _schemaVersionFallbackProperties = schemaVersionFallbackProperties;
     }
 
-    public ValueTask<T> ReadAsync(
-        IStateResource resource,
-        CancellationToken cancellationToken = default
-    )
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var fileResource = GetFileResource(resource);
-        var options = fileResource.Options;
-        var readPath =
-            options.PromoteSaveLocationEnabled && fileResource.FileExists(options.ConfigFilePath)
-                ? options.ConfigFilePath
-                : options.ReadFilePath;
-        var readOptions = options with { ConfigFilePath = readPath };
-        var result = MigrationLoaderExtension.LoadWithMigration(
-            readOptions,
-            type => LoadAsType(fileResource, readPath, type, readOptions),
-            () =>
-                FileBackupRecovery.Execute(
-                    readOptions.FileBackend,
-                    readPath,
-                    readOptions.Logger,
-                    () => ReadSchemaMetadata(fileResource, readPath, readOptions)
-                ),
-            static _ => { }
-        );
-        return new ValueTask<T>(result);
-    }
-
-    public async ValueTask WriteAsync(
-        T value,
-        IStateResource resource,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var fileResource = GetFileResource(resource);
-        var options = fileResource.Options;
-        var contents = GetSaveContents(value, fileResource, options);
-        await fileResource
-            .WriteAsync(options.ConfigFilePath, contents, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    private object LoadAsType(
-        FileStateResource<T> resource,
-        string path,
-        Type type,
-        WritableOptionsConfiguration<T> options
-    )
-    {
-        return FileBackupRecovery.Execute(
-            options.FileBackend,
-            path,
-            options.Logger,
-            () => LoadCore(resource, path, type, options)
-        );
-    }
-
-    private object LoadCore(
+    protected override object LoadCore(
         FileStateResource<T> resource,
         string path,
         Type type,
@@ -136,7 +79,7 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         Activator.CreateInstance(type)
         ?? throw new InvalidOperationException($"Could not create an instance of {type.Name}.");
 
-    private OptionsSchemaMetadata? ReadSchemaMetadata(
+    protected override OptionsSchemaMetadata? ReadSchemaMetadata(
         FileStateResource<T> resource,
         string path,
         WritableOptionsConfiguration<T> options
@@ -235,7 +178,7 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
         return Encoding.UTF8.GetBytes(yamlContent);
     }
 
-    private ReadOnlyMemory<byte> GetSaveContents(
+    protected override ReadOnlyMemory<byte> GetSaveContents(
         T config,
         FileStateResource<T> resource,
         WritableOptionsConfiguration<T> options
@@ -370,11 +313,4 @@ internal sealed class YamlStateCodec<T> : IStateCodec<T>
                 "# yaml-language-server: $schema=" + schemaReference + Environment.NewLine + yaml;
         return _encoding.GetBytes(yaml);
     }
-
-    private static FileStateResource<T> GetFileResource(IStateResource resource) =>
-        resource as FileStateResource<T>
-        ?? throw new ArgumentException(
-            "The YAML state codec requires a file state resource.",
-            nameof(resource)
-        );
 }
