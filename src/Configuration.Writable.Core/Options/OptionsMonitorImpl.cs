@@ -310,7 +310,11 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                     .ConfigureAwait(false);
                 if (options.OnChangeDebounce > TimeSpan.Zero)
                 {
-                    await Task.Delay(options.OnChangeDebounce, cancellationToken)
+                    await WaitForQuietPeriodAsync(
+                            source,
+                            options.OnChangeDebounce,
+                            cancellationToken
+                        )
                         .ConfigureAwait(false);
                 }
 
@@ -332,6 +336,54 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
                 {
                     return;
                 }
+            }
+        }
+    }
+
+    private static async Task WaitForQuietPeriodAsync(
+        IStateSource<T> source,
+        TimeSpan debounceDuration,
+        CancellationToken cancellationToken
+    )
+    {
+        while (true)
+        {
+            using var debounceCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken
+            );
+            var changeTask = source
+                .WaitForChangeAsync(null, debounceCancellation.Token)
+                .AsTask();
+            var delayTask = Task.Delay(debounceDuration, debounceCancellation.Token);
+            var completedTask = await Task.WhenAny(changeTask, delayTask).ConfigureAwait(false);
+
+            if (ReferenceEquals(completedTask, changeTask))
+            {
+                await changeTask.ConfigureAwait(false);
+#if NET8_0_OR_GREATER
+                await debounceCancellation.CancelAsync().ConfigureAwait(false);
+#else
+                debounceCancellation.Cancel();
+#endif
+                continue;
+            }
+
+#if NET8_0_OR_GREATER
+            await debounceCancellation.CancelAsync().ConfigureAwait(false);
+#else
+            debounceCancellation.Cancel();
+#endif
+            try
+            {
+                await changeTask.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+                when (
+                    debounceCancellation.IsCancellationRequested
+                    && !cancellationToken.IsCancellationRequested
+                )
+            {
+                return;
             }
         }
     }
