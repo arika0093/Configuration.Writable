@@ -1,8 +1,10 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Configuration.Writable.Configure;
 using Configuration.Writable.Diagnostics;
+using Configuration.Writable.FormatProvider;
 
 namespace Configuration.Writable.State;
 
@@ -10,6 +12,7 @@ namespace Configuration.Writable.State;
 internal sealed class FileStateSource<T> : IStateSource<T>
     where T : class, new()
 {
+    private const int MaxStableReadAttempts = 3;
     private readonly FileStateResource<T> _resource;
     private readonly IStateCodec<T> _codec;
     private readonly bool _acquireSaveLock;
@@ -25,9 +28,40 @@ internal sealed class FileStateSource<T> : IStateSource<T>
         CancellationToken cancellationToken = default
     )
     {
-        var value = await _codec.ReadAsync(_resource, cancellationToken).ConfigureAwait(false);
-        await PromoteIfRequiredAsync(value, cancellationToken).ConfigureAwait(false);
-        return StateReadResult<T>.Success(value, _resource.GetRevision());
+        for (var attempt = 0; attempt < MaxStableReadAttempts; attempt++)
+        {
+            var revisionBeforeRead = GetReadRevision();
+            var value = await _codec.ReadAsync(_resource, cancellationToken).ConfigureAwait(false);
+            var revisionAfterRead = GetReadRevision();
+
+            if (
+                !string.Equals(
+                    revisionBeforeRead,
+                    revisionAfterRead,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                if (attempt == MaxStableReadAttempts - 1)
+                {
+                    throw new IOException(
+                        $"Configuration file '{GetReadFilePath()}' changed while it was being read."
+                    );
+                }
+
+                continue;
+            }
+
+            if (!ReadFileExists())
+            {
+                return StateReadResult<T>.NotFound(revisionAfterRead);
+            }
+
+            await PromoteIfRequiredAsync(value, cancellationToken).ConfigureAwait(false);
+            return StateReadResult<T>.Success(value, _resource.GetRevision());
+        }
+
+        throw new InvalidOperationException("A stable configuration read could not be completed.");
     }
 
     public async ValueTask<StateWriteResult> WriteAsync(
@@ -59,7 +93,6 @@ internal sealed class FileStateSource<T> : IStateSource<T>
         var currentRevision = _resource.GetRevision();
         if (
             request.ExpectedRevision is not null
-            && currentRevision is not null
             && !string.Equals(request.ExpectedRevision, currentRevision, StringComparison.Ordinal)
         )
         {
@@ -69,6 +102,25 @@ internal sealed class FileStateSource<T> : IStateSource<T>
 
         await _codec.WriteAsync(request.Value, _resource, cancellationToken).ConfigureAwait(false);
         return new StateWriteResult(_resource.GetRevision());
+    }
+
+    private string? GetReadRevision() =>
+        ConfigurationFileFingerprint.Capture(GetReadOptions())?.ToRevision();
+
+    private bool ReadFileExists() => _resource.Options.FileProvider.FileExists(GetReadFilePath());
+
+    private string GetReadFilePath()
+    {
+        var readOptions = GetReadOptions();
+        return readOptions.FormatProvider is FallbackFormatProvider fallbackProvider
+            ? fallbackProvider.GetSelectedFilePath(readOptions)
+            : readOptions.ConfigFilePath;
+    }
+
+    private WritableOptionsConfiguration<T> GetReadOptions()
+    {
+        var options = _resource.Options;
+        return options with { ConfigFilePath = options.ReadFilePath };
     }
 
     private async ValueTask PromoteIfRequiredAsync(T value, CancellationToken cancellationToken)
