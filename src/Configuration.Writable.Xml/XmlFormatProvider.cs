@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using Configuration.Writable.State;
 using Microsoft.Extensions.Logging;
 
 namespace Configuration.Writable.FormatProvider;
@@ -16,9 +17,23 @@ namespace Configuration.Writable.FormatProvider;
 /// <summary>
 /// Writable configuration implementation for XML files.
 /// </summary>
-public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvider
+public class XmlFormatProvider
+    : FormatProviderBase,
+        IOptionsSchemaMetadataProvider,
+        IStateCodecFactory
 {
-    private static class SerializerCache<T>
+    IStateCodec<T> IStateCodecFactory.CreateStateCodec<T>(WritableOptionsConfiguration<T> options)
+    {
+        // Subclasses overriding serialization must stay on the legacy pipeline.
+        if (GetType() != typeof(XmlFormatProvider))
+        {
+            return new LegacyFormatStateCodec<T>();
+        }
+
+        return new XmlStateCodec<T>(SchemaVersionProperty, SchemaVersionFallbackProperties);
+    }
+
+    internal static class SerializerCache<T>
         where T : class, new()
     {
         internal static readonly XmlSerializer Instance = new(typeof(T));
@@ -242,7 +257,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         }
     }
 
-    private static XmlElement SerializeConfiguration<T>(T config)
+    internal static XmlElement SerializeConfiguration<T>(T config)
         where T : class, new()
     {
         using var writer = new StringWriter();
@@ -253,7 +268,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
             ?? throw new InvalidOperationException("Failed to serialize configuration to XML");
     }
 
-    private static void AddSchemaMetadata(
+    internal static void AddSchemaMetadata(
         XmlElement configElement,
         OptionsSchemaMetadata? metadata,
         string schemaVersionProperty
@@ -275,7 +290,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         }
     }
 
-    private static XDocument CreatePartialDocument(
+    internal static XDocument CreatePartialDocument(
         XmlElement configElement,
         System.Collections.Generic.IReadOnlyList<string> parts,
         IWritableOptionsConfiguration options
@@ -300,7 +315,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         );
     }
 
-    private static XDocument MergePartialDocument(
+    internal static XDocument MergePartialDocument(
         XDocument document,
         XmlElement configElement,
         System.Collections.Generic.IReadOnlyList<string> parts,
@@ -332,7 +347,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         return document;
     }
 
-    private static XElement GetSectionParent(
+    internal static XElement GetSectionParent(
         XElement root,
         System.Collections.Generic.IReadOnlyList<string> parts
     )
@@ -353,7 +368,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
         return current;
     }
 
-    private static ReadOnlyMemory<byte> WriteDocument(
+    internal static ReadOnlyMemory<byte> WriteDocument(
         XDocument document,
         IWritableOptionsConfiguration options
     )

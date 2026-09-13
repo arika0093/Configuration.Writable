@@ -30,6 +30,10 @@ internal static class FileCodecSelector
                 json.SchemaVersionFallbackProperties
             );
         }
+        if (provider is IStateCodecFactory factory)
+        {
+            return factory.CreateStateCodec<T>(options);
+        }
         return new LegacyFormatStateCodec<T>();
     }
 
