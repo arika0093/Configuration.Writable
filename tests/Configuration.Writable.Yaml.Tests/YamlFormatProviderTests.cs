@@ -36,7 +36,7 @@ public class YamlFormatProviderTests
             Encoding.UTF8.GetBytes(
                 """
                 name: base
-                nullText: "null"
+                nullText: base null text
                 enabled: true
                 count: 10
                 replaceItems:
@@ -55,6 +55,7 @@ public class YamlFormatProviderTests
             ),
             Encoding.UTF8.GetBytes(
                 """
+                nullText: null
                 enabled: false
                 count: 0
                 replaceItems: []
@@ -74,13 +75,13 @@ public class YamlFormatProviderTests
         var result = await provider.MergeConfigurationsAsync<YamlDeepMergeOptions>(documents);
 
         result.Name.ShouldBe("base");
-        result.NullText.ShouldBe("null");
+        result.NullText.ShouldBeNull();
         result.Enabled.ShouldBeFalse();
         result.Count.ShouldBe(0);
         result.ReplaceItems.ShouldBe([]);
         result.AppendItems.ShouldBe([1, 2, 2, 3]);
         result.UniqueItems.ShouldBe(["a", "b", "c"]);
-        result.Nested.Label.ShouldBe("base nested");
+        result.Nested.Label.ShouldBeNull();
         result.Nested.Count.ShouldBe(0);
     }
 

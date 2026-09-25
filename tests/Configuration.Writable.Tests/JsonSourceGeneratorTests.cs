@@ -33,6 +33,7 @@ public partial class NestedConfig
 public partial class DeepMergeTestOptions
 {
     public string Name { get; set; } = "default";
+    public string? OptionalName { get; set; } = "default optional";
     public bool Enabled { get; set; } = true;
     public int Count { get; set; } = 10;
     public int[] ReplaceItems { get; set; } = [9];
@@ -87,7 +88,7 @@ public class JsonSourceGeneratorTests
     private readonly InMemoryFileProvider _fileProvider = new();
 
     [Test]
-    public async Task JsonFormatProvider_MergeConfigurationsAsync_ShouldPreservePresenceAndMergeAttributes()
+    public async Task JsonFormatProvider_MergeConfigurationsAsync_ShouldHonorNullAndMergeAttributes()
     {
         var provider = new JsonFormatProvider
         {
@@ -101,12 +102,13 @@ public class JsonSourceGeneratorTests
         var result = await MergeTestOptionsAsync(provider);
 
         result.Name.ShouldBe("base");
+        result.OptionalName.ShouldBeNull();
         result.Enabled.ShouldBeFalse();
         result.Count.ShouldBe(0);
         result.ReplaceItems.ShouldBe([]);
         result.AppendItems.ShouldBe([1, 2, 2, 3]);
         result.UniqueItems.ShouldBe(["a", "b", "c"]);
-        result.Nested.Label.ShouldBe("base nested");
+        result.Nested.Label.ShouldBeNull();
         result.Nested.Count.ShouldBe(0);
     }
 
@@ -118,11 +120,12 @@ public class JsonSourceGeneratorTests
         var result = await MergeTestOptionsAsync(provider);
 
         result.Enabled.ShouldBeFalse();
+        result.OptionalName.ShouldBeNull();
         result.Count.ShouldBe(0);
         result.ReplaceItems.ShouldBe([]);
         result.AppendItems.ShouldBe([1, 2, 2, 3]);
         result.UniqueItems.ShouldBe(["a", "b", "c"]);
-        result.Nested.Label.ShouldBe("base nested");
+        result.Nested.Label.ShouldBeNull();
         result.Nested.Count.ShouldBe(0);
     }
 
@@ -159,8 +162,8 @@ public class JsonSourceGeneratorTests
     ) =>
         provider.MergeConfigurationsAsync<DeepMergeTestOptions>(
             [
-                Utf8("""{"name":"base","enabled":true,"count":10,"replaceItems":[1,2],"appendItems":[1,2],"uniqueItems":["a","b"],"nested":{"label":"base nested","count":5}}"""),
-                Utf8("""{"enabled":false,"count":0,"replaceItems":[],"appendItems":[2,3],"uniqueItems":["b","c"],"nested":{"label":null,"count":0}}"""),
+                Utf8("""{"name":"base","optionalName":"base optional","enabled":true,"count":10,"replaceItems":[1,2],"appendItems":[1,2],"uniqueItems":["a","b"],"nested":{"label":"base nested","count":5}}"""),
+                Utf8("""{"optionalName":null,"enabled":false,"count":0,"replaceItems":[],"appendItems":[2,3],"uniqueItems":["b","c"],"nested":{"label":null,"count":0}}"""),
             ]
         ).AsTask();
 

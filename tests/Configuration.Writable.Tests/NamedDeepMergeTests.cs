@@ -56,7 +56,7 @@ public class NamedDeepMergeTests
         merged.ReplaceItems.ShouldBe([]);
         merged.AppendItems.ShouldBe([1, 2]);
         merged.UniqueItems.ShouldBe(["a", "b"]);
-        merged.Nested.Label.ShouldBe("base nested");
+        merged.Nested.Label.ShouldBeNull();
         merged.Nested.Count.ShouldBe(5);
         namedOptions.Get("Second").Count.ShouldBe(10);
 

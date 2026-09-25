@@ -9,8 +9,8 @@ namespace Configuration.Writable.FormatProvider;
 /// A format provider that can merge sparse documents before deserializing them.
 /// </summary>
 /// <remarks>
-/// Omitted properties retain earlier values. Explicit nulls are ignored, nested objects merge recursively,
-/// scalar values use the last supplied value, and arrays replace by default.
+/// Omitted properties retain earlier values. Explicit null property values replace earlier values,
+/// nested objects merge recursively, scalar values use the last supplied value, and arrays replace by default.
 /// </remarks>
 public interface IDeepMergeableFormatProvider : IWritableFormatProvider
 {

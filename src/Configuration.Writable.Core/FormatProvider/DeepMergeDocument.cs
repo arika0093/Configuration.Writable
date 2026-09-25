@@ -75,9 +75,6 @@ internal static class DeepMergeDocument
                 : new DeepMergeObjectNode();
             foreach (var property in incomingObject.Properties)
             {
-                if (property.Value is DeepMergeScalarNode { Kind: DeepMergeScalarKind.Null })
-                    continue;
-
                 var propertyMetadata =
                     resolveProperty?.Invoke(modelType, property.Key)
                     ?? ResolveGeneratedProperty(metadata, modelType, property.Key);
@@ -115,7 +112,7 @@ internal static class DeepMergeDocument
     )
     {
         if (incoming is DeepMergeScalarNode { Kind: DeepMergeScalarKind.Null })
-            return current?.DeepClone() ?? incoming.DeepClone();
+            return incoming.DeepClone();
 
         if (incoming is DeepMergeArrayNode incomingArray)
         {
