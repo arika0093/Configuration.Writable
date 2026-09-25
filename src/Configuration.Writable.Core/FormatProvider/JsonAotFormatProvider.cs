@@ -29,7 +29,8 @@ namespace Configuration.Writable.FormatProvider;
 /// <exception cref="ArgumentNullException">Thrown when <paramref name="typeInfoResolver"/> is null.</exception>
 public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
     : FormatProviderBase,
-        IOptionsSchemaMetadataProvider
+        IOptionsSchemaMetadataProvider,
+        IDeepMergeableFormatProvider
 {
     private readonly IJsonTypeInfoResolver _typeInfoResolver =
         typeInfoResolver ?? throw new ArgumentNullException(nameof(typeInfoResolver));
@@ -213,6 +214,33 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
 
         return JsonSerializer.Deserialize(current.GetRawText(), jsonTypeInfo)
             ?? CreateDefault(type);
+    }
+
+    /// <inheritdoc />
+    public ValueTask<T> MergeConfigurationsAsync<T>(
+        IReadOnlyList<ReadOnlyMemory<byte>> documents,
+        IReadOnlyList<string> sectionNameParts,
+        CancellationToken cancellationToken = default
+    )
+        where T : class, new()
+    {
+        if (documents is null)
+            throw new ArgumentNullException(nameof(documents));
+        if (sectionNameParts is null)
+            throw new ArgumentNullException(nameof(sectionNameParts));
+        cancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<T>(
+            (T)
+                JsonDeepMergeHelper.Merge(
+                    typeof(T),
+                    documents,
+                    sectionNameParts,
+                    new T() as IGeneratedOptionsMergeMetadata,
+                    GetEffectiveOptions(),
+                    CreateDefault,
+                    cancellationToken
+                )
+        );
     }
 
     /// <inheritdoc />

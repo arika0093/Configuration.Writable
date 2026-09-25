@@ -15,7 +15,10 @@ namespace Configuration.Writable.FormatProvider;
 /// <summary>
 /// Writable configuration implementation for JSON files.
 /// </summary>
-public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvider
+public class JsonFormatProvider
+    : FormatProviderBase,
+        IOptionsSchemaMetadataProvider,
+        IDeepMergeableFormatProvider
 {
 #if NET
     private const string AotJsonReason =
@@ -214,6 +217,33 @@ public class JsonFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 
         return JsonSerializer.Deserialize(current.GetRawText(), type, JsonSerializerOptions)
             ?? CreateDefault(type);
+    }
+
+    /// <inheritdoc />
+    public ValueTask<T> MergeConfigurationsAsync<T>(
+        IReadOnlyList<ReadOnlyMemory<byte>> documents,
+        IReadOnlyList<string> sectionNameParts,
+        CancellationToken cancellationToken = default
+    )
+        where T : class, new()
+    {
+        if (documents is null)
+            throw new ArgumentNullException(nameof(documents));
+        if (sectionNameParts is null)
+            throw new ArgumentNullException(nameof(sectionNameParts));
+        cancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<T>(
+            (T)
+                JsonDeepMergeHelper.Merge(
+                    typeof(T),
+                    documents,
+                    sectionNameParts,
+                    new T() as IGeneratedOptionsMergeMetadata,
+                    JsonSerializerOptions,
+                    CreateDefault,
+                    cancellationToken
+                )
+        );
     }
 
     /// <inheritdoc />
