@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -25,7 +26,7 @@ namespace Configuration.Writable;
 internal sealed class WritableOptionsImpl<T>(
     OptionsMonitorImpl<T> optionMonitorInstance,
     IWritableOptionsConfigRegistry<T> registryInstance
-) : IWritableOptionsMonitor<T>, IOptionsMonitor<T>
+) : IWritableOptionsMonitor<T>, IDeepMergeableNamedOptions<T>, IOptionsMonitor<T>
     where T : class, new()
 {
     /// <inheritdoc />
@@ -99,6 +100,10 @@ internal sealed class WritableOptionsImpl<T>(
 
     /// <inheritdoc />
     public T Get(string name) => optionMonitorInstance.Get(name);
+
+    /// <inheritdoc />
+    public T GetMergedValue(params string[] instanceNames) =>
+        optionMonitorInstance.GetMergedValue(instanceNames);
 
     T IOptionsMonitor<T>.Get(string? name) => optionMonitorInstance.Get(name);
 

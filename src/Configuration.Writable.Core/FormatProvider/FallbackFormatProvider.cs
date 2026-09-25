@@ -147,6 +147,15 @@ internal sealed class FallbackFormatProvider
     internal string GetSelectedFilePath(IWritableOptionsConfiguration options) =>
         ResolveReadSource(options).Options.ConfigFilePath;
 
+    internal (
+        IWritableFormatProvider Provider,
+        IWritableOptionsConfiguration Options
+    ) GetReadSource(IWritableOptionsConfiguration options)
+    {
+        var source = ResolveReadSource(options);
+        return (source.Provider, source.Options);
+    }
+
     internal void ValidateConfigurationPath(
         string canonicalPath,
         IWritableFileProvider fileProvider

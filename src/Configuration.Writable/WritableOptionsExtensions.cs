@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Configuration.Writable.Configure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,6 +13,40 @@ namespace Configuration.Writable;
 public static class WritableOptionsExtensions
 {
     private const string LoggerCategoryName = "Configuration.Writable";
+
+    /// <summary>
+    /// Deep-merges the named configuration documents in the order supplied and returns the resulting options value.
+    /// Later instance names have higher precedence.
+    /// </summary>
+    /// <remarks>
+    /// The merge reads source documents so omitted properties remain distinguishable from default values.
+    /// Instances must use the same deep-mergeable format-provider type, compatible serializer settings, and section path.
+    /// Instances requiring schema migrations are not supported.
+    /// </remarks>
+    /// <typeparam name="T">The options model type.</typeparam>
+    /// <param name="namedOptions">The named options service.</param>
+    /// <param name="instanceNames">The instance names, ordered from lowest to highest precedence.</param>
+    /// <exception cref="ArgumentNullException">The named options service or instance-name array is null.</exception>
+    /// <exception cref="ArgumentException">No instance names were supplied or an instance name is null.</exception>
+    /// <exception cref="InvalidOperationException">The instances use different format provider types or section paths.</exception>
+    /// <exception cref="NotSupportedException">The service or one of its format providers does not support deep merging, or an instance requires migrations.</exception>
+    public static T GetMergedValue<T>(
+        this IReadOnlyNamedOptions<T> namedOptions,
+        params string[] instanceNames
+    )
+        where T : class, new()
+    {
+        if (namedOptions is null)
+            throw new ArgumentNullException(nameof(namedOptions));
+        if (instanceNames is null)
+            throw new ArgumentNullException(nameof(instanceNames));
+        if (namedOptions is not IDeepMergeableNamedOptions<T> mergeableNamedOptions)
+            throw new NotSupportedException(
+                "The named options service does not support deep merging."
+            );
+
+        return mergeableNamedOptions.GetMergedValue(instanceNames);
+    }
 
     /// <summary>Adds multiple writable options types with shared configuration.</summary>
     public static IServiceCollection AddWritableOptions(

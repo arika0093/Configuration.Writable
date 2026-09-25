@@ -2,9 +2,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
+using System.Linq;
 using System.Threading;
 using Configuration.Writable.Diagnostics;
 using Configuration.Writable.FileProvider;
+using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Migration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -119,6 +122,113 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
             return GetClonedValue(instanceName, dataSource.DefaultValue);
         }
         throw new InvalidOperationException($"No default value found for instance: {instanceName}");
+    }
+
+    internal T GetMergedValue(IReadOnlyList<string> instanceNames)
+    {
+        if (instanceNames is null)
+            throw new ArgumentNullException(nameof(instanceNames));
+        if (instanceNames.Count == 0)
+            throw new ArgumentException(
+                "At least one named options instance is required.",
+                nameof(instanceNames)
+            );
+
+        var documents = new List<ReadOnlyMemory<byte>>(instanceNames.Count);
+        IDeepMergeableFormatProvider? selectedProvider = null;
+        IReadOnlyList<string>? sectionNameParts = null;
+        Type? providerType = null;
+        string? fileExtension = null;
+
+        foreach (var instanceName in instanceNames)
+        {
+            if (instanceName is null)
+                throw new ArgumentException(
+                    "Instance names cannot be null.",
+                    nameof(instanceNames)
+                );
+
+            var configuration = _optionsRegistry.Get(instanceName);
+            if (configuration.MigrationSteps.Count > 0)
+                throw new NotSupportedException(
+                    $"Named instance '{instanceName}' uses schema migrations, which are not supported by GetMergedValue."
+                );
+
+            IWritableOptionsConfiguration readOptions = configuration with
+            {
+                ConfigFilePath = configuration.ReadFilePath,
+            };
+            var formatProvider = configuration.FormatProvider;
+            if (formatProvider is FormatProvider.FallbackFormatProvider fallbackFormatProvider)
+            {
+                var source = fallbackFormatProvider.GetReadSource(readOptions);
+                formatProvider = source.Provider;
+                readOptions = source.Options;
+            }
+
+            if (formatProvider is not IDeepMergeableFormatProvider mergeableFormatProvider)
+                throw new NotSupportedException(
+                    $"Format provider {formatProvider.GetType().Name} for named instance '{instanceName}' does not support deep merging."
+                );
+
+            if (providerType is not null && providerType != formatProvider.GetType())
+                throw new InvalidOperationException(
+                    "All named instances in a deep merge must use the same format provider type."
+                );
+            if (
+                fileExtension is not null
+                && !string.Equals(
+                    fileExtension,
+                    formatProvider.FileExtension,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+                throw new InvalidOperationException(
+                    "All named instances in a deep merge must use compatible file formats."
+                );
+            if (
+                sectionNameParts is not null
+                && !sectionNameParts.SequenceEqual(
+                    readOptions.SectionNameParts,
+                    StringComparer.Ordinal
+                )
+            )
+                throw new InvalidOperationException(
+                    "All named instances in a deep merge must use the same section path."
+                );
+
+            selectedProvider = mergeableFormatProvider;
+            providerType = formatProvider.GetType();
+            fileExtension = formatProvider.FileExtension;
+            sectionNameParts = readOptions.SectionNameParts;
+
+            var reader = readOptions.FileProvider.GetFilePipeReader(readOptions.ConfigFilePath);
+            if (reader is null)
+                continue;
+
+            try
+            {
+                using var stream = reader.AsStream(leaveOpen: true);
+                using var buffer = new MemoryStream();
+                stream.CopyTo(buffer);
+                documents.Add(buffer.ToArray());
+            }
+            finally
+            {
+                if (reader is IDisposable disposable)
+                    disposable.Dispose();
+            }
+        }
+
+        return selectedProvider!
+            .MergeConfigurationsAsync<T>(
+                documents,
+                sectionNameParts ?? Array.Empty<string>(),
+                CancellationToken.None
+            )
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
     }
 
     /// <summary>
