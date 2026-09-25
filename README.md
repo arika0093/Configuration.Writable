@@ -446,6 +446,87 @@ conf.OnChangeDebounce = TimeSpan.FromMilliseconds(500); // customize to 500ms
 conf.OnChangeDebounce = TimeSpan.Zero;                  // disable debouncing
 ```
 
+### InstanceName
+If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
+
+```csharp
+// without DI
+WritableOptions.Initialize(options => {
+    // first setting
+    options.Add<UserSetting>("First", conf => {
+        conf.UseFile("firstsettings.json");
+    });
+    // second setting
+    options.Add<UserSetting>("Second", conf => {
+        conf.UseFile("secondsettings.json");
+    });
+});
+```
+
+And use `IReadOnlyNamedOptions<T>` and `IWritableNamedOptions<T>` to access them.
+
+```csharp
+// without DI
+var options = WritableOptions.GetNamedOptions<UserSetting>();
+// get the instance by specifying the name
+var firstSetting = options.Get("First");
+var secondSetting = options.Get("Second");
+// and write to the instance
+await options.SaveAsync("First", setting => {
+    setting.Name = "first name";
+});
+
+// or use GetOptions("First") to get the instance directly
+var firstOptions = WritableOptions.GetOptions<UserSetting>("First");
+var firstSetting2 = firstOptions.CurrentValue;
+await firstOptions.SaveAsync(setting => {
+    setting.Name = "first name 2";
+});
+```
+
+```csharp
+builder.Services.AddWritableOptions(options => {
+    options.Add<UserSetting>("First", conf => {
+        conf.UseFile("firstsettings.json");
+    });
+    options.Add<UserSetting>("Second", conf => {
+        conf.UseFile("secondsettings.json");
+    });
+});
+
+// with DI, you can inject IWritableNamedOptions<T>/IReadOnlyNamedOptions<T> to access multiple instances of the same type.
+public class MyService(IWritableNamedOptions<UserSetting> options) {
+    public async Task GetAndSaveAsync() {
+        // get the instance by specifying the name
+        var firstSetting = options.Get("First");
+        var secondSetting = options.Get("Second");
+        await options.SaveAsync("First", setting => {
+            setting.Name = "first name";
+        });
+
+        // or use GetInstance("First") to get the instance directly
+        var firstOptions = options.GetInstance("First");
+        var firstSetting2 = firstOptions.CurrentValue;
+        await firstOptions.SaveAsync(setting => {
+            setting.Name = "first name 2";
+        });
+    }
+}
+
+// Alternatively, you can also use IWritableOptions<T> with the [FromKeyedService] attribute
+public class MyOtherService(
+    [FromKeyedService("First")]
+    IWritableOptions<UserSetting> firstOptions
+) {
+    public async Task GetAndSaveAsync() {
+        var firstSetting = firstOptions.CurrentValue;
+        await firstOptions.SaveAsync(setting => {
+            setting.Name = "first name";
+        });
+    }
+}
+```
+
 ### Logging
 Logging is enabled by default in DI environments.  
 If you are not using DI, or if you want to override the logging settings, you can enable logging by specifying `conf.Logger`.
@@ -1083,76 +1164,6 @@ conf.UseCustomCloneStrategy(original => {
 ```
 
 ## Low-level APIs
-### InstanceName
-If you want to manage multiple settings of the same type, you must specify different `InstanceName` for each setting.
-
-```csharp
-builder.Services.AddWritableOptions(options => {
-    // first setting
-    options.Add<UserSetting>("First", conf => {
-        conf.UseFile("firstsettings.json");
-    });
-    // second setting
-    options.Add<UserSetting>("Second", conf => {
-        conf.UseFile("secondsettings.json");
-    });
-});
-```
-
-And use `IReadOnlyNamedOptions<T>` and `IWritableNamedOptions<T>` to access them.
-
-```csharp
-// use IReadOnlyNamedOptions<T> to read, IWritableNamedOptions<T> to read and write
-public class MyService(IWritableNamedOptions<UserSetting> options) {
-    public async Task GetAndSaveAsync() {
-        var firstSetting = options.Get("First");
-        var secondSetting = options.Get("Second");
-        await options.SaveAsync("First", setting => {
-            setting.Name = "first name";
-        });
-        await options.SaveAsync("Second", setting => {
-            setting.Name = "second name";
-        });
-
-        // If specifying the name each time is cumbersome, you can also use GetInstance
-        // By doing so, you can handle it in the same way as regular IReadOnlyOptions/IWritableOptions.
-        var firstOptions = options.GetInstance("First");
-        var firstSetting2 = firstOptions.CurrentValue;
-        await firstOptions.SaveAsync(setting => {
-            setting.Name = "first name 2";
-        });
-    }
-}
-
-// Alternatively, you can also use IWritableOptions<T> with the [FromKeyedService] attribute
-public class MyOtherService(
-    [FromKeyedService("First")]
-    IWritableOptions<UserSetting> firstOptions
-) {
-    public async Task GetAndSaveAsync() {
-        var firstSetting = firstOptions.CurrentValue;
-        await firstOptions.SaveAsync(setting => {
-            setting.Name = "first name";
-        });
-    }
-}
-```
-
-If `RegisterAsSingleton` is enabled, you can access it as follows:
-
-```csharp
-public class MyService([FromKeyedService("First")] UserSetting options) {
-    public void DirectUseNamedInstance() {
-        // you can use the instance directly
-        Console.WriteLine($">> Name: {options.Name}");
-    }
-}
-```
-
-> [!NOTE]
-> When not using DI (direct use of WritableOptions), managing multiple configurations is intentionally not supported.
-> This is to avoid complicating usage.
-
 ### RegisterAsSingleton
 If you want to directly reference the settings class, specify `conf.RegisterAsSingleton = true`.
 

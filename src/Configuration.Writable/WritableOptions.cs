@@ -56,4 +56,17 @@ public static class WritableOptions
     /// </summary>
     public static IWritableOptions<T> GetOptions<T>()
         where T : class, new() => GetInternalInstance<T>().GetOptions();
+
+    /// <summary>
+    /// Creates a writable configuration instance bound to the specified name.
+    /// </summary>
+    /// <param name="instanceName">The name of the configured instance.</param>
+    public static IWritableOptions<T> GetOptions<T>(string instanceName)
+        where T : class, new() => GetInternalInstance<T>().GetOptions().GetInstance(instanceName);
+
+    /// <summary>
+    /// Creates a writable configuration monitor for accessing named instances.
+    /// </summary>
+    public static IWritableNamedOptions<T> GetNamedOptions<T>()
+        where T : class, new() => GetInternalInstance<T>().GetOptions();
 }

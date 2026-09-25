@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
 using Configuration.Writable.Testing;
@@ -121,7 +122,7 @@ public partial class GroupedWritableOptionsTests
     }
 
     [Test]
-    public void StaticGroupedInitialization_RetainsEveryNamedRegistration()
+    public async Task StaticGroupedInitialization_RetainsEveryNamedRegistration()
     {
         var provider = new InMemoryFileProvider();
         WritableOptions.Initialize(options =>
@@ -131,10 +132,21 @@ public partial class GroupedWritableOptionsTests
             options.Add<NamedSettings>("Second", conf => conf.UseFile("second.json"));
         });
 
-        var writableOptions =
-            (IWritableOptionsMonitor<NamedSettings>)WritableOptions.GetOptions<NamedSettings>();
-        writableOptions.Get("First").ShouldNotBeNull();
-        writableOptions.Get("Second").ShouldNotBeNull();
+        var namedOptions = WritableOptions.GetNamedOptions<NamedSettings>();
+        namedOptions.Get("First").Value.ShouldBe("named");
+        namedOptions.Get("Second").Value.ShouldBe("named");
+
+        var first = WritableOptions.GetOptions<NamedSettings>("First");
+        var second = WritableOptions.GetOptions<NamedSettings>("Second");
+        first.CurrentValue.Value.ShouldBe("named");
+        second.CurrentValue.Value.ShouldBe("named");
+
+        await first.SaveAsync(settings => settings.Value = "first value");
+
+        first.CurrentValue.Value.ShouldBe("first value");
+        second.CurrentValue.Value.ShouldBe("named");
+        provider.ReadAllText("first.json").ShouldContain("first value");
+        provider.FileExists("second.json").ShouldBeFalse();
     }
 
     [Test]
