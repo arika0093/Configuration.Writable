@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -16,6 +17,10 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
 {
     private const string AttributeName = "Configuration.Writable.OptionsModelAttribute";
     private const string MetadataInterfaceName = "Configuration.Writable.IGeneratedOptionsMetadata";
+    private const string MergeMetadataInterfaceName =
+        "Configuration.Writable.IGeneratedOptionsMergeMetadata";
+    private const string MergeArrayAttributeName = "Configuration.Writable.DeepMergeArrayAttribute";
+    private const string MergeArrayModeName = "Configuration.Writable.DeepMergeArrayMode";
     private const string MigrationInterfaceName = "Configuration.Writable.IOptionsMigration";
     private const string DiagnosticsDocumentationUrl =
         "https://github.com/arika0093/Configuration.Writable/blob/main/src/Configuration.Writable.Generator/README.md";
@@ -440,7 +445,11 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             builder.IncreaseIndent();
         }
 
-        var implementedInterfaces = new List<string> { MetadataInterfaceName };
+        var implementedInterfaces = new List<string>
+        {
+            MetadataInterfaceName,
+            MergeMetadataInterfaceName,
+        };
         if (previous is not null && model.Id is not null && model.SchemaVersion is not null)
         {
             implementedInterfaces.Add(
@@ -481,6 +490,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
         }
         builder.DecreaseIndent();
         builder.AppendLine("}");
+        GenerateMergeMetadata(builder, model.TypeSymbol);
 
         builder.DecreaseIndent();
         builder.AppendLine("}");
@@ -495,6 +505,175 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             builder.AppendLine("}");
         }
         return builder.ToString();
+    }
+
+    private static void GenerateMergeMetadata(
+        IndentedStringBuilder builder,
+        INamedTypeSymbol rootType
+    )
+    {
+        builder.AppendLine(
+            $$"""
+            bool global::{{MergeMetadataInterfaceName}}.TryGetPropertyMetadata(
+                global::System.Type declaringType,
+                string propertyName,
+                out global::System.Type propertyType,
+                out global::Configuration.Writable.DeepMergeArrayMode arrayMode)
+            {
+            """
+        );
+        builder.IncreaseIndent();
+        foreach (var type in GetMergeMetadataTypes(rootType))
+        {
+            foreach (var property in GetMergeMetadataProperties(type))
+            {
+                var propertyNames = GetSerializedPropertyNames(property);
+                var propertyType = property.Type.ToDisplayString(
+                    SymbolDisplayFormat.FullyQualifiedFormat
+                );
+                var arrayMode = GetArrayMergeMode(property);
+                builder.AppendLine(
+                    $"if (declaringType == typeof({type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}) && ({string.Join(" || ", propertyNames.Select(name => $"propertyName == {SymbolDisplay.FormatLiteral(name, true)}"))}))"
+                );
+                builder.AppendLine("{");
+                builder.IncreaseIndent();
+                builder.AppendLine($"propertyType = typeof({propertyType});");
+                builder.AppendLine($"arrayMode = global::{MergeArrayModeName}.{arrayMode};");
+                builder.AppendLine("return true;");
+                builder.DecreaseIndent();
+                builder.AppendLine("}");
+            }
+        }
+
+        builder.AppendLine("propertyType = typeof(object);");
+        builder.AppendLine($"arrayMode = global::{MergeArrayModeName}.Replace;");
+        builder.AppendLine("return false;");
+        builder.DecreaseIndent();
+        builder.AppendLine("}");
+    }
+
+    private static ImmutableArray<INamedTypeSymbol> GetMergeMetadataTypes(INamedTypeSymbol rootType)
+    {
+        var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+        var pending = new Queue<INamedTypeSymbol>();
+        var seen = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        pending.Enqueue(rootType);
+
+        while (pending.Count > 0)
+        {
+            var type = pending.Dequeue();
+            if (!seen.Add(type))
+            {
+                continue;
+            }
+
+            result.Add(type);
+            if (type.BaseType is not null)
+                AddMergeMetadataTypes(type.BaseType, pending);
+            foreach (var property in GetMergeMetadataProperties(type))
+            {
+                AddMergeMetadataTypes(property.Type, pending);
+            }
+        }
+
+        return result.ToImmutable();
+    }
+
+    private static IEnumerable<IPropertySymbol> GetMergeMetadataProperties(INamedTypeSymbol type)
+    {
+        var seenNames = new HashSet<string>(StringComparer.Ordinal);
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            foreach (
+                var property in current
+                    .GetMembers()
+                    .OfType<IPropertySymbol>()
+                    .Where(property =>
+                        !property.IsStatic
+                        && !property.IsIndexer
+                        && property.GetMethod is not null
+                        && seenNames.Add(property.Name)
+                    )
+            )
+            {
+                yield return property;
+            }
+        }
+    }
+
+    private static void AddMergeMetadataTypes(
+        ITypeSymbol propertyType,
+        Queue<INamedTypeSymbol> pending
+    )
+    {
+        if (propertyType is IArrayTypeSymbol arrayType)
+        {
+            AddMergeMetadataTypes(arrayType.ElementType, pending);
+            return;
+        }
+
+        if (propertyType is not INamedTypeSymbol namedType || namedType.TypeKind == TypeKind.Enum)
+        {
+            return;
+        }
+
+        var namespaceName = namedType.ContainingNamespace.ToDisplayString();
+        if (
+            namespaceName == "System"
+            || namespaceName.StartsWith("System.", StringComparison.Ordinal)
+        )
+        {
+            foreach (var typeArgument in namedType.TypeArguments)
+            {
+                AddMergeMetadataTypes(typeArgument, pending);
+            }
+            return;
+        }
+
+        if (namedType.TypeKind is TypeKind.Class or TypeKind.Struct)
+        {
+            pending.Enqueue(namedType);
+        }
+    }
+
+    private static IReadOnlyList<string> GetSerializedPropertyNames(IPropertySymbol property)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal) { property.Name };
+        if (property.Name.Length > 0)
+        {
+            names.Add(char.ToLowerInvariant(property.Name[0]) + property.Name.Substring(1));
+        }
+
+        foreach (var attribute in property.GetAttributes())
+        {
+            var attributeName = attribute.AttributeClass?.ToDisplayString();
+            if (
+                attributeName == "System.Text.Json.Serialization.JsonPropertyNameAttribute"
+                && attribute.ConstructorArguments.Length > 0
+                && attribute.ConstructorArguments[0].Value is string jsonName
+            )
+            {
+                names.Add(jsonName);
+            }
+        }
+
+        return names.ToArray();
+    }
+
+    private static string GetArrayMergeMode(IPropertySymbol property)
+    {
+        var attribute = property
+            .GetAttributes()
+            .FirstOrDefault(static candidate =>
+                candidate.AttributeClass?.ToDisplayString() == MergeArrayAttributeName
+            );
+        var modeValue = attribute?.ConstructorArguments.FirstOrDefault().Value;
+        return modeValue switch
+        {
+            1 => "Append",
+            2 => "UniqueAppend",
+            _ => "Replace",
+        };
     }
 
     private static void AppendTypeStart(
@@ -578,6 +757,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
     }
 
     private sealed record SourceModelInfo(
+        INamedTypeSymbol TypeSymbol,
         string? Id,
         int? SchemaVersion,
         bool SupportMigration,
@@ -673,6 +853,7 @@ public sealed class OptionsVersioningGenerator : IIncrementalGenerator
             }
 
             return new(
+                type,
                 id,
                 version,
                 supportMigration,
