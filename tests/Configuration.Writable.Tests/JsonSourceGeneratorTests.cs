@@ -60,6 +60,8 @@ internal partial class DeepMergeTestOptionsJsonContext : JsonSerializerContext;
 /// </summary>
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(SourceGenTestConfig))]
+[JsonSerializable(typeof(AnnotatedSettings))]
+[JsonSerializable(typeof(AdditionalAnnotatedSchemaModel))]
 internal partial class SourceGenTestConfigContext : JsonSerializerContext;
 
 /// <summary>

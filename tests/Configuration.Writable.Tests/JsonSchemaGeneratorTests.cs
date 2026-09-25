@@ -1,6 +1,8 @@
 #if NET9_0_OR_GREATER
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Configuration.Writable.Tests;
@@ -29,6 +31,58 @@ public class JsonSchemaGeneratorTests
             .GetValue<string>()
             .ShouldBe("string");
         result.WrittenFiles.ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Generate_ShouldIncludeDataAnnotationConstraints()
+    {
+        var model = new GeneratedOptionsModelMetadata(typeof(AnnotatedSettings), "annotated", 1);
+
+        var result = JsonSchemaGenerator.Generate([model], SourceGenTestConfigContext.Default);
+
+        result.Succeeded.ShouldBeTrue();
+        var schema = result.Documents[0].Schema;
+        schema["properties"]!["MaxConnections"]!["minimum"]!.GetValue<decimal>().ShouldBe(1m);
+        schema["properties"]!["MaxConnections"]!["maximum"]!.GetValue<decimal>().ShouldBe(1000m);
+        schema["properties"]!["Name"]!["minLength"]!.GetValue<int>().ShouldBe(3);
+        schema["properties"]!["Email"]!["minLength"]!.GetValue<int>().ShouldBe(1);
+        schema["properties"]!["Email"]!["format"]!.GetValue<string>().ShouldBe("email");
+        schema["required"]!.AsArray().Select(item => item!.GetValue<string>())
+            .ShouldBe(["Email", "Name"]);
+    }
+
+    [Test]
+    public void Generate_ShouldIncludeAdditionalDataAnnotationMetadata()
+    {
+        var model = new GeneratedOptionsModelMetadata(
+            typeof(AdditionalAnnotatedSchemaModel),
+            "additional-annotations",
+            1
+        );
+
+        var result = JsonSchemaGenerator.Generate([model], SourceGenTestConfigContext.Default);
+
+        result.Succeeded.ShouldBeTrue();
+        var schema = result.Documents[0].Schema;
+        schema["properties"]!["Label"]!["minLength"]!.GetValue<int>().ShouldBe(2);
+        schema["properties"]!["Label"]!["maxLength"]!.GetValue<int>().ShouldBe(8);
+        schema["properties"]!["OptionalLabel"]!.ToJsonString().ShouldContain("\"minLength\":2");
+        schema["properties"]!["Tags"]!["minItems"]!.GetValue<int>().ShouldBe(1);
+        schema["properties"]!["Tags"]!["maxItems"]!.GetValue<int>().ShouldBe(4);
+        schema["properties"]!["AllowedState"]!["enum"]!.AsArray()
+            .Select(item => item!.GetValue<string>())
+            .ShouldBe(["red", "green"]);
+        schema["properties"]!["EnumState"]!["enum"]!.AsArray()
+            .Select(item => item!.GetValue<int>())
+            .ShouldBe([1, 2]);
+        schema["properties"]!["CurrentState"]!["not"]!["enum"]!.AsArray()
+            .Select(item => item!.GetValue<string>())
+            .ShouldBe(["retired", "legacy"]);
+        schema["properties"]!["PublishedDate"]!["format"]!.GetValue<string>().ShouldBe("date");
+        schema["properties"]!["PublishedDate"]!["title"]!.GetValue<string>()
+            .ShouldBe("Published date");
+        schema["properties"]!["PublishedDate"]!["description"]!.GetValue<string>()
+            .ShouldBe("Date shown to users.");
     }
 
     [Test]
@@ -118,5 +172,38 @@ public class JsonSchemaGeneratorTests
     }
 
     private sealed class UnregisteredSchemaModel;
+}
+
+[OptionsModel]
+public partial class AdditionalAnnotatedSchemaModel
+{
+    [Length(2, 8)]
+    public string Label { get; set; } = "";
+
+    [Length(2, 8)]
+    public string? OptionalLabel { get; set; }
+
+    [MinLength(1)]
+    [MaxLength(4)]
+    public string[] Tags { get; set; } = [];
+
+    [AllowedValues("red", "green")]
+    public string AllowedState { get; set; } = "";
+
+    [DeniedValues("retired", "legacy")]
+    public string CurrentState { get; set; } = "";
+
+    [AllowedValues(AdditionalAnnotatedSchemaValue.First, AdditionalAnnotatedSchemaValue.Second)]
+    public AdditionalAnnotatedSchemaValue EnumState { get; set; }
+
+    [Display(Name = "Published date", Description = "Date shown to users.")]
+    [DataType(DataType.Date)]
+    public string PublishedDate { get; set; } = "";
+}
+
+public enum AdditionalAnnotatedSchemaValue
+{
+    First = 1,
+    Second = 2,
 }
 #endif

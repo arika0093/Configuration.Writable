@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -106,19 +108,7 @@ public static class JsonSchemaGenerator
             : new JsonSerializerOptions { WriteIndented = true, TypeInfoResolver = resolver };
         var exporterOptions = new JsonSchemaExporterOptions
         {
-            TransformSchemaNode = static (context, node) =>
-            {
-                var description = context
-                    .PropertyInfo?.AttributeProvider?.GetCustomAttributes(
-                        typeof(DescriptionAttribute),
-                        true
-                    )
-                    .OfType<DescriptionAttribute>()
-                    .FirstOrDefault();
-                if (description is not null && node is JsonObject schema)
-                    schema["description"] = description.Description;
-                return node;
-            },
+            TransformSchemaNode = TransformSchemaNode,
         };
 
         foreach (var model in candidates)
@@ -436,6 +426,53 @@ public static class JsonSchemaGenerator
         );
 
 #if NET9_0_OR_GREATER
+    private static JsonNode TransformSchemaNode(JsonSchemaExporterContext context, JsonNode node)
+    {
+        if (node is not JsonObject schema)
+            return node;
+
+        var description = GetAttributes<DescriptionAttribute>(
+                context.PropertyInfo?.AttributeProvider
+            )
+            .FirstOrDefault();
+        if (description is not null)
+            schema["description"] = description.Description;
+        else
+        {
+            var displayDescription = GetAttributes<DisplayAttribute>(
+                    context.PropertyInfo?.AttributeProvider
+                )
+                .FirstOrDefault()
+                ?.Description;
+            if (displayDescription is not null)
+                schema["description"] = displayDescription;
+        }
+
+        var displayName = GetAttributes<DisplayAttribute>(context.PropertyInfo?.AttributeProvider)
+            .FirstOrDefault()
+            ?.Name;
+        if (displayName is not null)
+            schema["title"] = displayName;
+
+        JsonSchemaValidationAttributeMapper.AddRequiredProperties(schema, context.TypeInfo);
+        foreach (
+            var attribute in GetAttributes<ValidationAttribute>(
+                context.PropertyInfo?.AttributeProvider
+            )
+        )
+            JsonSchemaValidationAttributeMapper.Apply(schema, attribute, context.TypeInfo);
+        return schema;
+    }
+
+    private static IEnumerable<TAttribute> GetAttributes<TAttribute>(
+        ICustomAttributeProvider? attributeProvider
+    )
+        where TAttribute : Attribute =>
+        attributeProvider
+            ?.GetCustomAttributes(typeof(TAttribute), inherit: true)
+            .OfType<TAttribute>()
+        ?? [];
+
     private static void AddLibraryProperties(
         JsonNode schema,
         GeneratedOptionsModelMetadata model,
