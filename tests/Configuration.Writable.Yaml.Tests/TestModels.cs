@@ -61,3 +61,27 @@ public partial class UserSettings
     public string Theme { get; set; } = "dark";
     public bool Notifications { get; set; } = true;
 }
+
+[OptionsModel]
+[YamlObject]
+public partial class YamlDeepMergeOptions
+{
+    public string Name { get; set; } = "default";
+    public string? NullText { get; set; } = "default null text";
+    public bool Enabled { get; set; } = true;
+    public int Count { get; set; } = 10;
+    public int[] ReplaceItems { get; set; } = [9];
+    [DeepMergeArray(DeepMergeArrayMode.Append)]
+    public int[] AppendItems { get; set; } = [];
+    [DeepMergeArray(DeepMergeArrayMode.UniqueAppend)]
+    public string[] UniqueItems { get; set; } = [];
+    public YamlDeepMergeNestedOptions Nested { get; set; } = new();
+}
+
+[OptionsModel]
+[YamlObject]
+public partial class YamlDeepMergeNestedOptions
+{
+    public string? Label { get; set; } = "default label";
+    public int Count { get; set; } = 4;
+}

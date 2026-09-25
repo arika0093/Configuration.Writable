@@ -1,7 +1,7 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
 namespace Configuration.Writable.FormatProvider
 {
-    public class YamlFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
+    public class YamlFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IDeepMergeableFormatProvider, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider, Configuration.Writable.FormatProvider.IWritableFormatProvider
     {
         public YamlFormatProvider() { }
         public System.Text.Encoding Encoding { get; init; }
@@ -10,6 +10,8 @@ namespace Configuration.Writable.FormatProvider
         public override string SchemaVersionProperty { get; set; }
         public VYaml.Serialization.YamlSerializerOptions SerializerOptions { get; init; }
         public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.ValueTask<T> MergeConfigurationsAsync<T>(System.Collections.Generic.IReadOnlyList<System.ReadOnlyMemory<byte>> documents, System.Collections.Generic.IReadOnlyList<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new () { }
         public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
         public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }

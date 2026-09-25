@@ -107,120 +107,18 @@ namespace Configuration.Writable.Configure
         public void WithValidatorFunction(System.Func<T, Microsoft.Extensions.Options.ValidateOptionsResult> validator) { }
     }
 }
-namespace Configuration.Writable.FileProvider
-{
-    public class CommonFileProvider : Configuration.Writable.FileProvider.IBackupFileProvider, Configuration.Writable.FileProvider.IWritableFileProvider, System.IDisposable
-    {
-        public CommonFileProvider() { }
-        public virtual string BackupDirectory { get; set; }
-        public virtual int BackupMaxCount { get; set; }
-        public virtual int MaxRetryCount { get; set; }
-        public virtual System.Func<int, int> RetryDelay { get; set; }
-        public virtual bool CanWriteToDirectory(string path) { }
-        public virtual bool CanWriteToFile(string path) { }
-        public virtual bool DirectoryExists(string path) { }
-        public void Dispose() { }
-        protected virtual void Dispose(bool disposing) { }
-        public virtual bool EnsureDirectoryExists(string path) { }
-        public virtual bool FileExists(string path) { }
-        protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
-        public virtual System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
-        protected virtual string GetTemporaryFilePath(string path) { }
-        public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
-        public virtual bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null) { }
-        public virtual bool TryRestoreLatestBackup(string path, Microsoft.Extensions.Logging.ILogger? logger = null) { }
-        protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
-    }
-    public interface IBackupFileProvider
-    {
-        bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null);
-    }
-    public interface IWritableFileProvider
-    {
-        bool CanWriteToDirectory(string path);
-        bool CanWriteToFile(string path);
-        bool DirectoryExists(string path);
-        bool EnsureDirectoryExists(string path);
-        bool FileExists(string path);
-        System.IO.Pipelines.PipeReader? GetFilePipeReader(string path);
-        System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default);
-    }
-    public class ZipFileProvider : Configuration.Writable.FileProvider.IBackupFileProvider, Configuration.Writable.FileProvider.IWritableFileProvider, System.IDisposable
-    {
-        public ZipFileProvider() { }
-        public string EntriesDirectory { get; set; }
-        public string ZipFileName { get; set; }
-        public bool CanWriteToDirectory(string path) { }
-        public bool CanWriteToFile(string path) { }
-        public bool DirectoryExists(string path) { }
-        public void Dispose() { }
-        protected virtual void Dispose(bool disposing) { }
-        public bool EnsureDirectoryExists(string path) { }
-        public bool FileExists(string path) { }
-        public System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
-        public System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
-        public bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null) { }
-    }
-}
-namespace Configuration.Writable.FormatProvider
-{
-    public abstract class FormatProviderBase : Configuration.Writable.FormatProvider.IWritableFormatProvider
-    {
-        protected FormatProviderBase() { }
-        public abstract string FileExtension { get; }
-        public virtual System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        public virtual string SchemaVersionProperty { get; set; }
-        public object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options) { }
-        public abstract System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
-        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new ();
-        protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
-    }
-    public interface IOptionsSchemaMetadataProvider
-    {
-        Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options);
-    }
-    public interface IWritableFormatProvider
-    {
-        string FileExtension { get; }
-        System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        string SchemaVersionProperty { get; set; }
-        object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options);
-        System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
-        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new ();
-    }
-    public class JsonAotFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
-    {
-        public JsonAotFormatProvider(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
-        public System.Text.Encoding Encoding { get; init; }
-        public override string FileExtension { get; }
-        public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; init; }
-        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        public override string SchemaVersionProperty { get; set; }
-        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
-        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new () { }
-    }
-    public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider
-    {
-        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Runtime JSON metadata may require runtime code generation and is not compatible w" +
-            "ith NativeAOT.")]
-        public JsonFormatProvider() { }
-        public System.Text.Encoding Encoding { get; init; }
-        public override string FileExtension { get; }
-        public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
-        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
-        public override string SchemaVersionProperty { get; set; }
-        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
-        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
-        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
-            where T :  class, new () { }
-    }
-}
 namespace Configuration.Writable
 {
+    public enum DeepMergeArrayMode
+    {
+        Replace = 0,
+        Append = 1,
+        UniqueAppend = 2,
+    }
+    public interface IGeneratedOptionsMergeMetadata
+    {
+        bool TryGetPropertyMetadata(System.Type declaringType, string propertyName, out System.Type propertyType, out Configuration.Writable.DeepMergeArrayMode arrayMode);
+    }
     public interface IWritableOptionsConfigRegistry<T>
         where T :  class, new ()
     {
@@ -279,6 +177,132 @@ namespace Configuration.Writable
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
             where T :  class, new () { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptionsCore<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string instanceName)
+            where T :  class, new () { }
+    }
+}
+namespace Configuration.Writable.FileProvider
+{
+    public class CommonFileProvider : Configuration.Writable.FileProvider.IBackupFileProvider, Configuration.Writable.FileProvider.IWritableFileProvider, System.IDisposable
+    {
+        public CommonFileProvider() { }
+        public virtual string BackupDirectory { get; set; }
+        public virtual int BackupMaxCount { get; set; }
+        public virtual int MaxRetryCount { get; set; }
+        public virtual System.Func<int, int> RetryDelay { get; set; }
+        public virtual bool CanWriteToDirectory(string path) { }
+        public virtual bool CanWriteToFile(string path) { }
+        public virtual bool DirectoryExists(string path) { }
+        public void Dispose() { }
+        protected virtual void Dispose(bool disposing) { }
+        public virtual bool EnsureDirectoryExists(string path) { }
+        public virtual bool FileExists(string path) { }
+        protected virtual void GenerateBackupFile(string path, Microsoft.Extensions.Logging.ILogger? logger) { }
+        public virtual System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
+        protected virtual string GetTemporaryFilePath(string path) { }
+        public virtual System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public virtual bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null) { }
+        public virtual bool TryRestoreLatestBackup(string path, Microsoft.Extensions.Logging.ILogger? logger = null) { }
+        protected virtual System.Threading.Tasks.Task WriteContentToFileAsync(string path, System.ReadOnlyMemory<byte> content, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public interface IBackupFileProvider
+    {
+        bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null);
+    }
+    public interface IWritableFileProvider
+    {
+        bool CanWriteToDirectory(string path);
+        bool CanWriteToFile(string path);
+        bool DirectoryExists(string path);
+        bool EnsureDirectoryExists(string path);
+        bool FileExists(string path);
+        System.IO.Pipelines.PipeReader? GetFilePipeReader(string path);
+        System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public class ZipFileProvider : Configuration.Writable.FileProvider.IBackupFileProvider, Configuration.Writable.FileProvider.IWritableFileProvider, System.IDisposable
+    {
+        public ZipFileProvider() { }
+        public string EntriesDirectory { get; set; }
+        public string ZipFileName { get; set; }
+        public bool CanWriteToDirectory(string path) { }
+        public bool CanWriteToFile(string path) { }
+        public bool DirectoryExists(string path) { }
+        public void Dispose() { }
+        protected virtual void Dispose(bool disposing) { }
+        public bool EnsureDirectoryExists(string path) { }
+        public bool FileExists(string path) { }
+        public System.IO.Pipelines.PipeReader? GetFilePipeReader(string path) { }
+        public System.Threading.Tasks.Task SaveToFileAsync(string path, System.ReadOnlyMemory<byte> content, Microsoft.Extensions.Logging.ILogger? logger = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public bool TryBackup(string path, out string? backupPath, Microsoft.Extensions.Logging.ILogger? logger = null) { }
+    }
+}
+namespace Configuration.Writable.FormatProvider
+{
+    public static class DeepMergeFormatProviderExtensions
+    {
+        public static System.Threading.Tasks.ValueTask<T> MergeConfigurationsAsync<T>(this Configuration.Writable.FormatProvider.IWritableFormatProvider formatProvider, System.Collections.Generic.IReadOnlyList<System.ReadOnlyMemory<byte>> documents, System.Collections.Generic.IReadOnlyList<string>? sectionNameParts = null, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new () { }
+    }
+    public abstract class FormatProviderBase : Configuration.Writable.FormatProvider.IWritableFormatProvider
+    {
+        protected FormatProviderBase() { }
+        public abstract string FileExtension { get; }
+        public virtual System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public virtual string SchemaVersionProperty { get; set; }
+        public object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options) { }
+        public abstract System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
+        public abstract System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new ();
+        protected static object CreateNestedSection(System.Collections.Generic.List<string> parts, object value) { }
+    }
+    public interface IDeepMergeableFormatProvider : Configuration.Writable.FormatProvider.IWritableFormatProvider
+    {
+        System.Threading.Tasks.ValueTask<T> MergeConfigurationsAsync<T>(System.Collections.Generic.IReadOnlyList<System.ReadOnlyMemory<byte>> documents, System.Collections.Generic.IReadOnlyList<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new ();
+    }
+    public interface IOptionsSchemaMetadataProvider
+    {
+        Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options);
+    }
+    public interface IWritableFormatProvider
+    {
+        string FileExtension { get; }
+        System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        string SchemaVersionProperty { get; set; }
+        object LoadConfiguration(System.Type type, Configuration.Writable.IWritableOptionsConfiguration options);
+        System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new ();
+    }
+    public class JsonAotFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IDeepMergeableFormatProvider, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider, Configuration.Writable.FormatProvider.IWritableFormatProvider
+    {
+        public JsonAotFormatProvider(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
+        public System.Text.Encoding Encoding { get; init; }
+        public override string FileExtension { get; }
+        public System.Text.Json.JsonSerializerOptions? JsonSerializerOptions { get; init; }
+        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public override string SchemaVersionProperty { get; set; }
+        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.ValueTask<T> MergeConfigurationsAsync<T>(System.Collections.Generic.IReadOnlyList<System.ReadOnlyMemory<byte>> documents, System.Collections.Generic.IReadOnlyList<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new () { }
+        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new () { }
+    }
+    public class JsonFormatProvider : Configuration.Writable.FormatProvider.FormatProviderBase, Configuration.Writable.FormatProvider.IDeepMergeableFormatProvider, Configuration.Writable.FormatProvider.IOptionsSchemaMetadataProvider, Configuration.Writable.FormatProvider.IWritableFormatProvider
+    {
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Runtime JSON metadata may require runtime code generation and is not compatible w" +
+            "ith NativeAOT.")]
+        public JsonFormatProvider() { }
+        public System.Text.Encoding Encoding { get; init; }
+        public override string FileExtension { get; }
+        public System.Text.Json.JsonSerializerOptions JsonSerializerOptions { get; init; }
+        public override System.Collections.Generic.IReadOnlyList<string> SchemaVersionFallbackProperties { get; set; }
+        public override string SchemaVersionProperty { get; set; }
+        public override System.Threading.Tasks.ValueTask<object> LoadConfigurationAsync(System.Type type, System.IO.Pipelines.PipeReader reader, System.Collections.Generic.List<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.ValueTask<T> MergeConfigurationsAsync<T>(System.Collections.Generic.IReadOnlyList<System.ReadOnlyMemory<byte>> documents, System.Collections.Generic.IReadOnlyList<string> sectionNameParts, System.Threading.CancellationToken cancellationToken = default)
+            where T :  class, new () { }
+        public Configuration.Writable.OptionsSchemaMetadata? ReadSchemaMetadata(Configuration.Writable.IWritableOptionsConfiguration options) { }
+        public override System.Threading.Tasks.Task SaveAsync<T>(T config, Configuration.Writable.IWritableOptionsConfiguration options, System.Threading.CancellationToken cancellationToken = default)
             where T :  class, new () { }
     }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Configuration.Writable.FileProvider;
 using Configuration.Writable.FormatProvider;
+using VYaml.Serialization;
 
 namespace Configuration.Writable.Yaml.Tests;
 
@@ -16,6 +17,71 @@ public class YamlFormatProviderTests
     {
         var provider = new YamlFormatProvider();
         provider.FileExtension.ShouldBe("yaml");
+    }
+
+    [Test]
+    public async Task YamlFormatProvider_MergeConfigurationsAsync_ShouldPreservePresenceAndMergeAttributes()
+    {
+        YamlDeepMergeOptions.__RegisterVYamlFormatter();
+        YamlDeepMergeNestedOptions.__RegisterVYamlFormatter();
+        var provider = new YamlFormatProvider
+        {
+            SerializerOptions = new YamlSerializerOptions
+            {
+                Resolver = YamlDeepMergeAotResolver.Instance,
+            },
+        };
+        var documents = new ReadOnlyMemory<byte>[]
+        {
+            Encoding.UTF8.GetBytes(
+                """
+                name: base
+                nullText: "null"
+                enabled: true
+                count: 10
+                replaceItems:
+                  - 1
+                  - 2
+                appendItems:
+                  - 1
+                  - 2
+                uniqueItems:
+                  - a
+                  - b
+                nested:
+                  label: base nested
+                  count: 5
+                """
+            ),
+            Encoding.UTF8.GetBytes(
+                """
+                enabled: false
+                count: 0
+                replaceItems: []
+                appendItems:
+                  - 2
+                  - 3
+                uniqueItems:
+                  - b
+                  - c
+                nested:
+                  label: null
+                  count: 0
+                """
+            ),
+        };
+
+        var result = await provider.MergeConfigurationsAsync<YamlDeepMergeOptions>(documents);
+
+        result.Name.ShouldBe("base");
+        result.NullText.ShouldBe("null");
+        result.Enabled.ShouldBeFalse();
+        result.Count.ShouldBe(0);
+        result.ReplaceItems.ShouldBe([]);
+        result.AppendItems.ShouldBe([1, 2, 2, 3]);
+        result.UniqueItems.ShouldBe(["a", "b", "c"]);
+        result.Nested.Label.ShouldBe("base nested");
+        result.Nested.Count.ShouldBe(0);
     }
 
     [Test]
@@ -332,5 +398,19 @@ public class YamlFormatProviderTests
         loadedSettings.Name.ShouldBe("yaml_deep_nested");
         loadedSettings.Value.ShouldBe(789);
         loadedSettings.IsEnabled.ShouldBeTrue();
+    }
+}
+
+internal sealed class YamlDeepMergeAotResolver : IYamlFormatterResolver
+{
+    public static YamlDeepMergeAotResolver Instance { get; } = new();
+
+    public IYamlFormatter<T>? GetFormatter<T>()
+    {
+        if (typeof(T) == typeof(int[]))
+            return (IYamlFormatter<T>)(object)new ArrayFormatter<int>();
+        if (typeof(T) == typeof(string[]))
+            return (IYamlFormatter<T>)(object)new ArrayFormatter<string>();
+        return GeneratedResolver.Instance.GetFormatter<T>() ?? BuiltinResolver.Instance.GetFormatter<T>();
     }
 }

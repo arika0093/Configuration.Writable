@@ -1,0 +1,69 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/arika0093/Configuration.Writable")]
+namespace Configuration.Writable
+{
+    [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple=false, Inherited=true)]
+    public sealed class DeepMergeArrayAttribute : System.Attribute
+    {
+        public DeepMergeArrayAttribute(Configuration.Writable.DeepMergeArrayMode mode) { }
+        public Configuration.Writable.DeepMergeArrayMode Mode { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Struct, AllowMultiple=false, Inherited=false)]
+    public sealed class OptionsModelAttribute : System.Attribute
+    {
+        public OptionsModelAttribute() { }
+        public string? Id { get; set; }
+        public System.Type? PreviousModel { get; set; }
+        public bool SupportMigration { get; set; }
+        public int Version { get; set; }
+    }
+    public static class WritableOptions
+    {
+        public static Configuration.Writable.IWritableNamedOptions<T> GetNamedOptions<T>()
+            where T :  class, new () { }
+        public static Configuration.Writable.IWritableOptions<T> GetOptions<T>()
+            where T :  class, new () { }
+        public static Configuration.Writable.IWritableOptions<T> GetOptions<T>(string instanceName)
+            where T :  class, new () { }
+        public static void Initialize(System.Action<Configuration.Writable.WritableOptionsBuilder> configure) { }
+        public static void Initialize<T>()
+            where T :  class, new () { }
+        public static void Initialize<T>(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configurationOptions)
+            where T :  class, new () { }
+    }
+    public class WritableOptionsBuilder : Configuration.Writable.Configure.WritableOptionsConfigBuilder
+    {
+        public WritableOptionsBuilder() { }
+        public void Add<T>()
+            where T :  class, new () { }
+        public void Add<T>(System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure)
+            where T :  class, new () { }
+        public void Add<T>(string instanceName)
+            where T :  class, new () { }
+        public void Add<T>(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure)
+            where T :  class, new () { }
+        protected virtual void Register<T>(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure)
+            where T :  class, new () { }
+    }
+    public static class WritableOptionsExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.WritableOptionsServiceBuilder> configure) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+            where T :  class, new () { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configureOptions)
+            where T :  class, new () { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string instanceName)
+            where T :  class, new () { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddWritableOptions<T>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configureOptions)
+            where T :  class, new () { }
+        public static T GetMergedValue<T>(this Configuration.Writable.IReadOnlyNamedOptions<T> namedOptions, params string[] instanceNames)
+            where T :  class, new () { }
+    }
+    public class WritableOptionsServiceBuilder : Configuration.Writable.WritableOptionsBuilder
+    {
+        public WritableOptionsServiceBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection services) { }
+        public void AddProfiled<T>(System.Action<Configuration.Writable.Configure.ProfiledOptionsConfigBuilder<T>> configure)
+            where T :  class, new () { }
+        protected override void Register<T>(string instanceName, System.Action<Configuration.Writable.Configure.WritableOptionsConfigBuilder<T>> configure)
+            where T :  class, new () { }
+    }
+}

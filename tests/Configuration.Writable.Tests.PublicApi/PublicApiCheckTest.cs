@@ -44,6 +44,9 @@ public class PublicApiCheckTest
     public void Abstractions() => PublicApiCheck.Check<IOptionsConfigurationInfo>();
 
     [Test]
+    public void Writable() => PublicApiCheck.Check<Configuration.Writable.DeepMergeArrayAttribute>();
+
+    [Test]
     public void Core() => PublicApiCheck.Check<JsonFormatProvider>();
 
     [Test]

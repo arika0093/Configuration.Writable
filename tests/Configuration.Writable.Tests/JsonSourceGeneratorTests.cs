@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -27,6 +28,31 @@ public partial class NestedConfig
     public string Description { get; set; } = "Nested description";
     public double Value { get; set; } = 3.14;
 }
+
+[OptionsModel]
+public partial class DeepMergeTestOptions
+{
+    public string Name { get; set; } = "default";
+    public bool Enabled { get; set; } = true;
+    public int Count { get; set; } = 10;
+    public int[] ReplaceItems { get; set; } = [9];
+    [DeepMergeArray(DeepMergeArrayMode.Append)]
+    public int[] AppendItems { get; set; } = [];
+    [DeepMergeArray(DeepMergeArrayMode.UniqueAppend)]
+    public string[] UniqueItems { get; set; } = [];
+    public DeepMergeNestedOptions Nested { get; set; } = new();
+}
+
+[OptionsModel]
+public partial class DeepMergeNestedOptions
+{
+    public string? Label { get; set; } = "default label";
+    public int Count { get; set; } = 4;
+}
+
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(DeepMergeTestOptions))]
+internal partial class DeepMergeTestOptionsJsonContext : JsonSerializerContext;
 
 /// <summary>
 /// JSON Source Generator context for test configuration
@@ -59,6 +85,86 @@ internal partial class CamelCaseTestConfigContext : JsonSerializerContext;
 public class JsonSourceGeneratorTests
 {
     private readonly InMemoryFileProvider _fileProvider = new();
+
+    [Test]
+    public async Task JsonFormatProvider_MergeConfigurationsAsync_ShouldPreservePresenceAndMergeAttributes()
+    {
+        var provider = new JsonFormatProvider
+        {
+            JsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                TypeInfoResolver = DeepMergeTestOptionsJsonContext.Default,
+            },
+        };
+
+        var result = await MergeTestOptionsAsync(provider);
+
+        result.Name.ShouldBe("base");
+        result.Enabled.ShouldBeFalse();
+        result.Count.ShouldBe(0);
+        result.ReplaceItems.ShouldBe([]);
+        result.AppendItems.ShouldBe([1, 2, 2, 3]);
+        result.UniqueItems.ShouldBe(["a", "b", "c"]);
+        result.Nested.Label.ShouldBe("base nested");
+        result.Nested.Count.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task JsonAotFormatProvider_MergeConfigurationsAsync_ShouldUseGeneratedResolver()
+    {
+        var provider = new JsonAotFormatProvider(DeepMergeTestOptionsJsonContext.Default);
+
+        var result = await MergeTestOptionsAsync(provider);
+
+        result.Enabled.ShouldBeFalse();
+        result.Count.ShouldBe(0);
+        result.ReplaceItems.ShouldBe([]);
+        result.AppendItems.ShouldBe([1, 2, 2, 3]);
+        result.UniqueItems.ShouldBe(["a", "b", "c"]);
+        result.Nested.Label.ShouldBe("base nested");
+        result.Nested.Count.ShouldBe(0);
+    }
+
+    [Test]
+    public void GeneratedMergeMetadata_ShouldDescribeNestedArrayPolicies()
+    {
+        var metadata = (IGeneratedOptionsMergeMetadata)new DeepMergeTestOptions();
+
+        metadata
+            .TryGetPropertyMetadata(
+                typeof(DeepMergeTestOptions),
+                nameof(DeepMergeTestOptions.AppendItems),
+                out var appendType,
+                out var appendMode
+            )
+            .ShouldBeTrue();
+        appendType.ShouldBe(typeof(int[]));
+        appendMode.ShouldBe(DeepMergeArrayMode.Append);
+
+        metadata
+            .TryGetPropertyMetadata(
+                typeof(DeepMergeNestedOptions),
+                nameof(DeepMergeNestedOptions.Count),
+                out var nestedType,
+                out var nestedMode
+            )
+            .ShouldBeTrue();
+        nestedType.ShouldBe(typeof(int));
+        nestedMode.ShouldBe(DeepMergeArrayMode.Replace);
+    }
+
+    private static Task<DeepMergeTestOptions> MergeTestOptionsAsync(
+        IWritableFormatProvider provider
+    ) =>
+        provider.MergeConfigurationsAsync<DeepMergeTestOptions>(
+            [
+                Utf8("""{"name":"base","enabled":true,"count":10,"replaceItems":[1,2],"appendItems":[1,2],"uniqueItems":["a","b"],"nested":{"label":"base nested","count":5}}"""),
+                Utf8("""{"enabled":false,"count":0,"replaceItems":[],"appendItems":[2,3],"uniqueItems":["b","c"],"nested":{"label":null,"count":0}}"""),
+            ]
+        ).AsTask();
+
+    private static ReadOnlyMemory<byte> Utf8(string value) => Encoding.UTF8.GetBytes(value);
 
     [Test]
     public async Task JsonFormatProvider_WithSourceGenerator_ShouldSerializeCorrectly()
