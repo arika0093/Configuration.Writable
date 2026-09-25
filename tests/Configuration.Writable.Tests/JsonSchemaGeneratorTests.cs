@@ -1,6 +1,7 @@
 #if NET9_0_OR_GREATER
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -114,6 +115,30 @@ public class JsonSchemaGeneratorTests
         properties["BooleanSchema"]!["description"]!.GetValue<string>()
             .ShouldBe("Boolean converter description.");
         properties["BooleanSchema"]!["not"]!["type"]!.GetValue<string>().ShouldBe("null");
+        properties["CoalescedValue"]!["description"]!.GetValue<string>()
+            .ShouldBe("A string or numeric value.");
+        properties["CoalescedValue"]!["oneOf"]![0]!["type"]!.AsArray()
+            .Select(item => item!.GetValue<string>())
+            .ShouldBe(["string", "null"]);
+        properties["CoalescedValue"]!["oneOf"]![1]!["type"]!.GetValue<string>()
+            .ShouldBe("number");
+    }
+
+    [Test]
+    public void Generate_ShouldDiagnoseInvalidCustomConverterSchemaOverride()
+    {
+        var model = new GeneratedOptionsModelMetadata(
+            typeof(InvalidSchemaOverrideModel),
+            "invalid-schema-override",
+            1
+        );
+
+        var result = JsonSchemaGenerator.Generate([model], SourceGenTestConfigContext.Default);
+
+        result.Succeeded.ShouldBeFalse();
+        result.Documents.ShouldBeEmpty();
+        result.Diagnostics.Count.ShouldBe(1);
+        result.Diagnostics[0].Code.ShouldBe("CWSC004");
     }
 
     [Test]
@@ -270,6 +295,11 @@ public partial class EdgeCaseAnnotatedSchemaModel
     [Display(Description = "Boolean converter description.")]
     [JsonConverter(typeof(BooleanSchemaStringConverter))]
     public string BooleanSchema { get; set; } = "";
+
+    [JsonConverter(typeof(CoalescedValueJsonConverter))]
+    [JsonSchemaOneOf(typeof(string), typeof(decimal))]
+    [Display(Description = "A string or numeric value.")]
+    public string CoalescedValue { get; set; } = "";
 }
 
 public sealed class BooleanSchemaStringConverter : JsonConverter<string>
@@ -286,5 +316,34 @@ public sealed class BooleanSchemaStringConverter : JsonConverter<string>
         JsonSerializerOptions options
     ) => writer.WriteStringValue(value);
 
+}
+
+public sealed class CoalescedValueJsonConverter : JsonConverter<string>
+{
+    public override string? Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    ) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.String => reader.GetString(),
+            JsonTokenType.Number => reader.GetDecimal().ToString(CultureInfo.InvariantCulture),
+            _ => throw new JsonException("Expected a string or number."),
+        };
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        string value,
+        JsonSerializerOptions options
+    ) => writer.WriteStringValue(value);
+}
+
+[OptionsModel]
+public partial class InvalidSchemaOverrideModel
+{
+    [JsonConverter(typeof(BooleanSchemaStringConverter))]
+    [JsonSchemaOverride("[]")]
+    public string Value { get; set; } = "";
 }
 #endif

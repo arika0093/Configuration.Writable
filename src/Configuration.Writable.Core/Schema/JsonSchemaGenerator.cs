@@ -106,11 +106,6 @@ public static class JsonSchemaGenerator
         var jsonOptions = resolver is JsonSerializerContext context
             ? context.Options
             : new JsonSerializerOptions { WriteIndented = true, TypeInfoResolver = resolver };
-        var exporterOptions = new JsonSchemaExporterOptions
-        {
-            TransformSchemaNode = TransformSchemaNode,
-        };
-
         foreach (var model in candidates)
         {
             try
@@ -128,7 +123,11 @@ public static class JsonSchemaGenerator
                     continue;
                 }
 
-                var schema = JsonSchemaExporter.GetJsonSchemaAsNode(typeInfo, exporterOptions);
+                var nodeTransformer = new JsonSchemaNodeTransformer(resolver, jsonOptions);
+                var schema = JsonSchemaExporter.GetJsonSchemaAsNode(
+                    typeInfo,
+                    nodeTransformer.Options
+                );
                 if (schema is null)
                 {
                     diagnostics.Add(
@@ -426,49 +425,178 @@ public static class JsonSchemaGenerator
         );
 
 #if NET9_0_OR_GREATER
-    private static JsonNode TransformSchemaNode(JsonSchemaExporterContext context, JsonNode node)
+    private sealed class JsonSchemaNodeTransformer
     {
-        if (node is not JsonObject schema)
-        {
-            if (node is not JsonValue value || !value.TryGetValue<bool>(out var booleanSchema))
-                return node;
+        private readonly IJsonTypeInfoResolver _resolver;
+        private readonly JsonSerializerOptions _jsonOptions;
+        private int _nextEmbeddedSchemaId;
 
-            schema = booleanSchema
-                ? new JsonObject()
-                : new JsonObject { ["not"] = new JsonObject() };
+        public JsonSchemaNodeTransformer(
+            IJsonTypeInfoResolver resolver,
+            JsonSerializerOptions jsonOptions
+        )
+        {
+            _resolver = resolver;
+            _jsonOptions = jsonOptions;
+            Options = new JsonSchemaExporterOptions { TransformSchemaNode = TransformSchemaNode };
         }
 
-        var description = GetAttributes<DescriptionAttribute>(
-                context.PropertyInfo?.AttributeProvider
-            )
-            .FirstOrDefault();
-        if (description is not null)
-            schema["description"] = description.Description;
-        else
+        public JsonSchemaExporterOptions Options { get; }
+
+        private JsonNode TransformSchemaNode(JsonSchemaExporterContext context, JsonNode node)
         {
-            var displayDescription = GetAttributes<DisplayAttribute>(
+            var schemaOverride = GetAttributes<JsonSchemaOverrideAttribute>(
+                    context.PropertyInfo?.AttributeProvider
+                )
+                .FirstOrDefault();
+            var oneOf = GetAttributes<JsonSchemaOneOfAttribute>(
+                    context.PropertyInfo?.AttributeProvider
+                )
+                .FirstOrDefault();
+            if (schemaOverride is not null && oneOf is not null)
+                throw new JsonException(
+                    "A property cannot declare both a JSON Schema override and a oneOf schema."
+                );
+
+            var isBooleanSchema =
+                node is JsonValue converterSchema && converterSchema.TryGetValue<bool>(out _);
+            if ((schemaOverride is not null || oneOf is not null) && !isBooleanSchema)
+                throw new JsonException(
+                    "JSON Schema override attributes can only be used with properties that export a boolean schema."
+                );
+
+            if (isBooleanSchema)
+            {
+                if (schemaOverride is not null)
+                {
+                    var replacement = JsonNode.Parse(schemaOverride.Schema);
+                    if (
+                        replacement is not JsonObject
+                        && (
+                            replacement is not JsonValue replacementValue
+                            || !replacementValue.TryGetValue<bool>(out _)
+                        )
+                    )
+                        throw new JsonException(
+                            "A JSON Schema override must be a JSON object or boolean schema."
+                        );
+                    node = replacement;
+                }
+                else if (oneOf is not null)
+                {
+                    if (
+                        oneOf.Types.Length == 0
+                        || oneOf.Types.Any(type => type is null)
+                        || oneOf.Types.Distinct().Count() != oneOf.Types.Length
+                    )
+                        throw new JsonException(
+                            "A oneOf schema must specify distinct, non-null types."
+                        );
+
+                    var alternatives = new JsonArray();
+                    foreach (var alternativeType in oneOf.Types)
+                    {
+                        var alternativeTypeInfo = _resolver.GetTypeInfo(
+                            alternativeType,
+                            _jsonOptions
+                        );
+                        var alternativeSchema = alternativeTypeInfo is null
+                            ? CreatePrimitiveSchema(alternativeType)
+                            : JsonSchemaExporter.GetJsonSchemaAsNode(alternativeTypeInfo, Options);
+                        if (alternativeSchema is null)
+                            throw new JsonException(
+                                $"The configured JSON type-info resolver does not provide metadata for oneOf type '{alternativeType.FullName}', and the type is not a supported primitive."
+                            );
+
+                        if (
+                            alternativeSchema is JsonObject alternativeObject
+                            && alternativeObject["$defs"] is JsonObject
+                        )
+                            alternativeObject["$id"] ??=
+                                $"urn:configuration-writable:oneof:{_nextEmbeddedSchemaId++}";
+                        alternatives.Add(alternativeSchema);
+                    }
+                    node = new JsonObject { ["oneOf"] = alternatives };
+                }
+            }
+
+            if (node is not JsonObject schema)
+            {
+                if (node is not JsonValue value || !value.TryGetValue<bool>(out var booleanSchema))
+                    return node;
+
+                schema = booleanSchema
+                    ? new JsonObject()
+                    : new JsonObject { ["not"] = new JsonObject() };
+            }
+
+            var description = GetAttributes<DescriptionAttribute>(
+                    context.PropertyInfo?.AttributeProvider
+                )
+                .FirstOrDefault();
+            if (description is not null)
+                schema["description"] = description.Description;
+            else
+            {
+                var displayDescription = GetAttributes<DisplayAttribute>(
+                        context.PropertyInfo?.AttributeProvider
+                    )
+                    .FirstOrDefault()
+                    ?.Description;
+                if (displayDescription is not null)
+                    schema["description"] = displayDescription;
+            }
+
+            var displayName = GetAttributes<DisplayAttribute>(
                     context.PropertyInfo?.AttributeProvider
                 )
                 .FirstOrDefault()
-                ?.Description;
-            if (displayDescription is not null)
-                schema["description"] = displayDescription;
+                ?.Name;
+            if (displayName is not null)
+                schema["title"] = displayName;
+
+            JsonSchemaValidationAttributeMapper.AddRequiredProperties(schema, context.TypeInfo);
+            foreach (
+                var attribute in GetAttributes<ValidationAttribute>(
+                    context.PropertyInfo?.AttributeProvider
+                )
+            )
+                JsonSchemaValidationAttributeMapper.Apply(schema, attribute, context.TypeInfo);
+            return schema;
         }
 
-        var displayName = GetAttributes<DisplayAttribute>(context.PropertyInfo?.AttributeProvider)
-            .FirstOrDefault()
-            ?.Name;
-        if (displayName is not null)
-            schema["title"] = displayName;
+        private static JsonNode? CreatePrimitiveSchema(Type type)
+        {
+            var nullableType = Nullable.GetUnderlyingType(type);
+            if (nullableType is not null)
+                type = nullableType;
 
-        JsonSchemaValidationAttributeMapper.AddRequiredProperties(schema, context.TypeInfo);
-        foreach (
-            var attribute in GetAttributes<ValidationAttribute>(
-                context.PropertyInfo?.AttributeProvider
-            )
-        )
-            JsonSchemaValidationAttributeMapper.Apply(schema, attribute, context.TypeInfo);
-        return schema;
+            if (type.IsEnum)
+                return null;
+
+            var schemaType = Type.GetTypeCode(type) switch
+            {
+                TypeCode.String or TypeCode.Char => "string",
+                TypeCode.Boolean => "boolean",
+                TypeCode.Byte
+                or TypeCode.SByte
+                or TypeCode.Int16
+                or TypeCode.UInt16
+                or TypeCode.Int32
+                or TypeCode.UInt32
+                or TypeCode.Int64
+                or TypeCode.UInt64 => "integer",
+                TypeCode.Single or TypeCode.Double or TypeCode.Decimal => "number",
+                _ => null,
+            };
+            if (schemaType is null)
+                return null;
+
+            var schema = new JsonObject { ["type"] = schemaType };
+            if (nullableType is not null)
+                schema["type"] = new JsonArray(schemaType, "null");
+            return schema;
+        }
     }
 
     private static IEnumerable<TAttribute> GetAttributes<TAttribute>(

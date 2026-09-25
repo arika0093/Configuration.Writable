@@ -63,6 +63,7 @@ internal partial class DeepMergeTestOptionsJsonContext : JsonSerializerContext;
 [JsonSerializable(typeof(AnnotatedSettings))]
 [JsonSerializable(typeof(AdditionalAnnotatedSchemaModel))]
 [JsonSerializable(typeof(EdgeCaseAnnotatedSchemaModel))]
+[JsonSerializable(typeof(InvalidSchemaOverrideModel))]
 internal partial class SourceGenTestConfigContext : JsonSerializerContext;
 
 /// <summary>
