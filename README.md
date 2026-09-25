@@ -1008,6 +1008,10 @@ builder.Services.AddWritableOptions(conf => {
     conf.AddFallbackFormatProvider(
         new JsonAotFormatProvider(MyJsonContext.Default)
     );
+    // If you want to disable automatic conversion from v1(JSON) to v2(YAML),
+    // add the following setting.
+    // conf.EnableFallbackPromotion(false);
+    
     conf.Add<UserSetting>(c => {
         // Do not include the file extension
         c.UseFile("usersettings");
