@@ -19,9 +19,12 @@ namespace Configuration.Writable.FormatProvider;
 
 /// <summary>
 /// Writable configuration implementation for Yaml files using VYaml.
-/// This provider is AOT-compatible when user types are annotated with <c>[YamlObject]</c>.
+/// NativeAOT requires generated model formatters and an AOT-safe resolver for any collection types.
 /// </summary>
-public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvider
+public class YamlFormatProvider
+    : FormatProviderBase,
+        IOptionsSchemaMetadataProvider,
+        IDeepMergeableFormatProvider
 {
     private static readonly MethodInfo DeserializeMethod = typeof(YamlSerializer)
         .GetMethods()
@@ -218,6 +221,54 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
         {
             throw new FormatException("Failed to deserialize YAML configuration.", ex);
         }
+    }
+
+    /// <inheritdoc />
+    public ValueTask<T> MergeConfigurationsAsync<T>(
+        IReadOnlyList<ReadOnlyMemory<byte>> documents,
+        IReadOnlyList<string> sectionNameParts,
+        CancellationToken cancellationToken = default
+    )
+        where T : class, new()
+    {
+        if (documents is null)
+            throw new ArgumentNullException(nameof(documents));
+        if (sectionNameParts is null)
+            throw new ArgumentNullException(nameof(sectionNameParts));
+        cancellationToken.ThrowIfCancellationRequested();
+        Register<T>();
+        var metadata = new T() as IGeneratedOptionsMergeMetadata;
+        IDeepMergeNode? merged = null;
+        foreach (var yamlBytes in documents)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsEmptyOrWhiteSpace(yamlBytes.Span))
+                continue;
+
+            var current = ParseYaml(yamlBytes);
+            foreach (var section in sectionNameParts)
+            {
+                if (
+                    current is not YamlMapping mapping
+                    || !mapping.Values.TryGetValue(section, out current)
+                )
+                {
+                    current = null;
+                    break;
+                }
+            }
+
+            if (current is null)
+                continue;
+
+            merged = DeepMergeDocument.Merge(merged, ToDeepMergeNode(current), typeof(T), metadata);
+        }
+
+        if (merged is null)
+            return new ValueTask<T>(new T());
+
+        var mergedYaml = SerializeDeepMergeYaml(merged);
+        return new ValueTask<T>((T)Deserialize(typeof(T), mergedYaml));
     }
 
     [UnconditionalSuppressMessage(
@@ -615,9 +666,87 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 
     private static YamlScalar ParseScalar(ref YamlParser parser)
     {
-        var value = parser.GetScalarAsString() ?? "null";
+        var scalar = parser.GetScalarAsString();
+        var value = scalar ?? "null";
+        var kind = GetScalarKind(ref parser);
         parser.ReadWithVerify(ParseEventType.Scalar);
-        return new YamlScalar(value);
+        return new YamlScalar(value, kind);
+    }
+
+    private static DeepMergeScalarKind GetScalarKind(ref YamlParser parser)
+    {
+        if (parser.IsNullScalar())
+            return DeepMergeScalarKind.Null;
+        if (parser.TryGetScalarAsBool(out _))
+            return DeepMergeScalarKind.Boolean;
+        if (parser.TryGetScalarAsDouble(out _))
+            return DeepMergeScalarKind.Number;
+        return DeepMergeScalarKind.String;
+    }
+
+    private static IDeepMergeNode ToDeepMergeNode(IYamlValue value) =>
+        value switch
+        {
+            YamlScalar scalar => new DeepMergeScalarNode(scalar.Kind, scalar.Value),
+            YamlMapping mapping => ToDeepMergeObject(mapping),
+            YamlSequence sequence => ToDeepMergeArray(sequence),
+            _ => throw new InvalidOperationException($"Unsupported YAML value: {value.GetType()}."),
+        };
+
+    private static DeepMergeObjectNode ToDeepMergeObject(YamlMapping mapping)
+    {
+        var result = new DeepMergeObjectNode();
+        foreach (var property in mapping.Values)
+            result.Properties[property.Key] = ToDeepMergeNode(property.Value);
+        return result;
+    }
+
+    private static DeepMergeArrayNode ToDeepMergeArray(YamlSequence sequence)
+    {
+        var result = new DeepMergeArrayNode();
+        foreach (var item in sequence.Values)
+            result.Items.Add(ToDeepMergeNode(item));
+        return result;
+    }
+
+    private static ReadOnlyMemory<byte> SerializeDeepMergeYaml(IDeepMergeNode node)
+    {
+        var writer = new ByteBufferWriter();
+        var emitter = new Utf8YamlEmitter(writer);
+        WriteDeepMergeYaml(ref emitter, node);
+        return writer.WrittenMemory;
+    }
+
+    private static void WriteDeepMergeYaml(ref Utf8YamlEmitter emitter, IDeepMergeNode node)
+    {
+        switch (node)
+        {
+            case DeepMergeScalarNode { Kind: DeepMergeScalarKind.String } scalar:
+                emitter.WriteString(scalar.Value);
+                break;
+            case DeepMergeScalarNode scalar:
+                emitter.WriteScalar(Encoding.UTF8.GetBytes(scalar.Value));
+                break;
+            case DeepMergeObjectNode objectNode:
+                emitter.BeginMapping();
+                foreach (var property in objectNode.Properties)
+                {
+                    emitter.WriteString(property.Key);
+                    WriteDeepMergeYaml(ref emitter, property.Value);
+                }
+                emitter.EndMapping();
+                break;
+            case DeepMergeArrayNode arrayNode:
+                emitter.BeginSequence();
+                foreach (var item in arrayNode.Items)
+                    WriteDeepMergeYaml(ref emitter, item);
+                emitter.EndSequence();
+                break;
+            default:
+                throw new InvalidOperationException(
+                    $"Unsupported merge document node: {node.GetType()}."
+                );
+        }
     }
 
     private static YamlMapping ParseMapping(ref YamlParser parser)
@@ -731,9 +860,13 @@ public class YamlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProv
 
     private interface IYamlValue;
 
-    private sealed class YamlScalar(string value) : IYamlValue
+    private sealed class YamlScalar(
+        string value,
+        DeepMergeScalarKind kind = DeepMergeScalarKind.String
+    ) : IYamlValue
     {
         public string Value { get; } = value;
+        public DeepMergeScalarKind Kind { get; } = kind;
     }
 
     private sealed class YamlMapping : IYamlValue

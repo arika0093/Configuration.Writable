@@ -37,6 +37,8 @@ builder.Services.AddWritableOptions<UserSecretSetting>(conf => {
 When `YamlFormatProvider` is used through `WritableOptionsConfigBuilder<T>`, the provider's typed deserializer is registered automatically while the options are being built.
 No additional `YamlFormatProvider.Register<T>()` call is required.
 
+For NativeAOT models with collection properties, ensure `SerializerOptions.Resolver` can resolve their concrete collection formatters without reflection. VYaml's default `StandardResolver` dynamically constructs some formatters (such as `ArrayFormatter<int>`), which may not be available in a native binary. Register a closed generic formatter or provide another AOT-safe resolver for each collection type.
+
 ```csharp
 using VYaml.Annotations;
 
@@ -52,6 +54,8 @@ public partial class SampleSetting
 // Register formatters at startup (required for NativeAOT)
 SampleSetting.__RegisterVYamlFormatter();
 ```
+
+For NativeAOT models with collection properties, also provide an AOT-safe `IYamlFormatterResolver` for each concrete collection type. VYaml's default `StandardResolver` creates some collection formatters dynamically (for example, `ArrayFormatter<int>`), which can be unavailable in a native binary. Registering the `[YamlObject]` formatter alone does not register those collection formatters.
 
 ### Example
 
