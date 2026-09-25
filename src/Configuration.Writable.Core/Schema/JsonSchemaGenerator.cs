@@ -429,7 +429,14 @@ public static class JsonSchemaGenerator
     private static JsonNode TransformSchemaNode(JsonSchemaExporterContext context, JsonNode node)
     {
         if (node is not JsonObject schema)
-            return node;
+        {
+            if (node is not JsonValue value || !value.TryGetValue<bool>(out var booleanSchema))
+                return node;
+
+            schema = booleanSchema
+                ? new JsonObject()
+                : new JsonObject { ["not"] = new JsonObject() };
+        }
 
         var description = GetAttributes<DescriptionAttribute>(
                 context.PropertyInfo?.AttributeProvider

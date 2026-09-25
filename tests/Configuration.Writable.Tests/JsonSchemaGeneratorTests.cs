@@ -3,7 +3,9 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Configuration.Writable.Tests;
 
@@ -45,7 +47,7 @@ public class JsonSchemaGeneratorTests
         schema["properties"]!["MaxConnections"]!["minimum"]!.GetValue<decimal>().ShouldBe(1m);
         schema["properties"]!["MaxConnections"]!["maximum"]!.GetValue<decimal>().ShouldBe(1000m);
         schema["properties"]!["Name"]!["minLength"]!.GetValue<int>().ShouldBe(3);
-        schema["properties"]!["Email"]!["minLength"]!.GetValue<int>().ShouldBe(1);
+        schema["properties"]!["Email"]!["pattern"]!.GetValue<string>().ShouldBe("\\S");
         schema["properties"]!["Email"]!["format"]!.GetValue<string>().ShouldBe("email");
         schema["required"]!.AsArray().Select(item => item!.GetValue<string>())
             .ShouldBe(["Email", "Name"]);
@@ -83,6 +85,35 @@ public class JsonSchemaGeneratorTests
             .ShouldBe("Published date");
         schema["properties"]!["PublishedDate"]!["description"]!.GetValue<string>()
             .ShouldBe("Date shown to users.");
+    }
+
+    [Test]
+    public void Generate_ShouldMapRequiredAndExclusiveRangeEdgeCases()
+    {
+        var model = new GeneratedOptionsModelMetadata(
+            typeof(EdgeCaseAnnotatedSchemaModel),
+            "edge-cases",
+            1
+        );
+
+        var result = JsonSchemaGenerator.Generate([model], SourceGenTestConfigContext.Default);
+
+        result.Succeeded.ShouldBeTrue();
+        var properties = result.Documents[0].Schema["properties"]!;
+        properties["OptionalName"]!["not"]!["type"]!.GetValue<string>().ShouldBe("null");
+        properties["RequiredName"]!["pattern"]!.GetValue<string>().ShouldBe("\\S");
+        properties["AllowEmptyName"]!["pattern"].ShouldBeNull();
+        properties["RequiredCount"]!["not"]!["type"]!.GetValue<string>().ShouldBe("null");
+        properties["ExclusiveRange"]!["exclusiveMinimum"]!.GetValue<decimal>().ShouldBe(1m);
+        properties["ExclusiveRange"]!["exclusiveMaximum"]!.GetValue<decimal>().ShouldBe(10m);
+        properties["SupportedPattern"]!["pattern"]!.GetValue<string>().ShouldBe("\\S");
+        properties["SupportedPattern"]!["allOf"]![0]!["pattern"]!.GetValue<string>()
+            .ShouldBe("^[A-Z]+$");
+        properties["UnsupportedPattern"]!["pattern"].ShouldBeNull();
+        properties["UnicodeDigitPattern"]!["pattern"].ShouldBeNull();
+        properties["BooleanSchema"]!["description"]!.GetValue<string>()
+            .ShouldBe("Boolean converter description.");
+        properties["BooleanSchema"]!["not"]!["type"]!.GetValue<string>().ShouldBe("null");
     }
 
     [Test]
@@ -205,5 +236,55 @@ public enum AdditionalAnnotatedSchemaValue
 {
     First = 1,
     Second = 2,
+}
+
+[OptionsModel]
+public partial class EdgeCaseAnnotatedSchemaModel
+{
+    [Required]
+    public string? OptionalName { get; set; }
+
+    [Required]
+    public string RequiredName { get; set; } = "";
+
+    [Required(AllowEmptyStrings = true)]
+    public string AllowEmptyName { get; set; } = "";
+
+    [Required]
+    public int? RequiredCount { get; set; }
+
+    [Range(1, 10, MinimumIsExclusive = true, MaximumIsExclusive = true)]
+    public int ExclusiveRange { get; set; }
+
+    [Required]
+    [RegularExpression("^[A-Z]+$")]
+    public string SupportedPattern { get; set; } = "";
+
+    [RegularExpression(@"\A[a-z]+\z")]
+    public string UnsupportedPattern { get; set; } = "";
+
+    [RegularExpression(@"^\d+$")]
+    public string UnicodeDigitPattern { get; set; } = "";
+
+    [Required]
+    [Display(Description = "Boolean converter description.")]
+    [JsonConverter(typeof(BooleanSchemaStringConverter))]
+    public string BooleanSchema { get; set; } = "";
+}
+
+public sealed class BooleanSchemaStringConverter : JsonConverter<string>
+{
+    public override string? Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    ) => reader.GetString();
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        string value,
+        JsonSerializerOptions options
+    ) => writer.WriteStringValue(value);
+
 }
 #endif
