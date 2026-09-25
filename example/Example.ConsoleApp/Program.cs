@@ -9,7 +9,6 @@ WritableOptions.Initialize(conf =>
 
     // enable JSON schema generation for the configuration classes
     // $ dotnet run -- --cw-generate-json-schema ./schema
-    conf.EnableJsonSchemaGeneration();
     conf.SchemaBaseUri = "../schema/";
 
     // customize the format provider
@@ -45,6 +44,10 @@ WritableOptions.Initialize(conf =>
         // * WithValidator: set a custom validation class implementing IValidateOptions<T>
     });
 });
+JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine(
+    SampleSettingSerializerContext.Default,
+    "../schema/"
+);
 
 // -------------------------------
 // get the config instance

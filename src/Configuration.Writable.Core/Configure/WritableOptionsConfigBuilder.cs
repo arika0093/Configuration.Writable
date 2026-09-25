@@ -109,11 +109,19 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
         "The runtime JSON contract may require runtime code generation and is not compatible with NativeAOT."
     )]
 #endif
-    public new void EnableJsonSchemaGeneration() => base.EnableJsonSchemaGeneration();
+#pragma warning disable S1133 // Retained for source and behavior compatibility.
+    [Obsolete(
+        "Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine after registration."
+    )]
+    public new void EnableJsonSchemaGeneration() => base.EnableJsonSchemaGenerationCore();
 
     /// <inheritdoc />
+    [Obsolete(
+        "Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine after registration."
+    )]
     public new void EnableJsonSchemaGeneration(IJsonTypeInfoResolver typeInfoResolver) =>
-        base.EnableJsonSchemaGeneration(typeInfoResolver);
+        base.EnableJsonSchemaGenerationCore(typeInfoResolver);
+#pragma warning restore S1133
 
     /// <inheritdoc />
     public new void EnablePromoteSaveLocation(bool enabled = true) =>

@@ -115,8 +115,8 @@ public class WritableOptionsConfigBuilder
     }
 
     /// <summary>
-    /// Enables command-line JSON schema generation using the runtime JSON contract.
-    /// This is not compatible with trimming or NativeAOT.
+    /// Enables the legacy command-line JSON schema generation integration.
+    /// Prefer <see cref="JsonSchemaGenerator"/> for new applications.
     /// </summary>
 #if NET
     [RequiresUnreferencedCode(
@@ -126,19 +126,32 @@ public class WritableOptionsConfigBuilder
         "The runtime JSON contract may require runtime code generation and is not compatible with NativeAOT."
     )]
 #endif
-    public void EnableJsonSchemaGeneration()
+#pragma warning disable S1133 // Retained for source and behavior compatibility.
+    [Obsolete(
+        "Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine after registration."
+    )]
+    public void EnableJsonSchemaGeneration() => EnableJsonSchemaGenerationCore();
+
+    /// <summary>Enables the legacy command-line JSON schema generation integration.</summary>
+    [Obsolete(
+        "Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine after registration."
+    )]
+    public void EnableJsonSchemaGeneration(IJsonTypeInfoResolver typeInfoResolver) =>
+        EnableJsonSchemaGenerationCore(typeInfoResolver);
+
+    internal void EnableJsonSchemaGenerationCore()
     {
         JsonSchemaGenerationEnabled = true;
         JsonSchemaTypeInfoResolver = null;
     }
 
-    /// <summary>Enables command-line JSON schema generation using a JSON type-info resolver.</summary>
-    public void EnableJsonSchemaGeneration(IJsonTypeInfoResolver typeInfoResolver)
+    internal void EnableJsonSchemaGenerationCore(IJsonTypeInfoResolver typeInfoResolver)
     {
         JsonSchemaTypeInfoResolver =
             typeInfoResolver ?? throw new ArgumentNullException(nameof(typeInfoResolver));
         JsonSchemaGenerationEnabled = true;
     }
+#pragma warning restore S1133
 
     /// <summary>
     /// Registers additional format providers that may be used to load an existing configuration

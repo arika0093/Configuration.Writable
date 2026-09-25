@@ -719,15 +719,44 @@ Configuration.Writable can generate [JSON Schema](https://json-schema.org/) file
 
 ### Generating JSON Schema
 
-First, add the following configuration in your code:
+For build tasks, tests, or applications with their own command-line parser, use the process-independent API after registering the options models:
 
 ```csharp
-conf.EnableJsonSchemaGeneration();
-// For NativeAOT, you need to specify JsonSerializerContext.
-conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
+WritableOptions.Initialize(options =>
+{
+    options.Add<MySettings>();
+});
+
+var result = JsonSchemaGenerator.Write(
+    GeneratedOptionsSchemaRegistry.RegisteredModels,
+    outputDirectory,
+    MySettingsSerializerContext.Default,
+    schemaBaseUri);
+
+if (!result.Succeeded)
+{
+    foreach (var diagnostic in result.Diagnostics)
+        Console.Error.WriteLine($"{diagnostic.Code}: {diagnostic.Message}");
+}
 ```
 
-Then, when you build the application, a feature to generate schemas using the `--cw-generate-json-schema` option is embedded.
+`JsonSchemaGenerator.Generate` returns documents in memory, while `Write` generates and writes them to the requested directory. Both return diagnostics containing the affected model type, model ID, version, and output path when available. They do not inspect command-line arguments or terminate the process.
+
+For applications that want the built-in command-line option and process exit behavior, call the compatibility entry point after model registration:
+
+```csharp
+WritableOptions.Initialize(conf =>
+{
+    conf.Add<SampleSetting>();
+    conf.SchemaBaseUri = "../schema/";
+});
+
+JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine(
+    SampleSettingSerializerContext.Default,
+    "../schema/");
+```
+
+This checks for `--cw-generate-json-schema` and exits after successful generation. The older `EnableJsonSchemaGeneration` builder methods keep their automatic behavior for compatibility but are obsolete.
 
 ```sh
 # generate JSON schema files in ./artifacts/schemas
@@ -740,6 +769,8 @@ Then, when you build the application, a feature to generate schemas using the `-
 > [!NOTE]
 > When `--cw-generate-json-schema` is specified, the application exits immediately after schema generation is complete.
 > This enables automatic schema generation in CI/CD pipelines and similar scenarios.
+
+Applications that own command-line parsing should call `JsonSchemaGenerator.Write` only when their parser selects schema generation, then decide how to report diagnostics and whether to exit.
 
 You are free to decide where to host this file. For example, consider these approaches:
 
@@ -789,11 +820,12 @@ builder.Services.AddWritableOptions(conf => {
     conf.Add<SampleSetting>();
     // format provider (JSON AOT)
     conf.FormatProvider = new JsonAotFormatProvider(SampleSettingSerializerContext.Default);
-    // support JSON Schema generation (--cw-generate-json-schema)
-    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
     // embedding schema information in generated files
     conf.SchemaBaseUri = "./schemas/";
 });
+JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine(
+    SampleSettingSerializerContext.Default,
+    "./schemas/");
 ```
 
 ### Yaml support
@@ -813,11 +845,12 @@ builder.Services.AddWritableOptions(conf => {
             NamingConvention = YamlNamingConvention.CamelCase
         }
     };
-    // support JSON Schema generation (--cw-generate-json-schema)
-    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
     // embedding schema information in generated files
     conf.SchemaBaseUri = "./schemas/";
 });
+JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine(
+    SampleSettingSerializerContext.Default,
+    "./schemas/");
 
 // Change JSON Schema side to camelCase
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]

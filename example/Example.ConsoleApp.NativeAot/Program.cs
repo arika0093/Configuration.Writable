@@ -9,7 +9,6 @@ WritableOptions.Initialize(conf =>
 
     // enable JSON schema generation for the configuration classes
     // $ dotnet run -- --cw-generate-json-schema ./schema
-    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
     conf.SchemaBaseUri = "../schema/";
 
     // JsonAotFormatProvider is the recommended format provider for NativeAOT scenarios
@@ -32,6 +31,10 @@ WritableOptions.Initialize(conf =>
         c.WithValidator<SampleSettingValidator>();
     });
 });
+JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine(
+    SampleSettingSerializerContext.Default,
+    "../schema/"
+);
 
 // -------------------------------
 // get the config instance

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Configuration.Writable;
 
 namespace Example.ConsoleApp;
@@ -12,3 +13,6 @@ public partial class SampleSetting
 
     public DateTime LastUpdatedAt { get; set; } = DateTime.Now;
 }
+
+[JsonSerializable(typeof(SampleSetting))]
+public partial class SampleSettingSerializerContext : JsonSerializerContext;

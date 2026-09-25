@@ -55,7 +55,11 @@ namespace Configuration.Writable.Configure
         public void AddFilePath(string path, int priority = 0) { }
         [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("The runtime JSON contract may require runtime code generation and is not compatib" +
             "le with NativeAOT.")]
+        [System.Obsolete("Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchema" +
+            "GenerationFromCommandLine after registration.")]
         public void EnableJsonSchemaGeneration() { }
+        [System.Obsolete("Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchema" +
+            "GenerationFromCommandLine after registration.")]
         public void EnableJsonSchemaGeneration(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
         public void EnablePromoteSaveLocation(bool enabled = true) { }
         public Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
@@ -88,7 +92,11 @@ namespace Configuration.Writable.Configure
         public Configuration.Writable.WritableOptionsConfiguration<T> BuildOptions(string instanceName) { }
         [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("The runtime JSON contract may require runtime code generation and is not compatib" +
             "le with NativeAOT.")]
+        [System.Obsolete("Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchema" +
+            "GenerationFromCommandLine after registration.")]
         public new void EnableJsonSchemaGeneration() { }
+        [System.Obsolete("Use JsonSchemaGenerator.Generate or Write, or call JsonSchemaGenerator.JsonSchema" +
+            "GenerationFromCommandLine after registration.")]
         public new void EnableJsonSchemaGeneration(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver typeInfoResolver) { }
         public new void EnablePromoteSaveLocation(bool enabled = true) { }
         public new Configuration.Writable.Configure.ILocationBuilder UseCurrentDirectory() { }
@@ -142,6 +150,43 @@ namespace Configuration.Writable
         string? SchemaBaseUri { get; }
         Configuration.Writable.OptionsSchemaMetadata? SchemaMetadata { get; }
         System.Collections.Generic.List<string> SectionNameParts { get; }
+    }
+    public sealed class JsonSchemaDocument : System.IEquatable<Configuration.Writable.JsonSchemaDocument>
+    {
+        public JsonSchemaDocument(Configuration.Writable.GeneratedOptionsModelMetadata Model, string FileName, System.Text.Json.Nodes.JsonNode Schema) { }
+        public string FileName { get; init; }
+        public Configuration.Writable.GeneratedOptionsModelMetadata Model { get; init; }
+        public System.Text.Json.Nodes.JsonNode Schema { get; init; }
+    }
+    public sealed class JsonSchemaGenerationDiagnostic : System.IEquatable<Configuration.Writable.JsonSchemaGenerationDiagnostic>
+    {
+        public JsonSchemaGenerationDiagnostic(string Code, string Message, System.Type? ModelType = null, string? ModelId = null, int? Version = default, string? OutputPath = null) { }
+        public string Code { get; init; }
+        public string Message { get; init; }
+        public string? ModelId { get; init; }
+        public System.Type? ModelType { get; init; }
+        public string? OutputPath { get; init; }
+        public int? Version { get; init; }
+    }
+    public sealed class JsonSchemaGenerationException : System.InvalidOperationException
+    {
+        public Configuration.Writable.JsonSchemaGenerationResult Result { get; }
+    }
+    public sealed class JsonSchemaGenerationResult
+    {
+        public System.Collections.Generic.IReadOnlyList<Configuration.Writable.JsonSchemaGenerationDiagnostic> Diagnostics { get; }
+        public System.Collections.Generic.IReadOnlyList<Configuration.Writable.JsonSchemaDocument> Documents { get; }
+        public bool Succeeded { get; }
+        public System.Collections.Generic.IReadOnlyList<string> WrittenFiles { get; }
+    }
+    public static class JsonSchemaGenerator
+    {
+        public static Configuration.Writable.JsonSchemaGenerationResult Generate(System.Collections.Generic.IEnumerable<Configuration.Writable.GeneratedOptionsModelMetadata> models, System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver resolver, string? schemaBaseUri = null) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("The runtime JSON contract may require runtime code generation and is not compatib" +
+            "le with NativeAOT.")]
+        public static void JsonSchemaGenerationFromCommandLine(string? schemaBaseUri = null) { }
+        public static void JsonSchemaGenerationFromCommandLine(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver resolver, string? schemaBaseUri = null) { }
+        public static Configuration.Writable.JsonSchemaGenerationResult Write(System.Collections.Generic.IEnumerable<Configuration.Writable.GeneratedOptionsModelMetadata> models, string outputDirectory, System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver resolver, string? schemaBaseUri = null) { }
     }
     public sealed class OptionsSchemaMetadata : System.IEquatable<Configuration.Writable.OptionsSchemaMetadata>
     {

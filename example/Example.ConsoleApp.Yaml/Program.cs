@@ -13,7 +13,6 @@ WritableOptions.Initialize(conf =>
 {
     // enable JSON schema generation for the configuration classes
     // $ dotnet run -- --cw-generate-json-schema ./schema
-    conf.EnableJsonSchemaGeneration(SampleSettingSerializerContext.Default);
     conf.SchemaBaseUri = "../schema/";
 
     // shared configuration for all options types
@@ -35,6 +34,10 @@ WritableOptions.Initialize(conf =>
         c.UseFile("./config/mysettings");
     });
 });
+JsonSchemaGenerator.JsonSchemaGenerationFromCommandLine(
+    SampleSettingSerializerContext.Default,
+    "../schema/"
+);
 
 // -------------------------------
 // get the config instance
