@@ -9,8 +9,11 @@ updates:
       # and if it is too high, the number of environments that do not work will increase.
       # Therefore, we want to keep it at the lowest possible version.
       - dependency-name: "Microsoft.CodeAnalysis.*"
+      # Keep the runtime dependencies at the .NET 10 baseline.
+      # Microsoft.Testing.Extensions.Retry intentionally continues receiving updates.
+      - dependency-name: "Microsoft.Extensions.*"
+      - dependency-name: "System.Text.Json"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-
