@@ -25,7 +25,11 @@ internal sealed class OptionsMonitorImpl<T> : IOptionsMonitor<T>, IDisposable
     private readonly IWritableOptionsConfigRegistry<T> _optionsRegistry;
     private readonly ConcurrentDictionary<string, OptionsMonitorDataSource> _dataSources = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+#if NET9_0_OR_GREATER
+    private readonly Lock _listenersLock = new();
+#else
     private readonly object _listenersLock = new();
+#endif
     private readonly List<Action<T, string?>> _listeners = [];
     private readonly List<Action<Exception, string?>> _failureListeners = [];
     private static readonly TimeSpan MaxWatcherRecoveryDelay = TimeSpan.FromSeconds(30);

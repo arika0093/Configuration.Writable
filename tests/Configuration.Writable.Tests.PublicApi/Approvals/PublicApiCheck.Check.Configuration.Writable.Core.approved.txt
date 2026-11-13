@@ -188,6 +188,18 @@ namespace Configuration.Writable
         public static void JsonSchemaGenerationFromCommandLine(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver resolver, string? schemaBaseUri = null) { }
         public static Configuration.Writable.JsonSchemaGenerationResult Write(System.Collections.Generic.IEnumerable<Configuration.Writable.GeneratedOptionsModelMetadata> models, string outputDirectory, System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver resolver, string? schemaBaseUri = null) { }
     }
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field, Inherited=true)]
+    public sealed class JsonSchemaOneOfAttribute : System.Attribute
+    {
+        public JsonSchemaOneOfAttribute(params System.Type[] types) { }
+        public System.Type[] Types { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Field, Inherited=true)]
+    public sealed class JsonSchemaOverrideAttribute : System.Attribute
+    {
+        public JsonSchemaOverrideAttribute(string schema) { }
+        public string Schema { get; }
+    }
     public sealed class OptionsSchemaMetadata : System.IEquatable<Configuration.Writable.OptionsSchemaMetadata>
     {
         public OptionsSchemaMetadata(string? ModelId, int? Version) { }

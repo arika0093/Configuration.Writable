@@ -37,8 +37,10 @@ public partial class DeepMergeTestOptions
     public bool Enabled { get; set; } = true;
     public int Count { get; set; } = 10;
     public int[] ReplaceItems { get; set; } = [9];
+
     [DeepMergeArray(DeepMergeArrayMode.Append)]
     public int[] AppendItems { get; set; } = [];
+
     [DeepMergeArray(DeepMergeArrayMode.UniqueAppend)]
     public string[] UniqueItems { get; set; } = [];
     public DeepMergeNestedOptions Nested { get; set; } = new();
@@ -61,9 +63,11 @@ internal partial class DeepMergeTestOptionsJsonContext : JsonSerializerContext;
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(SourceGenTestConfig))]
 [JsonSerializable(typeof(AnnotatedSettings))]
+#if NET9_0_OR_GREATER
 [JsonSerializable(typeof(AdditionalAnnotatedSchemaModel))]
 [JsonSerializable(typeof(EdgeCaseAnnotatedSchemaModel))]
 [JsonSerializable(typeof(InvalidSchemaOverrideModel))]
+#endif
 internal partial class SourceGenTestConfigContext : JsonSerializerContext;
 
 /// <summary>
@@ -164,12 +168,16 @@ public class JsonSourceGeneratorTests
     private static Task<DeepMergeTestOptions> MergeTestOptionsAsync(
         IWritableFormatProvider provider
     ) =>
-        provider.MergeConfigurationsAsync<DeepMergeTestOptions>(
-            [
-                Utf8("""{"name":"base","optionalName":"base optional","enabled":true,"count":10,"replaceItems":[1,2],"appendItems":[1,2],"uniqueItems":["a","b"],"nested":{"label":"base nested","count":5}}"""),
-                Utf8("""{"optionalName":null,"enabled":false,"count":0,"replaceItems":[],"appendItems":[2,3],"uniqueItems":["b","c"],"nested":{"label":null,"count":0}}"""),
-            ]
-        ).AsTask();
+        provider
+            .MergeConfigurationsAsync<DeepMergeTestOptions>([
+                Utf8(
+                    """{"name":"base","optionalName":"base optional","enabled":true,"count":10,"replaceItems":[1,2],"appendItems":[1,2],"uniqueItems":["a","b"],"nested":{"label":"base nested","count":5}}"""
+                ),
+                Utf8(
+                    """{"optionalName":null,"enabled":false,"count":0,"replaceItems":[],"appendItems":[2,3],"uniqueItems":["b","c"],"nested":{"label":null,"count":0}}"""
+                ),
+            ])
+            .AsTask();
 
     private static ReadOnlyMemory<byte> Utf8(string value) => Encoding.UTF8.GetBytes(value);
 

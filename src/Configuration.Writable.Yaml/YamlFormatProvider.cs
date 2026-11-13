@@ -548,11 +548,10 @@ public class YamlFormatProvider
         string? schemaReference
     )
     {
-        string yaml;
 #if NETSTANDARD2_0
-        yaml = Encoding.UTF8.GetString(utf8Bytes.ToArray());
+        var yaml = Encoding.UTF8.GetString(utf8Bytes.ToArray());
 #else
-        yaml = Encoding.UTF8.GetString(utf8Bytes.Span);
+        var yaml = Encoding.UTF8.GetString(utf8Bytes.Span);
 #endif
         if (schemaReference is not null)
             yaml =

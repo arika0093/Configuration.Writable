@@ -29,7 +29,11 @@ public static class GeneratedOptionsSchemaRegistry
 {
     private static readonly System.Collections.Generic.List<GeneratedOptionsModelMetadata> Models =
     [];
+#if NET9_0_OR_GREATER
+    private static readonly System.Threading.Lock SyncRoot = new();
+#else
     private static readonly object SyncRoot = new();
+#endif
 
     /// <summary>Gets the models registered by source-generated metadata.</summary>
     public static System.Collections.Generic.IReadOnlyList<GeneratedOptionsModelMetadata> RegisteredModels

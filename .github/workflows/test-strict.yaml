@@ -8,7 +8,7 @@ on:
       - '**.csproj'
       - '**.cs'
       - '**/Directory.Build.props'
-      - '.github/workflows/test.yaml'
+      - '.github/workflows/test-strict.yaml'
 
 jobs:
   test:
@@ -72,4 +72,6 @@ jobs:
         run: >
           tests/Configuration.Writable.Tests/bin/Release/net10.0/linux-x64/publish/Configuration.Writable.Tests
           --treenode-filter '/*/*/*/*JsonAot*'
+          --retry-failed-tests 3
+          --report-trx
           --no-progress
