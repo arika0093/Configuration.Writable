@@ -584,8 +584,7 @@ internal class CodeGenerator(
         // e.g., CustomEnumerable<string> should call CustomEnumerable_T__CloneInternal<string>
 
         // First, try to find a matching ClassInfo
-        var matchingClassInfo =
-            allClassInfos.FirstOrDefault(c => c.FullClassName == typeFullName)
+        var matchingClassInfo = allClassInfos.FirstOrDefault(c => c.FullClassName == typeFullName)
             ?? FindMatchingGenericClassInfo(typeFullName, allClassInfos);
         if (matchingClassInfo != null && matchingClassInfo.IsImmutableUsable)
         {

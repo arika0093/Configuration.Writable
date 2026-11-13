@@ -46,9 +46,8 @@ public class YamlFormatProvider
     internal static void Register<T>()
         where T : class, new()
     {
-        AotDeserializers.TryAdd(
-            typeof(T),
-            static (bytes, options) => YamlSerializer.Deserialize<T>(bytes, options)
+        AotDeserializers.TryAdd(typeof(T), static (bytes, options) =>
+            YamlSerializer.Deserialize<T>(bytes, options)
         );
     }
 
@@ -320,9 +319,8 @@ public class YamlFormatProvider
             return deserializer(yamlBytes, SerializerOptions);
         }
 
-        var genericMethod = DeserializeMethods.GetOrAdd(
-            type,
-            static type => DeserializeMethod.MakeGenericMethod(type)
+        var genericMethod = DeserializeMethods.GetOrAdd(type, static type =>
+            DeserializeMethod.MakeGenericMethod(type)
         );
         var result = genericMethod.Invoke(null, new object[] { yamlBytes, SerializerOptions });
         return result ?? Activator.CreateInstance(type)!;

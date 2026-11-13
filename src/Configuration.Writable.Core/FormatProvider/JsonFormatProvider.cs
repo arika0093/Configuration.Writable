@@ -196,8 +196,8 @@ public class JsonFormatProvider
         if (sectionNameParts.Count == 0)
         {
             return await JsonSerializer
-                    .DeserializeAsync(stream, type, JsonSerializerOptions, cancellationToken)
-                    .ConfigureAwait(false)
+                .DeserializeAsync(stream, type, JsonSerializerOptions, cancellationToken)
+                .ConfigureAwait(false)
                 ?? CreateDefault(type);
         }
 

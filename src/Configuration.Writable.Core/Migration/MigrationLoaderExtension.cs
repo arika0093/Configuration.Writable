@@ -38,9 +38,8 @@ internal static class MigrationLoaderExtension
         var metadataProvider = formatProvider as IOptionsSchemaMetadataProvider;
         var fileMetadata = metadataProvider is null
             ? null
-            : FormatProviderBase.ExecuteWithBackupRecovery(
-                options,
-                () => metadataProvider.ReadSchemaMetadata(options)
+            : FormatProviderBase.ExecuteWithBackupRecovery(options, () =>
+                metadataProvider.ReadSchemaMetadata(options)
             );
         ValidateFileMetadata(fileMetadata);
 

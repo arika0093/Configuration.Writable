@@ -22,9 +22,8 @@ internal sealed class EquatableArray<T> : IReadOnlyList<T>, IEquatable<Equatable
     public override bool Equals(object? obj) => obj is EquatableArray<T> other && Equals(other);
 
     public override int GetHashCode() =>
-        _items.Aggregate(
-            0,
-            static (hash, item) => (hash * 397) ^ EqualityComparer<T>.Default.GetHashCode(item!)
+        _items.Aggregate(0, static (hash, item) =>
+            (hash * 397) ^ EqualityComparer<T>.Default.GetHashCode(item!)
         );
 
     public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_items).GetEnumerator();

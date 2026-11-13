@@ -3,7 +3,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <MSBuildTreatAllWarningsAsErrors>true</MSBuildTreatAllWarningsAsErrors>
     <RestoreTreatWarningsAsErrors>true</RestoreTreatWarningsAsErrors>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>

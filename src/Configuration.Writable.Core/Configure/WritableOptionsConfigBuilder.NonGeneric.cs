@@ -147,8 +147,8 @@ public class WritableOptionsConfigBuilder
 
     internal void EnableJsonSchemaGenerationCore(IJsonTypeInfoResolver typeInfoResolver)
     {
-        JsonSchemaTypeInfoResolver =
-            typeInfoResolver ?? throw new ArgumentNullException(nameof(typeInfoResolver));
+        JsonSchemaTypeInfoResolver = typeInfoResolver
+            ?? throw new ArgumentNullException(nameof(typeInfoResolver));
         JsonSchemaGenerationEnabled = true;
     }
 #pragma warning restore S1133

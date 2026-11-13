@@ -22,8 +22,8 @@ internal sealed class FallbackFormatProvider
 
     internal FallbackFormatProvider(IWritableFormatProvider primaryProvider)
     {
-        PrimaryProvider =
-            primaryProvider ?? throw new ArgumentNullException(nameof(primaryProvider));
+        PrimaryProvider = primaryProvider
+            ?? throw new ArgumentNullException(nameof(primaryProvider));
     }
 
     internal IWritableFormatProvider PrimaryProvider { get; }
@@ -137,9 +137,8 @@ internal sealed class FallbackFormatProvider
     {
         var source = ResolveReadSource(options);
         return source.Provider is IOptionsSchemaMetadataProvider metadataProvider
-            ? FormatProviderBase.ExecuteWithBackupRecovery(
-                source.Options,
-                () => metadataProvider.ReadSchemaMetadata(source.Options)
+            ? FormatProviderBase.ExecuteWithBackupRecovery(source.Options, () =>
+                metadataProvider.ReadSchemaMetadata(source.Options)
             )
             : null;
     }

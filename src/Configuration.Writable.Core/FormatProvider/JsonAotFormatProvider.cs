@@ -32,8 +32,8 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         IOptionsSchemaMetadataProvider,
         IDeepMergeableFormatProvider
 {
-    private readonly IJsonTypeInfoResolver _typeInfoResolver =
-        typeInfoResolver ?? throw new ArgumentNullException(nameof(typeInfoResolver));
+    private readonly IJsonTypeInfoResolver _typeInfoResolver = typeInfoResolver
+        ?? throw new ArgumentNullException(nameof(typeInfoResolver));
     private JsonSerializerOptions? _effectiveOptions;
 
     /// <summary>
@@ -193,8 +193,8 @@ public class JsonAotFormatProvider(IJsonTypeInfoResolver typeInfoResolver)
         if (sectionNameParts.Count == 0)
         {
             return await JsonSerializer
-                    .DeserializeAsync(stream, jsonTypeInfo, cancellationToken)
-                    .ConfigureAwait(false)
+                .DeserializeAsync(stream, jsonTypeInfo, cancellationToken)
+                .ConfigureAwait(false)
                 ?? CreateDefault(type);
         }
 

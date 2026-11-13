@@ -75,8 +75,7 @@ internal static class DeepMergeDocument
                 : new DeepMergeObjectNode();
             foreach (var property in incomingObject.Properties)
             {
-                var propertyMetadata =
-                    resolveProperty?.Invoke(modelType, property.Key)
+                var propertyMetadata = resolveProperty?.Invoke(modelType, property.Key)
                     ?? ResolveGeneratedProperty(metadata, modelType, property.Key);
                 merged.Properties.TryGetValue(property.Key, out var existingValue);
                 merged.Properties[property.Key] = MergeProperty(

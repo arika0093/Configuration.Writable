@@ -1,14 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <!-- The approved API baseline includes the .NET 10 trimming and AOT annotations. -->
-    <TargetFrameworks>net10.0</TargetFrameworks>
-  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Configuration.Writable.Xml\Configuration.Writable.Xml.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable.Yaml\Configuration.Writable.Yaml.csproj" />
     <ProjectReference Include="..\..\src\Configuration.Writable\Configuration.Writable.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <Reference Include="System.IO.Compression" />
   </ItemGroup>
 </Project>

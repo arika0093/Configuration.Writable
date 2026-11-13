@@ -56,9 +56,8 @@ internal abstract class CloneableGeneratorCore<TOptions>() : IIncrementalGenerat
             static (compilation, _) => GenerationEnvironment.Create(compilation)
         );
 
-        context.RegisterSourceOutput(
-            classDeclarations.Combine(environment),
-            (spc, pair) => Execute(DropDuplicates(pair.Left), pair.Right, spc)
+        context.RegisterSourceOutput(classDeclarations.Combine(environment), (spc, pair) =>
+            Execute(DropDuplicates(pair.Left), pair.Right, spc)
         );
     }
 

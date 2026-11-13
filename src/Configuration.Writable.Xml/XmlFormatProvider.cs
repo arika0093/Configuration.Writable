@@ -312,8 +312,7 @@ public class XmlFormatProvider : FormatProviderBase, IOptionsSchemaMetadataProvi
             string.Join(":", parts)
         );
 
-        var root =
-            document.Root
+        var root = document.Root
             ?? throw new InvalidOperationException("Existing XML document has no root element");
         var parent = GetSectionParent(root, parts);
         var sectionName = parts[parts.Count - 1];

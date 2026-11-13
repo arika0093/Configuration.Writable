@@ -71,25 +71,20 @@ public static class WritableOptionsCoreExtensions
         // if named instance, add named wrapper
         if (!string.IsNullOrEmpty(instanceName))
         {
-            services.AddKeyedSingleton<IWritableOptions<T>>(
-                instanceName,
-                (p, key) =>
-                    new WritableOptionsWithNameImpl<T>(
-                        p.GetRequiredService<WritableOptionsImpl<T>>(),
-                        instanceName
-                    )
+            services.AddKeyedSingleton<IWritableOptions<T>>(instanceName, (p, key) =>
+                new WritableOptionsWithNameImpl<T>(
+                    p.GetRequiredService<WritableOptionsImpl<T>>(),
+                    instanceName
+                )
             );
-            services.AddKeyedSingleton<IReadOnlyOptions<T>>(
-                instanceName,
-                (p, key) => p.GetRequiredKeyedService<IWritableOptions<T>>(instanceName)
+            services.AddKeyedSingleton<IReadOnlyOptions<T>>(instanceName, (p, key) =>
+                p.GetRequiredKeyedService<IWritableOptions<T>>(instanceName)
             );
-            services.AddKeyedSingleton<IReadOnlyOptionsMonitor<T>>(
-                instanceName,
-                (p, key) => p.GetRequiredService<WritableOptionsImpl<T>>()
+            services.AddKeyedSingleton<IReadOnlyOptionsMonitor<T>>(instanceName, (p, key) =>
+                p.GetRequiredService<WritableOptionsImpl<T>>()
             );
-            services.AddKeyedSingleton<IWritableOptionsMonitor<T>>(
-                instanceName,
-                (p, key) => p.GetRequiredService<WritableOptionsImpl<T>>()
+            services.AddKeyedSingleton<IWritableOptionsMonitor<T>>(instanceName, (p, key) =>
+                p.GetRequiredService<WritableOptionsImpl<T>>()
             );
         }
         return services;

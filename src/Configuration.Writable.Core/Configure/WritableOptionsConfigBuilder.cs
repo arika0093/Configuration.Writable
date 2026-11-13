@@ -431,8 +431,7 @@ public class WritableOptionsConfigBuilder<T> : WritableOptionsConfigBuilder
             return;
         }
 
-        var targetVersion =
-            targetMetadata?.Version
+        var targetVersion = targetMetadata?.Version
             ?? throw new InvalidOperationException(
                 $"Target type {typeof(T).Name} does not declare a schema version."
             );

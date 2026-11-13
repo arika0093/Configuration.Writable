@@ -57,38 +57,30 @@ internal static class JsonSchemaValidationAttributeMapper
                 break;
             case RangeAttribute range:
                 if (TryGetNumericBound(range.Minimum, out var minimum))
-                    ApplyToNumericSchema(
-                        schema,
-                        item =>
-                            SetNumericBound(
-                                item,
-                                range.MinimumIsExclusive ? "exclusiveMinimum" : "minimum",
-                                minimum,
-                                isMinimum: true
-                            )
+                    ApplyToNumericSchema(schema, item =>
+                        SetNumericBound(
+                            item,
+                            range.MinimumIsExclusive ? "exclusiveMinimum" : "minimum",
+                            minimum,
+                            isMinimum: true
+                        )
                     );
                 if (TryGetNumericBound(range.Maximum, out var maximum))
-                    ApplyToNumericSchema(
-                        schema,
-                        item =>
-                            SetNumericBound(
-                                item,
-                                range.MaximumIsExclusive ? "exclusiveMaximum" : "maximum",
-                                maximum,
-                                isMinimum: false
-                            )
+                    ApplyToNumericSchema(schema, item =>
+                        SetNumericBound(
+                            item,
+                            range.MaximumIsExclusive ? "exclusiveMaximum" : "maximum",
+                            maximum,
+                            isMinimum: false
+                        )
                     );
                 break;
             case StringLengthAttribute stringLength:
-                ApplyToSchemaType(
-                    schema,
-                    "string",
-                    item =>
-                    {
-                        SetLength(item, "minLength", stringLength.MinimumLength, isMinimum: true);
-                        SetLength(item, "maxLength", stringLength.MaximumLength, isMinimum: false);
-                    }
-                );
+                ApplyToSchemaType(schema, "string", item =>
+                {
+                    SetLength(item, "minLength", stringLength.MinimumLength, isMinimum: true);
+                    SetLength(item, "maxLength", stringLength.MaximumLength, isMinimum: false);
+                });
                 break;
             case LengthAttribute length:
                 SetLengthConstraint(schema, length.MinimumLength, isMinimum: true);
@@ -108,10 +100,8 @@ internal static class JsonSchemaValidationAttributeMapper
                 break;
             case RegularExpressionAttribute expression:
                 if (IsJsonSchemaRegularExpression(expression.Pattern))
-                    ApplyToSchemaType(
-                        schema,
-                        "string",
-                        item => AddPattern(item, expression.Pattern)
+                    ApplyToSchemaType(schema, "string", item =>
+                        AddPattern(item, expression.Pattern)
                     );
                 break;
             case EmailAddressAttribute:
@@ -121,10 +111,8 @@ internal static class JsonSchemaValidationAttributeMapper
                 ApplyToSchemaType(schema, "string", item => SetFormat(item, "uri"));
                 break;
             case DataTypeAttribute dataType:
-                ApplyToSchemaType(
-                    schema,
-                    "string",
-                    item => SetDataTypeFormat(item, dataType.DataType)
+                ApplyToSchemaType(schema, "string", item =>
+                    SetDataTypeFormat(item, dataType.DataType)
                 );
                 break;
         }
@@ -150,15 +138,11 @@ internal static class JsonSchemaValidationAttributeMapper
 
     private static void SetLengthConstraint(JsonObject schema, int length, bool isMinimum)
     {
-        ApplyToSchemaType(
-            schema,
-            "string",
-            item => SetLength(item, isMinimum ? "minLength" : "maxLength", length, isMinimum)
+        ApplyToSchemaType(schema, "string", item =>
+            SetLength(item, isMinimum ? "minLength" : "maxLength", length, isMinimum)
         );
-        ApplyToSchemaType(
-            schema,
-            "array",
-            item => SetLength(item, isMinimum ? "minItems" : "maxItems", length, isMinimum)
+        ApplyToSchemaType(schema, "array", item =>
+            SetLength(item, isMinimum ? "minItems" : "maxItems", length, isMinimum)
         );
     }
 

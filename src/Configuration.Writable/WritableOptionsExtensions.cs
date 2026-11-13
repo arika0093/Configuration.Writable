@@ -163,15 +163,12 @@ public static class WritableOptionsExtensions
             }
             else
             {
-                services.AddKeyedSingleton<T>(
-                    actualInstanceName,
-                    (provider, _) =>
-                    {
-                        return provider
-                            .GetRequiredService<IReadOnlyNamedOptions<T>>()
-                            .Get(actualInstanceName);
-                    }
-                );
+                services.AddKeyedSingleton<T>(actualInstanceName, (provider, _) =>
+                {
+                    return provider
+                        .GetRequiredService<IReadOnlyNamedOptions<T>>()
+                        .Get(actualInstanceName);
+                });
             }
         }
 

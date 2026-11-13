@@ -140,11 +140,8 @@ public class WritableOptionsStub<T> : IWritableOptionsMonitor<T>, IOptionsMonito
 
     /// <inheritdoc/>
     public ConfigureSession<T> BeginConfigure(string name) =>
-        new(
-            Get(name),
-            new T(),
-            Clone,
-            (value, cancellationToken) => SaveAsync(name, value, cancellationToken)
+        new(Get(name), new T(), Clone, (value, cancellationToken) =>
+            SaveAsync(name, value, cancellationToken)
         );
 
     /// <inheritdoc/>

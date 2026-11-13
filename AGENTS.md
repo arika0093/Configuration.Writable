@@ -9,7 +9,7 @@ It is recommended to run all tests, including NativeAOT tests.
 ### Normal Tests
 
 ```bash
-# export TFMS=net8.0;net10.0
+# export TFMS='net10.0;net11.0'
 dotnet test -- --retry-failed-tests 3 --report-trx --no-progress
 ```
 
