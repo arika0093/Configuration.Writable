@@ -5,13 +5,16 @@
     <RestoreTreatWarningsAsErrors>true</RestoreTreatWarningsAsErrors>
     <TargetFrameworks Condition="'$(TFMS)' != ''">$(TFMS)</TargetFrameworks>
     <TargetFrameworks Condition="'$(TFMS)' == ''">net10.0</TargetFrameworks>
-    <RuntimeIdentifiers Condition="'$(TFMS)' == 'net48' and '$(OS)' == 'Windows_NT'">win-x86</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="'$(TFMS)' == 'net48' and '$(OS)' == 'Windows_NT'"
+      >win-x86</RuntimeIdentifiers>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <PublishAot Condition="'$(Configuration)' == 'Release' and '$(TargetFramework)' != 'net6.0' and '$(TargetFramework)' != 'net48'">true</PublishAot>
+    <PublishAot
+      Condition="'$(Configuration)' == 'Release' and '$(TargetFramework)' != 'net6.0' and '$(TargetFramework)' != 'net48'"
+      >true</PublishAot>
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <EnableAotAnalyzer>false</EnableAotAnalyzer>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
@@ -28,12 +31,13 @@
       by the NativeAOT test filter. Suppress their publish-time diagnostics;
       the product projects continue to report these diagnostics normally.
     -->
-    <NoWarn Condition="'$(PublishAot)' == 'true'">$(NoWarn);IL2026;IL2070;IL2104;IL3000;IL3050;IL3053</NoWarn>
+    <NoWarn Condition="'$(PublishAot)' == 'true'"
+      >$(NoWarn);IL2026;IL2070;IL2104;IL3000;IL3050;IL3053</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Shouldly" Version="4.*" />
-    <PackageReference Include="TUnit" Version="1.66.27" />
-    <PackageReference Include="Microsoft.Testing.Extensions.Retry" Version="2.4.1" />
+    <PackageReference Include="TUnit" Version="1.84.0" />
+    <PackageReference Include="Microsoft.Testing.Extensions.Retry" Version="2.5.3" />
     <PackageReference Include="PublicApiGenerator" Version="11.5.4" />
     <PackageReference Include="GitHubActionsTestLogger" Version="3.0.5" />
     <!-- PolySharp provides System.Index/System.Range polyfills for net48 only. -->
